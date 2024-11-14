@@ -1,0 +1,26 @@
+{
+  "name": "@jseql/utils",
+  "version": "0.0.0",
+  "description": "jseql shared utility functions",
+  "license": "MIT",
+  "author": "CipherStash <hello@cipherstash.com>",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "tsup": "^8.3.0"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  }
+}

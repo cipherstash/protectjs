@@ -1,0 +1,48 @@
+{
+	"name": "@jseql/eql",
+	"version": "0.0.0",
+	"description": "Encrypted Query Language JavaScript Library",
+	"keywords": ["encrypted", "query", "language", "typescript", "ts", "eql"],
+	"bugs": {
+		"url": "https://github.com/cipherstash/jseql/issues"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/cipherstash/jseql.git"
+	},
+	"license": "MIT",
+	"author": "CipherStash <hello@cipherstash.com>",
+	"type": "module",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js",
+			"require": "./dist/index.cjs"
+		},
+		"./drizzle": {
+			"types": "./dist/drizzle/index.d.ts",
+			"import": "./dist/drizzle/index.js",
+			"require": "./dist/drizzle/index.cjs"
+		}
+	},
+	"scripts": {
+		"build": "tsup",
+		"dev": "tsup --watch",
+		"generate-types": "json2ts ../../../cs_encrypted_v1.schema.json --output ./cs_encrypted_v1.ts",
+		"test": "bun test tests"
+	},
+	"devDependencies": {
+		"@types/bun": "latest",
+		"json-schema-to-typescript": "^15.0.2",
+		"tsup": "^8.3.0"
+	},
+	"peerDependencies": {
+		"typescript": "^5.0.0"
+	},
+	"publishConfig": {
+		"access": "public"
+	},
+	"dependencies": {
+		"@logtape/logtape": "^0.7.1"
+	}
+}

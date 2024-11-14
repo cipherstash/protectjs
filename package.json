@@ -1,0 +1,29 @@
+{
+  "name": "jseql",
+  "description": "CipherStash Encrypted Query Language JavaScript Library",
+	"keywords": ["encrypted", "query", "language", "typescript", "ts", "eql"], 
+	"bugs": {
+		"url": "https://github.com/cipherstash/jseql/issues"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/cipherstash/jseql.git"
+	},
+	"license": "MIT",
+	"author": "CipherStash <hello@cipherstash.com>",
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "build": "turbo build",
+    "dev": "turbo dev",
+    "code:fix": "biome check --write",
+    "test": "turbo test"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.3",
+    "turbo": "2.1.1"
+  },
+  "packageManager": "bun@1.1.27",
+  "engines": {
+    "node": ">=18"
+  }
+}
