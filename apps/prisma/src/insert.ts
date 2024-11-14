@@ -1,5 +1,5 @@
 import { getEmailArg } from '@cipherstash/utils'
-import { eqlPayload } from '../../../packages/eql/dist'
+import { createEqlPayload } from '@cipherstash/jseql'
 import { prisma } from './db'
 
 const email = getEmailArg({
@@ -9,7 +9,7 @@ const email = getEmailArg({
 await prisma.user.create({
   data: {
     email: email ?? 'test@test.com',
-    email_encrypted: eqlPayload({
+    email_encrypted: createEqlPayload({
       plaintext: email,
       table: 'users',
       column: 'email_encrypted',

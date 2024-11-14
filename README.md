@@ -28,9 +28,9 @@
 Install `jseql` via one of the following methods:
 
 ```bash
-npm install @jseql/eql
-yarn add @jseql/eql
-bun add @jseql/eql
+npm install @cipherstash/jseql
+yarn add @cipherstash/jseql
+bun add @cipherstash/jseql
 ```
 
 ## Usage
@@ -42,7 +42,7 @@ import {
   createEqlPayload,
   getPlaintext,
   type CsEncryptedV1Schema,
-} from '@jseql/eql'
+} from '@cipherstash/jseql'
 ```
 
 ### Functions

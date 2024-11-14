@@ -1,4 +1,4 @@
-import { eqlPayload } from '../../../packages/eql/dist'
+import { createEqlPayload } from '@cipherstash/jseql'
 import { PrismaClient, Prisma } from '@prisma/client'
 
 // TODO: Fix dynamic type of the whereEncrypted method
@@ -19,7 +19,7 @@ export const prisma = new PrismaClient().$extends({
         const schema = result[0].current_schema
 
         const payload = JSON.stringify(
-          eqlPayload({
+          createEqlPayload({
             plaintext,
             table: tableName,
             column,

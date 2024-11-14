@@ -1,5 +1,5 @@
 {
-  "name": "jseql",
+  "name": "cipherstash",
   "description": "Encrypted Query Language JavaScript/TypeScript Library",
   "author": "CipherStash <hello@cipherstash.com>",
 	"keywords": ["encrypted", "query", "language", "typescript", "ts", "eql"], 

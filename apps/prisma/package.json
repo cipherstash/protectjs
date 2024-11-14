@@ -13,7 +13,7 @@
   },
   "peerDependencies": {
     "typescript": "^5.0.0",
-    "@cipherstash/eql": "workspace:*"
+    "@cipherstash/jseql": "workspace:*"
   },
   "dependencies": {
     "@prisma/client": "^5.20.0",

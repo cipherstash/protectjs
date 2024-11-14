@@ -1,28 +1,28 @@
-import { getEmailArg } from "@cipherstash/utils";
-import { eqlPayload } from "@cipherstash/eql";
-import { db } from "./db";
-import { users } from "./schema";
+import { getEmailArg } from '@cipherstash/utils'
+import { createEqlPayload } from '@cipherstash/jseql'
+import { db } from './db'
+import { users } from './schema'
 
 const email = getEmailArg({
-	required: true,
-});
+  required: true,
+})
 
 const sql = db.insert(users).values({
-	email: email,
-	email_encrypted: eqlPayload({
-		plaintext: email,
-		table: "users",
-		column: "email_encrypted",
-	}),
-});
+  email: email,
+  email_encrypted: createEqlPayload({
+    plaintext: email,
+    table: 'users',
+    column: 'email_encrypted',
+  }),
+})
 
-const sqlResult = sql.toSQL();
-console.log("[INFO] SQL statement:", sqlResult);
+const sqlResult = sql.toSQL()
+console.log('[INFO] SQL statement:', sqlResult)
 
-await sql.execute();
+await sql.execute()
 console.log(
-	"[INFO] You've inserted a new user with an encrypted email from the plaintext",
-	email,
-);
+  "[INFO] You've inserted a new user with an encrypted email from the plaintext",
+  email,
+)
 
-process.exit(0);
+process.exit(0)

@@ -1,5 +1,5 @@
 {
-	"name": "@jseql/eql",
+	"name": "@cipherstash/jseql",
 	"version": "0.0.0",
 	"description": "Encrypted Query Language JavaScript Library",
 	"keywords": ["encrypted", "query", "language", "typescript", "ts", "eql"],

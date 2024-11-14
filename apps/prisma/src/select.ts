@@ -1,4 +1,4 @@
-import { getPlaintext } from '../../../packages/eql/dist'
+import { getPlaintext } from '@cipherstash/jseql'
 import { prisma } from './db'
 import { getEmailArg } from '@cipherstash/utils'
 import type { User } from '@prisma/client'
