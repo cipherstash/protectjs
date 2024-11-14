@@ -1,6 +1,7 @@
 {
   "name": "jseql",
-  "description": "CipherStash Encrypted Query Language JavaScript Library",
+  "description": "Encrypted Query Language JavaScript/TypeScript Library",
+  "author": "CipherStash <hello@cipherstash.com>",
 	"keywords": ["encrypted", "query", "language", "typescript", "ts", "eql"], 
 	"bugs": {
 		"url": "https://github.com/cipherstash/jseql/issues"
@@ -10,7 +11,6 @@
 		"url": "git+https://github.com/cipherstash/jseql.git"
 	},
 	"license": "MIT",
-	"author": "CipherStash <hello@cipherstash.com>",
   "workspaces": ["apps/*", "packages/*"],
   "scripts": {
     "build": "turbo build",
