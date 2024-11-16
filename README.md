@@ -171,14 +171,11 @@ To create a new release, run the following command:
 bun changeset
 ```
 
-This will open a new editor where you can write a changelog entry. 
-Once you're done, run the following command to create a new release:
+Create a pull request and merge it into the `main` branch, which will trigger the release workflow.
 
-```bash
-bun changeset:version
-```
-
-Create a pull request and merge it into the `main` branch, which will trigger the release workflow to publish the new version to npm.
+1. Changesets will open a new pull request with the new version.
+2. Merge the pull request into the `main` branch.
+3. Changesets will automatically publish the new version to npm.
 
 ## License
 
