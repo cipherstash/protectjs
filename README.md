@@ -29,7 +29,7 @@ Install `jseql` via one of the following methods:
 
 ```bash
 npm install @cipherstash/jseql
-yarn add @cipherstash/jseql
+bun add @cipherstash/jseql
 bun add @cipherstash/jseql
 ```
 
@@ -161,6 +161,30 @@ By setting up the logger, you can monitor the internal operations of `jseql`, wh
 ## Contributing
 
 Contributions are welcome! Please open an issue or submit a pull request on the [GitHub repository](https://github.com/cipherstash/jseql).
+
+## Changelog
+
+We use [Changesets](https://github.com/changesets/changesets) to manage our changelog. 
+To create a new release, run the following command:
+
+```bash
+bun changeset
+```
+
+This will open a new editor where you can write a changelog entry. 
+Once you're done, run the following command to create a new release:
+
+```bash
+bun changeset:version
+```
+
+Finally, run the following command to publish the new release:
+
+```bash
+bun changeset:publish
+```
+
+> TODO: Add a GitHub action to automatically create a new release when a new changeset is created.
 
 ## License
 

@@ -1,6 +1,7 @@
 {
 	"name": "drizzle-eql",
 	"module": "index.ts",
+	"private": true,
 	"type": "module",
 	"devDependencies": {
 		"@types/bun": "latest",
@@ -13,7 +14,7 @@
 	"peerDependencies": {
 		"typescript": "^5.0.0",
 		"@cipherstash/jseql": "workspace:*",
-    "@cipherstash/utils": "workspace:*"
+		"@cipherstash/utils": "workspace:*"
 	},
 	"dependencies": {
 		"drizzle-orm": "^0.33.0",
