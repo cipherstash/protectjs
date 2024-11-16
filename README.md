@@ -29,7 +29,7 @@ Install `jseql` via one of the following methods:
 
 ```bash
 npm install @cipherstash/jseql
-bun add @cipherstash/jseql
+yarn add @cipherstash/jseql
 bun add @cipherstash/jseql
 ```
 
