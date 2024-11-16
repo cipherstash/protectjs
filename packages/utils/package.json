@@ -1,6 +1,7 @@
 {
   "name": "@cipherstash/utils",
   "version": "0.0.0",
+  "private": true,
   "description": "jseql shared utility functions",
   "license": "MIT",
   "author": "CipherStash <hello@cipherstash.com>",

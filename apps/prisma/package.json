@@ -1,6 +1,7 @@
 {
   "name": "prisma-eql",
   "module": "index.ts",
+  "private": true,
   "type": "module",
   "devDependencies": {
     "@types/bun": "latest",
