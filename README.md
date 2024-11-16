@@ -162,9 +162,9 @@ By setting up the logger, you can monitor the internal operations of `jseql`, wh
 
 Contributions are welcome! Please open an issue or submit a pull request on the [GitHub repository](https://github.com/cipherstash/jseql).
 
-## Changelog
+## Releasing new versions
 
-We use [Changesets](https://github.com/changesets/changesets) to manage our changelog. 
+We use [Changesets](https://github.com/changesets/changesets) to manage our releases. 
 To create a new release, run the following command:
 
 ```bash
