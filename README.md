@@ -178,13 +178,7 @@ Once you're done, run the following command to create a new release:
 bun changeset:version
 ```
 
-Finally, run the following command to publish the new release:
-
-```bash
-bun changeset:publish
-```
-
-> TODO: Add a GitHub action to automatically create a new release when a new changeset is created.
+Create a pull request and merge it into the `main` branch, which will trigger the release workflow to publish the new version to npm.
 
 ## License
 

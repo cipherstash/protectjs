@@ -19,6 +19,7 @@
     "changeset:publish": "changeset publish",
     "dev": "turbo dev",
     "code:fix": "biome check --write",
+    "release": "turbo run build && changeset publish",
     "test": "turbo test"
   },
   "devDependencies": {
