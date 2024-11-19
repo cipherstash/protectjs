@@ -12,9 +12,9 @@
     - [createEqlPayload](#createeqlpayload)
     - [getPlaintext](#getplaintext)
   - [Logging](#logging)
+- [Releasing new versions](#releasing-new-versions)
 - [Contributing](#contributing)
 - [License](#license)
-- [Contact](#contact)
 
 ## Features
 
@@ -158,10 +158,6 @@ const payload = createEqlPayload({
 
 By setting up the logger, you can monitor the internal operations of `jseql`, which is especially useful for debugging and development purposes.
 
-## Contributing
-
-Contributions are welcome! Please open an issue or submit a pull request on the [GitHub repository](https://github.com/cipherstash/jseql).
-
 ## Releasing new versions
 
 We use [Changesets](https://github.com/changesets/changesets) to manage our releases. 
@@ -177,6 +173,10 @@ Create a pull request and merge it into the `main` branch, which will trigger th
 2. Merge the pull request into the `main` branch.
 3. Changesets will automatically publish the new version to npm.
 
+## Contributing
+
+Please see the [CONTRIBUTING.md](CONTRIBUTING.md) file for more information.
+
 ## License
 
-This project is licensed under the MIT License.
+Please see the [LICENSE](LICENSE.md) file for more information.

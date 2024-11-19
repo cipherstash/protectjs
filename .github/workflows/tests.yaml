@@ -1,0 +1,32 @@
+name: Package Tests
+
+on:
+  pull_request:
+    branches:
+      - "**"
+
+jobs:
+  run-tests:
+    name: Run Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js 23.1
+        uses: actions/setup-node@v3
+        with:
+          node-version: 23.1
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+
+      - name: Install Dependencies
+        run: bun install
+
+      # Run TurboRepo tests
+      - name: Run tests
+        run: bun test
