@@ -1,20 +1,9 @@
-import { configure, getConsoleSink, getFileSink } from '@logtape/logtape'
-import { describe, expect, it, beforeEach } from 'bun:test'
-import { createEqlPayload, getPlaintext } from '../src/index'
-import type { CsEncryptedV1Schema } from '../src/cs_encrypted_v1'
+import { describe, expect, it } from 'bun:test'
+import { createEqlPayload, getPlaintext } from '../src'
+import type { CsPlaintextV1Schema } from '../src/cs_plaintext_v1'
+import { getLogger } from '@logtape/logtape'
 
-await configure({
-  sinks: {
-    console: getConsoleSink(),
-  },
-  loggers: [
-    {
-      category: ['jseql'],
-      level: 'debug',
-      sinks: ['console'],
-    },
-  ],
-})
+const logger = getLogger(['jseql'])
 
 describe('createEqlPayload', () => {
   it('should create a payload with the correct default values', () => {
@@ -24,40 +13,37 @@ describe('createEqlPayload', () => {
       column: 'email',
     })
 
-    const expectedPayload: CsEncryptedV1Schema = {
+    const expectedPayload: CsPlaintextV1Schema = {
       v: 1,
-      s: 1,
       k: 'pt',
       p: 'test',
       i: {
         t: 'users',
         c: 'email',
       },
-      q: null,
     }
 
     expect(result).toEqual(expectedPayload)
   })
 
-  it('should set custom version and queryType values when provided', () => {
+  it('should set custom schemaVersion and queryType values when provided', () => {
     const result = createEqlPayload({
       plaintext: 'test',
       table: 'users',
       column: 'email',
-      version: 2,
-      queryType: 'SELECT',
+      schemaVersion: 2,
+      queryType: 'match',
     })
 
-    const expectedPayload: CsEncryptedV1Schema = {
+    const expectedPayload: CsPlaintextV1Schema = {
       v: 2,
-      s: 1,
       k: 'pt',
       p: 'test',
       i: {
         t: 'users',
         c: 'email',
       },
-      q: 'SELECT',
+      q: 'match',
     }
 
     expect(result).toEqual(expectedPayload)
@@ -65,7 +51,7 @@ describe('createEqlPayload', () => {
 
   it('should set plaintext to an empty string if undefined', () => {
     const result = createEqlPayload({
-      plaintext: undefined,
+      plaintext: '',
       table: 'users',
       column: 'email',
     })
@@ -75,42 +61,53 @@ describe('createEqlPayload', () => {
 })
 
 describe('getPlaintext', () => {
-  it('should return plaintext if payload has "pt" as key', () => {
-    const payload: CsEncryptedV1Schema = {
+  it('should return plaintext if payload is valid and key is "pt"', () => {
+    const payload: CsPlaintextV1Schema = {
       v: 1,
-      s: 1,
       k: 'pt',
       p: 'test',
       i: {
         t: 'users',
         c: 'email',
       },
-      q: null,
     }
 
     const result = getPlaintext(payload)
-    expect(result).toBe('test')
+
+    expect(result).toEqual({
+      failure: false,
+      plaintext: 'test',
+    })
   })
 
-  it('should return undefined and log error if payload is null', () => {
-    const result = getPlaintext(null)
-    expect(result).toBeUndefined()
-  })
-
-  it('should return undefined and log error if key is not "pt"', () => {
-    const payload: CsEncryptedV1Schema = {
+  it('should return an error if payload is missing "p" or key is not "pt"', () => {
+    const invalidPayload = {
       v: 1,
-      s: 1,
       k: 'ct',
       c: 'ciphertext',
+      p: '',
       i: {
         t: 'users',
         c: 'email',
       },
-      q: null,
     }
 
-    const result = getPlaintext(payload)
-    expect(result).toBeUndefined()
+    const result = getPlaintext(
+      invalidPayload as unknown as CsPlaintextV1Schema,
+    )
+
+    expect(result).toEqual({
+      failure: true,
+      error: new Error('No plaintext data found in the EQL payload'),
+    })
+  })
+
+  it('should return an error and log if payload is invalid', () => {
+    const result = getPlaintext(null as unknown as CsPlaintextV1Schema)
+
+    expect(result).toEqual({
+      failure: true,
+      error: new Error('No plaintext data found in the EQL payload'),
+    })
   })
 })
