@@ -41,7 +41,7 @@ bun add @cipherstash/jseql
 import {
   createEqlPayload,
   getPlaintext,
-  type CsEncryptedV1Schema,
+  type CsPlaintextV1Schema,
 } from '@cipherstash/jseql'
 ```
 
@@ -92,7 +92,7 @@ Extracts the plaintext data from an EQL payload.
 
 **Parameters:**
 
-- `payload` (`CsEncryptedV1Schema` | null): The EQL payload.
+- `payload` (`CsPlaintextV1Schema` | null): The EQL payload.
 
 **Returns:**
 

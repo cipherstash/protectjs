@@ -1,7 +1,4 @@
 #!/usr/bin/env bun
-
-// Fetch the latest schemas from https://github.com/cipherstash/encrypt-query-language/tree/main/sql/schemas
-// Write file to ./cs_encrypted_v1.schema.json
 import { $ } from 'bun'
 
 const url =
