@@ -1,49 +1,68 @@
-export * from './cs_encrypted_v1'
-import type { CsEncryptedV1Schema } from './cs_encrypted_v1'
+export * from './cs_plaintext_v1'
+import type {
+  CsPlaintextV1Schema,
+  ForQuery,
+  SchemaVersion,
+  Kind,
+  Table,
+  Column,
+  Plaintext,
+} from './cs_plaintext_v1'
 import { getLogger } from '@logtape/logtape'
 
 const logger = getLogger(['jseql'])
 
-type CreateEqlPayload = {
-  plaintext: string | undefined
-  table: string
-  column: string
-  version?: number
-  schemaVersion?: number
-  queryType?: string | null
+export type CreateEqlPayload = {
+  plaintext: Plaintext
+  table: Table
+  column: Column
+  schemaVersion?: SchemaVersion
+  queryType?: ForQuery | null
+}
+
+export type Result = {
+  failure?: boolean
+  error?: Error
+  plaintext?: Plaintext
 }
 
 export const createEqlPayload = ({
   plaintext,
   table,
   column,
-  version = 1,
+  schemaVersion = 1,
   queryType = null,
-}: CreateEqlPayload): CsEncryptedV1Schema => {
-  const payload: CsEncryptedV1Schema = {
-    v: version,
-    s: 1,
+}: CreateEqlPayload): CsPlaintextV1Schema => {
+  const payload: CsPlaintextV1Schema = {
+    v: schemaVersion,
     k: 'pt',
     p: plaintext ?? '',
     i: {
       t: table,
       c: column,
     },
-    q: queryType,
+  }
+
+  if (queryType) {
+    payload.q = queryType
   }
 
   logger.debug('Creating the EQL payload', payload)
   return payload
 }
 
-export const getPlaintext = (
-  payload: CsEncryptedV1Schema | null,
-): string | undefined => {
-  if (payload?.k === 'pt') {
+export const getPlaintext = (payload: CsPlaintextV1Schema): Result => {
+  if (payload?.p && payload?.k === 'pt') {
     logger.debug('Returning the plaintext data from the EQL payload', payload)
-    return payload.p
+    return {
+      failure: false,
+      plaintext: payload.p,
+    }
   }
 
   logger.error('No plaintext data found in the EQL payload', payload ?? {})
-  return undefined
+  return {
+    failure: true,
+    error: new Error('No plaintext data found in the EQL payload'),
+  }
 }

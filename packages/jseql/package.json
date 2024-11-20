@@ -35,7 +35,7 @@
 	"scripts": {
 		"build": "tsup",
 		"dev": "tsup --watch",
-		"generate-types": "json2ts ../../../cs_encrypted_v1.schema.json --output ./cs_encrypted_v1.ts",
+		"generate-types": "json2ts ./cs_plaintext_v1.schema.json --output ./src/cs_plaintext_v1.ts",
 		"test": "bun test tests"
 	},
 	"devDependencies": {
