@@ -12,6 +12,7 @@
     - [createEqlPayload](#createeqlpayload)
     - [getPlaintext](#getplaintext)
   - [Logging](#logging)
+- [Examples](#examples)
 - [Releasing new versions](#releasing-new-versions)
 - [Contributing](#contributing)
 - [License](#license)
