@@ -172,6 +172,13 @@ const payload = createEqlPayload({
 
 By setting up the logger, you can monitor the internal operations of `jseql`, which is especially useful for debugging and development purposes.
 
+## Examples
+
+- [Drizzle](/apps/drizzle)
+- [Prisma](/apps/prisma)
+
+`jseql` can be used with most ORMs that support PostgreSQL. If you're interested in using `jseql` with a specific ORM, please [create an issue](https://github.com/cipherstash/jseql/issues/new).
+
 ## Releasing new versions
 
 We use [Changesets](https://github.com/changesets/changesets) to manage our releases. 
