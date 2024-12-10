@@ -13,7 +13,7 @@
     - [getPlaintext](#getplaintext)
   - [Logging](#logging)
 - [Releasing new versions](#releasing-new-versions)
-- [ContributE](#contributE)
+- [Contributing](#contributing)
 - [License](#license)
 
 ## Features
