@@ -12,16 +12,26 @@
     - [createEqlPayload](#createeqlpayload)
     - [getPlaintext](#getplaintext)
   - [Logging](#logging)
+- [Examples](#examples)
 - [Releasing new versions](#releasing-new-versions)
 - [Contributing](#contributing)
 - [License](#license)
 
 ## Features
 
+`jseql` leverages [Encrypt Query Language (EQL)](https://github.com/cipherstash/encrypt-query-language) and [CipherStash](https://cipherstash.com) to encrypt data in a PostgreSQL database.
+
+**Features:**
 - **Data encoding**: Easily create EQL payloads with the `createEqlPayload` function.
 - **Data decoding**: Extract plaintext data from EQL payloads using `getPlaintext`.
 - **TypeScript support**: Strongly typed with TypeScript interfaces and types.
 - **Logging**: Integrated logging using [logtape](https://github.com/logtape/logtape) for debugging and monitoring.
+
+**Use cases:**
+- Meet compliance requirements for data encryption in your application.
+- Ensure only the intended users can access sensitive data.
+- Exceed customer expectations for data security.
+- Improve your overall security posture and reduce the risk of data breaches.
 
 ## Installation
 
@@ -29,7 +39,9 @@ Install `jseql` via one of the following methods:
 
 ```bash
 npm install @cipherstash/jseql
+# or
 yarn add @cipherstash/jseql
+# or
 bun add @cipherstash/jseql
 ```
 
@@ -67,10 +79,11 @@ const payload = createEqlPayload({
   table: 'messages',
   column: 'content',
 })
-console.log(payload)
+
+sql = `INSERT INTO messages (content) VALUES (${payload});`
 ```
 
-**Output:**
+**Payload:**
 
 ```json
 {
@@ -88,7 +101,7 @@ console.log(payload)
 
 #### getPlaintext
 
-Extracts the plaintext data from an EQL payload.
+Extracts the plaintext data from an EQL payload which has been decrypted.
 
 **Parameters:**
 
@@ -112,6 +125,8 @@ const payload = {
 const plaintext = getPlaintext(payload)
 console.log(plaintext) // Output: 'Hello, World!'
 ```
+> [!TIP]
+> Note: the payload that is stored in the database is encrypted, so it is not possible to view the plaintext data directly even if you have direct access to the database as an administrator.
 
 ### Logging
 
@@ -158,6 +173,13 @@ const payload = createEqlPayload({
 
 By setting up the logger, you can monitor the internal operations of `jseql`, which is especially useful for debugging and development purposes.
 
+## Examples
+
+- [Drizzle](/apps/drizzle)
+- [Prisma](/apps/prisma)
+
+`jseql` can be used with most ORMs that support PostgreSQL. If you're interested in using `jseql` with a specific ORM, please [create an issue](https://github.com/cipherstash/jseql/issues/new).
+
 ## Releasing new versions
 
 We use [Changesets](https://github.com/changesets/changesets) to manage our releases. 
@@ -175,7 +197,7 @@ Create a pull request and merge it into the `main` branch, which will trigger th
 
 ## Contributing
 
-Please see the [CONTRIBUTING.md](CONTRIBUTING.md) file for more information.
+Please see the [CONTRIBUTE.md](CONTRIBUTE.md) file for more information.
 
 ## License
 
