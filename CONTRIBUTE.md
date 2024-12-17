@@ -6,8 +6,6 @@ Please use the GitHub issue tracker to report bugs, suggest features, or documen
 
 [When filing an issue](https://github.com/cipherstash/jseql/issues/new/choose), please check [existing open](https://github.com/cipherstash/jseql/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc), or [recently closed](https://github.com/cipherstash/jseql/issues?q=is%3Aissue+sort%3Aupdated-desc+is%3Aclosed), issues to make sure somebody else hasn't already reported the issue. Please try to include as much information as you can.
 
-Below is a sample **CONTRIBUTING.md** (or **CONTRIBUTING.md** section) you can add or adapt for your repo. It includes details on repository structure, the `@cipherstash/jseql` package, how the build process works, and relevant commands using **bun**. Feel free to modify the language and structure as needed to fit your exact workflows and preferences.
-
 ---
 
 # Contributing to JSEQL
