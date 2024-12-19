@@ -1,4 +1,6 @@
 export * from './cs_plaintext_v1'
+export * from './eql'
+
 import type {
   CsPlaintextV1Schema,
   ForQuery,
