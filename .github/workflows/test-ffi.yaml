@@ -60,12 +60,16 @@ jobs:
         uses: ./.github/actions/setup
         with:
           platform: linux-x64-gnu
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
       - name: Build
         shell: bash
         env:
           CARGO_BUILD_TARGET: ${{ steps.neon.outputs.target }}
           NEON_BUILD_PLATFORM: linux-x64-gnu
-        run: npm run debug
+        run: cd packages/jseql-ffi && bun run debug
       - name: Test
         shell: bash
-        run: npm test
+        run: cd packages/jseql-ffi && bun test
