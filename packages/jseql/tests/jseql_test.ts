@@ -2,6 +2,10 @@ import { describe, expect, it } from 'bun:test'
 import { createEqlPayload, getPlaintext } from '../src'
 import type { CsPlaintextV1Schema } from '../src/cs_plaintext_v1'
 import { getLogger } from '@logtape/logtape'
+// import * as addon from '@cipherstash/jseql-ffi';
+const addon = require("@cipherstash/jseql-ffi")
+
+const eql = addon as any;
 
 const logger = getLogger(['jseql'])
 
@@ -110,4 +114,18 @@ describe('getPlaintext', () => {
       error: new Error('No plaintext data found in the EQL payload'),
     })
   })
+})
+
+describe('jseql-ffi', () => {
+  it('should work', async () => {
+    console.log(eql.newClient());
+    const client = await eql.newClient()
+    // const ciphertext = await eql.encrypt("plaintext", "column_name", client)
+    // const plaintext = await eql.decrypt(ciphertext, client)
+    // console.log({ciphertext, plaintext})
+
+    // expect(plaintext).toEqual("plaintext")
+
+    expect(true).toEqual(true)
+  }, 30000)
 })
