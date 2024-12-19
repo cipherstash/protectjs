@@ -1,10 +1,9 @@
 {
   "name": "@cipherstash/basic-example",
   "version": "0.0.0",
-  "main": "index.ts",
+  "main": "index.mjs",
   "scripts": {
-    "build": "tsc",
-    "start": "node dist/index.js"
+    "start": "node index.mjs"
   },
   "keywords": [],
   "author": "",

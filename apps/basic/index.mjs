@@ -1,7 +1,7 @@
-require('dotenv').config()
+import 'dotenv/config'
 
-// NPM isn't working with Turborepo so this is currenlty broken
-import { eql } from '@cipherstash/jseql'
+// NPM isn't working with Turborepo so hardcoded to cjs build for now
+import { eql } from '../../packages/jseql/dist/index.cjs'
 
 async function main() {
   if (!process.env.CS_CLIENT_ID || !process.env.CS_CLIENT_KEY) {
