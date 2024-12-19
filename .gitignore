@@ -1,3 +1,14 @@
 node_modules
 .turbo
 dist
+
+target
+index.node
+**/.DS_Store
+npm-debug.log*
+lib
+cargo.log
+cross.log
+mise.local.toml
+
+.env.local

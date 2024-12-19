@@ -1,4 +1,4 @@
-name: Release
+name: Release jseql-ffi
 
 run-name: |
   ${{ (inputs.dryrun && 'Dry run')
@@ -95,7 +95,7 @@ jobs:
     needs: [setup]
     permissions:
       contents: write
-    uses: ./.github/workflows/build.yml
+    uses: ./.github/workflows/build-ffi.yaml
     with:
       ref: ${{ needs.setup.outputs.ref }}
       tag: ${{ needs.setup.outputs.tag }}

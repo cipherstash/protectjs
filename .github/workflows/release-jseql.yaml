@@ -1,15 +1,16 @@
-name: Package Tests
+name: Release jseql
 
 on:
-  pull_request:
+  push:
     branches:
-      - "**"
+      - main
+
+concurrency: ${{ github.workflow }}-${{ github.ref }}
 
 jobs:
-  run-tests:
-    name: Run Tests
+  release:
+    name: Release
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v3
@@ -27,6 +28,11 @@ jobs:
       - name: Install Dependencies
         run: bun install
 
-      # Run TurboRepo tests
-      - name: Run tests
-        run: bun test
+      - name: Publish to npm
+        id: changesets
+        uses: changesets/action@v1
+        with:
+          publish: bun release
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
