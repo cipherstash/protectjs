@@ -1,6 +1,6 @@
-export * from './cs_plaintext_v1'
-export * from './eql'
+import { getLogger } from '@logtape/logtape'
 
+export * from './cs_plaintext_v1'
 import type {
   CsPlaintextV1Schema,
   ForQuery,
@@ -10,9 +10,26 @@ import type {
   Column,
   Plaintext,
 } from './cs_plaintext_v1'
-import { getLogger } from '@logtape/logtape'
-
+import { EqlClient } from './eql'
 const logger = getLogger(['jseql'])
+
+export const eql = ({
+  workspaceId,
+  clientId,
+  clientKey,
+}: {
+  workspaceId: string
+  clientId: string
+  clientKey: string
+}): Promise<EqlClient> => {
+  const client = new EqlClient({
+    workspaceId,
+    clientId,
+    clientKey,
+  })
+
+  return client.init()
+}
 
 export type CreateEqlPayload = {
   plaintext: Plaintext

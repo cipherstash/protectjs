@@ -1,0 +1,17 @@
+{
+  "name": "@cipherstash/basic-example",
+  "version": "0.0.0",
+  "main": "index.ts",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@cipherstash/jseql": "*",
+    "dotenv": "^16.4.7"
+  }
+}

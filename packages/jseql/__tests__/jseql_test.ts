@@ -1,14 +1,11 @@
 require('dotenv').config()
 import { describe, expect, it } from '@jest/globals'
 
-import { createEqlPayload, getPlaintext } from '../src'
+import { createEqlPayload, getPlaintext, eql } from '../src'
 import type { CsPlaintextV1Schema } from '../src/cs_plaintext_v1'
 import { getLogger } from '@logtape/logtape'
 
 // Using require because @cipherstash/jseql-ffi might not have ES modules support
-const addon = require('@cipherstash/jseql-ffi')
-const eql = addon as any
-
 const logger = getLogger(['jseql'])
 
 describe('createEqlPayload', () => {
@@ -124,16 +121,26 @@ describe('jseql-ffi', () => {
     expect(process.env.CS_CLIENT_KEY).toBeDefined()
   })
 
-  it('should work', async () => {
-    console.log(process.env.CS_CLIENT_ID)
-    console.log(process.env.CS_CLIENT_KEY)
-    const client = await eql.newClient()
-    // const ciphertext = await eql.encrypt("plaintext", "column_name", client)
-    // const plaintext = await eql.decrypt(ciphertext, client)
-    // console.log({ciphertext, plaintext})
+  it('should encrypt and decrypt a payload', async () => {
+    if (!process.env.CS_CLIENT_ID || !process.env.CS_CLIENT_KEY) {
+      throw new Error('CS_CLIENT_ID and CS_CLIENT_KEY must be set')
+    }
 
-    // expect(plaintext).toEqual("plaintext")
+    const eqlClient = await eql({
+      workspaceId: 'test',
+      clientId: process.env.CS_CLIENT_ID,
+      clientKey: process.env.CS_CLIENT_KEY,
+    })
 
+    const ciphertext = await eqlClient.encrypt({
+      plaintext: 'plaintext',
+      column: 'column_name',
+      table: 'users',
+    })
+
+    const plaintext = await eqlClient.decrypt(ciphertext)
+
+    expect(plaintext).toEqual('plaintext')
     expect(true).toEqual(true)
   }, 30000)
 })

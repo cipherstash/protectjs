@@ -1,98 +1,52 @@
-const { newClient, encrypt, decrypt } = require('@cipherstash/jseql-ffi');
+// TODO: Fix ffi build so that we can import it directly
+const { newClient, encrypt, decrypt } = require('@cipherstash/jseql-ffi')
 
-export type Eql = {
-  client: Client;
-  field: (opts: FieldOpts) => EqlField;
-};
+export class EqlClient {
+  // biome-ignore lint/suspicious/noExplicitAny: jseql-ffi is not typed
+  private client: any
+  private workspaceId
+  private clientId
+  private clientKey
 
-export type Client = {};
+  constructor({
+    workspaceId,
+    clientId,
+    clientKey,
+  }: {
+    workspaceId: string
+    clientId: string
+    clientKey: string
+  }) {
+    this.workspaceId = workspaceId
+    this.clientId = clientId
+    this.clientKey = clientKey
+  }
 
-export type FieldOpts = {
-  table: string;
-  column: string;
-};
+  async init(): Promise<EqlClient> {
+    const client = await newClient()
+    this.client = client
+    return this
+  }
 
-export type EqlField = {
-  client: Client;
-  table: string;
-  column: string;
-  plaintextPayload: (plaintext: string) => PlaintextEqlPayload;
-  decrypt: (
-    encryptedPayload: EncryptedEqlPayload
-  ) => Promise<PlaintextEqlPayload>;
-};
+  async encrypt({
+    plaintext,
+    column,
+    table,
+  }: {
+    plaintext: string
+    column: string
+    table: string
+  }): Promise<EncryptedEqlPayload> {
+    return await encrypt(plaintext, column, this.client).then((val: string) => {
+      return { c: val }
+    })
+  }
+
+  async decrypt(encryptedPayload: EncryptedEqlPayload): Promise<string> {
+    return await decrypt(encryptedPayload.c, this.client)
+  }
+}
 
 export type EncryptedEqlPayload = {
-  c: string;
-};
-
-export type PlaintextEqlPayload = {
-  plaintext: string;
-  field: EqlField;
-  encrypt: () => Promise<EncryptedEqlPayload>;
-};
-
-export function eql(): Promise<Eql> {
-  return newClient().then((client: Client) => newEql(client));
+  c: string
 }
-
-function newEql(client: Client): Eql {
-  return {
-    client,
-    field(opts: FieldOpts): EqlField {
-      return {
-        client: this.client,
-        table: opts.table,
-        column: opts.column,
-        plaintextPayload(plaintext: string): PlaintextEqlPayload {
-          return newPlaintextPayload(this, plaintext);
-        },
-        decrypt(
-          encryptedPayload: EncryptedEqlPayload
-        ): Promise<PlaintextEqlPayload> {
-          return decrypt(encryptedPayload.c, this.client).then((val: string) =>
-            newPlaintextPayload(this, val)
-          );
-        },
-      };
-    },
-  };
-}
-
-function newPlaintextPayload(
-  field: EqlField,
-  plaintext: string
-): PlaintextEqlPayload {
-  return {
-    plaintext,
-    field,
-    encrypt(): Promise<EncryptedEqlPayload> {
-      return encrypt(this.plaintext, this.field.column, this.field.client).then(
-        (val: string) => {
-          return { c: val };
-        }
-      );
-    },
-  };
-}
-
-//
-// Example code using this module:
-//
-
-// (async () => {
-//   const eqlClient = await eql();
-
-//   const emailField = eqlClient.field({
-//     table: "users",
-//     column: "email",
-//   });
-
-//   const encryptedEmail = await emailField.plaintextPayload("abcdef").encrypt();
-
-//   console.log(encryptedEmail);
-
-//   const decrypted = await emailField.decrypt(encryptedEmail);
-
-//   console.log(decrypted.plaintext);
-// })();
