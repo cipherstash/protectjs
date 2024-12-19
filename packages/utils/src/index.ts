@@ -2,7 +2,7 @@ import { parseArgs } from 'node:util'
 
 export const getEmailArg = ({ required = true }: { required: boolean }) => {
   const { values, positionals } = parseArgs({
-    args: Bun.argv,
+    args: process.argv,
     options: {
       email: {
         type: 'string',
