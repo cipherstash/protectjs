@@ -36,11 +36,14 @@
 		"build": "tsup",
 		"dev": "tsup --watch",
 		"generate-types": "json2ts ./cs_plaintext_v1.schema.json --output ./src/cs_plaintext_v1.ts",
-		"test": "bun test tests"
+		"test": "cross-env TS_NODE_PROJECT=\"./tsconfig.jest.json\" jest"
 	},
 	"devDependencies": {
-		"@types/bun": "latest",
+		"cross-env": "^7.0.3",
+		"dotenv": "^16.4.7",
 		"json-schema-to-typescript": "^15.0.2",
+		"ts-jest": "^29.2.5",
+		"ts-node": "^10.9.2",
 		"tsup": "^8.3.0"
 	},
 	"peerDependencies": {
@@ -49,8 +52,8 @@
 	"publishConfig": {
 		"access": "public"
 	},
-  "dependencies": {
-    "@logtape/logtape": "^0.7.1",
-    "@cipherstash/jseql-ffi": "0.1.1-2"
-  }
+	"dependencies": {
+		"@cipherstash/jseql-ffi": "0.1.1-2",
+		"@logtape/logtape": "^0.7.1"
+	}
 }

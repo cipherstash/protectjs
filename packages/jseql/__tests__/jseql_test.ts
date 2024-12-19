@@ -1,11 +1,13 @@
-import { describe, expect, it } from 'bun:test'
+require('dotenv').config()
+import { describe, expect, it } from '@jest/globals'
+
 import { createEqlPayload, getPlaintext } from '../src'
 import type { CsPlaintextV1Schema } from '../src/cs_plaintext_v1'
 import { getLogger } from '@logtape/logtape'
-// import * as addon from '@cipherstash/jseql-ffi';
-const addon = require("@cipherstash/jseql-ffi")
 
-const eql = addon as any;
+// Using require because @cipherstash/jseql-ffi might not have ES modules support
+const addon = require('@cipherstash/jseql-ffi')
+const eql = addon as any
 
 const logger = getLogger(['jseql'])
 
@@ -117,8 +119,14 @@ describe('getPlaintext', () => {
 })
 
 describe('jseql-ffi', () => {
+  it('should have defined CS_CLIENT_ID and CS_CLIENT_KEY', () => {
+    expect(process.env.CS_CLIENT_ID).toBeDefined()
+    expect(process.env.CS_CLIENT_KEY).toBeDefined()
+  })
+
   it('should work', async () => {
-    console.log(eql.newClient());
+    console.log(process.env.CS_CLIENT_ID)
+    console.log(process.env.CS_CLIENT_KEY)
     const client = await eql.newClient()
     // const ciphertext = await eql.encrypt("plaintext", "column_name", client)
     // const plaintext = await eql.decrypt(ciphertext, client)

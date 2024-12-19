@@ -44,25 +44,17 @@ Within the `apps/` directory, you’ll find example applications that demonstrat
 
 ## Setup Instructions
 
-We require you to use [**Bun**](https://bun.sh/) as the JavaScript runtime. This is because some operational scripts are optimized for Bun and may not work correctly in other runtimes like Node.js.
-
-### 1. Install Bun
-
-Follow the [official Bun installation guide](https://bun.sh/docs/install) to install Bun locally.
-
-### 2. Clone the Repo
+### 1. Clone the Repo
 
 ```bash
 git clone https://github.com/cipherstash/jseql.git
 cd jseql
 ```
 
-### 3. Install Dependencies
-
-> **Note:** We use Bun’s native package manager instead of `npm install` or `yarn install`.
+### 2. Install Dependencies
 
 ```bash
-bun install
+npm install
 ```
 
 ### 4. Build the Main Package
@@ -70,7 +62,7 @@ bun install
 Before you can run any example apps, you need to build the `@cipherstash/jseql` package:
 
 ```bash
-bun run build
+npm run build
 ```
 
 This command triggers Turborepo’s build pipeline, compiling the **jseql** package in `packages/jseql` and linking it locally so the example apps can reference it.
@@ -80,7 +72,7 @@ This command triggers Turborepo’s build pipeline, compiling the **jseql** pack
 Start the dev script which will watch for changes to the packages which are picked up by the example apps.
 
 ```bash
-bun dev
+npm run dev
 ```
 
 Navigate to one of the example apps in `apps/` and follow the instructions for the corresponding examples.
@@ -102,23 +94,14 @@ Now, you can view the running application (if it’s a web or server app) or oth
 
 We use [**Changesets**](https://github.com/changesets/changesets) to manage versioning and publication to npm.
 
-- When you’ve completed a feature or bug fix, **add a changeset** using `bunx changeset`. 
+- When you’ve completed a feature or bug fix, **add a changeset** using `npx changeset`. 
 - Follow the prompts to indicate the type of version bump (patch, minor, major).
 - The [GitHub Actions](./.github/workflows/) (or other CI pipeline) will handle the **publish** step to npm once your PR is merged and the changeset is committed to `main`.
 
 ## Additional Resources
 
 - [Turborepo Documentation](https://turbo.build/repo/docs)
-- [Bun Official Docs](https://bun.sh/docs)
 - [Changesets Documentation](https://github.com/changesets/changesets)
-
----
-
-**Thank you for contributing to JSEQL!** If you have any questions or need clarifications, feel free to open an issue or reach out to the maintainers.
-
-## Contributing via Pull Requests
-
-Please fork the repo, make your changes, and [create a PR](https://github.com/cipherstash/jseql/compare).
 
 # Security issue notifications
 

@@ -4,17 +4,16 @@
   "private": true,
   "type": "module",
   "devDependencies": {
-    "@types/bun": "latest",
     "prisma": "^5.20.0",
     "prisma-json-types-generator": "^3.1.1"
   },
   "scripts": {
-    "insert": "bun run src/insert.ts",
-    "select": "bun run src/select.ts"
+    "insert": "npm run src/insert.ts",
+    "select": "npm run src/select.ts"
   },
   "peerDependencies": {
     "typescript": "^5.0.0",
-    "@cipherstash/jseql": "workspace:*"
+    "@cipherstash/jseql": "*"
   },
   "dependencies": {
     "@prisma/client": "^5.20.0",
