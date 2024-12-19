@@ -43,7 +43,7 @@ jobs:
     needs: [pr]
     permissions:
       contents: write
-    uses: ./.github/workflows/build.yml
+    uses: ./.github/workflows/build-ffi.yaml
     with:
       ref: ${{ needs.pr.outputs.branch }}
       update-version: true
