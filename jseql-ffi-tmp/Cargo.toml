@@ -1,0 +1,3 @@
+[workspace]
+members = ["crates/jseql-ffi"]
+resolver = "2"
