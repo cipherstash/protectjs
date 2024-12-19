@@ -42,9 +42,13 @@ runs:
         node-version: ${{ env.NODE_VERSION }}
         registry-url: ${{ env.NPM_REGISTRY }}
         cache: npm
+    - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
     - name: Install Dependencies
       shell: bash  
-      run: npm ci   
+      run: bun install --frozen-lockfile
     - name: Compute Rust Target
       if: ${{ inputs['use-rust'] == 'true' }}
       id: target
