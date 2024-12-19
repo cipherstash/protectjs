@@ -41,7 +41,6 @@ runs:
       with:
         node-version: ${{ env.NODE_VERSION }}
         registry-url: ${{ env.NPM_REGISTRY }}
-        cache: npm
     - name: Set up Bun
       uses: oven-sh/setup-bun@v2
       with:
