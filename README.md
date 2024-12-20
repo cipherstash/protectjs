@@ -1,19 +1,14 @@
 # jseql
 
-`jseql` is a JavaScript/TypeScript package designed to facilitate interaction with [Encrypt Query Language (EQL)](https://github.com/cipherstash/encrypt-query-language). It provides classes and methods to encode and decode values when working with encrypted data in a PostgreSQL database.
+`jseql` is a JavaScript/TypeScript package designed to facilitate interaction with [Encrypt Query Language (EQL)](https://github.com/cipherstash/encrypt-query-language). It provides classes and methods to encrypt and decrypt data.
 
 ## Table of Contents
 
 - [Features](#features)
 - [Installation](#installation)
+- [Platform Support](#platform-support)
 - [Usage](#usage)
-  - [Importing the package](#importing-the-package)
-  - [Functions](#functions)
-    - [createEqlPayload](#createeqlpayload)
-    - [getPlaintext](#getplaintext)
-  - [Logging](#logging)
 - [Examples](#examples)
-- [Releasing new versions](#releasing-new-versions)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -22,8 +17,8 @@
 `jseql` leverages [Encrypt Query Language (EQL)](https://github.com/cipherstash/encrypt-query-language) and [CipherStash](https://cipherstash.com) to encrypt data in a PostgreSQL database.
 
 **Features:**
-- **Data encoding**: Easily create EQL payloads with the `createEqlPayload` function.
-- **Data decoding**: Extract plaintext data from EQL payloads using `getPlaintext`.
+- **Data encryption**: Easily encrypt data with the `encrypt` function.
+- **Data decryption**: Extract plaintext data from encrypted data using the `decrypt` function.
 - **TypeScript support**: Strongly typed with TypeScript interfaces and types.
 - **Logging**: Integrated logging using [logtape](https://github.com/logtape/logtape) for debugging and monitoring.
 
@@ -64,88 +59,92 @@ Older Node version support (minimum v10) may require lower Node-API versions. Se
 
 ## Usage
 
-### Importing the package
+### Define environment variables
 
-```typescript
-import {
-  createEqlPayload,
-  getPlaintext,
-  type CsPlaintextV1Schema,
-} from '@cipherstash/jseql'
+Create a `.env` file in the root directory of your project with the following contents:
+
+```
+CS_CLIENT_ID=your-client-id
+CS_CLIENT_KEY=your-client-key
+CS_WORKSPACE_ID=your-workspace-id
 ```
 
-### Functions
+At the time of this writing, you will need to use the [CipherStash CLI to generate a new client key](https://cipherstash.com/docs/how-to/client-keys).
 
-#### createEqlPayload
+`CS_WORKSPACE_ID` is the ID of the workspace you want to use, and can be found in the [CipherStash dashboard](  https://dashboard.cipherstash.com/).
 
-Creates an EQL payload which is required for database operations with encrypted data.
-
-**Parameters:**
-
-- `plaintext` (string | undefined): The plaintext data to include in the payload.
-- `table` (string): The database table name.
-- `column` (string): The column name in the table.
-- `version` (number, optional): The version of the payload. Defaults to `1`.
-- `queryType` (string | null, optional): The query type. Defaults to `null`.
-
-**Usage:**
+### Initialize the EQL client
 
 ```typescript
-const payload = createEqlPayload({
-  plaintext: 'Hello, World!',
-  table: 'messages',
-  column: 'content',
+import { eql } from '@cipherstash/jseql'
+
+const eqlClient = await eql({
+  workspaceId: process.env.CS_WORKSPACE_ID,
+  clientId: process.env.CS_CLIENT_ID,
+  clientKey: process.env.CS_CLIENT_KEY,
 })
-
-sql = `INSERT INTO messages (content) VALUES (${payload});`
 ```
 
-**Payload:**
+### Encrypting data
 
-```json
-{
-  "v": 1,
-  "s": 1,
-  "k": "pt",
-  "p": "Hello, World!",
-  "i": {
-    "t": "messages",
-    "c": "content"
-  },
-  "q": null
-}
-```
-
-#### getPlaintext
-
-Extracts the plaintext data from an EQL payload which has been decrypted.
-
-**Parameters:**
-
-- `payload` (`CsPlaintextV1Schema` | null): The EQL payload.
-
-**Returns:**
-
-- `string | undefined`: The plaintext data if available.
-
-**Usage:**
+To encrypt data, use the `encrypt` function. This function takes a plaintext string and an object with the table and column name as parameters.
 
 ```typescript
-const payload = {
-  v: 1,
-  s: 1,
-  k: 'pt',
-  p: 'Hello, World!',
-  i: { t: 'messages', c: 'content' },
-  q: null,
-}
-const plaintext = getPlaintext(payload)
-console.log(plaintext) // Output: 'Hello, World!'
+const ciphertext = await eqlClient.encrypt('plaintext', {
+  column: 'column_name',
+  table: 'users',
+})
 ```
-> [!TIP]
-> Note: the payload that is stored in the database is encrypted, so it is not possible to view the plaintext data directly even if you have direct access to the database as an administrator.
 
-### Logging
+The `encrypt` function returns an object with a `c` property, which is the encrypted data.
+
+```typescript
+{
+  c: 'encrypted-data'
+}
+```
+
+### Decrypting data
+
+To decrypt data, use the `decrypt` function. This function takes an encrypted data object and an object with the lock context as parameters.
+
+```typescript
+const plaintext = await eqlClient.decrypt(ciphertext, {
+  lockContext: {
+    identityClaim: ['sub'],
+  },
+})
+```
+
+The `decrypt` function returns a string with the plaintext data.
+
+```typescript
+'plaintext'
+```
+
+### Storing encrypted data in a database
+
+To store the encrypted data in PostgreSQL, you will need to specify the column type as `jsonb`. At the time of this writing.
+
+```sql
+CREATE TABLE users (
+  id SERIAL PRIMARY KEY,
+  email VARCHAR(255) NOT NULL,
+  encrypted_data jsonb NOT NULL
+);
+```
+
+## Searchable encrypted data
+
+`jseql` does not currently support searching encrypted data.
+We are hard at work on this feature and will update this section when it is available.
+You can read more about this feature and implementation [here](https://github.com/cipherstash/encrypt-query-language).
+
+## Logging
+
+> [!WARNING]
+> `jseql` will NEVER log plaintext data. 
+> This is by design to prevent sensitive data from being logged.
 
 `jseql` uses [logtape](https://github.com/logtape/logtape) for logging, which allows you to control the logging output and integrate it with your application's logging system.
 
@@ -169,31 +168,11 @@ await configure({
     },
   ],
 })
-
-// Use jseql functions as usual
-import { createEqlPayload } from 'jseql'
-
-const payload = createEqlPayload({
-  plaintext: 'Secret Data',
-  table: 'users',
-  column: 'password',
-})
-
-// The logger will output debug information to the console
 ```
-
-**Output:**
-
-```
-[debug] [jseql] Creating the EQL payload { ...payload data... }
-```
-
-By setting up the logger, you can monitor the internal operations of `jseql`, which is especially useful for debugging and development purposes.
 
 ## Examples
 
-- [Drizzle](/apps/drizzle)
-- [Prisma](/apps/prisma)
+- [Basic example](/apps/basic)
 
 `jseql` can be used with most ORMs that support PostgreSQL. If you're interested in using `jseql` with a specific ORM, please [create an issue](https://github.com/cipherstash/jseql/issues/new).
 
