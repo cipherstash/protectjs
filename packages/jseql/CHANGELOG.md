@@ -1,5 +1,11 @@
 # @cipherstash/jseql
 
+## 3.0.0
+
+### Major Changes
+
+- 2eefb5f: Implemented jseql-ffi for inline crypto.
+
 ## 2.1.0
 
 ### Minor Changes
