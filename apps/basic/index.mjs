@@ -1,6 +1,7 @@
 import 'dotenv/config'
 
 // NPM isn't working with Turborepo so hardcoded to cjs build for now
+// import { eql } from '@cipherstash/jseql'
 import { eql } from '../../packages/jseql/dist/index.cjs'
 
 async function main() {
@@ -9,13 +10,12 @@ async function main() {
   }
 
   const eqlClient = await eql({
-    workspaceId: 'test',
+    workspaceId: process.env.CS_WORKSPACE_ID,
     clientId: process.env.CS_CLIENT_ID,
     clientKey: process.env.CS_CLIENT_KEY,
   })
 
-  const ciphertext = await eqlClient.encrypt({
-    plaintext: 'plaintext',
+  const ciphertext = await eqlClient.encrypt('plaintext', {
     column: 'column_name',
     table: 'users',
   })

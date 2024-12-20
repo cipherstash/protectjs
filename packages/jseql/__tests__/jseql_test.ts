@@ -1,4 +1,4 @@
-require('dotenv').config()
+import 'dotenv/config'
 import { describe, expect, it } from '@jest/globals'
 
 import { createEqlPayload, getPlaintext, eql } from '../src'
@@ -132,8 +132,7 @@ describe('jseql-ffi', () => {
       clientKey: process.env.CS_CLIENT_KEY,
     })
 
-    const ciphertext = await eqlClient.encrypt({
-      plaintext: 'plaintext',
+    const ciphertext = await eqlClient.encrypt('plaintext', {
       column: 'column_name',
       table: 'users',
     })
@@ -141,6 +140,60 @@ describe('jseql-ffi', () => {
     const plaintext = await eqlClient.decrypt(ciphertext)
 
     expect(plaintext).toEqual('plaintext')
-    expect(true).toEqual(true)
+  }, 30000)
+
+  it('should encrypt and decrypt a payload with lock context', async () => {
+    if (!process.env.CS_CLIENT_ID || !process.env.CS_CLIENT_KEY) {
+      throw new Error('CS_CLIENT_ID and CS_CLIENT_KEY must be set')
+    }
+
+    const eqlClient = await eql({
+      workspaceId: 'test',
+      clientId: process.env.CS_CLIENT_ID,
+      clientKey: process.env.CS_CLIENT_KEY,
+    })
+
+    const ciphertext = await eqlClient.encrypt('plaintext', {
+      column: 'column_name',
+      table: 'users',
+      lockContext: {
+        identityClaim: ['sub'],
+      },
+    })
+
+    const plaintext = await eqlClient.decrypt(ciphertext, {
+      lockContext: {
+        identityClaim: ['sub'],
+      },
+    })
+
+    expect(plaintext).toEqual('plaintext')
+  }, 30000)
+
+  it('should encrypt with context and be unable to decrypt without context', async () => {
+    if (!process.env.CS_CLIENT_ID || !process.env.CS_CLIENT_KEY) {
+      throw new Error('CS_CLIENT_ID and CS_CLIENT_KEY must be set')
+    }
+
+    const eqlClient = await eql({
+      workspaceId: 'test',
+      clientId: process.env.CS_CLIENT_ID,
+      clientKey: process.env.CS_CLIENT_KEY,
+    })
+
+    const ciphertext = await eqlClient.encrypt('plaintext', {
+      column: 'column_name',
+      table: 'users',
+      lockContext: {
+        identityClaim: ['sub'],
+      },
+    })
+
+    try {
+      await eqlClient.decrypt(ciphertext)
+    } catch (error) {
+      const e = error as Error
+      expect(e.message.startsWith('Failed to retrieve key')).toEqual(true)
+    }
   }, 30000)
 })

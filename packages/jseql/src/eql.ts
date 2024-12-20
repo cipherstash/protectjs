@@ -1,6 +1,10 @@
 // TODO: Fix ffi build so that we can import it directly
 const { newClient, encrypt, decrypt } = require('@cipherstash/jseql-ffi')
 
+export type LockContext = {
+  identityClaim: string[]
+}
+
 export class EqlClient {
   // biome-ignore lint/suspicious/noExplicitAny: jseql-ffi is not typed
   private client: any
@@ -28,22 +32,44 @@ export class EqlClient {
     return this
   }
 
-  async encrypt({
-    plaintext,
-    column,
-    table,
-  }: {
-    plaintext: string
-    column: string
-    table: string
-  }): Promise<EncryptedEqlPayload> {
-    return await encrypt(plaintext, column, this.client).then((val: string) => {
+  async encrypt(
+    plaintext: string,
+    {
+      column,
+      table,
+      lockContext,
+    }: {
+      column: string
+      table: string
+      lockContext?: LockContext
+    },
+  ): Promise<EncryptedEqlPayload> {
+    if (lockContext) {
+      return await encrypt(this.client, plaintext, column, lockContext).then(
+        (val: string) => {
+          return { c: val }
+        },
+      )
+    }
+
+    return await encrypt(this.client, plaintext, column).then((val: string) => {
       return { c: val }
     })
   }
 
-  async decrypt(encryptedPayload: EncryptedEqlPayload): Promise<string> {
-    return await decrypt(encryptedPayload.c, this.client)
+  async decrypt(
+    encryptedPayload: EncryptedEqlPayload,
+    {
+      lockContext,
+    }: {
+      lockContext?: LockContext
+    } = {},
+  ): Promise<string> {
+    if (lockContext) {
+      return await decrypt(this.client, encryptedPayload.c, lockContext)
+    }
+
+    return await decrypt(this.client, encryptedPayload.c)
   }
 }
 
