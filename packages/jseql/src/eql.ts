@@ -1,5 +1,7 @@
 // TODO: Fix ffi build so that we can import it directly
 const { newClient, encrypt, decrypt } = require('@cipherstash/jseql-ffi')
+import { getLogger } from '@logtape/logtape'
+const logger = getLogger(['jseql'])
 
 export type LockContext = {
   identityClaim: string[]
@@ -45,6 +47,11 @@ export class EqlClient {
     },
   ): Promise<EncryptedEqlPayload> {
     if (lockContext) {
+      logger.debug('Encrypting with lock context', {
+        lockContext,
+        column,
+        table,
+      })
       return await encrypt(this.client, plaintext, column, lockContext).then(
         (val: string) => {
           return { c: val }
@@ -52,6 +59,10 @@ export class EqlClient {
       )
     }
 
+    logger.debug('Encrypting without a lock context', {
+      column,
+      table,
+    })
     return await encrypt(this.client, plaintext, column).then((val: string) => {
       return { c: val }
     })
@@ -66,9 +77,11 @@ export class EqlClient {
     } = {},
   ): Promise<string> {
     if (lockContext) {
+      logger.debug('Decrypting with lock context', lockContext)
       return await decrypt(this.client, encryptedPayload.c, lockContext)
     }
 
+    logger.debug('Decrypting without a lock context')
     return await decrypt(this.client, encryptedPayload.c)
   }
 }
