@@ -1,5 +1,5 @@
 {
-  "id": "62422630-6e0f-41ab-9ced-5e2c4d0839f8",
+  "id": "a263534d-e155-4647-9ed2-eb113525c55c",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -22,9 +22,9 @@
         },
         "email_encrypted": {
           "name": "email_encrypted",
-          "type": "cs_encrypted_v1",
+          "type": "jsonb",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         }
       },
       "indexes": {},
@@ -34,7 +34,9 @@
         "users_email_unique": {
           "name": "users_email_unique",
           "nullsNotDistinct": false,
-          "columns": ["email"]
+          "columns": [
+            "email"
+          ]
         }
       }
     }

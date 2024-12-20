@@ -1,19 +1,39 @@
-import { getEmailArg } from '@cipherstash/utils'
-import { createEqlPayload } from '@cipherstash/jseql'
+import 'dotenv/config'
+import { parseArgs } from 'node:util'
+import { getTableName } from 'drizzle-orm'
 import { db } from './db'
-import { users } from './schema'
+import { users } from './db/schema'
+import { eqlClient } from './eql'
 
-const email = getEmailArg({
-  required: true,
+const getEmail = () => {
+  const { values, positionals } = parseArgs({
+    args: process.argv,
+    options: {
+      email: {
+        type: 'string',
+      },
+    },
+    strict: true,
+    allowPositionals: true,
+  })
+
+  return values.email
+}
+
+const email = getEmail()
+
+if (!email) {
+  throw new Error('Email is required')
+}
+
+const encryptedEmail = await eqlClient.encrypt(email, {
+  column: users.email_encrypted.name,
+  table: getTableName(users),
 })
 
 const sql = db.insert(users).values({
   email: email,
-  email_encrypted: createEqlPayload({
-    plaintext: email,
-    table: 'users',
-    column: 'email_encrypted',
-  }),
+  email_encrypted: encryptedEmail,
 })
 
 const sqlResult = sql.toSQL()
