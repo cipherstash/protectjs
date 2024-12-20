@@ -143,17 +143,41 @@ The `encrypt` function returns an object with a `c` property, which is the encry
 To decrypt data, use the `decrypt` function. This function takes an encrypted data object and an object with the lock context as parameters.
 
 ```typescript
-const plaintext = await eqlClient.decrypt(ciphertext, {
-  lockContext: {
-    identityClaim: ['sub'],
-  },
-})
+const plaintext = await eqlClient.decrypt(ciphertext)
 ```
 
 The `decrypt` function returns a string with the plaintext data.
 
 ```typescript
 'plaintext'
+```
+
+### Lock context
+
+`jseql` supports lock contexts to ensure that only the intended users can access sensitive data.
+
+To use a lock context, you will need to provide an array of identity claims.
+
+```typescript
+const plaintext = await eqlClient.encrypt(plaintext, {
+  table: 'users',
+  column: 'email',
+  lockContext: {
+    identityClaim: ['sub'],
+  },
+})
+```
+
+The `identityClaim` property is an array of identity claims that must be present in the JWT token to decrypt the data.
+
+To decrypt data, use the `decrypt` function by passing in the lock context:
+
+```typescript
+const plaintext = await eqlClient.decrypt(ciphertext, {
+  lockContext: {
+    identityClaim: ['sub'],
+  },
+})
 ```
 
 ### Storing encrypted data in a database
