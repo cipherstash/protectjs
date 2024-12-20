@@ -67,23 +67,57 @@ Create a `.env` file in the root directory of your project with the following co
 CS_CLIENT_ID=your-client-id
 CS_CLIENT_KEY=your-client-key
 CS_WORKSPACE_ID=your-workspace-id
+CS_CLIENT_ACCESS_KEY=your-client-access-key
 ```
+
+> [!IMPORTANT]
+> These values are required to use the `jseql` package.
+> The names of the variables must match the values above or the package will not work.
+
+#### client keys
 
 At the time of this writing, you will need to use the [CipherStash CLI to generate a new client key](https://cipherstash.com/docs/how-to/client-keys).
 
+#### workspace id
+
 `CS_WORKSPACE_ID` is the ID of the workspace you want to use, and can be found in the [CipherStash dashboard](  https://dashboard.cipherstash.com/).
+
+#### access key
+
+`CS_CLIENT_ACCESS_KEY` is used to authenticate with the CipherStash API.
+You can generate an access token in the dashboard or the CLI.
 
 ### Initialize the EQL client
 
+Import the `eql` function from the `@cipherstash/jseql` package and initialize the EQL client with your CipherStash credentials.
+
 ```typescript
-import { eql } from '@cipherstash/jseql'
+const { eql } = require('@cipherstash/jseql')
 
 const eqlClient = await eql({
   workspaceId: process.env.CS_WORKSPACE_ID,
   clientId: process.env.CS_CLIENT_ID,
   clientKey: process.env.CS_CLIENT_KEY,
+  accessToken: process.env.CS_CLIENT_ACCESS_KEY,
 })
 ```
+
+.. or using ES6?
+
+```typescript
+import { createRequire } from 'node:module'
+const require = createRequire(import.meta.url)
+const { eql } = require('@cipherstash/jseql')
+
+const eqlClient = await eql({
+  workspaceId: process.env.CS_WORKSPACE_ID,
+  clientId: process.env.CS_CLIENT_ID,
+  clientKey: process.env.CS_CLIENT_KEY,
+  accessToken: process.env.CS_CLIENT_ACCESS_KEY,
+})
+```
+
+We are working on a solution to support the `import` statement in the future.
 
 ### Encrypting data
 
@@ -173,6 +207,7 @@ await configure({
 ## Examples
 
 - [Basic example](/apps/basic)
+- [Drizzle example](/apps/drizzle)
 
 `jseql` can be used with most ORMs that support PostgreSQL. If you're interested in using `jseql` with a specific ORM, please [create an issue](https://github.com/cipherstash/jseql/issues/new).
 

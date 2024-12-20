@@ -1,9 +1,8 @@
 declare namespace NodeJS {
   interface ProcessEnv {
     DATABASE_URL: string
-    DB_HOST: string
-    DB_USER: string
-    DB_PASSWORD: string
-    DB_NAME: string
+    CS_CLIENT_ID: string
+    CS_CLIENT_KEY: string
+    CS_WORKSPACE_ID: string
   }
 }
