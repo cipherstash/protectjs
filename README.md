@@ -41,9 +41,26 @@ Install `jseql` via one of the following methods:
 npm install @cipherstash/jseql
 # or
 yarn add @cipherstash/jseql
-# or
-bun add @cipherstash/jseql
 ```
+
+## Platform Support
+
+### Operating Systems
+
+| Linux  | macOS | Windows |
+| ------ | ----- | ------- |
+| ✓      | ✓     | ✓       |
+
+### Node.js
+
+Jseql actively supports all current and [maintenance releases of Node](https://github.com/nodejs/LTS#release-schedule). If you're
+using a different version of Node and believe it should be supported, let us know.
+
+Older Node version support (minimum v10) may require lower Node-API versions. See the Node [version support matrix](https://nodejs.org/api/n-api.html#node-api-version-matrix) for more details.
+
+### Bun (experimental)
+
+[Bun](https://bun.sh/) is an alternate JavaScript runtime that targets Node compatibility. At the time of this writing, some Node-API functions are [not implemented](https://github.com/oven-sh/bun/issues/158) so Jseql may not work with Bun.
 
 ## Usage
 
@@ -179,21 +196,6 @@ By setting up the logger, you can monitor the internal operations of `jseql`, wh
 - [Prisma](/apps/prisma)
 
 `jseql` can be used with most ORMs that support PostgreSQL. If you're interested in using `jseql` with a specific ORM, please [create an issue](https://github.com/cipherstash/jseql/issues/new).
-
-## Releasing new versions
-
-We use [Changesets](https://github.com/changesets/changesets) to manage our releases. 
-To create a new release, run the following command:
-
-```bash
-bun changeset
-```
-
-Create a pull request and merge it into the `main` branch, which will trigger the release workflow.
-
-1. Changesets will open a new pull request with the new version.
-2. Merge the pull request into the `main` branch.
-3. Changesets will automatically publish the new version to npm.
 
 ## Contributing
 

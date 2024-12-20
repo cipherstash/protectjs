@@ -1,0 +1,16 @@
+{
+  "name": "@cipherstash/basic-example",
+  "version": "0.0.0",
+  "main": "index.mjs",
+  "scripts": {
+    "start": "node index.mjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@cipherstash/jseql": "*",
+    "dotenv": "^16.4.7"
+  }
+}

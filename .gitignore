@@ -1,3 +1,5 @@
 node_modules
 .turbo
 dist
+mise.local.toml
+.env
