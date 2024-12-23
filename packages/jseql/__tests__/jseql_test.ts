@@ -1,7 +1,7 @@
 import 'dotenv/config'
 import { describe, expect, it } from '@jest/globals'
 
-import { createEqlPayload, getPlaintext, eql } from '../src'
+import { createEqlPayload, getPlaintext, eql, LockContext } from '../src'
 import type { CsPlaintextV1Schema } from '../src/cs_plaintext_v1'
 import { getLogger } from '@logtape/logtape'
 
@@ -119,17 +119,26 @@ describe('jseql-ffi', () => {
   it('should have defined CS_CLIENT_ID and CS_CLIENT_KEY', () => {
     expect(process.env.CS_CLIENT_ID).toBeDefined()
     expect(process.env.CS_CLIENT_KEY).toBeDefined()
+    expect(process.env.CS_CLIENT_ACCESS_KEY).toBeDefined()
   })
 
   it('should encrypt and decrypt a payload', async () => {
-    if (!process.env.CS_CLIENT_ID || !process.env.CS_CLIENT_KEY) {
-      throw new Error('CS_CLIENT_ID and CS_CLIENT_KEY must be set')
+    console.log(process.env)
+    if (
+      !process.env.CS_CLIENT_ID ||
+      !process.env.CS_CLIENT_KEY ||
+      !process.env.CS_CLIENT_ACCESS_KEY
+    ) {
+      throw new Error(
+        'CS_CLIENT_ID and CS_CLIENT_KEY must be set and CS_CLIENT_ACCESS_KEY must be set',
+      )
     }
 
     const eqlClient = await eql({
       workspaceId: 'test',
       clientId: process.env.CS_CLIENT_ID,
       clientKey: process.env.CS_CLIENT_KEY,
+      accessToken: process.env.CS_CLIENT_ACCESS_KEY,
     })
 
     const ciphertext = await eqlClient.encrypt('plaintext', {
@@ -143,50 +152,78 @@ describe('jseql-ffi', () => {
   }, 30000)
 
   it('should encrypt and decrypt a payload with lock context', async () => {
-    if (!process.env.CS_CLIENT_ID || !process.env.CS_CLIENT_KEY) {
-      throw new Error('CS_CLIENT_ID and CS_CLIENT_KEY must be set')
+    if (
+      !process.env.CS_CLIENT_ID ||
+      !process.env.CS_CLIENT_KEY ||
+      !process.env.CS_CLIENT_ACCESS_KEY
+    ) {
+      throw new Error(
+        'CS_CLIENT_ID and CS_CLIENT_KEY must be set and CS_CLIENT_ACCESS_KEY must be set',
+      )
     }
 
     const eqlClient = await eql({
       workspaceId: 'test',
       clientId: process.env.CS_CLIENT_ID,
       clientKey: process.env.CS_CLIENT_KEY,
+      accessToken: process.env.CS_CLIENT_ACCESS_KEY,
+    })
+
+    const lc = new LockContext({
+      identityClaim: ['sub'],
+      workspaceId: 'test',
+      region: 'ap-southeast-2',
+    })
+
+    const lockContext = await lc.identify('test', {
+      fetchFromCts: false,
     })
 
     const ciphertext = await eqlClient.encrypt('plaintext', {
       column: 'column_name',
       table: 'users',
-      lockContext: {
-        identityClaim: ['sub'],
-      },
+      lockContext: lockContext,
     })
 
     const plaintext = await eqlClient.decrypt(ciphertext, {
-      lockContext: {
-        identityClaim: ['sub'],
-      },
+      lockContext,
     })
 
     expect(plaintext).toEqual('plaintext')
   }, 30000)
 
   it('should encrypt with context and be unable to decrypt without context', async () => {
-    if (!process.env.CS_CLIENT_ID || !process.env.CS_CLIENT_KEY) {
-      throw new Error('CS_CLIENT_ID and CS_CLIENT_KEY must be set')
+    if (
+      !process.env.CS_CLIENT_ID ||
+      !process.env.CS_CLIENT_KEY ||
+      !process.env.CS_CLIENT_ACCESS_KEY
+    ) {
+      throw new Error(
+        'CS_CLIENT_ID and CS_CLIENT_KEY must be set and CS_CLIENT_ACCESS_KEY must be set',
+      )
     }
 
     const eqlClient = await eql({
       workspaceId: 'test',
       clientId: process.env.CS_CLIENT_ID,
       clientKey: process.env.CS_CLIENT_KEY,
+      accessToken: process.env.CS_CLIENT_ACCESS_KEY,
+    })
+
+    const lc = new LockContext({
+      identityClaim: ['sub'],
+      workspaceId: 'test',
+      region: 'ap-southeast-2',
+    })
+
+    const lockContext = await lc.identify('test', {
+      fetchFromCts: false,
     })
 
     const ciphertext = await eqlClient.encrypt('plaintext', {
       column: 'column_name',
       table: 'users',
-      lockContext: {
-        identityClaim: ['sub'],
-      },
+      lockContext: lockContext,
     })
 
     try {

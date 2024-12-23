@@ -1,6 +1,5 @@
 import { getLogger } from '@logtape/logtape'
 
-export * from './cs_plaintext_v1'
 import type {
   CsPlaintextV1Schema,
   ForQuery,
@@ -17,15 +16,18 @@ export const eql = ({
   workspaceId,
   clientId,
   clientKey,
+  accessToken,
 }: {
   workspaceId: string
   clientId: string
   clientKey: string
+  accessToken: string
 }): Promise<EqlClient> => {
   const client = new EqlClient({
     workspaceId,
     clientId,
     clientKey,
+    accessToken,
   })
 
   return client.init()
@@ -85,3 +87,6 @@ export const getPlaintext = (payload: CsPlaintextV1Schema): Result => {
     error: new Error('No plaintext data found in the EQL payload'),
   }
 }
+
+export * from './cs_plaintext_v1'
+export * from './identify'

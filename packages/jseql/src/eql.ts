@@ -2,10 +2,7 @@
 const { newClient, encrypt, decrypt } = require('@cipherstash/jseql-ffi')
 import { getLogger } from '@logtape/logtape'
 const logger = getLogger(['jseql'])
-
-export type LockContext = {
-  identityClaim: string[]
-}
+import type { LockContext } from './identify'
 
 export class EqlClient {
   // biome-ignore lint/suspicious/noExplicitAny: jseql-ffi is not typed
@@ -13,19 +10,23 @@ export class EqlClient {
   private workspaceId
   private clientId
   private clientKey
+  private accessToken
 
   constructor({
     workspaceId,
     clientId,
     clientKey,
+    accessToken,
   }: {
     workspaceId: string
     clientId: string
     clientKey: string
+    accessToken: string
   }) {
     this.workspaceId = workspaceId
     this.clientId = clientId
     this.clientKey = clientKey
+    this.accessToken = accessToken
   }
 
   async init(): Promise<EqlClient> {
@@ -47,22 +48,26 @@ export class EqlClient {
     },
   ): Promise<EncryptedEqlPayload> {
     if (lockContext) {
+      const lockContextData = lockContext.getLockContext()
+
       logger.debug('Encrypting with lock context', {
-        lockContext,
+        context: lockContextData.context,
         column,
         table,
       })
-      return await encrypt(this.client, plaintext, column, lockContext).then(
-        (val: string) => {
-          return { c: val }
-        },
-      )
+
+      return await encrypt(this.client, plaintext, column, {
+        identityClaim: lockContextData.context.identityClaim,
+      }).then((val: string) => {
+        return { c: val }
+      })
     }
 
     logger.debug('Encrypting without a lock context', {
       column,
       table,
     })
+
     return await encrypt(this.client, plaintext, column).then((val: string) => {
       return { c: val }
     })
@@ -77,8 +82,15 @@ export class EqlClient {
     } = {},
   ): Promise<string> {
     if (lockContext) {
-      logger.debug('Decrypting with lock context', lockContext)
-      return await decrypt(this.client, encryptedPayload.c, lockContext)
+      const lockContextData = lockContext.getLockContext()
+
+      logger.debug('Decrypting with lock context', {
+        context: lockContextData.context,
+      })
+
+      return await decrypt(this.client, encryptedPayload.c, {
+        identityClaim: lockContextData.context.identityClaim,
+      })
     }
 
     logger.debug('Decrypting without a lock context')

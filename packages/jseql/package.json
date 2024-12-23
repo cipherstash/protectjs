@@ -30,6 +30,11 @@
 			"types": "./dist/drizzle/index.d.ts",
 			"import": "./dist/drizzle/index.js",
 			"require": "./dist/drizzle/index.cjs"
+		},
+		"./identify": {
+			"types": "./dist/identify/index.d.ts",
+			"import": "./dist/identify/index.js",
+			"require": "./dist/identify/index.cjs"
 		}
 	},
 	"scripts": {
@@ -53,7 +58,7 @@
 		"access": "public"
 	},
 	"dependencies": {
-		"@cipherstash/jseql-ffi": "^0.2.0-0",
+		"@cipherstash/jseql-ffi": "^0.2.0",
 		"@logtape/logtape": "^0.7.1"
 	}
 }
