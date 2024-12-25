@@ -30,21 +30,24 @@
 			"types": "./dist/drizzle/index.d.ts",
 			"import": "./dist/drizzle/index.js",
 			"require": "./dist/drizzle/index.cjs"
+		},
+		"./identify": {
+			"types": "./dist/identify/index.d.ts",
+			"import": "./dist/identify/index.js",
+			"require": "./dist/identify/index.cjs"
 		}
 	},
 	"scripts": {
 		"build": "tsup",
 		"dev": "tsup --watch",
 		"generate-types": "json2ts ./cs_plaintext_v1.schema.json --output ./src/cs_plaintext_v1.ts",
-		"test": "cross-env TS_NODE_PROJECT=\"./tsconfig.jest.json\" jest"
+		"test": "vitest run"
 	},
 	"devDependencies": {
-		"cross-env": "^7.0.3",
 		"dotenv": "^16.4.7",
 		"json-schema-to-typescript": "^15.0.2",
-		"ts-jest": "^29.2.5",
-		"ts-node": "^10.9.2",
-		"tsup": "^8.3.0"
+		"tsup": "^8.3.0",
+		"vitest": "^2.1.8"
 	},
 	"peerDependencies": {
 		"typescript": "^5.0.0"
@@ -53,7 +56,10 @@
 		"access": "public"
 	},
 	"dependencies": {
-		"@cipherstash/jseql-ffi": "^0.2.0-0",
+		"@cipherstash/jseql-ffi": "^0.2.0",
 		"@logtape/logtape": "^0.7.1"
-	}
+	},
+	"optionalDependencies": {
+    "@rollup/rollup-linux-x64-gnu": "4.24.0"
+  }
 }

@@ -17,7 +17,7 @@
 `jseql` leverages [Encrypt Query Language (EQL)](https://github.com/cipherstash/encrypt-query-language) and [CipherStash](https://cipherstash.com) to encrypt data in a PostgreSQL database.
 
 **Features:**
-- **Data encryption**: Easily encrypt data with the `encrypt` function.
+- **Data encryption**: Easily encrypt data with the `encrypt` function. CipherStash uses a unique encryption key for every record in the database. This is also know as **field level encryption.** 
 - **Data decryption**: Extract plaintext data from encrypted data using the `decrypt` function.
 - **TypeScript support**: Strongly typed with TypeScript interfaces and types.
 - **Logging**: Integrated logging using [logtape](https://github.com/logtape/logtape) for debugging and monitoring.
@@ -93,13 +93,7 @@ Import the `eql` function from the `@cipherstash/jseql` package and initialize t
 
 ```typescript
 const { eql } = require('@cipherstash/jseql')
-
-const eqlClient = await eql({
-  workspaceId: process.env.CS_WORKSPACE_ID,
-  clientId: process.env.CS_CLIENT_ID,
-  clientKey: process.env.CS_CLIENT_KEY,
-  accessToken: process.env.CS_CLIENT_ACCESS_KEY,
-})
+const eqlClient = await eql()
 ```
 
 .. or using ES6?
@@ -109,12 +103,7 @@ import { createRequire } from 'node:module'
 const require = createRequire(import.meta.url)
 const { eql } = require('@cipherstash/jseql')
 
-const eqlClient = await eql({
-  workspaceId: process.env.CS_WORKSPACE_ID,
-  clientId: process.env.CS_CLIENT_ID,
-  clientKey: process.env.CS_CLIENT_KEY,
-  accessToken: process.env.CS_CLIENT_ACCESS_KEY,
-})
+const eqlClient = await eql()
 ```
 
 We are working on a solution to support the `import` statement in the future.
@@ -130,7 +119,7 @@ const ciphertext = await eqlClient.encrypt('plaintext', {
 })
 ```
 
-The `encrypt` function returns an object with a `c` property, which is the encrypted data.
+The `encrypt` function returns an object with a `c` key, and the value is the encrypted data.
 
 ```typescript
 {
@@ -155,28 +144,45 @@ The `decrypt` function returns a string with the plaintext data.
 ### Lock context
 
 `jseql` supports lock contexts to ensure that only the intended users can access sensitive data.
-
-To use a lock context, you will need to provide an array of identity claims.
+To use a lock context, initialize a `LockContext` object with the identity claims and workspace ID.
 
 ```typescript
-const plaintext = await eqlClient.encrypt(plaintext, {
-  table: 'users',
-  column: 'email',
-  lockContext: {
-    identityClaim: ['sub'],
-  },
+import { LockContext } from '@cipherstash/jseql'
+
+// eqlClient from the previous steps
+const lc = new LockContext(eqlClient, {
+  identityClaim: ['sub'],
 })
 ```
 
-The `identityClaim` property is an array of identity claims that must be present in the JWT token to decrypt the data.
+The lock context needs to be tied to a specific user.
+To identify the user, call the `identify` method on the lock context object.
 
-To decrypt data, use the `decrypt` function by passing in the lock context:
+```typescript
+const lockContext = await lc.identify('jwt_token_from_identiti_provider')
+```
+
+The `jwt_token_from_identiti_provider` is the JWT token from your identity provider, and can be retrieved from the user's session.
+
+### Encrypting data with a lock context
+
+To encrypt data with a lock context, pass the lock context object as a parameter to the `encrypt` function.
+
+```typescript
+const ciphertext = await eqlClient.encrypt('plaintext', {
+  table: 'users',
+  column: 'email',
+  lockContext,
+})
+```
+
+### Decrypting data with a lock context
+
+To decrypt data with a lock context, pass the lock context object as a parameter to the `decrypt` function.
 
 ```typescript
 const plaintext = await eqlClient.decrypt(ciphertext, {
-  lockContext: {
-    identityClaim: ['sub'],
-  },
+  lockContext,
 })
 ```
 
