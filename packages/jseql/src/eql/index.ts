@@ -2,7 +2,7 @@
 const { newClient, encrypt, decrypt } = require('@cipherstash/jseql-ffi')
 import { getLogger } from '@logtape/logtape'
 const logger = getLogger(['jseql'])
-import type { LockContext } from './identify'
+import type { LockContext } from '../identify'
 
 export class EqlClient {
   // biome-ignore lint/suspicious/noExplicitAny: jseql-ffi is not typed
@@ -12,21 +12,45 @@ export class EqlClient {
   private clientKey
   private accessToken
 
-  constructor({
-    workspaceId,
-    clientId,
-    clientKey,
-    accessToken,
-  }: {
-    workspaceId: string
-    clientId: string
-    clientKey: string
-    accessToken: string
-  }) {
-    this.workspaceId = workspaceId
-    this.clientId = clientId
-    this.clientKey = clientKey
-    this.accessToken = accessToken
+  constructor() {
+    const errorMessage = (message: string) => `Initialization error: ${message}`
+    let message = ''
+
+    if (!process.env.CS_WORKSPACE_ID) {
+      message = errorMessage(
+        'The environment variable "CS_WORKSPACE_ID" must be set. You can find your workspace ID in the CipherStash dashboard.',
+      )
+
+      logger.error(message)
+      throw new Error(message)
+    }
+
+    if (!process.env.CS_CLIENT_ID || !process.env.CS_CLIENT_KEY) {
+      message = errorMessage(
+        'The environment variables "CS_CLIENT_ID" and "CS_CLIENT_KEY" must be set. You must use the CipherStash CLI to generate a new client key pair.',
+      )
+
+      logger.error(message)
+      throw new Error(message)
+    }
+
+    if (!process.env.CS_CLIENT_ACCESS_KEY) {
+      message = errorMessage(
+        'The environment variable "CS_CLIENT_ACCESS_KEY" must be set. Generate a new access token in the CipherStash dashboard or CLI.',
+      )
+
+      logger.error(message)
+      throw new Error(message)
+    }
+
+    logger.info(
+      'Successfully initialized the EQL client with your defined environment variables.',
+    )
+
+    this.workspaceId = process.env.CS_WORKSPACE_ID
+    this.clientId = process.env.CS_CLIENT_ID
+    this.clientKey = process.env.CS_CLIENT_KEY
+    this.accessToken = process.env.CS_CLIENT_ACCESS_KEY
   }
 
   async init(): Promise<EqlClient> {
@@ -50,7 +74,7 @@ export class EqlClient {
     if (lockContext) {
       const lockContextData = lockContext.getLockContext()
 
-      logger.debug('Encrypting with lock context', {
+      logger.debug('Encrypting data with lock context', {
         context: lockContextData.context,
         column,
         table,
@@ -63,7 +87,7 @@ export class EqlClient {
       })
     }
 
-    logger.debug('Encrypting without a lock context', {
+    logger.debug('Encrypting data without a lock context', {
       column,
       table,
     })
@@ -84,7 +108,7 @@ export class EqlClient {
     if (lockContext) {
       const lockContextData = lockContext.getLockContext()
 
-      logger.debug('Decrypting with lock context', {
+      logger.debug('Decrypting data with lock context', {
         context: lockContextData.context,
       })
 
@@ -93,8 +117,15 @@ export class EqlClient {
       })
     }
 
-    logger.debug('Decrypting without a lock context')
+    logger.debug('Decrypting data without a lock context')
     return await decrypt(this.client, encryptedPayload.c)
+  }
+
+  clientInfo() {
+    return {
+      workspaceId: this.workspaceId,
+      clientId: this.clientId,
+    }
   }
 }
 

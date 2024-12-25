@@ -1,12 +1,11 @@
-export type CtsRegions = 'ap-northeast-1' | 'us-east-1' | 'us-west-2' | 'eu-west-1' |
-'ap-southeast-1' | 'us-west-1' | 'eu-central-1' | 'eu-west-2' | 'ap-south-1' |
-'us-east-2' | 'ap-northeast-2' | 'ca-central-1' | 'ap-southeast-2' | 'eu-north-1' |
-'sa-east-1' | 'eu-west-3' | 'ap-east-1' | 'me-south-1' | 'af-south-1'
+import type { EqlClient } from '../eql'
+import { getLogger } from '@logtape/logtape'
+const logger = getLogger(['jseql'])
+
+export type CtsRegions = 'ap-southeast-2'
 
 export type Context = {
   identityClaim: string[]
-  workspaceId: string
-  region: CtsRegions
 }
 
 export type IdentifyOptions = {
@@ -16,20 +15,22 @@ export type IdentifyOptions = {
 export class LockContext {
   private cts_token: string | undefined
   private workspaceId: string
-  private region: CtsRegions = 'ap-southeast-2'
   private context: Context
 
-  constructor(context: Context) {
-    this.region = context.region ?? this.region
-    this.workspaceId = context.workspaceId
+  constructor(eqlClient: EqlClient, context: Context) {
+    this.workspaceId = eqlClient.clientInfo().workspaceId
     this.context = context
+    logger.debug('Successfully initialized the lock context.')
   }
 
-  async identify(jwtToken: string, {
-    fetchFromCts = true,
-  }: IdentifyOptions = {}): Promise<LockContext> {
+  async identify(
+    jwtToken: string,
+    { fetchFromCts = true }: IdentifyOptions = {},
+  ): Promise<LockContext> {
     const workspaceId = this.workspaceId
-    const region = this.region
+
+    // CipherStash CTS is only available in ap-southeast-2
+    const region = 'ap-southeast-2'
 
     if (fetchFromCts) {
       const ctsResponse = await fetch(
@@ -47,15 +48,19 @@ export class LockContext {
       )
 
       if (!ctsResponse.ok) {
-        throw new Error(
-          'Failed to initialize identity claim due to an error with the CipherStash API. Please contact support.',
-        )
+        const errorMessage =
+          'Failed to initialize identity claim due to an error with the CipherStash API. Please contact support.'
+        logger.error(errorMessage)
+        throw new Error(errorMessage)
       }
 
       const data = await ctsResponse.json()
 
       if (!data.accessToken) {
-        throw new Error('Failed to initialize identity claim due to an with the CipherStash API. Please contact support.')
+        const errorMessage =
+          'Failed to initialize identity claim due to an error with the CipherStash API. Please contact support.'
+        logger.error(errorMessage)
+        throw new Error(errorMessage)
       }
 
       this.cts_token = data.accessToken
@@ -72,7 +77,10 @@ export class LockContext {
     cts_token: string
   } {
     if (!this.cts_token) {
-      throw new Error('Please call identify() before getLockContext() to initialize the identity claim.')
+      const errorMessage =
+        'Please call identify() before getLockContext() to initialize the identity claim.'
+      logger.error(errorMessage)
+      throw new Error(errorMessage)
     }
 
     return {

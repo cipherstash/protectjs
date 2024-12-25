@@ -12,24 +12,8 @@ import type {
 import { EqlClient } from './eql'
 const logger = getLogger(['jseql'])
 
-export const eql = ({
-  workspaceId,
-  clientId,
-  clientKey,
-  accessToken,
-}: {
-  workspaceId: string
-  clientId: string
-  clientKey: string
-  accessToken: string
-}): Promise<EqlClient> => {
-  const client = new EqlClient({
-    workspaceId,
-    clientId,
-    clientKey,
-    accessToken,
-  })
-
+export const eql = (): Promise<EqlClient> => {
+  const client = new EqlClient()
   return client.init()
 }
 
