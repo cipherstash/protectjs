@@ -41,7 +41,7 @@
 		"build": "tsup",
 		"dev": "tsup --watch",
 		"generate-types": "json2ts ./cs_plaintext_v1.schema.json --output ./src/cs_plaintext_v1.ts",
-		"test": "vitest"
+		"test": "vitest run"
 	},
 	"devDependencies": {
 		"dotenv": "^16.4.7",
