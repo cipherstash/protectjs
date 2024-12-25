@@ -1,5 +1,13 @@
 # @cipherstash/jseql
 
+## 3.1.0
+
+### Minor Changes
+
+- 71ce612: Released support for LockContext initializer.
+- e484718: Refactored init function to not require envrionment variables as arguments.
+- e484718: Replaces jset with vitest for better typescript support.
+
 ## 3.0.0
 
 ### Major Changes
