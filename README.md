@@ -93,13 +93,7 @@ Import the `eql` function from the `@cipherstash/jseql` package and initialize t
 
 ```typescript
 const { eql } = require('@cipherstash/jseql')
-
-const eqlClient = await eql({
-  workspaceId: process.env.CS_WORKSPACE_ID,
-  clientId: process.env.CS_CLIENT_ID,
-  clientKey: process.env.CS_CLIENT_KEY,
-  accessToken: process.env.CS_CLIENT_ACCESS_KEY,
-})
+const eqlClient = await eql()
 ```
 
 .. or using ES6?
@@ -109,12 +103,7 @@ import { createRequire } from 'node:module'
 const require = createRequire(import.meta.url)
 const { eql } = require('@cipherstash/jseql')
 
-const eqlClient = await eql({
-  workspaceId: process.env.CS_WORKSPACE_ID,
-  clientId: process.env.CS_CLIENT_ID,
-  clientKey: process.env.CS_CLIENT_KEY,
-  accessToken: process.env.CS_CLIENT_ACCESS_KEY,
-})
+const eqlClient = await eql()
 ```
 
 We are working on a solution to support the `import` statement in the future.
@@ -160,10 +149,9 @@ To use a lock context, initialize a `LockContext` object with the identity claim
 ```typescript
 import { LockContext } from '@cipherstash/jseql'
 
-const lc = new LockContext({
+// eqlClient from the previous steps
+const lc = new LockContext(eqlClient, {
   identityClaim: ['sub'],
-  workspaceId: 'your-workspace-id',
-  region: 'ap-southeast-2', // optional, defaults to ap-southeast-2
 })
 ```
 
