@@ -5,6 +5,11 @@ on:
     branches:
       - "**"
 
+env:
+  CS_CLIENT_ID: ${{ secrets.CS_CLIENT_ID }}
+  CS_CLIENT_KEY: ${{ secrets.CS_CLIENT_KEY }}
+  CS_CLIENT_ACCESS_KEY: ${{ secrets.CS_CLIENT_ACCESS_KEY }}
+  CS_WORKSPACE_ID: ${{ secrets.CS_WORKSPACE_ID }}
 jobs:
   run-tests:
     name: Run Tests
