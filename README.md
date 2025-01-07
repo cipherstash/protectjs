@@ -11,6 +11,8 @@
 - [Installation](#installation)
 - [Platform Support](#platform-support)
 - [Usage](#usage)
+- [Logging](#logging)
+- [Builds and bundling](#builds-and-bundling)
 - [Examples](#examples)
 - [Contributing](#contributing)
 - [License](#license)
@@ -235,6 +237,36 @@ await configure({
     },
   ],
 })
+```
+
+## Builds and bundling
+
+### Next.js
+
+Using `@cipherstash/jseql` with Next.js? Since the package is a native Node.js module, you need to opt-out from the Server Components bundling and use native Node.js `require` instead.
+
+#### Using version 15 or later
+
+`next.config.ts` [configuration](https://nextjs.org/docs/app/api-reference/config/next-config-js/serverExternalPackages):
+
+```js
+const nextConfig = {
+  ...
+  serverExternalPackages: ['@cipherstash/jseql'],
+}
+```
+
+#### Using version 14
+
+`next.config.mjs` [configuration](https://nextjs.org/docs/14/app/api-reference/next-config-js/serverComponentsExternalPackages):
+
+```js
+const nextConfig = {
+  ...
+  experimental: {
+    serverComponentsExternalPackages: ['@cipherstash/jseql'],
+  },
+}
 ```
 
 ## Examples
