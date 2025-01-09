@@ -72,17 +72,23 @@ export class EqlClient {
     },
   ): Promise<EncryptedEqlPayload> {
     if (lockContext) {
-      const lockContextData = lockContext.getLockContext()
+      const { cts_token, context } = lockContext.getLockContext()
 
       logger.debug('Encrypting data with lock context', {
-        context: lockContextData.context,
+        context,
         column,
         table,
       })
 
-      return await encrypt(this.client, plaintext, column, {
-        identityClaim: lockContextData.context.identityClaim,
-      }).then((val: string) => {
+      return await encrypt(
+        this.client,
+        plaintext,
+        column,
+        {
+          identityClaim: context.identityClaim,
+        },
+        cts_token,
+      ).then((val: string) => {
         return { c: val }
       })
     }
@@ -106,15 +112,20 @@ export class EqlClient {
     } = {},
   ): Promise<string> {
     if (lockContext) {
-      const lockContextData = lockContext.getLockContext()
+      const { cts_token, context } = lockContext.getLockContext()
 
       logger.debug('Decrypting data with lock context', {
-        context: lockContextData.context,
+        context,
       })
 
-      return await decrypt(this.client, encryptedPayload.c, {
-        identityClaim: lockContextData.context.identityClaim,
-      })
+      return await decrypt(
+        this.client,
+        encryptedPayload.c,
+        {
+          identityClaim: context.identityClaim,
+        },
+        cts_token,
+      )
     }
 
     logger.debug('Decrypting data without a lock context')

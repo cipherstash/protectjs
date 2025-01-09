@@ -11,6 +11,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@cipherstash/jseql": "workspace:*",
     "dotenv": "^16.4.7"
   }
 }
