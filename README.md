@@ -192,7 +192,15 @@ You can then use the `getCtsToken` function to retrieve the CTS token for the cu
 ```typescript
 import { getCtsToken } from '@cipherstash/nextjs'
 
-const ctsToken = await getCtsToken()
+export default async function Page() {
+  const ctsToken = await getCtsToken()
+
+  return (
+    <div>
+      <h1>Server side rendered page</h1>
+    </div>
+  )
+}
 ```
 
 #### Contructing a LockContext with an existing CTS token
@@ -203,11 +211,18 @@ Since the CTS token is already available, you can construct a `LockContext` obje
 import { LockContext } from '@cipherstash/jseql'
 import { getCtsToken } from '@cipherstash/nextjs'
 
-const ctsToken = await getCtsToken()
+export default async function Page() {
+  const ctsToken = await getCtsToken()
+  const lockContext = new LockContext({
+    identityClaim: ['sub'],
+  }, ctsToken)
 
-const lockContext = new LockContext({
-  identityClaim: ['sub'],
-}, ctsToken)
+  return (
+    <div>
+      <h1>Server side rendered page</h1>
+    </div>
+  )
+}
 ```
 
 ### Encrypting data with a lock context
