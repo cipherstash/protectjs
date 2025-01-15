@@ -61,9 +61,8 @@ export const jseqlClerkMiddleware = async (
     response.cookies.set({
       name: CS_COOKIE_NAME,
       value: JSON.stringify(cts_token),
-      expires: new Date(cts_token.expiry),
-      httpOnly: true,
-      secure: true,
+      expires: new Date(cts_token.expiry * 1000),
+      sameSite: 'lax',
       path: '/',
     })
 
