@@ -48,8 +48,6 @@ export const jseqlClerkMiddleware = async (
       }),
     })
 
-    console.log('[ Server ] jseql: CTS response', ctsResponse)
-
     if (!ctsResponse.ok) {
       throw new Error(
         `[ Server ] jseql: Failed to fetch CTS token: ${ctsResponse.statusText}`,
