@@ -124,7 +124,7 @@ importers:
         specifier: ^0.7.1
         version: 0.7.1
       next:
-        specifier: 15.1.4
+        specifier: ^14 || ^15
         version: 15.1.4(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       typescript:
         specifier: ^5.0.0

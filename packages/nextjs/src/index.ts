@@ -1,35 +1,23 @@
-import type { NextRequest } from 'next/server'
-import { NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
+import { getLogger } from '@logtape/logtape'
 
-type JseqlMiddlewareConfig = {
-  sessionCookieName: string
+const logger = getLogger(['jseql'])
+export const CS_COOKIE_NAME = '__cipherstash_cts_session'
+
+export type CtsToken = {
+  access_token: string
+  expires: Date
 }
 
-export async function jseqlMiddleware(config: JseqlMiddlewareConfig) {
-  return async (req: NextRequest) => {
-    const cookie = req.cookies.get(config.sessionCookieName)
+export const getCtsToken = async () => {
+  const cookieStore = await cookies()
+  const cookieData = cookieStore.get(CS_COOKIE_NAME)?.value
 
-    if (cookie) {
-      const token = cookie.value
-
-      if (!token) {
-        throw new Error(
-          '[ Server ] jseql: No session token found in the request.',
-        )
-      }
-
-      // TODO: CTS token exchange
-      const cts_token = token
-
-      const response = NextResponse.next()
-      response.cookies.set({
-        name: '__cipherstash_cts_token',
-        value: cts_token,
-        expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
-        path: '/',
-      })
-
-      return response
-    }
+  if (!cookieData) {
+    logger.debug('No CipherStash session cookie found in the request.')
+    return null
   }
+
+  const cts_token = JSON.parse(cookieData) as CtsToken
+  return cts_token
 }
