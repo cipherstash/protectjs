@@ -35,6 +35,7 @@
 		"dev": "tsup --watch"
 	},
 	"devDependencies": {
+		"@cipherstash/jseql": "workspace:*",
 		"@clerk/nextjs": "^6.9.7",
 		"dotenv": "^16.4.7",
 		"tsup": "^8.3.0",

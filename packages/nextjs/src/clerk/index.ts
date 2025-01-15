@@ -2,7 +2,8 @@ import type { ClerkMiddlewareAuth } from '@clerk/nextjs/server'
 import { getLogger } from '@logtape/logtape'
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
-import { type CtsToken, CS_COOKIE_NAME } from '../index'
+import { CS_COOKIE_NAME } from '../index'
+import type { CtsToken } from '@cipherstash/jseql'
 
 const logger = getLogger(['jseql'])
 
@@ -62,7 +63,9 @@ export const jseqlClerkMiddleware = async (
     response.cookies.set({
       name: CS_COOKIE_NAME,
       value: JSON.stringify(cts_token),
-      expires: cts_token.expires,
+      expires: new Date(cts_token.expiry),
+      httpOnly: true,
+      secure: true,
       path: '/',
     })
 

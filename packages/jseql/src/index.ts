@@ -12,8 +12,6 @@ import type {
 import { EqlClient } from './eql'
 const logger = getLogger(['jseql'])
 
-export type { EqlClient } from './eql'
-
 export const eql = (): Promise<EqlClient> => {
   const client = new EqlClient()
   return client.init()
@@ -74,5 +72,6 @@ export const getPlaintext = (payload: CsPlaintextV1Schema): Result => {
   }
 }
 
+export type { EqlClient } from './eql'
 export * from './cs_plaintext_v1'
 export * from './identify'

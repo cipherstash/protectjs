@@ -8,9 +8,6 @@ export class EqlClient {
   // biome-ignore lint/suspicious/noExplicitAny: jseql-ffi is not typed
   private client: any
   private workspaceId
-  private clientId
-  private clientKey
-  private accessToken
 
   constructor() {
     const errorMessage = (message: string) => `Initialization error: ${message}`
@@ -22,7 +19,7 @@ export class EqlClient {
       )
 
       logger.error(message)
-      throw new Error(message)
+      throw new Error(`[ Server ] jseql: ${message}`)
     }
 
     if (!process.env.CS_CLIENT_ID || !process.env.CS_CLIENT_KEY) {
@@ -31,7 +28,7 @@ export class EqlClient {
       )
 
       logger.error(message)
-      throw new Error(message)
+      throw new Error(`[ Server ] jseql: ${message}`)
     }
 
     if (!process.env.CS_CLIENT_ACCESS_KEY) {
@@ -40,7 +37,7 @@ export class EqlClient {
       )
 
       logger.error(message)
-      throw new Error(message)
+      throw new Error(`[ Server ] jseql: ${message}`)
     }
 
     logger.info(
@@ -48,9 +45,6 @@ export class EqlClient {
     )
 
     this.workspaceId = process.env.CS_WORKSPACE_ID
-    this.clientId = process.env.CS_CLIENT_ID
-    this.clientKey = process.env.CS_CLIENT_KEY
-    this.accessToken = process.env.CS_CLIENT_ACCESS_KEY
   }
 
   async init(): Promise<EqlClient> {
@@ -72,7 +66,7 @@ export class EqlClient {
     },
   ): Promise<EncryptedEqlPayload> {
     if (lockContext) {
-      const { cts_token, context } = lockContext.getLockContext()
+      const { ctsToken, context } = lockContext.getLockContext()
 
       logger.debug('Encrypting data with lock context', {
         context,
@@ -87,7 +81,7 @@ export class EqlClient {
         {
           identityClaim: context.identityClaim,
         },
-        cts_token,
+        ctsToken,
       ).then((val: string) => {
         return { c: val }
       })
@@ -112,7 +106,7 @@ export class EqlClient {
     } = {},
   ): Promise<string> {
     if (lockContext) {
-      const { cts_token, context } = lockContext.getLockContext()
+      const { ctsToken, context } = lockContext.getLockContext()
 
       logger.debug('Decrypting data with lock context', {
         context,
@@ -124,7 +118,7 @@ export class EqlClient {
         {
           identityClaim: context.identityClaim,
         },
-        cts_token,
+        ctsToken,
       )
     }
 
@@ -135,7 +129,6 @@ export class EqlClient {
   clientInfo() {
     return {
       workspaceId: this.workspaceId,
-      clientId: this.clientId,
     }
   }
 }

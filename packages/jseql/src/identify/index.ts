@@ -1,12 +1,7 @@
-import type { EqlClient } from '../eql'
 import { getLogger } from '@logtape/logtape'
 const logger = getLogger(['jseql'])
 
 export type CtsRegions = 'ap-southeast-2'
-
-export type Context = {
-  identityClaim: string[]
-}
 
 export type IdentifyOptions = {
   fetchFromCts?: boolean
@@ -17,13 +12,28 @@ export type CtsToken = {
   expiry: number
 }
 
+export type Context = {
+  identityClaim: string[]
+}
+
 export class LockContext {
-  private cts_token: CtsToken | undefined
+  private ctsToken: CtsToken | undefined
   private workspaceId: string
   private context: Context
 
-  constructor(eqlClient: EqlClient, context: Context) {
-    this.workspaceId = eqlClient.clientInfo().workspaceId
+  constructor(context: Context, ctsToken?: CtsToken) {
+    if (!process.env.CS_WORKSPACE_ID) {
+      const errorMessage =
+        'CS_WORKSPACE_ID environment variable is not set, and is required to initialize a LockContext.'
+      logger.error(errorMessage)
+      throw new Error(`[ Server ] jseql: ${errorMessage}`)
+    }
+
+    if (ctsToken) {
+      this.ctsToken = ctsToken
+    }
+
+    this.workspaceId = process.env.CS_WORKSPACE_ID
     this.context = context
     logger.debug('Successfully initialized the EQL lock context.')
   }
@@ -31,68 +41,56 @@ export class LockContext {
   async identify(jwtToken: string): Promise<LockContext> {
     const workspaceId = this.workspaceId
 
-    // CipherStash CTS is only available in ap-southeast-2
-    const region = 'ap-southeast-2'
+    const ctsEndoint =
+      process.env.CS_CTS_ENDPOINT ||
+      'https://ap-southeast-2.aws.auth.viturhosted.net'
 
-    const ctsResponse = await fetch(
-      `https://${region}.aws.auth.viturhosted.net/api/federate`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${jwtToken}`,
-        },
-        body: JSON.stringify({
-          workspaceId,
-        }),
+    const ctsResponse = await fetch(`${ctsEndoint}/api/authorize`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
       },
-    )
+      body: JSON.stringify({
+        workspaceId,
+        oidcToken: jwtToken,
+      }),
+    })
 
-    if (ctsResponse.status === 401) {
-      const errorMessage =
-        'The JWT token provided is invalid or the CipherStash token service can not be authenticated. Please check your JWT token and try again.'
-      logger.error(errorMessage)
-      throw new Error(errorMessage)
-    }
+    console.log('[ Server ] jseql: CTS response', ctsResponse)
 
     if (!ctsResponse.ok) {
-      const errorMessage =
-        'Failed to initialize identity claim due to an error with the CipherStash API. Please contact support.'
-      logger.error(errorMessage)
-      logger.debug('Error message from the CipherStash API:', {
-        ctsResponse: ctsResponse.statusText,
-      })
-
-      throw new Error(errorMessage)
+      throw new Error(
+        `[ Server ] jseql: Failed to fetch CTS token: ${ctsResponse.statusText}`,
+      )
     }
 
-    const data = await ctsResponse.json()
+    const ctsToken = (await ctsResponse.json()) as CtsToken
 
-    if (!data.accessToken) {
+    if (!ctsToken.accessToken) {
       const errorMessage =
         'The response from the CipherStash API did not contain an access token. Please contact support.'
       logger.error(errorMessage)
       throw new Error(errorMessage)
     }
 
-    this.cts_token = data
+    this.ctsToken = ctsToken
     return this
   }
 
   getLockContext(): {
     context: Context
-    cts_token: CtsToken
+    ctsToken: CtsToken
   } {
-    if (!this.cts_token) {
+    if (!this.ctsToken) {
       const errorMessage =
-        'Please call identify() before getLockContext() to initialize the identity claim with a JWT token.'
+        'Please call identify() with a users JWT token, or pass an existing CTS token to the LockContext constructor before calling getLockContext().'
       logger.error(errorMessage)
       throw new Error(errorMessage)
     }
 
     return {
       context: this.context,
-      cts_token: this.cts_token,
+      ctsToken: this.ctsToken,
     }
   }
 }
