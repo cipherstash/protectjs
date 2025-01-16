@@ -14,20 +14,27 @@ jobs:
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v3
-
-      - name: Setup Node.js 23.1
-        uses: actions/setup-node@v3
+      
+      - uses: pnpm/action-setup@v4
+        name: Install pnpm
         with:
-          node-version: 23.1
+          version: 9
+          run_install: false
 
-      - name: Install Dependencies
-        run: npm install
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install
 
       - name: Publish to npm
         id: changesets
         uses: changesets/action@v1
         with:
-          publish: npm run release
+          publish: pnpm run release
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
