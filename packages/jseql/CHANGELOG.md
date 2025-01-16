@@ -1,5 +1,11 @@
 # @cipherstash/jseql
 
+## 3.3.0
+
+### Minor Changes
+
+- 80ee5af: Fixed bugs when implmenting the lock context with CTS v2 tokens.
+
 ## 3.2.0
 
 ### Minor Changes
