@@ -12,8 +12,9 @@ export const jseqlClerkMiddleware = async (
   req: NextRequest,
 ) => {
   const { userId, getToken } = await auth()
+  const ctsSession = req.cookies.has(CS_COOKIE_NAME)
 
-  if (userId) {
+  if (userId && !ctsSession) {
     const oidcToken = await getToken()
 
     if (!oidcToken) {

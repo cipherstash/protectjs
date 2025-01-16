@@ -121,7 +121,7 @@ export class EqlClient {
           context,
         })
 
-        const decryptedPayload = await this.client.decrypt(
+        const decryptedPayload = await decrypt(
           this.client,
           encryptedPayload.c,
           {

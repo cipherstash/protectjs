@@ -150,16 +150,14 @@ The `decrypt` function returns a string with the plaintext data.
 To use a lock context, initialize a `LockContext` object with the identity claims.
 
 ```typescript
-import { LockContext } from '@cipherstash/jseql'
+import { LockContext } from '@cipherstash/jseql/identify'
 
 // eqlClient from the previous steps
-const lc = new LockContext({
-  identityClaim: ['sub'],
-})
+const lc = new LockContext()
 ```
 
 > [!NOTE]
-> At the time of this writing, the we only support the `sub` Identity Claim.
+> At the time of this writing, the default LockContext is set to use the `sub` Identity Claim, as this is the only Identity Claim that is currently supported.
 
 #### Identifying the user
 
@@ -208,14 +206,14 @@ export default async function Page() {
 Since the CTS token is already available, you can construct a `LockContext` object with the existing CTS token.
 
 ```typescript
-import { LockContext } from '@cipherstash/jseql'
+import { LockContext } from '@cipherstash/jseql/identify'
 import { getCtsToken } from '@cipherstash/nextjs'
 
 export default async function Page() {
   const ctsToken = await getCtsToken()
   const lockContext = new LockContext({
-    identityClaim: ['sub'],
-  }, ctsToken)
+    ctsToken
+  })
 
   return (
     <div>
