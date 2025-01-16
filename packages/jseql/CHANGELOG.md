@@ -1,5 +1,12 @@
 # @cipherstash/jseql
 
+## 3.2.0
+
+### Minor Changes
+
+- 0526f60: Use the latest jseql-ffi (0.4.0)
+- fbb2bcb: Implemented CTS v2 for identity lock.
+
 ## 3.1.0
 
 ### Minor Changes
