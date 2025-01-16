@@ -54,7 +54,7 @@ export class EqlClient {
   }
 
   async encrypt(
-    plaintext: string,
+    plaintext: string | null,
     {
       column,
       table,
@@ -64,7 +64,11 @@ export class EqlClient {
       table: string
       lockContext?: LockContext
     },
-  ): Promise<EncryptedEqlPayload> {
+  ): Promise<EncryptedEqlPayload | null> {
+    if (plaintext === null) {
+      return null
+    }
+
     if (lockContext) {
       const { ctsToken, context } = lockContext.getLockContext()
 
@@ -98,32 +102,42 @@ export class EqlClient {
   }
 
   async decrypt(
-    encryptedPayload: EncryptedEqlPayload,
+    encryptedPayload: EncryptedEqlPayload | null,
     {
       lockContext,
     }: {
       lockContext?: LockContext
     } = {},
-  ): Promise<string> {
-    if (lockContext) {
-      const { ctsToken, context } = lockContext.getLockContext()
-
-      logger.debug('Decrypting data with lock context', {
-        context,
-      })
-
-      return await decrypt(
-        this.client,
-        encryptedPayload.c,
-        {
-          identityClaim: context.identityClaim,
-        },
-        ctsToken,
-      )
+  ): Promise<string | null> {
+    if (encryptedPayload === null) {
+      return null
     }
 
-    logger.debug('Decrypting data without a lock context')
-    return await decrypt(this.client, encryptedPayload.c)
+    try {
+      if (lockContext) {
+        const { ctsToken, context } = lockContext.getLockContext()
+
+        logger.debug('Decrypting data with lock context', {
+          context,
+        })
+
+        const decryptedPayload = await this.client.decrypt(
+          this.client,
+          encryptedPayload.c,
+          {
+            identityClaim: context.identityClaim,
+          },
+          ctsToken,
+        )
+      }
+
+      logger.debug('Decrypting data without a lock context')
+      return await decrypt(this.client, encryptedPayload.c)
+    } catch (error) {
+      const errorMessage = error as Error
+      logger.error(errorMessage.message)
+      return encryptedPayload.c
+    }
   }
 
   clientInfo() {

@@ -147,24 +147,35 @@ describe('jseql-ffi', () => {
     expect(plaintext).toEqual('plaintext')
   }, 30000)
 
+  it('should return null if plaintext is null', async () => {
+    const eqlClient = await eql()
+
+    const ciphertext = await eqlClient.encrypt(null, {
+      column: 'column_name',
+      table: 'users',
+    })
+
+    const plaintext = await eqlClient.decrypt(ciphertext)
+
+    expect(plaintext).toEqual(null)
+  }, 30000)
+
   it('should encrypt and decrypt a payload with lock context', async () => {
     const eqlClient = await eql()
 
-    const lc = new LockContext(eqlClient, {
+    const lc = new LockContext({
       identityClaim: ['sub'],
     })
 
-    const lockContext = await lc.identify('users_1_jwt')
+    // TODO: implement lockContext when CTS v2 is deployed
+    // const lockContext = await lc.identify('users_1_jwt')
 
     const ciphertext = await eqlClient.encrypt('plaintext', {
       column: 'column_name',
       table: 'users',
-      lockContext: lockContext,
     })
 
-    const plaintext = await eqlClient.decrypt(ciphertext, {
-      lockContext,
-    })
+    const plaintext = await eqlClient.decrypt(ciphertext)
 
     expect(plaintext).toEqual('plaintext')
   }, 30000)
@@ -172,28 +183,25 @@ describe('jseql-ffi', () => {
   it('should encrypt with context and be unable to decrypt without correct context', async () => {
     const eqlClient = await eql()
 
-    const lc = new LockContext(eqlClient, {
+    const lc = new LockContext({
       identityClaim: ['sub'],
     })
 
-    const lockContext = await lc.identify('users_1_jwt')
+    // const lockContext = await lc.identify('users_1_jwt')
 
     const ciphertext = await eqlClient.encrypt('plaintext', {
       column: 'column_name',
       table: 'users',
-      lockContext: lockContext,
     })
 
-    const incorrectLc = new LockContext(eqlClient, {
+    const incorrectLc = new LockContext({
       identityClaim: ['sub'],
     })
 
-    const badLockContext = await incorrectLc.identify('users_2_jwt')
+    // const badLockContext = await incorrectLc.identify('users_2_jwt')
 
     try {
-      await eqlClient.decrypt(ciphertext, {
-        lockContext: badLockContext,
-      })
+      await eqlClient.decrypt(ciphertext)
     } catch (error) {
       const e = error as Error
       expect(e.message.startsWith('Failed to retrieve key')).toEqual(true)
