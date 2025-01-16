@@ -26,11 +26,6 @@
 			"import": "./dist/index.js",
 			"require": "./dist/index.cjs"
 		},
-		"./drizzle": {
-			"types": "./dist/drizzle/index.d.ts",
-			"import": "./dist/drizzle/index.js",
-			"require": "./dist/drizzle/index.cjs"
-		},
 		"./identify": {
 			"types": "./dist/identify/index.d.ts",
 			"import": "./dist/identify/index.js",
