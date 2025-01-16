@@ -147,16 +147,21 @@ The `decrypt` function returns a string with the plaintext data.
 ### Lock context
 
 `jseql` supports lock contexts to ensure that only the intended users can access sensitive data.
-To use a lock context, initialize a `LockContext` object with the identity claims and workspace ID.
+To use a lock context, initialize a `LockContext` object with the identity claims.
 
 ```typescript
 import { LockContext } from '@cipherstash/jseql'
 
 // eqlClient from the previous steps
-const lc = new LockContext(eqlClient, {
+const lc = new LockContext({
   identityClaim: ['sub'],
 })
 ```
+
+> [!NOTE]
+> At the time of this writing, the we only support the `sub` Identity Claim.
+
+#### Identifying the user
 
 The lock context needs to be tied to a specific user.
 To identify the user, call the `identify` method on the lock context object.
@@ -166,6 +171,59 @@ const lockContext = await lc.identify('jwt_token_from_identiti_provider')
 ```
 
 The `jwt_token_from_identiti_provider` is the JWT token from your identity provider, and can be retrieved from the user's session.
+
+### Lock context with Next.js and Clerk
+
+If you're using [Clerk](https://clerk.com/) as your identity provider, you can use the `jseqlClerkMiddleware` function to automatically set the CTS token for every user session. 
+
+In your `middleware.ts` file, add the following code:
+
+```typescript
+import { clerkMiddleware } from '@clerk/nextjs/server'
+import { jseqlClerkMiddleware } from '@cipherstash/nextjs/clerk'
+
+export default clerkMiddleware(async (auth, req: NextRequest) => {
+  return jseqlClerkMiddleware(auth, req)
+})
+```
+
+You can then use the `getCtsToken` function to retrieve the CTS token for the current user session.
+
+```typescript
+import { getCtsToken } from '@cipherstash/nextjs'
+
+export default async function Page() {
+  const ctsToken = await getCtsToken()
+
+  return (
+    <div>
+      <h1>Server side rendered page</h1>
+    </div>
+  )
+}
+```
+
+#### Contructing a LockContext with an existing CTS token
+
+Since the CTS token is already available, you can construct a `LockContext` object with the existing CTS token.
+
+```typescript
+import { LockContext } from '@cipherstash/jseql'
+import { getCtsToken } from '@cipherstash/nextjs'
+
+export default async function Page() {
+  const ctsToken = await getCtsToken()
+  const lockContext = new LockContext({
+    identityClaim: ['sub'],
+  }, ctsToken)
+
+  return (
+    <div>
+      <h1>Server side rendered page</h1>
+    </div>
+  )
+}
+```
 
 ### Encrypting data with a lock context
 

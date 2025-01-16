@@ -6,7 +6,7 @@
     "dev": "tsx watch src/index.ts"
   },
   "dependencies": {
-    "@cipherstash/jseql": "^3.1.0",
+    "@cipherstash/jseql": "workspace:*",
     "@hono/node-server": "^1.13.7",
     "@supabase/supabase-js": "^2.47.10",
     "dotenv": "^16.4.7",

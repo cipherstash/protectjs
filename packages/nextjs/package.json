@@ -1,14 +1,12 @@
 {
-	"name": "@cipherstash/jseql",
-	"version": "3.1.0",
-	"description": "Encrypted Query Language JavaScript Library",
+	"name": "@cipherstash/nextjs",
+	"version": "0.0.0",
+	"description": "Nextjs middleware for jseql",
 	"keywords": [
 		"encrypted",
-		"query",
-		"language",
 		"typescript",
-		"ts",
-		"eql"
+		"eql",
+		"nextjs"
 	],
 	"bugs": {
 		"url": "https://github.com/cipherstash/jseql/issues"
@@ -26,33 +24,30 @@
 			"import": "./dist/index.js",
 			"require": "./dist/index.cjs"
 		},
-		"./identify": {
-			"types": "./dist/identify/index.d.ts",
-			"import": "./dist/identify/index.js",
-			"require": "./dist/identify/index.cjs"
+		"./clerk": {
+			"types": "./dist/clerk/index.d.ts",
+			"import": "./dist/clerk/index.js",
+			"require": "./dist/clerk/index.cjs"
 		}
 	},
 	"scripts": {
 		"build": "tsup",
-		"dev": "tsup --watch",
-		"generate-types": "json2ts ./cs_plaintext_v1.schema.json --output ./src/cs_plaintext_v1.ts",
-		"test": "vitest run"
+		"dev": "tsup --watch"
 	},
 	"devDependencies": {
+		"@cipherstash/jseql": "workspace:*",
+		"@clerk/nextjs": "^6.9.7",
 		"dotenv": "^16.4.7",
-		"json-schema-to-typescript": "^15.0.2",
 		"tsup": "^8.3.0",
 		"vitest": "^2.1.8"
 	},
 	"peerDependencies": {
+		"@logtape/logtape": "^0.7.1",
+		"next": "^14 || ^15",
 		"typescript": "^5.0.0"
 	},
 	"publishConfig": {
 		"access": "public"
-	},
-	"dependencies": {
-		"@cipherstash/jseql-ffi": "^0.4.0",
-		"@logtape/logtape": "^0.7.1"
 	},
 	"optionalDependencies": {
 		"@rollup/rollup-linux-x64-gnu": "4.24.0"

@@ -8,9 +8,6 @@ export class EqlClient {
   // biome-ignore lint/suspicious/noExplicitAny: jseql-ffi is not typed
   private client: any
   private workspaceId
-  private clientId
-  private clientKey
-  private accessToken
 
   constructor() {
     const errorMessage = (message: string) => `Initialization error: ${message}`
@@ -22,7 +19,7 @@ export class EqlClient {
       )
 
       logger.error(message)
-      throw new Error(message)
+      throw new Error(`[ Server ] jseql: ${message}`)
     }
 
     if (!process.env.CS_CLIENT_ID || !process.env.CS_CLIENT_KEY) {
@@ -31,7 +28,7 @@ export class EqlClient {
       )
 
       logger.error(message)
-      throw new Error(message)
+      throw new Error(`[ Server ] jseql: ${message}`)
     }
 
     if (!process.env.CS_CLIENT_ACCESS_KEY) {
@@ -40,7 +37,7 @@ export class EqlClient {
       )
 
       logger.error(message)
-      throw new Error(message)
+      throw new Error(`[ Server ] jseql: ${message}`)
     }
 
     logger.info(
@@ -48,9 +45,6 @@ export class EqlClient {
     )
 
     this.workspaceId = process.env.CS_WORKSPACE_ID
-    this.clientId = process.env.CS_CLIENT_ID
-    this.clientKey = process.env.CS_CLIENT_KEY
-    this.accessToken = process.env.CS_CLIENT_ACCESS_KEY
   }
 
   async init(): Promise<EqlClient> {
@@ -60,7 +54,7 @@ export class EqlClient {
   }
 
   async encrypt(
-    plaintext: string,
+    plaintext: string | null,
     {
       column,
       table,
@@ -70,19 +64,29 @@ export class EqlClient {
       table: string
       lockContext?: LockContext
     },
-  ): Promise<EncryptedEqlPayload> {
+  ): Promise<EncryptedEqlPayload | null> {
+    if (plaintext === null) {
+      return null
+    }
+
     if (lockContext) {
-      const lockContextData = lockContext.getLockContext()
+      const { ctsToken, context } = lockContext.getLockContext()
 
       logger.debug('Encrypting data with lock context', {
-        context: lockContextData.context,
+        context,
         column,
         table,
       })
 
-      return await encrypt(this.client, plaintext, column, {
-        identityClaim: lockContextData.context.identityClaim,
-      }).then((val: string) => {
+      return await encrypt(
+        this.client,
+        plaintext,
+        column,
+        {
+          identityClaim: context.identityClaim,
+        },
+        ctsToken,
+      ).then((val: string) => {
         return { c: val }
       })
     }
@@ -98,33 +102,47 @@ export class EqlClient {
   }
 
   async decrypt(
-    encryptedPayload: EncryptedEqlPayload,
+    encryptedPayload: EncryptedEqlPayload | null,
     {
       lockContext,
     }: {
       lockContext?: LockContext
     } = {},
-  ): Promise<string> {
-    if (lockContext) {
-      const lockContextData = lockContext.getLockContext()
-
-      logger.debug('Decrypting data with lock context', {
-        context: lockContextData.context,
-      })
-
-      return await decrypt(this.client, encryptedPayload.c, {
-        identityClaim: lockContextData.context.identityClaim,
-      })
+  ): Promise<string | null> {
+    if (encryptedPayload === null) {
+      return null
     }
 
-    logger.debug('Decrypting data without a lock context')
-    return await decrypt(this.client, encryptedPayload.c)
+    try {
+      if (lockContext) {
+        const { ctsToken, context } = lockContext.getLockContext()
+
+        logger.debug('Decrypting data with lock context', {
+          context,
+        })
+
+        const decryptedPayload = await this.client.decrypt(
+          this.client,
+          encryptedPayload.c,
+          {
+            identityClaim: context.identityClaim,
+          },
+          ctsToken,
+        )
+      }
+
+      logger.debug('Decrypting data without a lock context')
+      return await decrypt(this.client, encryptedPayload.c)
+    } catch (error) {
+      const errorMessage = error as Error
+      logger.error(errorMessage.message)
+      return encryptedPayload.c
+    }
   }
 
   clientInfo() {
     return {
       workspaceId: this.workspaceId,
-      clientId: this.clientId,
     }
   }
 }

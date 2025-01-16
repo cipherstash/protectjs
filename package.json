@@ -23,14 +23,14 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "turbo build",
+    "build": "turbo build --filter './packages/*'",
     "changeset": "changeset",
     "changeset:version": "changeset version",
     "changeset:publish": "changeset publish",
-    "dev": "turbo dev",
+    "dev": "turbo dev --filter './packages/*'",
     "code:fix": "biome check --write",
     "release": "turbo run build && changeset publish",
-    "test": "turbo test"
+    "test": "turbo test --filter './packages/*'"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.3",
@@ -38,8 +38,8 @@
     "@types/node": "^22.10.2",
     "turbo": "2.1.1"
   },
-  "packageManager": "npm@10.9.0",
+  "packageManager": "pnpm@9.15.3",
   "engines": {
-    "node": ">=22"
+    "node": ">=20"
   }
 }

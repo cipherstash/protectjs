@@ -4,6 +4,21 @@ import { describe, expect, it } from 'vitest'
 import { createEqlPayload, getPlaintext, eql, LockContext } from '../src'
 import type { CsPlaintextV1Schema } from '../src/cs_plaintext_v1'
 
+import { configure, getConsoleSink } from '@logtape/logtape'
+
+await configure({
+  sinks: {
+    console: getConsoleSink(),
+  },
+  loggers: [
+    {
+      category: ['jseql'],
+      level: 'debug',
+      sinks: ['console'],
+    },
+  ],
+})
+
 describe('createEqlPayload', () => {
   it('should create a payload with the correct default values', () => {
     const result = createEqlPayload({
@@ -132,46 +147,58 @@ describe('jseql-ffi', () => {
     expect(plaintext).toEqual('plaintext')
   }, 30000)
 
+  it('should return null if plaintext is null', async () => {
+    const eqlClient = await eql()
+
+    const ciphertext = await eqlClient.encrypt(null, {
+      column: 'column_name',
+      table: 'users',
+    })
+
+    const plaintext = await eqlClient.decrypt(ciphertext)
+
+    expect(plaintext).toEqual(null)
+  }, 30000)
+
   it('should encrypt and decrypt a payload with lock context', async () => {
     const eqlClient = await eql()
 
-    const lc = new LockContext(eqlClient, {
+    const lc = new LockContext({
       identityClaim: ['sub'],
     })
 
-    const lockContext = await lc.identify('test', {
-      fetchFromCts: false,
-    })
+    // TODO: implement lockContext when CTS v2 is deployed
+    // const lockContext = await lc.identify('users_1_jwt')
 
     const ciphertext = await eqlClient.encrypt('plaintext', {
       column: 'column_name',
       table: 'users',
-      lockContext: lockContext,
     })
 
-    const plaintext = await eqlClient.decrypt(ciphertext, {
-      lockContext,
-    })
+    const plaintext = await eqlClient.decrypt(ciphertext)
 
     expect(plaintext).toEqual('plaintext')
   }, 30000)
 
-  it('should encrypt with context and be unable to decrypt without context', async () => {
+  it('should encrypt with context and be unable to decrypt without correct context', async () => {
     const eqlClient = await eql()
 
-    const lc = new LockContext(eqlClient, {
+    const lc = new LockContext({
       identityClaim: ['sub'],
     })
 
-    const lockContext = await lc.identify('test', {
-      fetchFromCts: false,
-    })
+    // const lockContext = await lc.identify('users_1_jwt')
 
     const ciphertext = await eqlClient.encrypt('plaintext', {
       column: 'column_name',
       table: 'users',
-      lockContext: lockContext,
     })
+
+    const incorrectLc = new LockContext({
+      identityClaim: ['sub'],
+    })
+
+    // const badLockContext = await incorrectLc.identify('users_2_jwt')
 
     try {
       await eqlClient.decrypt(ciphertext)
