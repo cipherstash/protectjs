@@ -163,9 +163,7 @@ describe('jseql-ffi', () => {
   it('should encrypt and decrypt a payload with lock context', async () => {
     const eqlClient = await eql()
 
-    const lc = new LockContext({
-      identityClaim: ['sub'],
-    })
+    const lc = new LockContext()
 
     // TODO: implement lockContext when CTS v2 is deployed
     // const lockContext = await lc.identify('users_1_jwt')
@@ -183,9 +181,7 @@ describe('jseql-ffi', () => {
   it('should encrypt with context and be unable to decrypt without correct context', async () => {
     const eqlClient = await eql()
 
-    const lc = new LockContext({
-      identityClaim: ['sub'],
-    })
+    const lc = new LockContext()
 
     // const lockContext = await lc.identify('users_1_jwt')
 
@@ -194,9 +190,7 @@ describe('jseql-ffi', () => {
       table: 'users',
     })
 
-    const incorrectLc = new LockContext({
-      identityClaim: ['sub'],
-    })
+    const incorrectLc = new LockContext()
 
     // const badLockContext = await incorrectLc.identify('users_2_jwt')
 

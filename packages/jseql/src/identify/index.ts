@@ -16,12 +16,20 @@ export type Context = {
   identityClaim: string[]
 }
 
+export type LockContextOptions = {
+  context?: Context
+  ctsToken?: CtsToken
+}
+
 export class LockContext {
   private ctsToken: CtsToken | undefined
   private workspaceId: string
   private context: Context
 
-  constructor(context: Context, ctsToken?: CtsToken) {
+  constructor({
+    context = { identityClaim: ['sub'] },
+    ctsToken,
+  }: LockContextOptions = {}) {
     if (!process.env.CS_WORKSPACE_ID) {
       const errorMessage =
         'CS_WORKSPACE_ID environment variable is not set, and is required to initialize a LockContext.'
