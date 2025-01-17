@@ -1,8 +1,12 @@
 import { cookies } from 'next/headers'
-import type { CtsToken } from '@cipherstash/jseql'
 import { logger } from './logger'
 
 export const CS_COOKIE_NAME = '__cipherstash_cts_session'
+
+export type CtsToken = {
+  accessToken: string
+  expiry: number
+}
 
 export const getCtsToken = async () => {
   const cookieStore = await cookies()
