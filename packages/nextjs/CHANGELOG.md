@@ -1,5 +1,11 @@
 # @cipherstash/nextjs
 
+## 0.5.0
+
+### Minor Changes
+
+- c0123be: Replaced logtape with native node debuglog.
+
 ## 0.4.0
 
 ### Minor Changes
