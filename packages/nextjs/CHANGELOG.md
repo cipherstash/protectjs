@@ -1,5 +1,11 @@
 # @cipherstash/nextjs
 
+## 0.4.0
+
+### Minor Changes
+
+- 3bb4a10: Cleared session cookies when a user has logged out.
+
 ## 0.3.0
 
 ### Minor Changes
