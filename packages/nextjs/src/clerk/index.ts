@@ -67,7 +67,17 @@ export const jseqlClerkMiddleware = async (
       path: '/',
     })
 
-    const cookie = response.cookies.get(CS_COOKIE_NAME)
+    response.cookies.get(CS_COOKIE_NAME)
+    return response
+  }
+
+  if (!userId && ctsSession) {
+    logger.debug(
+      'No Clerk token found in the request, so the CipherStash session was reset.',
+    )
+
+    const response = NextResponse.next()
+    response.cookies.delete(CS_COOKIE_NAME)
     return response
   }
 
