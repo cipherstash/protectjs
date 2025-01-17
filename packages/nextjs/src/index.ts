@@ -1,8 +1,7 @@
 import { cookies } from 'next/headers'
-import { getLogger } from '@logtape/logtape'
 import type { CtsToken } from '@cipherstash/jseql'
+import { logger } from './logger'
 
-const logger = getLogger(['jseql'])
 export const CS_COOKIE_NAME = '__cipherstash_cts_session'
 
 export const getCtsToken = async () => {
