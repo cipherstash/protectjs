@@ -1,8 +1,7 @@
 import type { ClerkMiddlewareAuth } from '@clerk/nextjs/server'
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
-import { CS_COOKIE_NAME } from '../index'
-import type { CtsToken } from '@cipherstash/jseql'
+import { CS_COOKIE_NAME, type CtsToken } from '../index'
 import { logger } from '../logger'
 
 export const jseqlClerkMiddleware = async (
