@@ -1,5 +1,11 @@
 # @cipherstash/jseql
 
+## 3.7.0
+
+### Minor Changes
+
+- 7b8ec52: Implement packageless logging framework.
+
 ## 3.6.0
 
 ### Minor Changes

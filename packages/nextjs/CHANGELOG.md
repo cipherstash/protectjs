@@ -1,5 +1,11 @@
 # @cipherstash/nextjs
 
+## 0.7.0
+
+### Minor Changes
+
+- 7b8ec52: Implement packageless logging framework.
+
 ## 0.6.0
 
 ### Minor Changes
