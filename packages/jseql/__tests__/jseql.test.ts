@@ -13,7 +13,7 @@ await configure({
   loggers: [
     {
       category: ['jseql'],
-      level: 'debug',
+      level: 'info',
       sinks: ['console'],
     },
   ],
@@ -200,5 +200,63 @@ describe('jseql-ffi', () => {
       const e = error as Error
       expect(e.message.startsWith('Failed to retrieve key')).toEqual(true)
     }
+  }, 30000)
+})
+
+describe('bulk encryption', () => {
+  it('should bulk encrypt and decrypt a payload', async () => {
+    const eqlClient = await eql()
+
+    const ciphertexts = await eqlClient.bulkEncrypt(
+      [
+        {
+          plaintext: 'test',
+          id: '1',
+        },
+        {
+          plaintext: 'test2',
+          id: '2',
+        },
+      ],
+      {
+        table: 'users',
+        column: 'column_name',
+      },
+    )
+
+    console.log('ct', ciphertexts)
+
+    const plaintexts = await eqlClient.bulkDecrypt(ciphertexts)
+
+    expect(plaintexts).toEqual([
+      {
+        plaintext: 'test',
+        id: '1',
+      },
+      {
+        plaintext: 'test2',
+        id: '2',
+      },
+    ])
+  }, 30000)
+
+  it('should return null if plaintexts is empty', async () => {
+    const eqlClient = await eql()
+
+    const ciphertexts = await eqlClient.bulkEncrypt([], {
+      table: 'users',
+      column: 'column_name',
+    })
+
+    expect(ciphertexts).toEqual(null)
+  }, 30000)
+
+  it('should return null if decrypting empty ciphertexts', async () => {
+    const eqlClient = await eql()
+
+    const ciphertexts = null
+    const plaintexts = await eqlClient.bulkDecrypt(ciphertexts)
+
+    expect(plaintexts).toEqual(null)
   }, 30000)
 })
