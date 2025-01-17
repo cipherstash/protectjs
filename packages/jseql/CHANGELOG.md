@@ -1,5 +1,11 @@
 # @cipherstash/jseql
 
+## 3.6.0
+
+### Minor Changes
+
+- 7480cfd: Fixed node:util package bundling.
+
 ## 3.5.0
 
 ### Minor Changes

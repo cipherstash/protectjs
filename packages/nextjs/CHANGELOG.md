@@ -1,5 +1,11 @@
 # @cipherstash/nextjs
 
+## 0.6.0
+
+### Minor Changes
+
+- 7480cfd: Fixed node:util package bundling.
+
 ## 0.5.0
 
 ### Minor Changes
