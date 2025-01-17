@@ -1,5 +1,12 @@
 # @cipherstash/basic-example
 
+## 0.0.6
+
+### Patch Changes
+
+- Updated dependencies [7b8ec52]
+  - @cipherstash/jseql@3.7.0
+
 ## 0.0.5
 
 ### Patch Changes
