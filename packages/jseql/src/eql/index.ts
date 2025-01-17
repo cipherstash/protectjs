@@ -6,8 +6,7 @@ const {
   encryptBulk,
   decryptBulk,
 } = require('@cipherstash/jseql-ffi')
-import { getLogger } from '@logtape/logtape'
-const logger = getLogger(['jseql'])
+import { logger } from '../logger'
 import type { LockContext } from '../identify'
 
 export class EqlClient {

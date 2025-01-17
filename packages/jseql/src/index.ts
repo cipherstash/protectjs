@@ -1,5 +1,3 @@
-import { getLogger } from '@logtape/logtape'
-
 import type {
   CsPlaintextV1Schema,
   ForQuery,
@@ -10,7 +8,7 @@ import type {
   Plaintext,
 } from './cs_plaintext_v1'
 import { EqlClient } from './eql'
-const logger = getLogger(['jseql'])
+import { logger } from './logger'
 
 export const eql = (): Promise<EqlClient> => {
   const client = new EqlClient()

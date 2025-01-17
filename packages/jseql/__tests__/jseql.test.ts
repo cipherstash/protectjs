@@ -4,21 +4,6 @@ import { describe, expect, it } from 'vitest'
 import { createEqlPayload, getPlaintext, eql, LockContext } from '../src'
 import type { CsPlaintextV1Schema } from '../src/cs_plaintext_v1'
 
-import { configure, getConsoleSink } from '@logtape/logtape'
-
-await configure({
-  sinks: {
-    console: getConsoleSink(),
-  },
-  loggers: [
-    {
-      category: ['jseql'],
-      level: 'info',
-      sinks: ['console'],
-    },
-  ],
-})
-
 describe('createEqlPayload', () => {
   it('should create a payload with the correct default values', () => {
     const result = createEqlPayload({

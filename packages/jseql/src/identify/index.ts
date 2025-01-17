@@ -1,5 +1,4 @@
-import { getLogger } from '@logtape/logtape'
-const logger = getLogger(['jseql'])
+import { logger } from '../logger'
 
 export type CtsRegions = 'ap-southeast-2'
 

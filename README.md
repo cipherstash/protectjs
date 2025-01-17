@@ -419,32 +419,19 @@ You can read more about this feature and implementation [here](https://github.co
 
 ## Logging
 
-> [!WARNING]
+> [!IMPORTANT]
 > `jseql` will NEVER log plaintext data. 
 > This is by design to prevent sensitive data from being logged.
 
-`jseql` uses [logtape](https://github.com/logtape/logtape) for logging, which allows you to control the logging output and integrate it with your application's logging system.
+`@cipherstash/jseql` and `@cipherstash/nextjs` use [node's built-in debug logging](https://nodejs.org/api/util.html#utildebuglogsection-callback) for logging.
 
-To set up logging for `jseql`, you need to configure a sink for the `'jseql'` logger.
+By default, the logger is disabled, but you can enable it by configuring the following environment variables:
 
-**Setup Example:**
-
-```typescript
-// Configure the logger
-import { configure, getConsoleSink, getFileSink } from '@logtape/logtape'
-
-await configure({
-  sinks: {
-    console: getConsoleSink(),
-  },
-  loggers: [
-    {
-      category: ['jseql'],
-      level: 'debug',
-      sinks: ['console'],
-    },
-  ],
-})
+```bash
+NODE_DEBUG=jseql-debug  # Enable debug logging
+NODE_DEBUG=jseql-error  # Enable error logging
+NODE_DEBUG=jseql-info   # Enable info logging
+NODE_DEBUG=jseql-*      # Enable all logging
 ```
 
 ## Examples
