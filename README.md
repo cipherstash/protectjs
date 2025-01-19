@@ -12,6 +12,7 @@
 - [Platform Support](#platform-support)
 - [Usage](#usage)
 - [Examples](#examples)
+- [CipherStash Client](#cipherstash-client)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -20,10 +21,14 @@
 `jseql` leverages [Encrypt Query Language (EQL)](https://github.com/cipherstash/encrypt-query-language) and [CipherStash](https://cipherstash.com) to encrypt data in a PostgreSQL database.
 
 **Features:**
-- **Data encryption**: Easily encrypt data with the `encrypt` function. CipherStash uses a unique encryption key for every record in the database. This is also know as **field level encryption.** 
-- **Data decryption**: Extract plaintext data from encrypted data using the `decrypt` function.
+- **Data encryption**: Easily encrypt data with industry standard encryption algorithms, like AES-256.
+CipherStash also uses a unique encryption key for every record in the database, this is also know as **field level encryption.** 
+- **Data decryption**: Decrypt encrypted data easily directly in your application.
+- **Lock context**: "Lock" the encryption and decryption operations based on user identity. 
+This allows you to ensure that only the intended users can access sensitive data.
+- **Bulk encryption and decryption**: Encrypt and decrypt multiple records at once using a unique data key per record. 
+Compared to something like AWS KMS, this is much more efficient, secure, and scalable.
 - **TypeScript support**: Strongly typed with TypeScript interfaces and types.
-- **Logging**: Integrated logging using [logtape](https://github.com/logtape/logtape) for debugging and monitoring.
 
 **Use cases:**
 - Meet compliance requirements for data encryption in your application.
@@ -39,6 +44,8 @@ Install `jseql` via one of the following methods:
 npm install @cipherstash/jseql
 # or
 yarn add @cipherstash/jseql
+# or
+pnpm add @cipherstash/jseql
 ```
 
 ## Platform Support
@@ -63,6 +70,8 @@ Older Node version support (minimum v10) may require lower Node-API versions. Se
 ## Usage
 
 ### Define environment variables
+
+Create an account with [CipherStash](https://cipherstash.com) and get your `client id`, `client key`, `workspace id`, and `access key` from the [CipherStash dashboard](https://dashboard.cipherstash.com/).
 
 Create a `.env` file in the root directory of your project with the following contents:
 
@@ -135,10 +144,6 @@ const plaintext = await eqlClient.decrypt(ciphertext)
 
 The `decrypt` function returns a string with the plaintext data.
 
-```typescript
-'plaintext'
-```
-
 ### Lock context
 
 `jseql` supports lock contexts to ensure that only the intended users can access sensitive data.
@@ -167,7 +172,7 @@ The `jwt_token_from_identiti_provider` is the JWT token from your identity provi
 
 ### Lock context with Next.js and Clerk
 
-If you're using [Clerk](https://clerk.com/) as your identity provider, you can use the `jseqlClerkMiddleware` function to automatically set the CTS token for every user session. 
+If you're using [Clerk](https://clerk.com/) as your identity provider, you can use the `jseqlClerkMiddleware` function to automatically set the CTS token for every user session.
 
 In your `middleware.ts` file, add the following code:
 
@@ -339,8 +344,6 @@ if (encryptedResults) {
 }
 ```
 
----
-
 #### bulkDecrypt
 
 ```ts
@@ -431,8 +434,32 @@ JSEQL_LOG_LEVEL=error  # Enable error logging
 
 - [Basic example](/apps/basic)
 - [Drizzle example](/apps/drizzle)
+- [Next.js, Drizzle, and Clerk example](https://github.com/cipherstash/jseql-next-drizzle)
 
 `jseql` can be used with most ORMs that support PostgreSQL. If you're interested in using `jseql` with a specific ORM, please [create an issue](https://github.com/cipherstash/jseql/issues/new).
+
+## CipherStash Client
+
+`@cipherstash/jseql` is built on top of the CipherStash Client Rust SDK which is integrated with the `@cipherstash/jseql-ffi` package.
+At the time of this writing, the `@cipherstash/jseql-ffi` package is public, but the source code is not yet available.
+
+The Cipherstash Client is configured by environment variables, which are used to initialize the client when the `eql` function is called.
+Below are the available environment variables:
+
+| Variable Name | Description | Required | Default |
+| --- | --- | --- | --- |
+| CS_CLIENT_ID | The client ID for your CipherStash account. | Yes | |
+| CS_CLIENT_KEY | The client key for your CipherStash account. | Yes | |
+| CS_WORKSPACE_ID | The workspace ID for your CipherStash account. | Yes | |
+| CS_CLIENT_ACCESS_KEY | The access key for your CipherStash account. | Yes | |
+| CS_ZEROKMS_HOST | The host for the ZeroKMS server. | No | https://ap-southeast-2.aws.viturhosted.net |
+| CS_CONFIG_PATH | A temporary path to store the CipherStash client configuration. | No | /home/{username}/.cipherstash |
+
+Important notes:
+
+- If you've created a Workspace in a region other than `ap-southeast-2`, you will need to set the `CS_ZEROKMS_HOST` environment variable to the appropriate region. E.g. `https://<region>.aws.viturhosted.net`
+-  In most hosting environments, the `CS_CONFIG_PATH` environment variable will need to be set to a path that is accessible by the user running the application. 
+`/tmp/.cipherstash` will work in most cases, and has been tested on [Vercel](https://vercel.com/), [AWS Lambda](https://aws.amazon.com/lambda/), and other hosting environments.
 
 ## Contributing
 
