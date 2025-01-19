@@ -53,7 +53,7 @@
 		"access": "public"
 	},
 	"dependencies": {
-		"@cipherstash/jseql-ffi": "^0.5.0-0"
+		"@cipherstash/jseql-ffi": "0.5.0"
 	},
 	"optionalDependencies": {
 		"@rollup/rollup-linux-x64-gnu": "4.24.0"

@@ -95,8 +95,8 @@ importers:
   packages/jseql:
     dependencies:
       '@cipherstash/jseql-ffi':
-        specifier: ^0.5.0-0
-        version: 0.5.0-0
+        specifier: 0.5.0
+        version: 0.5.0
       typescript:
         specifier: ^5.0.0
         version: 5.7.2
@@ -265,33 +265,33 @@ packages:
   '@changesets/write@0.3.2':
     resolution: {integrity: sha512-kDxDrPNpUgsjDbWBvUo27PzKX4gqeKOlhibaOXDJA6kuBisGqNHv/HwGJrAu8U/dSf8ZEFIeHIPtvSlZI1kULw==}
 
-  '@cipherstash/jseql-ffi-darwin-arm64@0.5.0-0':
-    resolution: {integrity: sha512-ZGrzVP8XcCic31qqXLcZqIYOtGr90H27nX72Ar4Q1zhqJPFpR0fvphmFYpPk8ZZO0ZhV7F9eWRFCbwlHJ4yh0A==}
+  '@cipherstash/jseql-ffi-darwin-arm64@0.5.0':
+    resolution: {integrity: sha512-BEgTe+sgyj5lQ3/SST/jsd9pGSGJgbTNRIb+YmcuDAQ/aXqHI0hlD0b8mw6SYd839/DSCmpRoAKySQ6iH41oEA==}
     cpu: [arm64]
     os: [darwin]
 
-  '@cipherstash/jseql-ffi-darwin-x64@0.5.0-0':
-    resolution: {integrity: sha512-HzL92Lqm5nKl79sKG2gpF06I3Jg2YPuaLOvyOCnm1KYeMHhr3MXjMImEGaX3oH78SSYn/y12k/VP1nYXBJYw5w==}
+  '@cipherstash/jseql-ffi-darwin-x64@0.5.0':
+    resolution: {integrity: sha512-PoE5WLIgZBSnICZ/mALKAthpWYqPl3F+uhIvMp9WYUWp1F6Z94khkvWsgVYOPMVCsYa923aRLokQ7jAaXt7OMw==}
     cpu: [x64]
     os: [darwin]
 
-  '@cipherstash/jseql-ffi-linux-arm64-gnu@0.5.0-0':
-    resolution: {integrity: sha512-FtL85FzT24IzPiepB0RFoNgadPi4+yBFFQcfGpIjFOCX2/k1Ie66tUL/sPhHMzUlOWldIZyzDRD0d8AVvbIg2A==}
+  '@cipherstash/jseql-ffi-linux-arm64-gnu@0.5.0':
+    resolution: {integrity: sha512-q5obr/xvzM7+/0ru1UxRLuZQo8ps8eoX6ctj60DHFauegZeq5pPcAPWq5RO4Emje+hAsmEhKVSywZ3q8KzIDyQ==}
     cpu: [arm64]
     os: [linux]
 
-  '@cipherstash/jseql-ffi-linux-x64-gnu@0.5.0-0':
-    resolution: {integrity: sha512-HnX+JY7zCiL74E7YVJsykNqjYDvX9S7YNmRXlMcWk4NksGVfX9WiqOdD3WeBXnDgn3fshCgyGrcP9PIEn+1Pww==}
+  '@cipherstash/jseql-ffi-linux-x64-gnu@0.5.0':
+    resolution: {integrity: sha512-s14WrI4Ho4l1+3f1xAEVnVjGd1ACq3bYD0uSL04goQMe71kUj2bTl2ycP/Ae4JqMM1qMTNkp18aOCAx3BMht0g==}
     cpu: [x64]
     os: [linux]
 
-  '@cipherstash/jseql-ffi-win32-x64-msvc@0.5.0-0':
-    resolution: {integrity: sha512-pUCxpkNiulCk/pa3XMT5V7pf1t0B7bQjb7qMtat0lC63wFNE++kbFh/HFgH2ToG4R2a+B9BzVEK/py1JYy0gkA==}
+  '@cipherstash/jseql-ffi-win32-x64-msvc@0.5.0':
+    resolution: {integrity: sha512-NRBCJW/3ZBdnuGigPBKD0xeHAkS03BESS3P1rghom3Xds+mhyplv/c2bi0rL0mS+T7z/VnqVQcTpuq/gZ9qIww==}
     cpu: [x64]
     os: [win32]
 
-  '@cipherstash/jseql-ffi@0.5.0-0':
-    resolution: {integrity: sha512-XGnFVdZEAQIbNtZFXXCBq5CKyxWiZxGexeitL0mHMMDgkJU3B4E5f9L92H45oxci3lx4T8wo8FqGbNYRxJwYmA==}
+  '@cipherstash/jseql-ffi@0.5.0':
+    resolution: {integrity: sha512-eqouBHqdCw1JhUJpr4SmT/vW+eoDRRpwSQKZ5V/+cKC5+eypxDq22aQx1klmLmJUtt2dOsTVQU7Qh8QBuWAaUQ==}
 
   '@clerk/backend@1.21.5':
     resolution: {integrity: sha512-fZ+HuHQkPngYp9vAEqsJ1XJkhWjSWTin90UixeV3jNrbuPY2jd70LKYTAIEvggnnG42pYxdVupaQDUfqj0dy4Q==}
@@ -2891,30 +2891,30 @@ snapshots:
       human-id: 1.0.2
       prettier: 2.8.8
 
-  '@cipherstash/jseql-ffi-darwin-arm64@0.5.0-0':
+  '@cipherstash/jseql-ffi-darwin-arm64@0.5.0':
     optional: true
 
-  '@cipherstash/jseql-ffi-darwin-x64@0.5.0-0':
+  '@cipherstash/jseql-ffi-darwin-x64@0.5.0':
     optional: true
 
-  '@cipherstash/jseql-ffi-linux-arm64-gnu@0.5.0-0':
+  '@cipherstash/jseql-ffi-linux-arm64-gnu@0.5.0':
     optional: true
 
-  '@cipherstash/jseql-ffi-linux-x64-gnu@0.5.0-0':
+  '@cipherstash/jseql-ffi-linux-x64-gnu@0.5.0':
     optional: true
 
-  '@cipherstash/jseql-ffi-win32-x64-msvc@0.5.0-0':
+  '@cipherstash/jseql-ffi-win32-x64-msvc@0.5.0':
     optional: true
 
-  '@cipherstash/jseql-ffi@0.5.0-0':
+  '@cipherstash/jseql-ffi@0.5.0':
     dependencies:
       '@neon-rs/load': 0.1.82
     optionalDependencies:
-      '@cipherstash/jseql-ffi-darwin-arm64': 0.5.0-0
-      '@cipherstash/jseql-ffi-darwin-x64': 0.5.0-0
-      '@cipherstash/jseql-ffi-linux-arm64-gnu': 0.5.0-0
-      '@cipherstash/jseql-ffi-linux-x64-gnu': 0.5.0-0
-      '@cipherstash/jseql-ffi-win32-x64-msvc': 0.5.0-0
+      '@cipherstash/jseql-ffi-darwin-arm64': 0.5.0
+      '@cipherstash/jseql-ffi-darwin-x64': 0.5.0
+      '@cipherstash/jseql-ffi-linux-arm64-gnu': 0.5.0
+      '@cipherstash/jseql-ffi-linux-x64-gnu': 0.5.0
+      '@cipherstash/jseql-ffi-win32-x64-msvc': 0.5.0
 
   '@clerk/backend@1.21.5(react-dom@19.0.0(react@19.0.0))(react@19.0.0)':
     dependencies:
