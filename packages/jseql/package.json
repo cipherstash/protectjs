@@ -35,11 +35,13 @@
 	"scripts": {
 		"build": "tsup",
 		"dev": "tsup --watch",
+		"update-schema": "node ./generateSchema.mjs",
 		"generate-types": "json2ts ./cs_plaintext_v1.schema.json --output ./src/cs_plaintext_v1.ts",
 		"test": "vitest run"
 	},
 	"devDependencies": {
 		"dotenv": "^16.4.7",
+		"execa": "^9.5.2",
 		"json-schema-to-typescript": "^15.0.2",
 		"tsup": "^8.3.0",
 		"vitest": "^2.1.8"
