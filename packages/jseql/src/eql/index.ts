@@ -9,7 +9,6 @@ import {
 } from '@cipherstash/jseql-ffi'
 import { logger } from '../logger'
 import type { LockContext } from '../identify'
-import { a } from 'vitest/dist/chunks/suite.B2jumIFP.js'
 
 export class EqlClient {
   // biome-ignore lint/suspicious/noExplicitAny: jseql-ffi is not typed
