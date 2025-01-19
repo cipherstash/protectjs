@@ -17,6 +17,9 @@ importers:
       '@types/node':
         specifier: ^22.10.2
         version: 22.10.5
+      rimraf:
+        specifier: 6.0.1
+        version: 6.0.1
       turbo:
         specifier: 2.1.1
         version: 2.1.1
@@ -92,8 +95,8 @@ importers:
   packages/jseql:
     dependencies:
       '@cipherstash/jseql-ffi':
-        specifier: ^0.4.0
-        version: 0.4.0
+        specifier: ^0.5.0-0
+        version: 0.5.0-0
       typescript:
         specifier: ^5.0.0
         version: 5.7.2
@@ -259,33 +262,33 @@ packages:
   '@changesets/write@0.3.2':
     resolution: {integrity: sha512-kDxDrPNpUgsjDbWBvUo27PzKX4gqeKOlhibaOXDJA6kuBisGqNHv/HwGJrAu8U/dSf8ZEFIeHIPtvSlZI1kULw==}
 
-  '@cipherstash/jseql-ffi-darwin-arm64@0.4.0':
-    resolution: {integrity: sha512-I6Igt0nCodkzNsA/aXDoP01YzsucgUE17RH/iV7k1xA7ntgXOCggen/ejjA2pNP/RjTF1+2JpXkkPCSKqKCPVA==}
+  '@cipherstash/jseql-ffi-darwin-arm64@0.5.0-0':
+    resolution: {integrity: sha512-ZGrzVP8XcCic31qqXLcZqIYOtGr90H27nX72Ar4Q1zhqJPFpR0fvphmFYpPk8ZZO0ZhV7F9eWRFCbwlHJ4yh0A==}
     cpu: [arm64]
     os: [darwin]
 
-  '@cipherstash/jseql-ffi-darwin-x64@0.4.0':
-    resolution: {integrity: sha512-xi6b4AXDb9sNjPgy8Spkm4W3iaFpy3AQIX+QZq7qSuVax/w0w+7mfBF/HlzPBHJ0t6t9gXj6ioSqTFHBLvu0+Q==}
+  '@cipherstash/jseql-ffi-darwin-x64@0.5.0-0':
+    resolution: {integrity: sha512-HzL92Lqm5nKl79sKG2gpF06I3Jg2YPuaLOvyOCnm1KYeMHhr3MXjMImEGaX3oH78SSYn/y12k/VP1nYXBJYw5w==}
     cpu: [x64]
     os: [darwin]
 
-  '@cipherstash/jseql-ffi-linux-arm64-gnu@0.4.0':
-    resolution: {integrity: sha512-HyNlYIPDmQLx+goXS+F3IHa9PhgPLNe3ztTKaiTk09us+zRBkc6H96igV+IP8zjQj1d0rSPKKXvBMg6KGjqJ3g==}
+  '@cipherstash/jseql-ffi-linux-arm64-gnu@0.5.0-0':
+    resolution: {integrity: sha512-FtL85FzT24IzPiepB0RFoNgadPi4+yBFFQcfGpIjFOCX2/k1Ie66tUL/sPhHMzUlOWldIZyzDRD0d8AVvbIg2A==}
     cpu: [arm64]
     os: [linux]
 
-  '@cipherstash/jseql-ffi-linux-x64-gnu@0.4.0':
-    resolution: {integrity: sha512-wjkgFzyulyCnp5RwwBtkujUN4N1oA4hlsiG+oA6o8uF+271qQbTgtWba3WW5piHevrUBi6pr0pWogfOQU2k0jQ==}
+  '@cipherstash/jseql-ffi-linux-x64-gnu@0.5.0-0':
+    resolution: {integrity: sha512-HnX+JY7zCiL74E7YVJsykNqjYDvX9S7YNmRXlMcWk4NksGVfX9WiqOdD3WeBXnDgn3fshCgyGrcP9PIEn+1Pww==}
     cpu: [x64]
     os: [linux]
 
-  '@cipherstash/jseql-ffi-win32-x64-msvc@0.4.0':
-    resolution: {integrity: sha512-j5vKJUP3ou4vrFf+5P8bbGEkiVrExAnGp99StvM838igV1A+pm9X1CaZTSt9w9DX9lAqPlVM7G9qLocaU1smBw==}
+  '@cipherstash/jseql-ffi-win32-x64-msvc@0.5.0-0':
+    resolution: {integrity: sha512-pUCxpkNiulCk/pa3XMT5V7pf1t0B7bQjb7qMtat0lC63wFNE++kbFh/HFgH2ToG4R2a+B9BzVEK/py1JYy0gkA==}
     cpu: [x64]
     os: [win32]
 
-  '@cipherstash/jseql-ffi@0.4.0':
-    resolution: {integrity: sha512-MG5pBPbtzDNJFcykJTcYMnH9iKHdbSayCZIaA7QP8cCOo3iRfVItgDP9hhqGdMelFYT66nXvce8sQPKZ8weSDg==}
+  '@cipherstash/jseql-ffi@0.5.0-0':
+    resolution: {integrity: sha512-XGnFVdZEAQIbNtZFXXCBq5CKyxWiZxGexeitL0mHMMDgkJU3B4E5f9L92H45oxci3lx4T8wo8FqGbNYRxJwYmA==}
 
   '@clerk/backend@1.21.5':
     resolution: {integrity: sha512-fZ+HuHQkPngYp9vAEqsJ1XJkhWjSWTin90UixeV3jNrbuPY2jd70LKYTAIEvggnnG42pYxdVupaQDUfqj0dy4Q==}
@@ -1811,6 +1814,11 @@ packages:
     resolution: {integrity: sha512-7Bv8RF0k6xjo7d4A/PxYLbUCfb6c+Vpd2/mB2yRDlew7Jb5hEXiCD9ibfO7wpk8i4sevK6DFny9h7EYbM3/sHg==}
     hasBin: true
 
+  glob@11.0.1:
+    resolution: {integrity: sha512-zrQDm8XPnYEKawJScsnM0QzobJxlT/kHOOlRTio8IH/GrmxRE5fjllkzdaHclIuNjUQTJYH2xHNIGfdpJkDJUw==}
+    engines: {node: 20 || >=22}
+    hasBin: true
+
   globby@11.1.0:
     resolution: {integrity: sha512-jhIXaOzy1sb8IyocaruWSn1TjmnBVs8Ayhcy83rmxNJ8q2uWKCAj3CnJY+KpGSXCueAPc0i05kVvVKtP1t9S3g==}
     engines: {node: '>=10'}
@@ -1865,6 +1873,10 @@ packages:
 
   jackspeak@3.4.3:
     resolution: {integrity: sha512-OGlZQpz2yfahA/Rd1Y8Cd9SIEsqvXkLVoSw/cgwhnhFMDbsQFeZYoJJ7bIZBS9BcamUW96asq/npPWugM+RQBw==}
+
+  jackspeak@4.0.2:
+    resolution: {integrity: sha512-bZsjR/iRjl1Nk1UkjGpAzLNfQtzuijhn2g+pbZb98HQ1Gk8vM9hfbxeMBP+M2/UUdwj0RqGG3mlvk2MsAqwvEw==}
+    engines: {node: 20 || >=22}
 
   joycon@3.1.1:
     resolution: {integrity: sha512-34wB/Y7MW7bzjKRjUKTa46I2Z7eV62Rkhva+KkopW7Qvv/OSWBqvkSY7vusOPrNuZcUG3tApvdVgNB8POj3SPw==}
@@ -1923,6 +1935,10 @@ packages:
   lru-cache@10.4.3:
     resolution: {integrity: sha512-JNAzZcXrCt42VGLuYz0zfAzDfAvJWW6AfYlDBQyDV5DClI2m5sAmK+OIO7s59XfsRsWHp02jAJrRadPRGTt6SQ==}
 
+  lru-cache@11.0.2:
+    resolution: {integrity: sha512-123qHRfJBmo2jXDbo/a5YOQrJoHF/GNQTLzQ5+IdK5pWpceK17yRc6ozlWd25FxvGKQbIUs91fDFkXmDHTKcyA==}
+    engines: {node: 20 || >=22}
+
   magic-string@0.30.17:
     resolution: {integrity: sha512-sNPKHvyjVf7gyjwS4xGTaW/mCnF8wnjtifKBEhxfZ7E/S8tQ0rssrwGNn6q8JH/ohItJfSQp9mBtQYuTlH5QnA==}
 
@@ -1937,6 +1953,10 @@ packages:
   micromatch@4.0.8:
     resolution: {integrity: sha512-PXwfBhYu0hBCPw8Dn0E+WDYb7af3dSLVWKi3HGv84IdF4TyFoC0ysxFd0Goxw7nSv4T/PzEJQxsYsEiFCKo2BA==}
     engines: {node: '>=8.6'}
+
+  minimatch@10.0.1:
+    resolution: {integrity: sha512-ethXTt3SGGR+95gudmqJ1eNhRO7eGEGIgYA9vnPatK4/etz2MEVDno5GMCibdMTuBMyElzIlgxMna3K94XDIDQ==}
+    engines: {node: 20 || >=22}
 
   minimatch@9.0.5:
     resolution: {integrity: sha512-G6T0ZX48xgozx7587koeX9Ys2NYy6Gmv//P89sEte9V9whIapMNF4idKxnW2QtCcLiTWlb/wfCabAtAFWhhBow==}
@@ -2039,6 +2059,10 @@ packages:
   path-scurry@1.11.1:
     resolution: {integrity: sha512-Xa4Nw17FS9ApQFJ9umLiJS4orGjm7ZzwUrwamcGQuHSzDyth9boKDaycYdDcZDuqYATXw4HFXgaqWTctW/v1HA==}
     engines: {node: '>=16 || 14 >=14.18'}
+
+  path-scurry@2.0.0:
+    resolution: {integrity: sha512-ypGJsmGtdXUOeM5u93TyeIEfEhM6s+ljAhrk5vAvSx8uyY/02OvrZnA0YNGUrPXfpJMgI1ODd3nwz8Npx4O4cg==}
+    engines: {node: 20 || >=22}
 
   path-type@4.0.0:
     resolution: {integrity: sha512-gDKb8aZMDeD/tZWs9P6+q0J9Mwkdl6xMV8TjnGP3qJVJ06bdMgkbBlLU8IdfOsIsFz2BW1rNVT3XuNEl8zPAvw==}
@@ -2224,6 +2248,11 @@ packages:
   reusify@1.0.4:
     resolution: {integrity: sha512-U9nH88a3fc/ekCF1l0/UP1IosiuIjyTh7hBvXVMHYgVcfGvt897Xguj2UOLDeI5BG2m7/uwyaLVT6fbtCwTyzw==}
     engines: {iojs: '>=1.0.0', node: '>=0.10.0'}
+
+  rimraf@6.0.1:
+    resolution: {integrity: sha512-9dkvaxAsk/xNXSJzMgFqqMCuFgt2+KsOFek3TMLfo8NCPfWpBmqwyNn5Y+NX56QUYfCtsyhF3ayiboEoUmJk/A==}
+    engines: {node: 20 || >=22}
+    hasBin: true
 
   rollup@4.30.1:
     resolution: {integrity: sha512-mlJ4glW020fPuLi7DkM/lN97mYEZGWeqBnrljzN0gs7GLctqX3lNWxKQ7Gl712UAX+6fog/L3jh4gb7R6aVi3w==}
@@ -2796,30 +2825,30 @@ snapshots:
       human-id: 1.0.2
       prettier: 2.8.8
 
-  '@cipherstash/jseql-ffi-darwin-arm64@0.4.0':
+  '@cipherstash/jseql-ffi-darwin-arm64@0.5.0-0':
     optional: true
 
-  '@cipherstash/jseql-ffi-darwin-x64@0.4.0':
+  '@cipherstash/jseql-ffi-darwin-x64@0.5.0-0':
     optional: true
 
-  '@cipherstash/jseql-ffi-linux-arm64-gnu@0.4.0':
+  '@cipherstash/jseql-ffi-linux-arm64-gnu@0.5.0-0':
     optional: true
 
-  '@cipherstash/jseql-ffi-linux-x64-gnu@0.4.0':
+  '@cipherstash/jseql-ffi-linux-x64-gnu@0.5.0-0':
     optional: true
 
-  '@cipherstash/jseql-ffi-win32-x64-msvc@0.4.0':
+  '@cipherstash/jseql-ffi-win32-x64-msvc@0.5.0-0':
     optional: true
 
-  '@cipherstash/jseql-ffi@0.4.0':
+  '@cipherstash/jseql-ffi@0.5.0-0':
     dependencies:
       '@neon-rs/load': 0.1.82
     optionalDependencies:
-      '@cipherstash/jseql-ffi-darwin-arm64': 0.4.0
-      '@cipherstash/jseql-ffi-darwin-x64': 0.4.0
-      '@cipherstash/jseql-ffi-linux-arm64-gnu': 0.4.0
-      '@cipherstash/jseql-ffi-linux-x64-gnu': 0.4.0
-      '@cipherstash/jseql-ffi-win32-x64-msvc': 0.4.0
+      '@cipherstash/jseql-ffi-darwin-arm64': 0.5.0-0
+      '@cipherstash/jseql-ffi-darwin-x64': 0.5.0-0
+      '@cipherstash/jseql-ffi-linux-arm64-gnu': 0.5.0-0
+      '@cipherstash/jseql-ffi-linux-x64-gnu': 0.5.0-0
+      '@cipherstash/jseql-ffi-win32-x64-msvc': 0.5.0-0
 
   '@clerk/backend@1.21.5(react-dom@19.0.0(react@19.0.0))(react@19.0.0)':
     dependencies:
@@ -3958,6 +3987,15 @@ snapshots:
       package-json-from-dist: 1.0.1
       path-scurry: 1.11.1
 
+  glob@11.0.1:
+    dependencies:
+      foreground-child: 3.3.0
+      jackspeak: 4.0.2
+      minimatch: 10.0.1
+      minipass: 7.1.2
+      package-json-from-dist: 1.0.1
+      path-scurry: 2.0.0
+
   globby@11.1.0:
     dependencies:
       array-union: 2.1.0
@@ -4005,6 +4043,10 @@ snapshots:
       '@isaacs/cliui': 8.0.2
     optionalDependencies:
       '@pkgjs/parseargs': 0.11.0
+
+  jackspeak@4.0.2:
+    dependencies:
+      '@isaacs/cliui': 8.0.2
 
   joycon@3.1.1: {}
 
@@ -4059,6 +4101,8 @@ snapshots:
 
   lru-cache@10.4.3: {}
 
+  lru-cache@11.0.2: {}
+
   magic-string@0.30.17:
     dependencies:
       '@jridgewell/sourcemap-codec': 1.5.0
@@ -4071,6 +4115,10 @@ snapshots:
     dependencies:
       braces: 3.0.3
       picomatch: 2.3.1
+
+  minimatch@10.0.1:
+    dependencies:
+      brace-expansion: 2.0.1
 
   minimatch@9.0.5:
     dependencies:
@@ -4157,6 +4205,11 @@ snapshots:
   path-scurry@1.11.1:
     dependencies:
       lru-cache: 10.4.3
+      minipass: 7.1.2
+
+  path-scurry@2.0.0:
+    dependencies:
+      lru-cache: 11.0.2
       minipass: 7.1.2
 
   path-type@4.0.0: {}
@@ -4296,6 +4349,11 @@ snapshots:
   resolve-pkg-maps@1.0.0: {}
 
   reusify@1.0.4: {}
+
+  rimraf@6.0.1:
+    dependencies:
+      glob: 11.0.1
+      package-json-from-dist: 1.0.1
 
   rollup@4.30.1:
     dependencies:

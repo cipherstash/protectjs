@@ -1,13 +1,15 @@
-// TODO: Fix ffi build so that we can import it directly
-const {
+import {
   newClient,
-  encrypt,
   decrypt,
+  encrypt,
   encryptBulk,
   decryptBulk,
-} = require('@cipherstash/jseql-ffi')
+  type BulkEncryptPayload,
+  type BulkDecryptPayload,
+} from '@cipherstash/jseql-ffi'
 import { logger } from '../logger'
 import type { LockContext } from '../identify'
+import { a } from 'vitest/dist/chunks/suite.B2jumIFP.js'
 
 export class EqlClient {
   // biome-ignore lint/suspicious/noExplicitAny: jseql-ffi is not typed
@@ -164,26 +166,22 @@ export class EqlClient {
       return null
     }
 
-    const encryptPayloads: Array<{
-      plaintext: string
-      column: string
-      lockContext?: LockContext
-    }> = plaintexts.reduce(
+    const encryptPayloads: BulkEncryptPayload[] = plaintexts.reduce(
       (acc, plaintext) => {
         const payload = {
           plaintext: plaintext.plaintext,
           column,
-          ...(lockContext ? { lockContext } : {}),
+          ...(lockContext
+            ? {
+                lockContext: lockContext.getLockContext().context,
+              }
+            : {}),
         }
 
         acc.push(payload)
         return acc
       },
-      [] as Array<{
-        plaintext: string
-        column: string
-        lockContext?: LockContext
-      }>,
+      [] as BulkEncryptPayload[],
     )
 
     logger.debug('Bulk encrypting data...', {
@@ -191,9 +189,7 @@ export class EqlClient {
       table,
     })
 
-    let encryptedData: {
-      c: string[]
-    }
+    let encryptedData: string[]
 
     if (lockContext) {
       const { ctsToken, context } = lockContext.getLockContext()
@@ -204,27 +200,17 @@ export class EqlClient {
         table,
       })
 
-      encryptedData = await encryptBulk(
-        this.client,
-        encryptPayloads,
-        ctsToken,
-      ).then((val: string) => {
-        return { c: val }
-      })
+      encryptedData = await encryptBulk(this.client, encryptPayloads, ctsToken)
     } else {
       logger.debug('Bulk encrypting data without a lock context', {
         column,
         table,
       })
 
-      encryptedData = await encryptBulk(this.client, encryptPayloads).then(
-        (val: string) => {
-          return { c: val }
-        },
-      )
+      encryptedData = await encryptBulk(this.client, encryptPayloads)
     }
 
-    const response = encryptedData?.c.map((encryptedData, index) => {
+    const response = encryptedData?.map((encryptedData, index) => {
       return {
         c: encryptedData,
         id: plaintexts[index].id,
@@ -241,28 +227,26 @@ export class EqlClient {
     }: {
       lockContext?: LockContext
     } = {},
-  ): Promise<Array<{ plaintext: string; id: string }> | null> {
+  ): Promise<BulkDecryptedData | null> {
     if (encryptedPayloads?.length === 0 || encryptedPayloads === null) {
       return null
     }
 
-    const decryptPayloads: Array<{
-      ciphertext: string
-      lockContext?: LockContext
-    }> = encryptedPayloads.reduce(
+    const decryptPayloads: BulkDecryptPayload[] = encryptedPayloads.reduce(
       (acc, encryptedPayload) => {
         const payload = {
           ciphertext: encryptedPayload.c,
-          ...(lockContext ? { lockContext } : {}),
+          ...(lockContext
+            ? {
+                lockContext: lockContext.getLockContext().context,
+              }
+            : {}),
         }
 
         acc.push(payload)
         return acc
       },
-      [] as Array<{
-        ciphertext: string
-        lockContext?: LockContext
-      }>,
+      [] as BulkDecryptPayload[],
     )
 
     let decryptedData: string[]
@@ -303,5 +287,10 @@ export type EncryptedEqlPayload = {
 
 export type BulkEncryptedEqlPayload = {
   c: string
+  id: string
+}[]
+
+export type BulkDecryptedData = {
+  plaintext: string
   id: string
 }[]
