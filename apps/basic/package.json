@@ -1,7 +1,7 @@
 {
   "name": "@cipherstash/basic-example",
   "private": true,
-  "version": "0.0.6",
+  "version": "0.1.0",
   "main": "index.mjs",
   "scripts": {
     "start": "node index.mjs"

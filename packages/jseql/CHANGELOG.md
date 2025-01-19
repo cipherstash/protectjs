@@ -1,5 +1,11 @@
 # @cipherstash/jseql
 
+## 3.8.0
+
+### Minor Changes
+
+- eeaec18: Implemented typing and import synatx for es6.
+
 ## 3.7.0
 
 ### Minor Changes
