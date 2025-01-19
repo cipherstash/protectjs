@@ -102,14 +102,9 @@ const eqlClient = await eql()
 .. or using ES6?
 
 ```typescript
-import { createRequire } from 'node:module'
-const require = createRequire(import.meta.url)
-const { eql } = require('@cipherstash/jseql')
-
+import { eql } from '@cipherstash/jseql'
 const eqlClient = await eql()
 ```
-
-We are working on a solution to support the `import` statement in the future.
 
 ### Encrypting data
 
