@@ -1,5 +1,16 @@
 # @cipherstash/basic-example
 
+## 0.1.0
+
+### Minor Changes
+
+- eeaec18: Implemented typing and import synatx for es6.
+
+### Patch Changes
+
+- Updated dependencies [eeaec18]
+  - @cipherstash/jseql@3.8.0
+
 ## 0.0.6
 
 ### Patch Changes
