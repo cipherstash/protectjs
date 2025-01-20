@@ -458,7 +458,8 @@ The Cipherstash Client is configured by environment variables, which are used to
 | `CS_ZEROKMS_HOST`      | The host for the ZeroKMS server.                                | No       | `https://ap-southeast-2.aws.viturhosted.net` |
 | `CS_CONFIG_PATH`       | A temporary path to store the CipherStash client configuration. | No       | `/home/{username}/.cipherstash`              |
 
-Important notes:
+> [!TIP]
+> There are some configuration details you should take note of when deploying `jseql` in your production apps.
 
 - If you've created a Workspace in a region other than `ap-southeast-2`, you will need to set the `CS_ZEROKMS_HOST` environment variable to the appropriate region. E.g. `https://<region>.aws.viturhosted.net`
 -  In most hosting environments, the `CS_CONFIG_PATH` environment variable will need to be set to a path that is accessible by the user running the application.
