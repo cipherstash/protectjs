@@ -445,7 +445,7 @@ If you're interested in using `jseql` with a specific ORM, please [create an iss
 ## CipherStash Client
 
 `@cipherstash/jseql` is built on top of the CipherStash Client Rust SDK which is integrated with the `@cipherstash/jseql-ffi` package.
-At the time of this writing, the `@cipherstash/jseql-ffi` package is public, but the source code is not yet available.
+The `@cipherstash/jseql-ffi` package is [public on NPM](https://www.npmjs.com/package/@cipherstash/jseql-ffi), and the source code will be released on GitHub.
 
 The Cipherstash Client is configured by environment variables, which are used to initialize the client when the `eql` function is called.
 Below are the available environment variables:
