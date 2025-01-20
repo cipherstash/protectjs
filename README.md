@@ -260,10 +260,10 @@ CREATE TABLE users (
 );
 ```
 
-### Buld Encryption/Decryption
+### Bulk Encryption/Decryption
 
 If you have a large list of items to encrypt or decrypt, you can use the **`bulkEncrypt`** and **`bulkDecrypt`** methods to batch encryption/decryption.
-These methods are more efficient and perform better than the single-item encryption/decryption methods.
+`bulkEncrypt` and `bulkDecrypt` give your app significantly better throughput than the single-item `encrypt` / `decrypt` methods.
 
 #### bulkEncrypt
 
