@@ -3,7 +3,11 @@
 [![Package Tests](https://github.com/cipherstash/jseql/actions/workflows/tests.yaml/badge.svg)](https://github.com/cipherstash/jseql/actions/workflows/tests.yaml)
 [![Built by CipherStash](https://raw.githubusercontent.com/cipherstash/meta/refs/heads/main/csbadge.svg)](https://cipherstash.com)
 
-`jseql` is a JavaScript/TypeScript package designed to facilitate interaction with [Encrypt Query Language (EQL)](https://github.com/cipherstash/encrypt-query-language). It provides classes and methods to encrypt and decrypt data.
+`jseql` is a JavaScript/TypeScript package for encrypting and decrypting data in PostgreSQL databases.
+Encryption operations happen directly in your app, and the ciphertext is stored in your PostgreSQL database.
+
+Every value you encrypt with `jseql` has a unique key, made possible by CipherStash [ZeroKMS](https://cipherstash.com/products/zerokms)'s blazing fast bulk key operations.
+Under the hood `jseql` uses CipherStash [Encrypt Query Language (EQL)](https://github.com/cipherstash/encrypt-query-language), and all ZeroKMS data keys are backed by a root key in [AWS KMS](https://docs.aws.amazon.com/kms/latest/developerguide/overview.html).
 
 ## Table of Contents
 
@@ -21,20 +25,16 @@
 `jseql` leverages [Encrypt Query Language (EQL)](https://github.com/cipherstash/encrypt-query-language) and [CipherStash](https://cipherstash.com) to encrypt data in a PostgreSQL database.
 
 **Features:**
-- **Data encryption**: Easily encrypt data with industry standard encryption algorithms, like AES-256.
-CipherStash also uses a unique encryption key for every record in the database, this is also know as **field level encryption.** 
-- **Data decryption**: Decrypt encrypted data easily directly in your application.
-- **Lock context**: "Lock" the encryption and decryption operations based on user identity. 
-This allows you to ensure that only the intended users can access sensitive data.
-- **Bulk encryption and decryption**: Encrypt and decrypt multiple records at once using a unique data key per record. 
-Compared to something like AWS KMS, this is much more efficient, secure, and scalable.
+- **Bulk encryption and decryption**: `jseql` uses [ZeroKMS](https://cipherstash.com/products/zerokms) for encrypting and decrypting thousands of records at once, while using a unique key for every value.
+- **Single item encryption and decryption**: Just looking for a way to encrypt and decrypt single values? `jseql` has you covered.
+- **Really fast:** ZeroKMS's performance makes using millions of unique keys feasible and performant for real-world applications built with `jseql`.
+- **Identity-aware encryption**: Lock down access to sensitive data by requiring a valid JWT to perform a decryption.
 - **TypeScript support**: Strongly typed with TypeScript interfaces and types.
 
 **Use cases:**
-- Meet compliance requirements for data encryption in your application.
-- Ensure only the intended users can access sensitive data.
-- Exceed customer expectations for data security.
-- Improve your overall security posture and reduce the risk of data breaches.
+- **Trusted data access**: make sure only your end-users can access their sensitive data stored in your product.
+- **Meet compliance requirements faster:** achieve and exceed the data encryption requirements of SOC2 and ISO27001.
+- **Reduce the blast radius of data breaches:** limit the impact of exploited vulnerabilities to only the data your end-users can decrypt.
 
 ## Installation
 
@@ -58,14 +58,16 @@ pnpm add @cipherstash/jseql
 
 ### Node.js
 
-Jseql actively supports all current and [maintenance releases of Node](https://github.com/nodejs/LTS#release-schedule). If you're
-using a different version of Node and believe it should be supported, let us know.
+`jseql` actively supports all current and [maintenance releases of Node](https://github.com/nodejs/LTS#release-schedule).
+If you're using a different version of Node and believe it should be supported, let us know.
 
-Older Node version support (minimum v10) may require lower Node-API versions. See the Node [version support matrix](https://nodejs.org/api/n-api.html#node-api-version-matrix) for more details.
+Older Node version support (minimum v10) may require lower Node-API versions.
+See the Node [version support matrix](https://nodejs.org/api/n-api.html#node-api-version-matrix) for more details.
 
 ### Bun (experimental)
 
-[Bun](https://bun.sh/) is an alternate JavaScript runtime that targets Node compatibility. At the time of this writing, some Node-API functions are [not implemented](https://github.com/oven-sh/bun/issues/158) so Jseql may not work with Bun.
+[Bun](https://bun.sh/) is an alternate JavaScript runtime that targets Node compatibility.
+At the time of this writing, some Node-API functions are [not implemented](https://github.com/oven-sh/bun/issues/158) so `jseql` may not work with Bun.
 
 ## Usage
 
@@ -117,7 +119,8 @@ const eqlClient = await eql()
 
 ### Encrypting data
 
-To encrypt data, use the `encrypt` function. This function takes a plaintext string and an object with the table and column name as parameters.
+To encrypt data, use the `encrypt` function.
+This function takes a plaintext string and an object with the table and column name as parameters.
 
 ```typescript
 const ciphertext = await eqlClient.encrypt('plaintext', {
@@ -136,7 +139,8 @@ The `encrypt` function returns an object with a `c` key, and the value is the en
 
 ### Decrypting data
 
-To decrypt data, use the `decrypt` function. This function takes an encrypted data object and an object with the lock context as parameters.
+To decrypt data, use the `decrypt` function.
+This function takes an encrypted data object and an object with the lock context as parameters.
 
 ```typescript
 const plaintext = await eqlClient.decrypt(ciphertext)
@@ -173,6 +177,16 @@ The `jwt_token_from_identiti_provider` is the JWT token from your identity provi
 ### Lock context with Next.js and Clerk
 
 If you're using [Clerk](https://clerk.com/) as your identity provider, you can use the `jseqlClerkMiddleware` function to automatically set the CTS token for every user session.
+
+Install the `@cipherstash/nextjs` package:
+
+```bash
+npm install @cipherstash/nextjs
+# or
+yarn add @cipherstash/nextjs
+# or
+pnpm add @cipherstash/nextjs
+```
 
 In your `middleware.ts` file, add the following code:
 
@@ -247,7 +261,7 @@ const plaintext = await eqlClient.decrypt(ciphertext, {
 
 ### Storing encrypted data in a database
 
-To store the encrypted data in PostgreSQL, you will need to specify the column type as `jsonb`. At the time of this writing.
+To store the encrypted data in PostgreSQL, you will need to specify the column type as `jsonb`.
 
 ```sql
 CREATE TABLE users (
@@ -257,10 +271,10 @@ CREATE TABLE users (
 );
 ```
 
-### Buld Encryption/Decryption
+### Bulk Encryption/Decryption
 
 If you have a large list of items to encrypt or decrypt, you can use the **`bulkEncrypt`** and **`bulkDecrypt`** methods to batch encryption/decryption.
-These methods are more efficient and perform better than the single-item encryption/decryption methods.
+`bulkEncrypt` and `bulkDecrypt` give your app significantly better throughput than the single-item `encrypt` / `decrypt` methods.
 
 #### bulkEncrypt
 
@@ -274,34 +288,34 @@ const encryptedResults = await eqlClient.bulkEncrypt(plaintextsToEncrypt, {
 
 **Parameters**
 
-1. **`plaintexts`**  
-   - **Type**: `{ plaintext: string; id: string }[]`  
-   - **Description**:  
-     An array of objects containing the **plaintext** and an **id**.  
-     - **plaintext**: The string you want encrypted.  
+1. **`plaintexts`**
+   - **Type**: `{ plaintext: string; id: string }[]`
+   - **Description**:
+     An array of objects containing the **plaintext** and an **id**.
+     - **plaintext**: The string you want encrypted.
      - **id**: A unique identifier you can use to map the returned ciphertext back to its source. For example, if you have a `User` with `id: 1`, you might pass `id: '1'`.
 
-2. **`column`**  
-   - **Type**: `string`  
-   - **Description**:  
+2. **`column`**
+   - **Type**: `string`
+   - **Description**:
      The name of the column you’re encrypting (e.g., "email"). This is typically used in logging or contextual purposes when constructing the payload for the encryption engine.
 
-3. **`table`**  
-   - **Type**: `string`  
-   - **Description**:  
+3. **`table`**
+   - **Type**: `string`
+   - **Description**:
      The name of the table you’re encrypting data in (e.g., "Users").
 
-4. **`lockContext`** (optional)  
-   - **Type**: `LockContext`  
-   - **Description**:  
+4. **`lockContext`** (optional)
+   - **Type**: `LockContext`
+   - **Description**:
      Additional metadata and tokens for secure encryption/decryption. If not provided, encryption proceeds without a lock context.
 
 ### Return Value
 
-- **Type**: `Promise<Array<{ c: string; id: string }> | null>`  
-- Returns an array of objects, where:  
-  - **`c`** is the ciphertext.  
-  - **`id`** is the same **id** you passed in, so you can correlate which ciphertext matches which original plaintext.  
+- **Type**: `Promise<Array<{ c: string; id: string }> | null>`
+- Returns an array of objects, where:
+  - **`c`** is the ciphertext.
+  - **`id`** is the same **id** you passed in, so you can correlate which ciphertext matches which original plaintext.
 - If `plaintexts` is an empty array, it returns `null`.
 
 ### Example Usage
@@ -354,22 +368,22 @@ const decryptedResults = await eqlClient.bulkDecrypt(encryptedPayloads, {
 
 **Parameters**
 
-1. **`encryptedPayloads`**  
-   - **Type**: `Array<{ c: string; id: string }> | null`  
-   - **Description**:  
+1. **`encryptedPayloads`**
+   - **Type**: `Array<{ c: string; id: string }> | null`
+   - **Description**:
      An array of objects containing the **ciphertext** (`c`) and the **id**. If this array is empty or `null`, the function returns `null`.
 
-2. **`lockContext`** (optional)  
-   - **Type**: `LockContext`  
-   - **Description**:  
+2. **`lockContext`** (optional)
+   - **Type**: `LockContext`
+   - **Description**:
      Additional metadata used to securely unlock ciphertext. If not provided, decryption proceeds without it.
 
 ### Return Value
 
-- **Type**: `Promise<Array<{ plaintext: string; id: string }> | null>`  
-- Returns an array of objects, where:  
-  - **`plaintext`** is the decrypted value.  
-  - **`id`** is the same **id** you passed in, so you can correlate which plaintext matches which original ciphertext.  
+- **Type**: `Promise<Array<{ plaintext: string; id: string }> | null>`
+- Returns an array of objects, where:
+  - **`plaintext`** is the decrypted value.
+  - **`id`** is the same **id** you passed in, so you can correlate which plaintext matches which original ciphertext.
 - Returns `null` if the provided `encryptedPayloads` is empty or `null`.
 
 ### Example Usage
@@ -409,17 +423,20 @@ if (decryptedResults) {
 }
 ```
 
-## Searchable encrypted data
+## Searchable encryption
 
 `jseql` does not currently support searching encrypted data.
-We are hard at work on this feature and will update this section when it is available.
-You can read more about this feature and implementation [here](https://github.com/cipherstash/encrypt-query-language).
+Searchable encryption is an extremely well supported capability in other CipherStash products, and will be coming to `jseql`.
+Until searchable encryption support is released in `jseql`, you can:
+
+- Read [about how searchable encryption works in EQL](https://github.com/cipherstash/encrypt-query-language)
+- Vote for this feature by adding a :+1: on this [GitHub Issue](https://github.com/cipherstash/jseql/issues/46).
 
 ## Logging
 
 > [!IMPORTANT]
-> `jseql` will NEVER log plaintext data. 
-> This is by design to prevent sensitive data from being logged.
+> `jseql` will NEVER log plaintext data.
+> This is by design to prevent sensitive data from leaking into logs.
 
 `@cipherstash/jseql` and `@cipherstash/nextjs` will log to the console with a log level of `info` by default.
 You can enable the logger by configuring the following environment variable:
@@ -436,35 +453,35 @@ JSEQL_LOG_LEVEL=error  # Enable error logging
 - [Drizzle example](/apps/drizzle)
 - [Next.js, Drizzle, and Clerk example](https://github.com/cipherstash/jseql-next-drizzle)
 
-`jseql` can be used with most ORMs that support PostgreSQL. If you're interested in using `jseql` with a specific ORM, please [create an issue](https://github.com/cipherstash/jseql/issues/new).
+`jseql` can be used with most ORMs that support PostgreSQL.
+If you're interested in using `jseql` with a specific ORM, please [create an issue](https://github.com/cipherstash/jseql/issues/new).
 
 ## CipherStash Client
 
 `@cipherstash/jseql` is built on top of the CipherStash Client Rust SDK which is integrated with the `@cipherstash/jseql-ffi` package.
-At the time of this writing, the `@cipherstash/jseql-ffi` package is public, but the source code is not yet available.
+The `@cipherstash/jseql-ffi` package is [public on NPM](https://www.npmjs.com/package/@cipherstash/jseql-ffi), and the source code will be released on GitHub.
 
-The Cipherstash Client is configured by environment variables, which are used to initialize the client when the `eql` function is called.
-Below are the available environment variables:
+The Cipherstash Client is configured by environment variables, which are used to initialize the client when the `eql` function is called:
 
-| Variable Name | Description | Required | Default |
-| --- | --- | --- | --- |
-| CS_CLIENT_ID | The client ID for your CipherStash account. | Yes | |
-| CS_CLIENT_KEY | The client key for your CipherStash account. | Yes | |
-| CS_WORKSPACE_ID | The workspace ID for your CipherStash account. | Yes | |
-| CS_CLIENT_ACCESS_KEY | The access key for your CipherStash account. | Yes | |
-| CS_ZEROKMS_HOST | The host for the ZeroKMS server. | No | https://ap-southeast-2.aws.viturhosted.net |
-| CS_CONFIG_PATH | A temporary path to store the CipherStash client configuration. | No | /home/{username}/.cipherstash |
+|      Variable Name     |                           Description                           | Required |                    Default                   |
+|:----------------------:|:---------------------------------------------------------------:|:--------:|:--------------------------------------------:|
+| `CS_CLIENT_ID`         | The client ID for your CipherStash account.                     | Yes      |                                              |
+| `CS_CLIENT_KEY`        | The client key for your CipherStash account.                    | Yes      |                                              |
+| `CS_WORKSPACE_ID`      | The workspace ID for your CipherStash account.                  | Yes      |                                              |
+| `CS_CLIENT_ACCESS_KEY` | The access key for your CipherStash account.                    | Yes      |                                              |
+| `CS_ZEROKMS_HOST`      | The host for the ZeroKMS server.                                | No       | `https://ap-southeast-2.aws.viturhosted.net` |
+| `CS_CONFIG_PATH`       | A temporary path to store the CipherStash client configuration. | No       | `/home/{username}/.cipherstash`              |
 
-Important notes:
+> [!TIP]
+> There are some configuration details you should take note of when deploying `jseql` in your production apps.
 
-- If you've created a Workspace in a region other than `ap-southeast-2`, you will need to set the `CS_ZEROKMS_HOST` environment variable to the appropriate region. E.g. `https://<region>.aws.viturhosted.net`
--  In most hosting environments, the `CS_CONFIG_PATH` environment variable will need to be set to a path that is accessible by the user running the application. 
-`/tmp/.cipherstash` will work in most cases, and has been tested on [Vercel](https://vercel.com/), [AWS Lambda](https://aws.amazon.com/lambda/), and other hosting environments.
+- If you've created a Workspace in a region other than `ap-southeast-2`, you will need to set the `CS_ZEROKMS_HOST` environment variable to the appropriate region. For example, if you are using ZeroKMS in the `eu-central-1` region, you need to set the `CS_ZEROKMS_HOST` variable to `https://eu-central-1.aws.viturhosted.net`. This is a known usability issue that will be addressed.
+- In most hosting environments, the `CS_CONFIG_PATH` environment variable will need to be set to a path that the user running the application has permission to write to. Setting `CS_CONFIG_PATH` to `/tmp/.cipherstash` will work in most cases, and has been tested on [Vercel](https://vercel.com/), [AWS Lambda](https://aws.amazon.com/lambda/), and other hosting environments.
 
 ## Contributing
 
-Please see the [CONTRIBUTE.md](CONTRIBUTE.md) file for more information.
+Please read the [contribution guide](CONTRIBUTE.md).
 
 ## License
 
-Please see the [LICENSE](LICENSE.md) file for more information.
+`jseql` is [MIT licensed](./LICENSE.md).
