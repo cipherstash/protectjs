@@ -466,8 +466,8 @@ The Cipherstash Client is configured by environment variables, which are used to
 
 ## Contributing
 
-Please see the [CONTRIBUTE.md](CONTRIBUTE.md) file for more information.
+Please read the [contribution guide](CONTRIBUTE.md).
 
 ## License
 
-Please see the [LICENSE](LICENSE.md) file for more information.
+`jseql` is [MIT licensed](./LICENSE.md).
