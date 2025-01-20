@@ -25,20 +25,15 @@ Under the hood `jseql` uses CipherStash [Encrypt Query Language (EQL)](https://g
 `jseql` leverages [Encrypt Query Language (EQL)](https://github.com/cipherstash/encrypt-query-language) and [CipherStash](https://cipherstash.com) to encrypt data in a PostgreSQL database.
 
 **Features:**
-- **Data encryption**: Easily encrypt data with industry standard encryption algorithms, like AES-256.
-CipherStash also uses a unique encryption key for every record in the database, this is also know as **field level encryption.**
-- **Data decryption**: Decrypt encrypted data easily directly in your application.
-- **Lock context**: "Lock" the encryption and decryption operations based on user identity.
-This allows you to ensure that only the intended users can access sensitive data.
-- **Bulk encryption and decryption**: Encrypt and decrypt multiple records at once using a unique data key per record.
-Compared to something like AWS KMS, this is much more efficient, secure, and scalable.
+- **Bulk encryption and decryption**: `jseql` uses [ZeroKMS](https://cipherstash.com/products/zerokms) for encrypting and decrypting thousands of records at once, while using a unique keys for every value.
+- **Really fast:** ZeroKMS's performance makes using millions of unique keys feasible and performant for real-world applications built with `jseql`.
+- **Identity-aware encryption**: Lock down access to sensitive data by requiring a valid JWT to perform a decryption.
 - **TypeScript support**: Strongly typed with TypeScript interfaces and types.
 
 **Use cases:**
-- Meet compliance requirements for data encryption in your application.
-- Ensure only the intended users can access sensitive data.
-- Exceed customer expectations for data security.
-- Improve your overall security posture and reduce the risk of data breaches.
+- **Trusted data access**: make sure only your end-users can access their sensitive data stored in your product.
+- **Meet compliance requirements faster:** achieve and exceed the data encryption requirements of SOC2 and ISO27001.
+- **Reduce the blast radius of data breaches:** limit the impact of exploited vulnerabilities to only the data your end-users can decrypt.
 
 ## Installation
 
