@@ -447,17 +447,16 @@ If you're interested in using `jseql` with a specific ORM, please [create an iss
 `@cipherstash/jseql` is built on top of the CipherStash Client Rust SDK which is integrated with the `@cipherstash/jseql-ffi` package.
 The `@cipherstash/jseql-ffi` package is [public on NPM](https://www.npmjs.com/package/@cipherstash/jseql-ffi), and the source code will be released on GitHub.
 
-The Cipherstash Client is configured by environment variables, which are used to initialize the client when the `eql` function is called.
-Below are the available environment variables:
+The Cipherstash Client is configured by environment variables, which are used to initialize the client when the `eql` function is called:
 
-| Variable Name | Description | Required | Default |
-| --- | --- | --- | --- |
-| CS_CLIENT_ID | The client ID for your CipherStash account. | Yes | |
-| CS_CLIENT_KEY | The client key for your CipherStash account. | Yes | |
-| CS_WORKSPACE_ID | The workspace ID for your CipherStash account. | Yes | |
-| CS_CLIENT_ACCESS_KEY | The access key for your CipherStash account. | Yes | |
-| CS_ZEROKMS_HOST | The host for the ZeroKMS server. | No | https://ap-southeast-2.aws.viturhosted.net |
-| CS_CONFIG_PATH | A temporary path to store the CipherStash client configuration. | No | /home/{username}/.cipherstash |
+|      Variable Name     |                           Description                           | Required |                    Default                   |
+|:----------------------:|:---------------------------------------------------------------:|:--------:|:--------------------------------------------:|
+| `CS_CLIENT_ID`         | The client ID for your CipherStash account.                     | Yes      |                                              |
+| `CS_CLIENT_KEY`        | The client key for your CipherStash account.                    | Yes      |                                              |
+| `CS_WORKSPACE_ID`      | The workspace ID for your CipherStash account.                  | Yes      |                                              |
+| `CS_CLIENT_ACCESS_KEY` | The access key for your CipherStash account.                    | Yes      |                                              |
+| `CS_ZEROKMS_HOST`      | The host for the ZeroKMS server.                                | No       | `https://ap-southeast-2.aws.viturhosted.net` |
+| `CS_CONFIG_PATH`       | A temporary path to store the CipherStash client configuration. | No       | `/home/{username}/.cipherstash`              |
 
 Important notes:
 
