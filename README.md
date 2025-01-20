@@ -3,7 +3,11 @@
 [![Package Tests](https://github.com/cipherstash/jseql/actions/workflows/tests.yaml/badge.svg)](https://github.com/cipherstash/jseql/actions/workflows/tests.yaml)
 [![Built by CipherStash](https://raw.githubusercontent.com/cipherstash/meta/refs/heads/main/csbadge.svg)](https://cipherstash.com)
 
-`jseql` is a JavaScript/TypeScript package designed to facilitate interaction with [Encrypt Query Language (EQL)](https://github.com/cipherstash/encrypt-query-language). It provides classes and methods to encrypt and decrypt data.
+`jseql` is a JavaScript/TypeScript package for encrypting and decrypting data in PostgreSQL databases.
+Encryption operations happen directly in your app, and the ciphertext is stored in your PostgreSQL database.
+
+Every value you encrypt with `jseql` has a unique key, made possible by CipherStash [ZeroKMS](https://cipherstash.com/products/zerokms)'s blazing fast key bulk key operations.
+Under the hood `jseql` uses CipherStash [Encrypt Query Language (EQL)](https://github.com/cipherstash/encrypt-query-language), and all ZeroKMS data keys are backed by a root key in [AWS KMS](https://docs.aws.amazon.com/kms/latest/developerguide/overview.html).
 
 ## Table of Contents
 
