@@ -57,14 +57,16 @@ pnpm add @cipherstash/jseql
 
 ### Node.js
 
-`jseql` actively supports all current and [maintenance releases of Node](https://github.com/nodejs/LTS#release-schedule). If you're
-using a different version of Node and believe it should be supported, let us know.
+`jseql` actively supports all current and [maintenance releases of Node](https://github.com/nodejs/LTS#release-schedule).
+If you're using a different version of Node and believe it should be supported, let us know.
 
-Older Node version support (minimum v10) may require lower Node-API versions. See the Node [version support matrix](https://nodejs.org/api/n-api.html#node-api-version-matrix) for more details.
+Older Node version support (minimum v10) may require lower Node-API versions.
+See the Node [version support matrix](https://nodejs.org/api/n-api.html#node-api-version-matrix) for more details.
 
 ### Bun (experimental)
 
-[Bun](https://bun.sh/) is an alternate JavaScript runtime that targets Node compatibility. At the time of this writing, some Node-API functions are [not implemented](https://github.com/oven-sh/bun/issues/158) so `jseql` may not work with Bun.
+[Bun](https://bun.sh/) is an alternate JavaScript runtime that targets Node compatibility.
+At the time of this writing, some Node-API functions are [not implemented](https://github.com/oven-sh/bun/issues/158) so `jseql` may not work with Bun.
 
 ## Usage
 
@@ -116,7 +118,8 @@ const eqlClient = await eql()
 
 ### Encrypting data
 
-To encrypt data, use the `encrypt` function. This function takes a plaintext string and an object with the table and column name as parameters.
+To encrypt data, use the `encrypt` function.
+This function takes a plaintext string and an object with the table and column name as parameters.
 
 ```typescript
 const ciphertext = await eqlClient.encrypt('plaintext', {
@@ -135,7 +138,8 @@ The `encrypt` function returns an object with a `c` key, and the value is the en
 
 ### Decrypting data
 
-To decrypt data, use the `decrypt` function. This function takes an encrypted data object and an object with the lock context as parameters.
+To decrypt data, use the `decrypt` function.
+This function takes an encrypted data object and an object with the lock context as parameters.
 
 ```typescript
 const plaintext = await eqlClient.decrypt(ciphertext)
@@ -435,7 +439,8 @@ JSEQL_LOG_LEVEL=error  # Enable error logging
 - [Drizzle example](/apps/drizzle)
 - [Next.js, Drizzle, and Clerk example](https://github.com/cipherstash/jseql-next-drizzle)
 
-`jseql` can be used with most ORMs that support PostgreSQL. If you're interested in using `jseql` with a specific ORM, please [create an issue](https://github.com/cipherstash/jseql/issues/new).
+`jseql` can be used with most ORMs that support PostgreSQL.
+If you're interested in using `jseql` with a specific ORM, please [create an issue](https://github.com/cipherstash/jseql/issues/new).
 
 ## CipherStash Client
 
