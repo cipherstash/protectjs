@@ -250,7 +250,7 @@ const plaintext = await eqlClient.decrypt(ciphertext, {
 
 ### Storing encrypted data in a database
 
-To store the encrypted data in PostgreSQL, you will need to specify the column type as `jsonb`. At the time of this writing.
+To store the encrypted data in PostgreSQL, you will need to specify the column type as `jsonb`.
 
 ```sql
 CREATE TABLE users (
