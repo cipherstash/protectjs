@@ -22,11 +22,11 @@
 
 **Features:**
 - **Data encryption**: Easily encrypt data with industry standard encryption algorithms, like AES-256.
-CipherStash also uses a unique encryption key for every record in the database, this is also know as **field level encryption.** 
+CipherStash also uses a unique encryption key for every record in the database, this is also know as **field level encryption.**
 - **Data decryption**: Decrypt encrypted data easily directly in your application.
-- **Lock context**: "Lock" the encryption and decryption operations based on user identity. 
+- **Lock context**: "Lock" the encryption and decryption operations based on user identity.
 This allows you to ensure that only the intended users can access sensitive data.
-- **Bulk encryption and decryption**: Encrypt and decrypt multiple records at once using a unique data key per record. 
+- **Bulk encryption and decryption**: Encrypt and decrypt multiple records at once using a unique data key per record.
 Compared to something like AWS KMS, this is much more efficient, secure, and scalable.
 - **TypeScript support**: Strongly typed with TypeScript interfaces and types.
 
@@ -274,34 +274,34 @@ const encryptedResults = await eqlClient.bulkEncrypt(plaintextsToEncrypt, {
 
 **Parameters**
 
-1. **`plaintexts`**  
-   - **Type**: `{ plaintext: string; id: string }[]`  
-   - **Description**:  
-     An array of objects containing the **plaintext** and an **id**.  
-     - **plaintext**: The string you want encrypted.  
+1. **`plaintexts`**
+   - **Type**: `{ plaintext: string; id: string }[]`
+   - **Description**:
+     An array of objects containing the **plaintext** and an **id**.
+     - **plaintext**: The string you want encrypted.
      - **id**: A unique identifier you can use to map the returned ciphertext back to its source. For example, if you have a `User` with `id: 1`, you might pass `id: '1'`.
 
-2. **`column`**  
-   - **Type**: `string`  
-   - **Description**:  
+2. **`column`**
+   - **Type**: `string`
+   - **Description**:
      The name of the column you’re encrypting (e.g., "email"). This is typically used in logging or contextual purposes when constructing the payload for the encryption engine.
 
-3. **`table`**  
-   - **Type**: `string`  
-   - **Description**:  
+3. **`table`**
+   - **Type**: `string`
+   - **Description**:
      The name of the table you’re encrypting data in (e.g., "Users").
 
-4. **`lockContext`** (optional)  
-   - **Type**: `LockContext`  
-   - **Description**:  
+4. **`lockContext`** (optional)
+   - **Type**: `LockContext`
+   - **Description**:
      Additional metadata and tokens for secure encryption/decryption. If not provided, encryption proceeds without a lock context.
 
 ### Return Value
 
-- **Type**: `Promise<Array<{ c: string; id: string }> | null>`  
-- Returns an array of objects, where:  
-  - **`c`** is the ciphertext.  
-  - **`id`** is the same **id** you passed in, so you can correlate which ciphertext matches which original plaintext.  
+- **Type**: `Promise<Array<{ c: string; id: string }> | null>`
+- Returns an array of objects, where:
+  - **`c`** is the ciphertext.
+  - **`id`** is the same **id** you passed in, so you can correlate which ciphertext matches which original plaintext.
 - If `plaintexts` is an empty array, it returns `null`.
 
 ### Example Usage
@@ -354,22 +354,22 @@ const decryptedResults = await eqlClient.bulkDecrypt(encryptedPayloads, {
 
 **Parameters**
 
-1. **`encryptedPayloads`**  
-   - **Type**: `Array<{ c: string; id: string }> | null`  
-   - **Description**:  
+1. **`encryptedPayloads`**
+   - **Type**: `Array<{ c: string; id: string }> | null`
+   - **Description**:
      An array of objects containing the **ciphertext** (`c`) and the **id**. If this array is empty or `null`, the function returns `null`.
 
-2. **`lockContext`** (optional)  
-   - **Type**: `LockContext`  
-   - **Description**:  
+2. **`lockContext`** (optional)
+   - **Type**: `LockContext`
+   - **Description**:
      Additional metadata used to securely unlock ciphertext. If not provided, decryption proceeds without it.
 
 ### Return Value
 
-- **Type**: `Promise<Array<{ plaintext: string; id: string }> | null>`  
-- Returns an array of objects, where:  
-  - **`plaintext`** is the decrypted value.  
-  - **`id`** is the same **id** you passed in, so you can correlate which plaintext matches which original ciphertext.  
+- **Type**: `Promise<Array<{ plaintext: string; id: string }> | null>`
+- Returns an array of objects, where:
+  - **`plaintext`** is the decrypted value.
+  - **`id`** is the same **id** you passed in, so you can correlate which plaintext matches which original ciphertext.
 - Returns `null` if the provided `encryptedPayloads` is empty or `null`.
 
 ### Example Usage
@@ -458,7 +458,7 @@ Below are the available environment variables:
 Important notes:
 
 - If you've created a Workspace in a region other than `ap-southeast-2`, you will need to set the `CS_ZEROKMS_HOST` environment variable to the appropriate region. E.g. `https://<region>.aws.viturhosted.net`
--  In most hosting environments, the `CS_CONFIG_PATH` environment variable will need to be set to a path that is accessible by the user running the application. 
+-  In most hosting environments, the `CS_CONFIG_PATH` environment variable will need to be set to a path that is accessible by the user running the application.
 `/tmp/.cipherstash` will work in most cases, and has been tested on [Vercel](https://vercel.com/), [AWS Lambda](https://aws.amazon.com/lambda/), and other hosting environments.
 
 ## Contributing
