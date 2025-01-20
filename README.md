@@ -412,11 +412,14 @@ if (decryptedResults) {
 }
 ```
 
-## Searchable encrypted data
+## Searchable encryption
 
 `jseql` does not currently support searching encrypted data.
-We are hard at work on this feature and will update this section when it is available.
-You can read more about this feature and implementation [here](https://github.com/cipherstash/encrypt-query-language).
+Searchable encryption is an extremely well supported capability in other CipherStash products, and will be coming to `jseql`.
+Until searchable encryption support is released in `jseql`, you can:
+
+- Read [about how searchable encryption works in EQL](https://github.com/cipherstash/encrypt-query-language)
+- Vote for this feature by adding a :+1: on this [GitHub Issue](https://github.com/cipherstash/jseql/issues/46).
 
 ## Logging
 
