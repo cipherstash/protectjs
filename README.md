@@ -422,7 +422,7 @@ You can read more about this feature and implementation [here](https://github.co
 
 > [!IMPORTANT]
 > `jseql` will NEVER log plaintext data.
-> This is by design to prevent sensitive data from being logged.
+> This is by design to prevent sensitive data from leaking into logs.
 
 `@cipherstash/jseql` and `@cipherstash/nextjs` will log to the console with a log level of `info` by default.
 You can enable the logger by configuring the following environment variable:
