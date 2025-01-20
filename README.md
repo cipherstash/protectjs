@@ -6,7 +6,7 @@
 `jseql` is a JavaScript/TypeScript package for encrypting and decrypting data in PostgreSQL databases.
 Encryption operations happen directly in your app, and the ciphertext is stored in your PostgreSQL database.
 
-Every value you encrypt with `jseql` has a unique key, made possible by CipherStash [ZeroKMS](https://cipherstash.com/products/zerokms)'s blazing fast key bulk key operations.
+Every value you encrypt with `jseql` has a unique key, made possible by CipherStash [ZeroKMS](https://cipherstash.com/products/zerokms)'s blazing fast bulk key operations.
 Under the hood `jseql` uses CipherStash [Encrypt Query Language (EQL)](https://github.com/cipherstash/encrypt-query-language), and all ZeroKMS data keys are backed by a root key in [AWS KMS](https://docs.aws.amazon.com/kms/latest/developerguide/overview.html).
 
 ## Table of Contents
@@ -25,7 +25,8 @@ Under the hood `jseql` uses CipherStash [Encrypt Query Language (EQL)](https://g
 `jseql` leverages [Encrypt Query Language (EQL)](https://github.com/cipherstash/encrypt-query-language) and [CipherStash](https://cipherstash.com) to encrypt data in a PostgreSQL database.
 
 **Features:**
-- **Bulk encryption and decryption**: `jseql` uses [ZeroKMS](https://cipherstash.com/products/zerokms) for encrypting and decrypting thousands of records at once, while using a unique keys for every value.
+- **Bulk encryption and decryption**: `jseql` uses [ZeroKMS](https://cipherstash.com/products/zerokms) for encrypting and decrypting thousands of records at once, while using a unique key for every value.
+- **Single item encryption and decryption**: Just looking for a way to encrypt and decrypt single values? `jseql` has you covered.
 - **Really fast:** ZeroKMS's performance makes using millions of unique keys feasible and performant for real-world applications built with `jseql`.
 - **Identity-aware encryption**: Lock down access to sensitive data by requiring a valid JWT to perform a decryption.
 - **TypeScript support**: Strongly typed with TypeScript interfaces and types.
