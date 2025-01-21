@@ -423,6 +423,15 @@ if (decryptedResults) {
 }
 ```
 
+## Supported data types
+
+`jseql` currently supports encrypting and decrypting text.
+Other data types like booleans, dates, ints, floats, and JSON are extremely well supported in other CipherStash products, and will be coming to `jseql`.
+Until support for other data types are available in `jseql`, you can:
+
+- Read [about how these data types work in EQL](https://github.com/cipherstash/encrypt-query-language/blob/main/docs/reference/INDEX.md)
+- Vote for this feature by adding a :+1: on this [GitHub Issue](https://github.com/cipherstash/jseql/issues/48).
+
 ## Searchable encryption
 
 `jseql` does not currently support searching encrypted data.
