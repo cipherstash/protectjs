@@ -4,10 +4,8 @@ import {
   encrypt,
   encryptBulk,
   decryptBulk,
-  type BulkEncryptPayload as InternalBulkEncryptPayload,
-  type BulkDecryptPayload as InternalBulkDecryptPayload,
 } from '@cipherstash/jseql-ffi'
-import { logger } from '../logger'
+import { logger } from '../../../utils/logger'
 import type { LockContext } from '../identify'
 import { checkEnvironmentVariables } from './env-check'
 import {

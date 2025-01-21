@@ -1,4 +1,4 @@
-import { logger } from '../logger'
+import { logger } from '../../../utils/logger'
 
 export type CtsRegions = 'ap-southeast-2'
 
@@ -33,7 +33,7 @@ export class LockContext {
       const errorMessage =
         'CS_WORKSPACE_ID environment variable is not set, and is required to initialize a LockContext.'
       logger.error(errorMessage)
-      throw new Error(`[ Server ] jseql: ${errorMessage}`)
+      throw new Error(`[jseql]: ${errorMessage}`)
     }
 
     if (ctsToken) {
@@ -63,11 +63,9 @@ export class LockContext {
       }),
     })
 
-    console.log('[ Server ] jseql: CTS response', ctsResponse)
-
     if (!ctsResponse.ok) {
       throw new Error(
-        `[ Server ] jseql: Failed to fetch CTS token: ${ctsResponse.statusText}`,
+        `[jseql]: Failed to fetch CTS token: ${ctsResponse.statusText}`,
       )
     }
 

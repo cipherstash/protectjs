@@ -1,5 +1,5 @@
 import { cookies } from 'next/headers'
-import { logger } from './logger'
+import { logger } from '../../utils/logger'
 
 export const CS_COOKIE_NAME = '__cipherstash_cts_session'
 

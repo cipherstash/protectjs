@@ -7,7 +7,7 @@ function getLevelValue(level: string): number {
     case 'error':
       return 30
     default:
-      return 20 // default to 'info'
+      return 30 // default to error level
   }
 }
 
@@ -16,19 +16,19 @@ const currentLevel = getLevelValue(envLogLevel)
 
 function debug(...args: unknown[]): void {
   if (currentLevel <= getLevelValue('debug')) {
-    console.debug('[DEBUG]', ...args)
+    console.debug('[jseql] DEBUG', ...args)
   }
 }
 
 function info(...args: unknown[]): void {
   if (currentLevel <= getLevelValue('info')) {
-    console.info('[INFO]', ...args)
+    console.info('[jseql] INFO', ...args)
   }
 }
 
 function error(...args: unknown[]): void {
   if (currentLevel <= getLevelValue('error')) {
-    console.error('[ERROR]', ...args)
+    console.error('[jseql] ERROR', ...args)
   }
 }
 

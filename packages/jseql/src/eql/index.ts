@@ -6,7 +6,7 @@ import type {
   Column,
   Plaintext,
 } from '../cs_plaintext_v1'
-import { logger } from '../logger'
+import { logger } from '../../../utils/logger'
 
 export type CreateEqlPayload = {
   plaintext: Plaintext
