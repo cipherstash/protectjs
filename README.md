@@ -15,6 +15,7 @@ Under the hood `jseql` uses CipherStash [Encrypt Query Language (EQL)](https://g
 - [Installation](#installation)
 - [Platform Support](#platform-support)
 - [Usage](#usage)
+- [Logging](#logging)
 - [Examples](#examples)
 - [CipherStash Client](#cipherstash-client)
 - [Contributing](#contributing)
@@ -454,6 +455,38 @@ You can enable the logger by configuring the following environment variable:
 JSEQL_LOG_LEVEL=debug  # Enable debug logging
 JSEQL_LOG_LEVEL=info   # Enable info logging
 JSEQL_LOG_LEVEL=error  # Enable error logging
+```
+
+## Builds and bundling
+
+`@cipherstash/jseql` is a native Node.js module, and relies on native Node.js `require` to load the package.
+
+### Next.js
+
+Using `@cipherstash/jseql` with Next.js? You need to opt-out from the Server Components bundling and use native Node.js `require` instead.
+
+#### Using version 15 or later
+
+`next.config.ts` [configuration](https://nextjs.org/docs/app/api-reference/config/next-config-js/serverExternalPackages):
+
+```js
+const nextConfig = {
+  ...
+  serverExternalPackages: ['@cipherstash/jseql'],
+}
+```
+
+#### Using version 14
+
+`next.config.mjs` [configuration](https://nextjs.org/docs/14/app/api-reference/next-config-js/serverComponentsExternalPackages):
+
+```js
+const nextConfig = {
+  ...
+  experimental: {
+    serverComponentsExternalPackages: ['@cipherstash/jseql'],
+  },
+}
 ```
 
 ## Examples
