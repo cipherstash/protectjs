@@ -1,5 +1,11 @@
 # @cipherstash/nextjs
 
+## 0.9.0
+
+### Minor Changes
+
+- e885975: Fixed improper use of throwing errors, and log with jseql logger.
+
 ## 0.8.0
 
 ### Minor Changes
