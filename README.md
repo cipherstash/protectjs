@@ -16,7 +16,6 @@ Under the hood `jseql` uses CipherStash [Encrypt Query Language (EQL)](https://g
 - [Platform Support](#platform-support)
 - [Usage](#usage)
 - [Logging](#logging)
-- [Builds and bundling](#builds-and-bundling)
 - [Examples](#examples)
 - [CipherStash Client](#cipherstash-client)
 - [Contributing](#contributing)
@@ -460,9 +459,11 @@ JSEQL_LOG_LEVEL=error  # Enable error logging
 
 ## Builds and bundling
 
+`@cipherstash/jseql` is a native Node.js module, and relies on native Node.js `require` to load the package.
+
 ### Next.js
 
-Using `@cipherstash/jseql` with Next.js? Since the package is a native Node.js module, you need to opt-out from the Server Components bundling and use native Node.js `require` instead.
+Using `@cipherstash/jseql` with Next.js? You need to opt-out from the Server Components bundling and use native Node.js `require` instead.
 
 #### Using version 15 or later
 
