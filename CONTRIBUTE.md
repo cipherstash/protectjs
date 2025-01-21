@@ -54,7 +54,7 @@ cd jseql
 ### 2. Install Dependencies
 
 ```bash
-npm install
+pnpm install
 ```
 
 ### 4. Build the Main Package
@@ -62,7 +62,7 @@ npm install
 Before you can run any example apps, you need to build the `@cipherstash/jseql` package:
 
 ```bash
-npm run build
+pnpm run build
 ```
 
 This command triggers Turborepo’s build pipeline, compiling the **jseql** package in `packages/jseql` and linking it locally so the example apps can reference it.
@@ -72,7 +72,7 @@ This command triggers Turborepo’s build pipeline, compiling the **jseql** pack
 Start the dev script which will watch for changes to the packages which are picked up by the example apps.
 
 ```bash
-npm run dev
+pnpm run dev
 ```
 
 Navigate to one of the example apps in `apps/` and follow the instructions for the corresponding examples.
