@@ -2,7 +2,7 @@ import type { ClerkMiddlewareAuth } from '@clerk/nextjs/server'
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 import { CS_COOKIE_NAME, type CtsToken } from '../index'
-import { logger } from '../logger'
+import { logger } from '../../../utils/logger'
 
 export const jseqlClerkMiddleware = async (
   auth: ClerkMiddlewareAuth,
@@ -25,10 +25,11 @@ export const jseqlClerkMiddleware = async (
     const workspaceId = process.env.CS_WORKSPACE_ID
 
     if (!workspaceId) {
-      const errorMessage =
-        'CS_WORKSPACE_ID environment variable is not set, and is required by jseqlClerkMiddleware.'
-      logger.error(errorMessage)
-      throw new Error(`[ Server ] jseql: ${errorMessage}`)
+      logger.error(
+        'The "CS_WORKSPACE_ID" environment variable is not set, and is required by jseqlClerkMiddleware. No CipherStash session will be set.',
+      )
+
+      return NextResponse.next()
     }
 
     const ctsEndoint =
@@ -47,9 +48,13 @@ export const jseqlClerkMiddleware = async (
     })
 
     if (!ctsResponse.ok) {
-      throw new Error(
-        `[ Server ] jseql: Failed to fetch CTS token: ${ctsResponse.statusText}`,
+      logger.debug(`Failed to fetch CTS token: ${ctsResponse.statusText}`)
+
+      logger.error(
+        'There was an issue communicating with the CipherStash CTS API, the CipherStash session was not set. If the issue persists, please contact support.',
       )
+
+      return NextResponse.next()
     }
 
     const cts_token = (await ctsResponse.json()) as CtsToken
