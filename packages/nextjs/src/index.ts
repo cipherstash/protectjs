@@ -1,4 +1,7 @@
+import type { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
+import { setCtsToken } from './cts'
 import { logger } from '../../utils/logger'
 
 export const CS_COOKIE_NAME = '__cipherstash_cts_session'
@@ -19,4 +22,32 @@ export const getCtsToken = async () => {
 
   const cts_token = JSON.parse(cookieData) as CtsToken
   return cts_token
+}
+
+export const resetCtsToken = () => {
+  const response = NextResponse.next()
+  response.cookies.delete(CS_COOKIE_NAME)
+  return response
+}
+
+export const jseqlMiddleware = async (oidcToken: string, req: NextRequest) => {
+  const ctsSession = req.cookies.has(CS_COOKIE_NAME)
+
+  if (oidcToken && !ctsSession) {
+    return await setCtsToken(oidcToken)
+  }
+
+  if (!oidcToken && ctsSession) {
+    logger.debug(
+      'The JWT token was undefined, so the CipherStash session was reset.',
+    )
+
+    return resetCtsToken()
+  }
+
+  logger.debug(
+    'The JWT token was undefined, so the CipherStash session was not set.',
+  )
+
+  return NextResponse.next()
 }
