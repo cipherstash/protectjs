@@ -43,7 +43,7 @@ export const jseqlMiddleware = async (
   const ctsSession = req.cookies.has(CS_COOKIE_NAME)
 
   if (oidcToken && !ctsSession) {
-    return await setCtsToken(oidcToken)
+    return await setCtsToken(oidcToken, res)
   }
 
   if (!oidcToken && ctsSession) {

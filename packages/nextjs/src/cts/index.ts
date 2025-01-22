@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { logger } from '../../../utils/logger'
 import { CS_COOKIE_NAME, type CtsToken } from '../index'
 
-export const setCtsToken = async (oidcToken: string) => {
+export const setCtsToken = async (oidcToken: string, res?: NextResponse) => {
   const workspaceId = process.env.CS_WORKSPACE_ID
 
   if (!workspaceId) {
@@ -10,7 +10,7 @@ export const setCtsToken = async (oidcToken: string) => {
       'The "CS_WORKSPACE_ID" environment variable is not set, and is required by jseqlClerkMiddleware. No CipherStash session will be set.',
     )
 
-    return NextResponse.next()
+    return res ?? NextResponse.next()
   }
 
   const ctsEndoint =
@@ -35,13 +35,13 @@ export const setCtsToken = async (oidcToken: string) => {
       'There was an issue communicating with the CipherStash CTS API, the CipherStash session was not set. If the issue persists, please contact support.',
     )
 
-    return NextResponse.next()
+    return res ?? NextResponse.next()
   }
 
   const cts_token = (await ctsResponse.json()) as CtsToken
 
   // Setting cookies on the request and response using the `ResponseCookies` API
-  const response = NextResponse.next()
+  const response = res ?? NextResponse.next()
   response.cookies.set({
     name: CS_COOKIE_NAME,
     value: JSON.stringify(cts_token),
@@ -50,6 +50,5 @@ export const setCtsToken = async (oidcToken: string) => {
     path: '/',
   })
 
-  response.cookies.get(CS_COOKIE_NAME)
   return response
 }
