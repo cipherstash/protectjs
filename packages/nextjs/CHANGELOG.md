@@ -1,5 +1,11 @@
 # @cipherstash/nextjs
 
+## 0.10.0
+
+### Minor Changes
+
+- 7d0fac0: Implemented a generic Next.js jseql middleware.
+
 ## 0.9.0
 
 ### Minor Changes
