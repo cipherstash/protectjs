@@ -1,5 +1,11 @@
 # @cipherstash/nextjs
 
+## 0.11.0
+
+### Minor Changes
+
+- ebc23ba: Added support for optional next response in generic jseql middleware functions.
+
 ## 0.10.0
 
 ### Minor Changes
