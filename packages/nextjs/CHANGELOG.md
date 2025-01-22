@@ -1,5 +1,11 @@
 # @cipherstash/nextjs
 
+## 0.12.0
+
+### Minor Changes
+
+- 14c0279: Fixed optional response argument getting called in setCtsToken.
+
 ## 0.11.0
 
 ### Minor Changes
