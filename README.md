@@ -151,6 +151,10 @@ The `decrypt` function returns a string with the plaintext data.
 
 ### Lock context
 
+> [!CAUTION]
+> If you use a lock context to encrypt data, you must also use the same lock context to decrypt the data.
+> Otherwise, you will receive a `400` error from ZeroKMS indicating that the request was unable to generate a data key, and you will be unable to decrypt the data.
+
 `jseql` supports lock contexts to ensure that only the intended users can access sensitive data.
 To use a lock context, initialize a `LockContext` object with the identity claims.
 
@@ -162,11 +166,11 @@ const lc = new LockContext()
 ```
 
 > [!NOTE]
-> At the time of this writing, the default LockContext context is set to use the `sub` Identity Claim.
+> When initializing a `LockContext` the default context is set to use the `sub` Identity Claim.
 
 **Custom context**
 
-If you want to use a custom context, you can pass it to the `LockContext` constructor.
+If you want to override the default context, you can pass a custom context to the `LockContext` constructor.
 
 ```typescript
 import { LockContext } from '@cipherstash/jseql/identify'
@@ -174,20 +178,22 @@ import { LockContext } from '@cipherstash/jseql/identify'
 // eqlClient from the previous steps
 const lc = new LockContext({
   context: {
-    identityClaim: ['sub'],
+    identityClaim: ['sub'], // this is the default context
   },
 })
 ```
 
 **Context and identity claim options**
 
-The context must be an object with an `identityClaim` property.
+The context object contains an `identityClaim` property.
 The `identityClaim` property must be an array of strings that correspond to the Identity Claim(s) you want to lock the encryption operation to.
 
-| Identity Claim | Description | Default |
-| -------------- | ----------- | ------- |
-| `sub`          | The user's subject identifier. | yes |
-| `scopes`       | The user's scopes set by your IDP policy. | no |
+Currently supported Identity Claims are:
+
+| Identity Claim | Description |
+| -------------- | ----------- |
+| `sub`          | The user's subject identifier. |
+| `scopes`       | The user's scopes set by your IDP policy. |
 
 #### Identifying the user
 

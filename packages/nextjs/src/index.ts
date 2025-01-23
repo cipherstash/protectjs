@@ -11,17 +11,36 @@ export type CtsToken = {
   expiry: number
 }
 
-export const getCtsToken = async () => {
+type GetCtsTokenResponse = Promise<
+  | {
+      success: boolean
+      error: string
+      ctsToken?: never
+    }
+  | {
+      success: boolean
+      error?: never
+      ctsToken: CtsToken
+    }
+>
+
+export const getCtsToken = async (): GetCtsTokenResponse => {
   const cookieStore = await cookies()
   const cookieData = cookieStore.get(CS_COOKIE_NAME)?.value
 
   if (!cookieData) {
     logger.debug('No CipherStash session cookie found in the request.')
-    return null
+    return {
+      success: false,
+      error: 'No CipherStash session cookie found in the request.',
+    }
   }
 
   const cts_token = JSON.parse(cookieData) as CtsToken
-  return cts_token
+  return {
+    success: true,
+    ctsToken: cts_token,
+  }
 }
 
 export const resetCtsToken = (res?: NextResponse) => {
@@ -51,7 +70,7 @@ export const jseqlMiddleware = async (
       'The JWT token was undefined, so the CipherStash session was reset.',
     )
 
-    return resetCtsToken()
+    return resetCtsToken(res)
   }
 
   logger.debug(

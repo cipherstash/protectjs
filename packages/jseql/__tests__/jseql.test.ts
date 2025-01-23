@@ -111,7 +111,7 @@ describe('getPlaintext', () => {
   })
 })
 
-describe('jseql-ffi', () => {
+describe('encryption and decryption', () => {
   it('should have all required environment variables defined', () => {
     expect(process.env.CS_CLIENT_ID).toBeDefined()
     expect(process.env.CS_CLIENT_KEY).toBeDefined()
@@ -143,48 +143,6 @@ describe('jseql-ffi', () => {
     const plaintext = await eqlClient.decrypt(ciphertext)
 
     expect(plaintext).toEqual(null)
-  }, 30000)
-
-  it('should encrypt and decrypt a payload with lock context', async () => {
-    const eqlClient = await eql()
-
-    const lc = new LockContext()
-
-    // TODO: implement lockContext when CTS v2 is deployed
-    // const lockContext = await lc.identify('users_1_jwt')
-
-    const ciphertext = await eqlClient.encrypt('plaintext', {
-      column: 'column_name',
-      table: 'users',
-    })
-
-    const plaintext = await eqlClient.decrypt(ciphertext)
-
-    expect(plaintext).toEqual('plaintext')
-  }, 30000)
-
-  it('should encrypt with context and be unable to decrypt without correct context', async () => {
-    const eqlClient = await eql()
-
-    const lc = new LockContext()
-
-    // const lockContext = await lc.identify('users_1_jwt')
-
-    const ciphertext = await eqlClient.encrypt('plaintext', {
-      column: 'column_name',
-      table: 'users',
-    })
-
-    const incorrectLc = new LockContext()
-
-    // const badLockContext = await incorrectLc.identify('users_2_jwt')
-
-    try {
-      await eqlClient.decrypt(ciphertext)
-    } catch (error) {
-      const e = error as Error
-      expect(e.message.startsWith('Failed to retrieve key')).toEqual(true)
-    }
   }, 30000)
 })
 
@@ -238,3 +196,93 @@ describe('bulk encryption', () => {
     expect(plaintexts).toEqual(null)
   }, 30000)
 })
+
+// ------------------------
+// TODO get bulk Encryption/Decryption working in CI.
+// These tests pass locally, given you provide a valid JWT.
+// To manually test locally, uncomment the following lines and provide a valid JWT in the userJwt variable.
+// ------------------------
+// const userJwt = ''
+// describe('encryption and decryption with lock context', () => {
+//   it('should encrypt and decrypt a payload with lock context', async () => {
+//     const eqlClient = await eql()
+
+//     const lc = new LockContext()
+//     const lockContext = await lc.identify(userJwt)
+
+//     const ciphertext = await eqlClient
+//       .encrypt('plaintext', {
+//         column: 'column_name',
+//         table: 'users',
+//       })
+//       .withLockContext(lockContext)
+
+//     const plaintext = await eqlClient
+//       .decrypt(ciphertext)
+//       .withLockContext(lockContext)
+
+//     expect(plaintext).toEqual('plaintext')
+//   }, 30000)
+
+//   it('should encrypt with context and be unable to decrypt without context', async () => {
+//     const eqlClient = await eql()
+
+//     const lc = new LockContext()
+//     const lockContext = await lc.identify(userJwt)
+
+//     const ciphertext = await eqlClient
+//       .encrypt('plaintext', {
+//         column: 'column_name',
+//         table: 'users',
+//       })
+//       .withLockContext(lockContext)
+
+//     try {
+//       await eqlClient.decrypt(ciphertext)
+//     } catch (error) {
+//       const e = error as Error
+//       expect(e.message.startsWith('Failed to retrieve key')).toEqual(true)
+//     }
+//   }, 30000)
+
+//   it('should bulk encrypt and decrypt a payload with lock context', async () => {
+//     const eqlClient = await eql()
+
+//     const lc = new LockContext()
+//     const lockContext = await lc.identify(userJwt)
+
+//     const ciphertexts = await eqlClient
+//       .bulkEncrypt(
+//         [
+//           {
+//             plaintext: 'test',
+//             id: '1',
+//           },
+//           {
+//             plaintext: 'test2',
+//             id: '2',
+//           },
+//         ],
+//         {
+//           table: 'users',
+//           column: 'column_name',
+//         },
+//       )
+//       .withLockContext(lockContext)
+
+//     const plaintexts = await eqlClient
+//       .bulkDecrypt(ciphertexts)
+//       .withLockContext(lockContext)
+
+//     expect(plaintexts).toEqual([
+//       {
+//         plaintext: 'test',
+//         id: '1',
+//       },
+//       {
+//         plaintext: 'test2',
+//         id: '2',
+//       },
+//     ])
+//   }, 30000)
+// })

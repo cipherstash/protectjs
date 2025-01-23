@@ -20,6 +20,20 @@ export type LockContextOptions = {
   ctsToken?: CtsToken
 }
 
+export type GetLockContextResponse =
+  | {
+      success: boolean
+      error: string
+      ctsToken?: never
+      context?: never
+    }
+  | {
+      success: boolean
+      error?: never
+      ctsToken: CtsToken
+      context: Context
+    }
+
 export class LockContext {
   private ctsToken: CtsToken | undefined
   private workspaceId: string
@@ -82,18 +96,17 @@ export class LockContext {
     return this
   }
 
-  getLockContext(): {
-    context: Context
-    ctsToken: CtsToken
-  } {
-    if (!this.ctsToken) {
-      const errorMessage =
-        'Please call identify() with a users JWT token, or pass an existing CTS token to the LockContext constructor before calling getLockContext().'
-      logger.error(errorMessage)
-      throw new Error(errorMessage)
+  getLockContext(): GetLockContextResponse {
+    if (!this.ctsToken?.accessToken && !this.ctsToken?.expiry) {
+      return {
+        success: false,
+        error:
+          'The CTS token is not set. Please call identify() with a users JWT token, or pass an existing CTS token to the LockContext constructor before calling getLockContext().',
+      }
     }
 
     return {
+      success: true,
       context: this.context,
       ctsToken: this.ctsToken,
     }
