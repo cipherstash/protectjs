@@ -6,19 +6,49 @@ import type {
 import type { BulkEncryptPayload, BulkEncryptedData } from './index'
 import type { LockContext } from '../identify'
 
-const getLockContextPayload = (lockContext?: LockContext) => {
-  if (!lockContext) {
-    return {}
+const getLockContextPayload = (lockContext: LockContext) => {
+  const context = lockContext.getLockContext()
+
+  if (!context.ctsToken?.accessToken) {
+    throw new Error(
+      '[jseql]: LockContext must be initialized with a valid CTS token before using it.',
+    )
   }
 
   return {
-    lockContext: lockContext.getLockContext().context,
+    lockContext: context.context,
   }
 }
 
 export const normalizeBulkDecryptPayloads = (
   encryptedPayloads: BulkEncryptedData,
-  lockContext?: LockContext,
+) =>
+  encryptedPayloads?.reduce((acc, encryptedPayload) => {
+    const payload = {
+      ciphertext: encryptedPayload.c,
+    }
+
+    acc.push(payload)
+    return acc
+  }, [] as InternalBulkDecryptPayload[])
+
+export const normalizeBulkEncryptPayloads = (
+  plaintexts: BulkEncryptPayload,
+  column: string,
+) =>
+  plaintexts.reduce((acc, plaintext) => {
+    const payload = {
+      plaintext: plaintext.plaintext,
+      column,
+    }
+
+    acc.push(payload)
+    return acc
+  }, [] as InternalBulkEncryptPayload[])
+
+export const normalizeBulkDecryptPayloadsWithLockContext = (
+  encryptedPayloads: BulkEncryptedData,
+  lockContext: LockContext,
 ) =>
   encryptedPayloads?.reduce((acc, encryptedPayload) => {
     const payload = {
@@ -30,10 +60,10 @@ export const normalizeBulkDecryptPayloads = (
     return acc
   }, [] as InternalBulkDecryptPayload[])
 
-export const normalizeBulkEncryptPayloads = (
+export const normalizeBulkEncryptPayloadsWithLockContext = (
   plaintexts: BulkEncryptPayload,
   column: string,
-  lockContext?: LockContext,
+  lockContext: LockContext,
 ) =>
   plaintexts.reduce((acc, plaintext) => {
     const payload = {
