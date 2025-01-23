@@ -241,6 +241,16 @@ import { getCtsToken } from '@cipherstash/nextjs'
 export default async function Page() {
   const ctsToken = await getCtsToken()
 
+  // getCtsToken returns either
+  // ---
+  // { success: true, ctsToken: CtsToken }
+  // or
+  // { success: false, error: string }
+
+  if (!ctsToken.success) {
+    // handle error
+  }
+
   return (
     <div>
       <h1>Server side rendered page</h1>
@@ -259,6 +269,11 @@ import { getCtsToken } from '@cipherstash/nextjs'
 
 export default async function Page() {
   const ctsToken = await getCtsToken()
+
+  if (!ctsToken.success) {
+    // handle error
+  }
+
   const lockContext = new LockContext({
     ctsToken
   })
