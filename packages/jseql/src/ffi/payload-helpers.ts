@@ -6,20 +6,7 @@ import type {
 import type { BulkEncryptPayload, BulkEncryptedData } from './index'
 import type { LockContext } from '../identify'
 
-const getLockContextPayload = (
-  usingLockContext: boolean,
-  lockContext?: LockContext,
-) => {
-  if (!usingLockContext) {
-    return {}
-  }
-
-  if (!lockContext) {
-    throw new Error(
-      '[jseql]: LockContext is required when using a lock context',
-    )
-  }
-
+const getLockContextPayload = (lockContext: LockContext) => {
   const context = lockContext.getLockContext()
 
   if (!context.ctsToken?.accessToken) {
@@ -35,13 +22,10 @@ const getLockContextPayload = (
 
 export const normalizeBulkDecryptPayloads = (
   encryptedPayloads: BulkEncryptedData,
-  usingLockContext: boolean,
-  lockContext?: LockContext,
 ) =>
   encryptedPayloads?.reduce((acc, encryptedPayload) => {
     const payload = {
       ciphertext: encryptedPayload.c,
-      ...getLockContextPayload(usingLockContext, lockContext),
     }
 
     acc.push(payload)
@@ -51,14 +35,41 @@ export const normalizeBulkDecryptPayloads = (
 export const normalizeBulkEncryptPayloads = (
   plaintexts: BulkEncryptPayload,
   column: string,
-  usingLockContext: boolean,
-  lockContext?: LockContext,
 ) =>
   plaintexts.reduce((acc, plaintext) => {
     const payload = {
       plaintext: plaintext.plaintext,
       column,
-      ...getLockContextPayload(usingLockContext, lockContext),
+    }
+
+    acc.push(payload)
+    return acc
+  }, [] as InternalBulkEncryptPayload[])
+
+export const normalizeBulkDecryptPayloadsWithLockContext = (
+  encryptedPayloads: BulkEncryptedData,
+  lockContext: LockContext,
+) =>
+  encryptedPayloads?.reduce((acc, encryptedPayload) => {
+    const payload = {
+      ciphertext: encryptedPayload.c,
+      ...getLockContextPayload(lockContext),
+    }
+
+    acc.push(payload)
+    return acc
+  }, [] as InternalBulkDecryptPayload[])
+
+export const normalizeBulkEncryptPayloadsWithLockContext = (
+  plaintexts: BulkEncryptPayload,
+  column: string,
+  lockContext: LockContext,
+) =>
+  plaintexts.reduce((acc, plaintext) => {
+    const payload = {
+      plaintext: plaintext.plaintext,
+      column,
+      ...getLockContextPayload(lockContext),
     }
 
     acc.push(payload)

@@ -10,6 +10,8 @@ import { checkEnvironmentVariables } from './env-check'
 import {
   normalizeBulkEncryptPayloads,
   normalizeBulkDecryptPayloads,
+  normalizeBulkEncryptPayloadsWithLockContext,
+  normalizeBulkDecryptPayloadsWithLockContext,
 } from './payload-helpers'
 import type { LockContext } from '../identify'
 
@@ -317,7 +319,6 @@ class BulkEncryptOperation implements PromiseLike<BulkEncryptedData> {
     const encryptPayloads = normalizeBulkEncryptPayloads(
       this.plaintexts,
       this.column,
-      false,
     )
 
     logger.debug('Bulk encrypting data WITHOUT a lock context', {
@@ -379,10 +380,9 @@ class BulkEncryptOperationWithLockContext
       return null
     }
 
-    const encryptPayloads = normalizeBulkEncryptPayloads(
+    const encryptPayloads = normalizeBulkEncryptPayloadsWithLockContext(
       plaintexts,
       column,
-      true,
       this.lockContext,
     )
 
@@ -447,10 +447,7 @@ class BulkDecryptOperation implements PromiseLike<BulkDecryptedData> {
       return null
     }
 
-    const decryptPayloads = normalizeBulkDecryptPayloads(
-      this.encryptedPayloads,
-      false,
-    )
+    const decryptPayloads = normalizeBulkDecryptPayloads(this.encryptedPayloads)
 
     if (!decryptPayloads) {
       return null
@@ -511,9 +508,8 @@ class BulkDecryptOperationWithLockContext
       return null
     }
 
-    const decryptPayloads = normalizeBulkDecryptPayloads(
+    const decryptPayloads = normalizeBulkDecryptPayloadsWithLockContext(
       encryptedPayloads,
-      true,
       this.lockContext,
     )
 
