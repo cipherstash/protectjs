@@ -93,7 +93,7 @@ export const jseqlMiddleware = async (
       'The JWT token was defined, so the CipherStash session will be set.',
     )
 
-    return setCtsToken(oidcToken, res)
+    return await setCtsToken(oidcToken, res)
   }
 
   if (!oidcToken && ctsSession) {
