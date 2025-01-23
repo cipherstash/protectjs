@@ -1,5 +1,11 @@
 # @cipherstash/nextjs
 
+## 1.1.0
+
+### Minor Changes
+
+- d0f5dd9: Enforced a check for the subject claims before setting cts session.
+
 ## 1.0.0
 
 ### Major Changes
