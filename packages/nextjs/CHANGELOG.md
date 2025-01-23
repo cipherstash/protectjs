@@ -1,5 +1,11 @@
 # @cipherstash/nextjs
 
+## 1.0.0
+
+### Major Changes
+
+- 24f0a72: Implemented better error handling for fetching CTS tokens and accessing them in the Next.js application.
+
 ## 0.12.0
 
 ### Minor Changes
