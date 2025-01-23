@@ -162,7 +162,32 @@ const lc = new LockContext()
 ```
 
 > [!NOTE]
-> At the time of this writing, the default LockContext is set to use the `sub` Identity Claim, as this is the only Identity Claim that is currently supported.
+> At the time of this writing, the default LockContext context is set to use the `sub` Identity Claim.
+
+**Custom context**
+
+If you want to use a custom context, you can pass it to the `LockContext` constructor.
+
+```typescript
+import { LockContext } from '@cipherstash/jseql/identify'
+
+// eqlClient from the previous steps
+const lc = new LockContext({
+  context: {
+    identityClaim: ['sub'],
+  },
+})
+```
+
+**Context and identity claim options**
+
+The context must be an object with an `identityClaim` property.
+The `identityClaim` property must be an array of strings that correspond to the Identity Claim(s) you want to lock the encryption operation to.
+
+| Identity Claim | Description | Default |
+| -------------- | ----------- | ------- |
+| `sub`          | The user's subject identifier. | yes |
+| `scopes`       | The user's scopes set by your IDP policy. | no |
 
 #### Identifying the user
 
@@ -199,6 +224,8 @@ export default clerkMiddleware(async (auth, req: NextRequest) => {
   return jseqlClerkMiddleware(auth, req)
 })
 ```
+
+#### Retrieving the CTS token in Next.js 
 
 You can then use the `getCtsToken` function to retrieve the CTS token for the current user session.
 
@@ -240,24 +267,21 @@ export default async function Page() {
 
 ### Encrypting data with a lock context
 
-To encrypt data with a lock context, pass the lock context object as a parameter to the `encrypt` function.
+To encrypt data with a lock context, call the optional `withLockContext` method on the `encrypt` function and pass the lock context object as a parameter.
 
 ```typescript
 const ciphertext = await eqlClient.encrypt('plaintext', {
   table: 'users',
   column: 'email',
-  lockContext,
-})
+}).withLockContext(lockContext)
 ```
 
 ### Decrypting data with a lock context
 
-To decrypt data with a lock context, pass the lock context object as a parameter to the `decrypt` function.
+To decrypt data with a lock context, call the optional `withLockContext` method on the `decrypt` function and pass the lock context object as a parameter.
 
 ```typescript
-const plaintext = await eqlClient.decrypt(ciphertext, {
-  lockContext,
-})
+const plaintext = await eqlClient.decrypt(ciphertext).withLockContext(lockContext)
 ```
 
 ### Storing encrypted data in a database
@@ -283,8 +307,14 @@ If you have a large list of items to encrypt or decrypt, you can use the **`bulk
 const encryptedResults = await eqlClient.bulkEncrypt(plaintextsToEncrypt, {
   column: 'email',
   table: 'Users',
-  // lockContext: someLockContext, // if you have one
 })
+
+// or with lock context
+
+const encryptedResults = await eqlClient.bulkEncrypt(plaintextsToEncrypt, {
+  column: 'email',
+  table: 'Users',
+}).withLockContext(lockContext)
 ```
 
 **Parameters**
@@ -305,11 +335,6 @@ const encryptedResults = await eqlClient.bulkEncrypt(plaintextsToEncrypt, {
    - **Type**: `string`
    - **Description**:
      The name of the table you’re encrypting data in (e.g., "Users").
-
-4. **`lockContext`** (optional)
-   - **Type**: `LockContext`
-   - **Description**:
-     Additional metadata and tokens for secure encryption/decryption. If not provided, encryption proceeds without a lock context.
 
 ### Return Value
 
@@ -338,7 +363,6 @@ const plaintextsToEncrypt = users.map((user) => ({
 const encryptedResults = await bulkEncrypt(plaintextsToEncrypt, {
   column: 'email',
   table: 'Users',
-  // lockContext: someLockContext, // if you have one
 })
 
 // encryptedResults might look like:
@@ -362,9 +386,11 @@ if (encryptedResults) {
 #### bulkDecrypt
 
 ```ts
-const decryptedResults = await eqlClient.bulkDecrypt(encryptedPayloads, {
-  // lockContext: someLockContext, // if needed
-})
+const decryptedResults = await eqlClient.bulkDecrypt(encryptedPayloads)
+
+// or with lock context
+
+const decryptedResults = await eqlClient.bulkDecrypt(encryptedPayloads).withLockContext(lockContext)
 ```
 
 **Parameters**
@@ -373,11 +399,6 @@ const decryptedResults = await eqlClient.bulkDecrypt(encryptedPayloads, {
    - **Type**: `Array<{ c: string; id: string }> | null`
    - **Description**:
      An array of objects containing the **ciphertext** (`c`) and the **id**. If this array is empty or `null`, the function returns `null`.
-
-2. **`lockContext`** (optional)
-   - **Type**: `LockContext`
-   - **Description**:
-     Additional metadata used to securely unlock ciphertext. If not provided, decryption proceeds without it.
 
 ### Return Value
 
@@ -403,9 +424,7 @@ const encryptedPayloads = users.map((user) => ({
 }))
 
 // 2) Call bulkDecrypt
-const decryptedResults = await bulkDecrypt(encryptedPayloads, {
-  // lockContext: someLockContext, // if needed
-})
+const decryptedResults = await bulkDecrypt(encryptedPayloads)
 
 // decryptedResults might look like:
 // [
