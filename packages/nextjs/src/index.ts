@@ -8,6 +8,7 @@ import { decodeJwt } from 'jose'
 function getSubjectFromToken(jwt: string): string | undefined {
   const payload = decodeJwt(jwt)
 
+  // The CTS JWT payload has a sub field that starts with "CS|"
   if (typeof payload?.sub === 'string' && payload?.sub.startsWith('CS|')) {
     return payload.sub.slice(3)
   }
