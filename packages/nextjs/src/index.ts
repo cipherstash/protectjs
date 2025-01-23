@@ -3,6 +3,18 @@ import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { setCtsToken } from './cts'
 import { logger } from '../../utils/logger'
+import { decodeJwt } from 'jose'
+
+function getSubjectFromToken(jwt: string): string | undefined {
+  const payload = decodeJwt(jwt)
+
+  // The CTS JWT payload has a sub field that starts with "CS|"
+  if (typeof payload?.sub === 'string' && payload?.sub.startsWith('CS|')) {
+    return payload.sub.slice(3)
+  }
+
+  return payload?.sub
+}
 
 export const CS_COOKIE_NAME = '__cipherstash_cts_session'
 
@@ -59,9 +71,29 @@ export const jseqlMiddleware = async (
   req: NextRequest,
   res?: NextResponse,
 ) => {
-  const ctsSession = req.cookies.has(CS_COOKIE_NAME)
+  const ctsSession = req.cookies.get(CS_COOKIE_NAME)?.value
+
+  if (oidcToken && ctsSession) {
+    const ctsToken = JSON.parse(ctsSession) as CtsToken
+    const ctsTokenSubject = getSubjectFromToken(ctsToken.accessToken)
+    const oidcTokenSubject = getSubjectFromToken(oidcToken)
+
+    if (ctsTokenSubject === oidcTokenSubject) {
+      logger.debug(
+        'The JWT token and the CipherStash session are both valid for the same user.',
+      )
+
+      return res ?? NextResponse.next()
+    }
+
+    return await setCtsToken(oidcToken, res)
+  }
 
   if (oidcToken && !ctsSession) {
+    logger.debug(
+      'The JWT token was defined, so the CipherStash session will be set.',
+    )
+
     return await setCtsToken(oidcToken, res)
   }
 
