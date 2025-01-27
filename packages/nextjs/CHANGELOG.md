@@ -1,5 +1,11 @@
 # @cipherstash/nextjs
 
+## 1.2.0
+
+### Minor Changes
+
+- 3cb97c2: Added an optional argument to getCtsToken to fetch a new CTS token.
+
 ## 1.1.0
 
 ### Minor Changes
