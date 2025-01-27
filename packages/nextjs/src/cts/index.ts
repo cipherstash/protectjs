@@ -7,9 +7,7 @@ import {
 } from '../index'
 
 // Can be used independently of the Next.js middleware
-export const fetchCtsToken = async (
-  oidcToken: string,
-): Promise<GetCtsTokenResponse> => {
+export const fetchCtsToken = async (oidcToken: string): GetCtsTokenResponse => {
   const workspaceId = process.env.CS_WORKSPACE_ID
 
   if (!workspaceId) {
