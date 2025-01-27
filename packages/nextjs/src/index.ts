@@ -1,7 +1,7 @@
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
-import { setCtsToken } from './cts'
+import { setCtsToken, fetchCtsToken } from './cts'
 import { logger } from '../../utils/logger'
 import { decodeJwt } from 'jose'
 
@@ -23,7 +23,7 @@ export type CtsToken = {
   expiry: number
 }
 
-type GetCtsTokenResponse = Promise<
+export type GetCtsTokenResponse = Promise<
   | {
       success: boolean
       error: string
@@ -36,9 +36,17 @@ type GetCtsTokenResponse = Promise<
     }
 >
 
-export const getCtsToken = async (): GetCtsTokenResponse => {
+export const getCtsToken = async (oidcToken?: string): GetCtsTokenResponse => {
   const cookieStore = await cookies()
   const cookieData = cookieStore.get(CS_COOKIE_NAME)?.value
+
+  if (oidcToken && !cookieData) {
+    logger.debug(
+      'The CipherStash session cookie was not found in the request, but a JWT token was provided. The JWT token will be used to fetch a new CipherStash session.',
+    )
+
+    return await fetchCtsToken(oidcToken)
+  }
 
   if (!cookieData) {
     logger.debug('No CipherStash session cookie found in the request.')

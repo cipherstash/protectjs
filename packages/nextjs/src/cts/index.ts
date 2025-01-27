@@ -1,8 +1,13 @@
 import { NextResponse } from 'next/server'
 import { logger } from '../../../utils/logger'
-import { CS_COOKIE_NAME, type CtsToken } from '../index'
+import {
+  CS_COOKIE_NAME,
+  type CtsToken,
+  type GetCtsTokenResponse,
+} from '../index'
 
-export const setCtsToken = async (oidcToken: string, res?: NextResponse) => {
+// Can be used independently of the Next.js middleware
+export const fetchCtsToken = async (oidcToken: string): GetCtsTokenResponse => {
   const workspaceId = process.env.CS_WORKSPACE_ID
 
   if (!workspaceId) {
@@ -10,7 +15,10 @@ export const setCtsToken = async (oidcToken: string, res?: NextResponse) => {
       'The "CS_WORKSPACE_ID" environment variable is not set, and is required by jseqlClerkMiddleware. No CipherStash session will be set.',
     )
 
-    return res ?? NextResponse.next()
+    return {
+      success: false,
+      error: 'The "CS_WORKSPACE_ID" environment variable is not set.',
+    }
   }
 
   const ctsEndoint =
@@ -35,10 +43,34 @@ export const setCtsToken = async (oidcToken: string, res?: NextResponse) => {
       'There was an issue communicating with the CipherStash CTS API, the CipherStash session was not set. If the issue persists, please contact support.',
     )
 
-    return res ?? NextResponse.next()
+    return {
+      success: false,
+      error: `Failed to fetch CTS token: ${ctsResponse.statusText}`,
+    }
   }
 
   const cts_token = (await ctsResponse.json()) as CtsToken
+
+  return {
+    success: true,
+    ctsToken: cts_token,
+  }
+}
+
+// Used in the Next.js middleware
+export const setCtsToken = async (oidcToken: string, res?: NextResponse) => {
+  const ctsResponse = await fetchCtsToken(oidcToken)
+  const cts_token = ctsResponse.ctsToken
+
+  if (!cts_token) {
+    logger.debug(`Failed to fetch CTS token: ${ctsResponse.error}`)
+
+    logger.error(
+      'There was an issue fetching the CipherStash session, the CipherStash session was not set. If the issue persists, please contact support.',
+    )
+
+    return res ?? NextResponse.next()
+  }
 
   // Setting cookies on the request and response using the `ResponseCookies` API
   const response = res ?? NextResponse.next()
