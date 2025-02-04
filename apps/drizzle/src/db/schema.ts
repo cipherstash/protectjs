@@ -1,11 +1,18 @@
 import 'dotenv/config'
+// import {
+//   customType,
+//   pgTable,
+//   serial,
+//   varchar,
+//   jsonb,
+// } from 'drizzle-orm/pg-core'
 import {
   customType,
-  pgTable,
+  mysqlTable,
   serial,
   varchar,
-  jsonb,
-} from 'drizzle-orm/pg-core'
+  json,
+} from 'drizzle-orm/mysql-core'
 
 // Custom types will be implemented in the future - this is an example for now
 // ---
@@ -19,8 +26,8 @@ import {
 //     },
 //   })(name)
 
-export const users = pgTable('users', {
+export const users = mysqlTable('users', {
   id: serial('id').primaryKey(),
-  email: varchar('email').unique(),
-  email_encrypted: jsonb('email_encrypted').notNull(),
+  email: varchar('email', { length: 200 }).unique(),
+  email_encrypted: json('email_encrypted').notNull(),
 })

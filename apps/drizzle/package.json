@@ -14,7 +14,8 @@
 		"insert": "ts-node src/insert.ts",
 		"select": "ts-node src/select.ts",
 		"db:generate": "drizzle-kit generate",
-		"db:migrate": "drizzle-kit migrate"
+		"db:migrate": "drizzle-kit migrate",
+		"db:studio": "drizzle-kit studio"
 	},
 	"peerDependencies": {
 		"typescript": "^5.0.0"
@@ -22,6 +23,7 @@
 	"dependencies": {
 		"@cipherstash/jseql": "workspace:*",
 		"drizzle-orm": "^0.33.0",
+		"mysql2": "^3.12.0",
 		"pg": "^8.13.1",
 		"postgres": "^3.4.4"
 	}
