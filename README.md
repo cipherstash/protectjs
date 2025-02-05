@@ -1,13 +1,13 @@
-# jseql
+# CipherStash Protect for JavaScript/TypeScript
 
-[![Package Tests](https://github.com/cipherstash/jseql/actions/workflows/tests.yaml/badge.svg)](https://github.com/cipherstash/jseql/actions/workflows/tests.yaml)
+[![Package Tests](https://github.com/cipherstash/protectjs/actions/workflows/tests.yaml/badge.svg)](https://github.com/cipherstash/protectjs/actions/workflows/tests.yaml)
 [![Built by CipherStash](https://raw.githubusercontent.com/cipherstash/meta/refs/heads/main/csbadge.svg)](https://cipherstash.com)
 
-`jseql` is a JavaScript/TypeScript package for encrypting and decrypting data in PostgreSQL databases.
+`@cipherstash/protect` is a JavaScript/TypeScript package for encrypting and decrypting data in PostgreSQL databases.
 Encryption operations happen directly in your app, and the ciphertext is stored in your PostgreSQL database.
 
-Every value you encrypt with `jseql` has a unique key, made possible by CipherStash [ZeroKMS](https://cipherstash.com/products/zerokms)'s blazing fast bulk key operations.
-Under the hood `jseql` uses CipherStash [Encrypt Query Language (EQL)](https://github.com/cipherstash/encrypt-query-language), and all ZeroKMS data keys are backed by a root key in [AWS KMS](https://docs.aws.amazon.com/kms/latest/developerguide/overview.html).
+Every value you encrypt with `@cipherstash/protect` has a unique key, made possible by CipherStash [ZeroKMS](https://cipherstash.com/products/zerokms)'s blazing fast bulk key operations.
+Under the hood `@cipherstash/protect` uses CipherStash [Encrypt Query Language (EQL)](https://github.com/cipherstash/encrypt-query-language), and all ZeroKMS data keys are backed by a root key in [AWS KMS](https://docs.aws.amazon.com/kms/latest/developerguide/overview.html).
 
 ## Table of Contents
 
@@ -23,12 +23,12 @@ Under the hood `jseql` uses CipherStash [Encrypt Query Language (EQL)](https://g
 
 ## Features
 
-`jseql` leverages [Encrypt Query Language (EQL)](https://github.com/cipherstash/encrypt-query-language) and [CipherStash](https://cipherstash.com) to encrypt data in a PostgreSQL database.
+`@cipherstash/protect` is built on to protect data in a PostgreSQL database using industry standard encryption, and a key management service called [ZeroKMS](https://cipherstash.com/products/zerokms) that's built to work with data at scale.
 
 **Features:**
-- **Bulk encryption and decryption**: `jseql` uses [ZeroKMS](https://cipherstash.com/products/zerokms) for encrypting and decrypting thousands of records at once, while using a unique key for every value.
-- **Single item encryption and decryption**: Just looking for a way to encrypt and decrypt single values? `jseql` has you covered.
-- **Really fast:** ZeroKMS's performance makes using millions of unique keys feasible and performant for real-world applications built with `jseql`.
+- **Bulk encryption and decryption**: `@cipherstash/protect` uses [ZeroKMS](https://cipherstash.com/products/zerokms) for encrypting and decrypting thousands of records at once, while using a unique key for every value.
+- **Single item encryption and decryption**: Just looking for a way to encrypt and decrypt single values? `@cipherstash/protect` has you covered.
+- **Really fast:** ZeroKMS's performance makes using millions of unique keys feasible and performant for real-world applications built with `@cipherstash/protect`.
 - **Identity-aware encryption**: Lock down access to sensitive data by requiring a valid JWT to perform a decryption.
 - **TypeScript support**: Strongly typed with TypeScript interfaces and types.
 
@@ -39,36 +39,20 @@ Under the hood `jseql` uses CipherStash [Encrypt Query Language (EQL)](https://g
 
 ## Installation
 
-Install `jseql` via one of the following methods:
+Install `@cipherstash/protect` via one of the following methods:
 
 ```bash
-npm install @cipherstash/jseql
+npm install @cipherstash/protect
 # or
-yarn add @cipherstash/jseql
+yarn add @cipherstash/protect
 # or
-pnpm add @cipherstash/jseql
+pnpm add @cipherstash/protect
 ```
-
-## Platform Support
-
-### Operating Systems
-
-| Linux  | macOS | Windows |
-| ------ | ----- | ------- |
-| ✓      | ✓     | ✓       |
-
-### Node.js
-
-`jseql` actively supports all current and [maintenance releases of Node](https://github.com/nodejs/LTS#release-schedule).
-If you're using a different version of Node and believe it should be supported, let us know.
-
-Older Node version support (minimum v10) may require lower Node-API versions.
-See the Node [version support matrix](https://nodejs.org/api/n-api.html#node-api-version-matrix) for more details.
 
 ### Bun (experimental)
 
 [Bun](https://bun.sh/) is an alternate JavaScript runtime that targets Node compatibility.
-At the time of this writing, some Node-API functions are [not implemented](https://github.com/oven-sh/bun/issues/158) so `jseql` may not work with Bun.
+At the time of this writing, some Node-API functions are [not implemented](https://github.com/oven-sh/bun/issues/158) so `@cipherstash/protect` may not work with Bun.
 
 ## Usage
 
@@ -86,7 +70,7 @@ CS_CLIENT_ACCESS_KEY=your-client-access-key
 ```
 
 > [!IMPORTANT]
-> These values are required to use the `jseql` package.
+> These values are required to use the `@cipherstash/protect` package.
 > The names of the variables must match the values above or the package will not work.
 
 #### client keys
@@ -104,18 +88,18 @@ You can generate an access token in the dashboard or the CLI.
 
 ### Initialize the EQL client
 
-Import the `eql` function from the `@cipherstash/jseql` package and initialize the EQL client with your CipherStash credentials.
+Import the `protect` function from the `@cipherstash/protect` package and initialize a client with your CipherStash credentials.
 
 ```typescript
-const { eql } = require('@cipherstash/jseql')
-const eqlClient = await eql()
+const { protect } = require('@cipherstash/protect')
+const protectClient = await protect()
 ```
 
 .. or using ES6?
 
 ```typescript
-import { eql } from '@cipherstash/jseql'
-const eqlClient = await eql()
+import { protect } from '@cipherstash/protect'
+const protectClient = await protect()
 ```
 
 ### Encrypting data
@@ -124,7 +108,7 @@ To encrypt data, use the `encrypt` function.
 This function takes a plaintext string and an object with the table and column name as parameters.
 
 ```typescript
-const ciphertext = await eqlClient.encrypt('plaintext', {
+const ciphertext = await protectClient.encrypt('plaintext', {
   column: 'column_name',
   table: 'users',
 })
@@ -144,7 +128,7 @@ To decrypt data, use the `decrypt` function.
 This function takes an encrypted data object and an object with the lock context as parameters.
 
 ```typescript
-const plaintext = await eqlClient.decrypt(ciphertext)
+const plaintext = await protectClient.decrypt(ciphertext)
 ```
 
 The `decrypt` function returns a string with the plaintext data.
@@ -155,13 +139,13 @@ The `decrypt` function returns a string with the plaintext data.
 > If you use a lock context to encrypt data, you must also use the same lock context to decrypt the data.
 > Otherwise, you will receive a `400` error from ZeroKMS indicating that the request was unable to generate a data key, and you will be unable to decrypt the data.
 
-`jseql` supports lock contexts to ensure that only the intended users can access sensitive data.
+`@cipherstash/protect` supports lock contexts to ensure that only the intended users can access sensitive data.
 To use a lock context, initialize a `LockContext` object with the identity claims.
 
 ```typescript
-import { LockContext } from '@cipherstash/jseql/identify'
+import { LockContext } from '@cipherstash/protect/identify'
 
-// eqlClient from the previous steps
+// protectClient from the previous steps
 const lc = new LockContext()
 ```
 
@@ -173,9 +157,9 @@ const lc = new LockContext()
 If you want to override the default context, you can pass a custom context to the `LockContext` constructor.
 
 ```typescript
-import { LockContext } from '@cipherstash/jseql/identify'
+import { LockContext } from '@cipherstash/protect/identify'
 
-// eqlClient from the previous steps
+// protectClient from the previous steps
 const lc = new LockContext({
   context: {
     identityClaim: ['sub'], // this is the default context
@@ -208,7 +192,7 @@ The `jwt_token_from_identiti_provider` is the JWT token from your identity provi
 
 ### Lock context with Next.js and Clerk
 
-If you're using [Clerk](https://clerk.com/) as your identity provider, you can use the `jseqlClerkMiddleware` function to automatically set the CTS token for every user session.
+If you're using [Clerk](https://clerk.com/) as your identity provider, you can use the `protectClerkMiddleware` function to automatically set the CTS token for every user session.
 
 Install the `@cipherstash/nextjs` package:
 
@@ -224,10 +208,10 @@ In your `middleware.ts` file, add the following code:
 
 ```typescript
 import { clerkMiddleware } from '@clerk/nextjs/server'
-import { jseqlClerkMiddleware } from '@cipherstash/nextjs/clerk'
+import { protectClerkMiddleware } from '@cipherstash/nextjs/clerk'
 
 export default clerkMiddleware(async (auth, req: NextRequest) => {
-  return jseqlClerkMiddleware(auth, req)
+  return protectClerkMiddleware(auth, req)
 })
 ```
 
@@ -264,7 +248,7 @@ export default async function Page() {
 Since the CTS token is already available, you can construct a `LockContext` object with the existing CTS token.
 
 ```typescript
-import { LockContext } from '@cipherstash/jseql/identify'
+import { LockContext } from '@cipherstash/protect/identify'
 import { getCtsToken } from '@cipherstash/nextjs'
 
 export default async function Page() {
@@ -291,7 +275,7 @@ export default async function Page() {
 To encrypt data with a lock context, call the optional `withLockContext` method on the `encrypt` function and pass the lock context object as a parameter.
 
 ```typescript
-const ciphertext = await eqlClient.encrypt('plaintext', {
+const ciphertext = await protectClient.encrypt('plaintext', {
   table: 'users',
   column: 'email',
 }).withLockContext(lockContext)
@@ -302,7 +286,7 @@ const ciphertext = await eqlClient.encrypt('plaintext', {
 To decrypt data with a lock context, call the optional `withLockContext` method on the `decrypt` function and pass the lock context object as a parameter.
 
 ```typescript
-const plaintext = await eqlClient.decrypt(ciphertext).withLockContext(lockContext)
+const plaintext = await protectClient.decrypt(ciphertext).withLockContext(lockContext)
 ```
 
 ### Storing encrypted data in a database
@@ -325,14 +309,14 @@ If you have a large list of items to encrypt or decrypt, you can use the **`bulk
 #### bulkEncrypt
 
 ```ts
-const encryptedResults = await eqlClient.bulkEncrypt(plaintextsToEncrypt, {
+const encryptedResults = await protectClient.bulkEncrypt(plaintextsToEncrypt, {
   column: 'email',
   table: 'Users',
 })
 
 // or with lock context
 
-const encryptedResults = await eqlClient.bulkEncrypt(plaintextsToEncrypt, {
+const encryptedResults = await protectClient.bulkEncrypt(plaintextsToEncrypt, {
   column: 'email',
   table: 'Users',
 }).withLockContext(lockContext)
@@ -407,11 +391,11 @@ if (encryptedResults) {
 #### bulkDecrypt
 
 ```ts
-const decryptedResults = await eqlClient.bulkDecrypt(encryptedPayloads)
+const decryptedResults = await protectClient.bulkDecrypt(encryptedPayloads)
 
 // or with lock context
 
-const decryptedResults = await eqlClient.bulkDecrypt(encryptedPayloads).withLockContext(lockContext)
+const decryptedResults = await protectClient.bulkDecrypt(encryptedPayloads).withLockContext(lockContext)
 ```
 
 **Parameters**
@@ -466,44 +450,44 @@ if (decryptedResults) {
 
 ## Supported data types
 
-`jseql` currently supports encrypting and decrypting text.
-Other data types like booleans, dates, ints, floats, and JSON are extremely well supported in other CipherStash products, and will be coming to `jseql`.
-Until support for other data types are available in `jseql`, you can:
+`@cipherstash/protect` currently supports encrypting and decrypting text.
+Other data types like booleans, dates, ints, floats, and JSON are extremely well supported in other CipherStash products, and will be coming to `@cipherstash/protect`.
+Until support for other data types are available in `@cipherstash/protect`, you can:
 
 - Read [about how these data types work in EQL](https://github.com/cipherstash/encrypt-query-language/blob/main/docs/reference/INDEX.md)
-- Vote for this feature by adding a :+1: on this [GitHub Issue](https://github.com/cipherstash/jseql/issues/48).
+- Vote for this feature by adding a :+1: on this [GitHub Issue](https://github.com/cipherstash/protectjs/issues/48).
 
 ## Searchable encryption
 
-`jseql` does not currently support searching encrypted data.
-Searchable encryption is an extremely well supported capability in other CipherStash products, and will be coming to `jseql`.
-Until searchable encryption support is released in `jseql`, you can:
+`@cipherstash/protect` does not currently support searching encrypted data.
+Searchable encryption is an extremely well supported capability in other CipherStash products, and will be coming to `@cipherstash/protect`.
+Until searchable encryption support is released in `@cipherstash/protect`, you can:
 
 - Read [about how searchable encryption works in EQL](https://github.com/cipherstash/encrypt-query-language)
-- Vote for this feature by adding a :+1: on this [GitHub Issue](https://github.com/cipherstash/jseql/issues/46).
+- Vote for this feature by adding a :+1: on this [GitHub Issue](https://github.com/cipherstash/protectjs/issues/46).
 
 ## Logging
 
 > [!IMPORTANT]
-> `jseql` will NEVER log plaintext data.
+> `@cipherstash/protect` will NEVER log plaintext data.
 > This is by design to prevent sensitive data from leaking into logs.
 
-`@cipherstash/jseql` and `@cipherstash/nextjs` will log to the console with a log level of `info` by default.
+`@cipherstash/protect` and `@cipherstash/nextjs` will log to the console with a log level of `info` by default.
 You can enable the logger by configuring the following environment variable:
 
 ```bash
-JSEQL_LOG_LEVEL=debug  # Enable debug logging
-JSEQL_LOG_LEVEL=info   # Enable info logging
-JSEQL_LOG_LEVEL=error  # Enable error logging
+PROTECT_LOG_LEVEL=debug  # Enable debug logging
+PROTECT_LOG_LEVEL=info   # Enable info logging
+PROTECT_LOG_LEVEL=error  # Enable error logging
 ```
 
 ## Builds and bundling
 
-`@cipherstash/jseql` is a native Node.js module, and relies on native Node.js `require` to load the package.
+`@cipherstash/protect` is a native Node.js module, and relies on native Node.js `require` to load the package.
 
 ### Next.js
 
-Using `@cipherstash/jseql` with Next.js? You need to opt-out from the Server Components bundling and use native Node.js `require` instead.
+Using `@cipherstash/protect` with Next.js? You need to opt-out from the Server Components bundling and use native Node.js `require` instead.
 
 #### Using version 15 or later
 
@@ -512,7 +496,7 @@ Using `@cipherstash/jseql` with Next.js? You need to opt-out from the Server Com
 ```js
 const nextConfig = {
   ...
-  serverExternalPackages: ['@cipherstash/jseql'],
+  serverExternalPackages: ['@cipherstash/protect'],
 }
 ```
 
@@ -524,7 +508,7 @@ const nextConfig = {
 const nextConfig = {
   ...
   experimental: {
-    serverComponentsExternalPackages: ['@cipherstash/jseql'],
+    serverComponentsExternalPackages: ['@cipherstash/protect'],
   },
 }
 ```
@@ -533,15 +517,15 @@ const nextConfig = {
 
 - [Basic example](/apps/basic)
 - [Drizzle example](/apps/drizzle)
-- [Next.js, Drizzle, and Clerk example](https://github.com/cipherstash/jseql-next-drizzle)
+- [Next.js, Drizzle, and Clerk example](https://github.com/cipherstash/protectjs-next-drizzle)
 
-`jseql` can be used with most ORMs that support PostgreSQL.
-If you're interested in using `jseql` with a specific ORM, please [create an issue](https://github.com/cipherstash/jseql/issues/new).
+`@cipherstash/protect` can be used with most ORMs that support PostgreSQL.
+If you're interested in using `@cipherstash/protect` with a specific ORM, please [create an issue](https://github.com/cipherstash/protectjs/issues/new).
 
 ## CipherStash Client
 
-`@cipherstash/jseql` is built on top of the CipherStash Client Rust SDK which is integrated with the `@cipherstash/jseql-ffi` package.
-The `@cipherstash/jseql-ffi` package is [public on NPM](https://www.npmjs.com/package/@cipherstash/jseql-ffi), and the source code will be released on GitHub.
+`@cipherstash/protect` is built on top of the CipherStash Client Rust SDK which is integrated with the `@cipherstash/jseql-ffi` package.
+The `@cipherstash/jseql-ffi` package is [public on NPM](https://www.npmjs.com/package/@cipherstash/jseql-ffi), and the source code will be released on GitHub soon.
 
 The Cipherstash Client is configured by environment variables, which are used to initialize the client when the `eql` function is called:
 
@@ -555,7 +539,7 @@ The Cipherstash Client is configured by environment variables, which are used to
 | `CS_CONFIG_PATH`       | A temporary path to store the CipherStash client configuration. | No       | `/home/{username}/.cipherstash`              |
 
 > [!TIP]
-> There are some configuration details you should take note of when deploying `jseql` in your production apps.
+> There are some configuration details you should take note of when deploying `@cipherstash/protect` in your production apps.
 
 - If you've created a Workspace in a region other than `ap-southeast-2`, you will need to set the `CS_ZEROKMS_HOST` environment variable to the appropriate region. For example, if you are using ZeroKMS in the `eu-central-1` region, you need to set the `CS_ZEROKMS_HOST` variable to `https://eu-central-1.aws.viturhosted.net`. This is a known usability issue that will be addressed.
 - In most hosting environments, the `CS_CONFIG_PATH` environment variable will need to be set to a path that the user running the application has permission to write to. Setting `CS_CONFIG_PATH` to `/tmp/.cipherstash` will work in most cases, and has been tested on [Vercel](https://vercel.com/), [AWS Lambda](https://aws.amazon.com/lambda/), and other hosting environments.
@@ -566,4 +550,4 @@ Please read the [contribution guide](CONTRIBUTE.md).
 
 ## License
 
-`jseql` is [MIT licensed](./LICENSE.md).
+`@cipherstash/protect` is [MIT licensed](./LICENSE.md).

@@ -1,16 +1,16 @@
-# How to contribute to jseql
+# How to contribute to @cipherstash/protect
 
 ## I want to report a bug, or make a feature request
 
 Please use the GitHub issue tracker to report bugs, suggest features, or documentation improvements.
 
-[When filing an issue](https://github.com/cipherstash/jseql/issues/new/choose), please check [existing open](https://github.com/cipherstash/jseql/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc), or [recently closed](https://github.com/cipherstash/jseql/issues?q=is%3Aissue+sort%3Aupdated-desc+is%3Aclosed), issues to make sure somebody else hasn't already reported the issue. Please try to include as much information as you can.
+[When filing an issue](https://github.com/cipherstash/protectjs/issues/new/choose), please check [existing open](https://github.com/cipherstash/protectjs/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc), or [recently closed](https://github.com/cipherstash/protectjs/issues?q=is%3Aissue+sort%3Aupdated-desc+is%3Aclosed), issues to make sure somebody else hasn't already reported the issue. Please try to include as much information as you can.
 
 ---
 
-# Contributing to JSEQL
+# Contributing to @cipherstash/protect
 
-Thank you for your interest in contributing to **jseql**! This document will walk you through the repository’s structure, how to build and run the project locally, and how to make contributions effectively.
+Thank you for your interest in contributing to **@cipherstash/protect**! This document will walk you through the repository’s structure, how to build and run the project locally, and how to make contributions effectively.
 
 ## Repository Structure
 
@@ -21,7 +21,7 @@ Thank you for your interest in contributing to **jseql**! This document will wal
 │   └── example-app-2/
 │
 ├── packages/
-│   └── jseql/     <-- Main package published to npm
+│   └── protect/     <-- Main package published to npm
 │
 ├── .changeset/
 ├── .turbo/
@@ -34,21 +34,21 @@ Thank you for your interest in contributing to **jseql**! This document will wal
 
 This repo uses [Turborepo](https://turbo.build/) to manage multiple packages and apps in a monorepo structure. Turborepo orchestrates tasks (build, test, lint, etc.) across the different packages in a consistent and efficient manner.
 
-### `packages/jseql`
+### `packages/protect`
 
-The **jseql** package is the core library that is published to npm under the `@cipherstash/jseql` namespace. This is likely where you’ll spend most of your time if you’re contributing new features or bug fixes related to JSEQL’s core functionality.
+The **@cipherstash/protect** package is the core library that is published to npm under the `@cipherstash/protect` namespace. This is likely where you’ll spend most of your time if you’re contributing new features or bug fixes related to JSEQL’s core functionality.
 
 ### `apps/` Directory
 
-Within the `apps/` directory, you’ll find example applications that demonstrate how to use **jseql**. These example apps reference the local `@cipherstash/jseql` package, allowing you to test and verify your changes to **jseql** in a real-world application scenario.
+Within the `apps/` directory, you’ll find example applications that demonstrate how to use **@cipherstash/protect**. These example apps reference the local `@cipherstash/protect` package, allowing you to test and verify your changes to **@cipherstash/protect** in a real-world application scenario.
 
 ## Setup Instructions
 
 ### 1. Clone the Repo
 
 ```bash
-git clone https://github.com/cipherstash/jseql.git
-cd jseql
+git clone https://github.com/cipherstash/protectjs.git
+cd protectjs
 ```
 
 ### 2. Install Dependencies
@@ -59,13 +59,13 @@ pnpm install
 
 ### 4. Build the Main Package
 
-Before you can run any example apps, you need to build the `@cipherstash/jseql` package:
+Before you can run any example apps, you need to build the `@cipherstash/protect` package:
 
 ```bash
 pnpm run build
 ```
 
-This command triggers Turborepo’s build pipeline, compiling the **jseql** package in `packages/jseql` and linking it locally so the example apps can reference it.
+This command triggers Turborepo’s build pipeline, compiling the **@cipherstash/protect** package in `packages/protect` and linking it locally so the example apps can reference it.
 
 ### 5. Run an Example App
 
@@ -77,7 +77,7 @@ pnpm run dev
 
 Navigate to one of the example apps in `apps/` and follow the instructions for the corresponding examples.
 
-Now, you can view the running application (if it’s a web or server app) or otherwise test the example’s output. This will help confirm your local build of **jseql** is working correctly.
+Now, you can view the running application (if it’s a web or server app) or otherwise test the example’s output. This will help confirm your local build of **@cipherstash/protect** is working correctly.
 
 ## Making Changes
 
@@ -86,7 +86,7 @@ Now, you can view the running application (if it’s a web or server app) or oth
    git checkout -b feat/my-new-feature
    ```
 
-2. **Implement your changes** in the relevant package (most likely in `packages/jseql`).
+2. **Implement your changes** in the relevant package (most likely in `packages/protect`).
 
 3. **Write tests** to cover any new functionality or bug fixes.
 

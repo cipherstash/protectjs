@@ -3,7 +3,7 @@ import { parseArgs } from 'node:util'
 import { getTableName } from 'drizzle-orm'
 import { db } from './db'
 import { users } from './db/schema'
-import { eqlClient } from './eql'
+import { protectClient } from './protect'
 
 const getEmail = () => {
   const { values, positionals } = parseArgs({
@@ -26,7 +26,7 @@ if (!email) {
   throw new Error('Email is required')
 }
 
-const encryptedEmail = await eqlClient.encrypt(email, {
+const encryptedEmail = await protectClient.encrypt(email, {
   column: users.email_encrypted.name,
   table: getTableName(users),
 })

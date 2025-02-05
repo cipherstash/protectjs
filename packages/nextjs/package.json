@@ -1,7 +1,7 @@
 {
 	"name": "@cipherstash/nextjs",
 	"version": "1.2.0",
-	"description": "Nextjs middleware for jseql",
+	"description": "Nextjs package for use with @cipherstash/protect",
 	"keywords": [
 		"encrypted",
 		"typescript",
@@ -9,11 +9,11 @@
 		"nextjs"
 	],
 	"bugs": {
-		"url": "https://github.com/cipherstash/jseql/issues"
+		"url": "https://github.com/cipherstash/protectjs/issues"
 	},
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/cipherstash/jseql.git"
+		"url": "git+https://github.com/cipherstash/protectjs.git"
 	},
 	"license": "MIT",
 	"author": "CipherStash <hello@cipherstash.com>",

@@ -26,18 +26,18 @@ importers:
 
   apps/basic:
     dependencies:
-      '@cipherstash/jseql':
+      '@cipherstash/protect':
         specifier: workspace:*
-        version: link:../../packages/jseql
+        version: link:../../packages/protect
       dotenv:
         specifier: ^16.4.7
         version: 16.4.7
 
   apps/drizzle:
     dependencies:
-      '@cipherstash/jseql':
+      '@cipherstash/protect':
         specifier: workspace:*
-        version: link:../../packages/jseql
+        version: link:../../packages/protect
       drizzle-orm:
         specifier: ^0.33.0
         version: 0.33.0(@types/pg@8.11.10)(pg@8.13.1)(postgres@3.4.5)(react@19.0.0)
@@ -69,9 +69,9 @@ importers:
 
   apps/hono-supabase:
     dependencies:
-      '@cipherstash/jseql':
+      '@cipherstash/protect':
         specifier: workspace:*
-        version: link:../../packages/jseql
+        version: link:../../packages/protect
       '@hono/node-server':
         specifier: ^1.13.7
         version: 1.13.7(hono@4.6.16)
@@ -91,35 +91,6 @@ importers:
       tsx:
         specifier: ^4.7.1
         version: 4.19.2
-
-  packages/jseql:
-    dependencies:
-      '@cipherstash/jseql-ffi':
-        specifier: 0.5.0
-        version: 0.5.0
-      typescript:
-        specifier: ^5.0.0
-        version: 5.7.2
-    optionalDependencies:
-      '@rollup/rollup-linux-x64-gnu':
-        specifier: 4.24.0
-        version: 4.24.0
-    devDependencies:
-      dotenv:
-        specifier: ^16.4.7
-        version: 16.4.7
-      execa:
-        specifier: ^9.5.2
-        version: 9.5.2
-      json-schema-to-typescript:
-        specifier: ^15.0.2
-        version: 15.0.3
-      tsup:
-        specifier: ^8.3.0
-        version: 8.3.5(postcss@8.4.49)(tsx@4.19.2)(typescript@5.7.2)
-      vitest:
-        specifier: ^2.1.8
-        version: 2.1.8(@types/node@22.10.5)
 
   packages/nextjs:
     dependencies:
@@ -143,6 +114,35 @@ importers:
       dotenv:
         specifier: ^16.4.7
         version: 16.4.7
+      tsup:
+        specifier: ^8.3.0
+        version: 8.3.5(postcss@8.4.49)(tsx@4.19.2)(typescript@5.7.2)
+      vitest:
+        specifier: ^2.1.8
+        version: 2.1.8(@types/node@22.10.5)
+
+  packages/protect:
+    dependencies:
+      '@cipherstash/jseql-ffi':
+        specifier: 0.5.0
+        version: 0.5.0
+      typescript:
+        specifier: ^5.0.0
+        version: 5.7.2
+    optionalDependencies:
+      '@rollup/rollup-linux-x64-gnu':
+        specifier: 4.24.0
+        version: 4.24.0
+    devDependencies:
+      dotenv:
+        specifier: ^16.4.7
+        version: 16.4.7
+      execa:
+        specifier: ^9.5.2
+        version: 9.5.2
+      json-schema-to-typescript:
+        specifier: ^15.0.2
+        version: 15.0.3
       tsup:
         specifier: ^8.3.0
         version: 8.3.5(postcss@8.4.49)(tsx@4.19.2)(typescript@5.7.2)

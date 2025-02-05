@@ -11,7 +11,7 @@ function getLevelValue(level: string): number {
   }
 }
 
-const envLogLevel = process.env.JSEQL_LOG_LEVEL || 'info'
+const envLogLevel = process.env.PROTECT_LOG_LEVEL || 'info'
 const currentLevel = getLevelValue(envLogLevel)
 
 function debug(...args: unknown[]): void {

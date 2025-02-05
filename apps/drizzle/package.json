@@ -20,7 +20,7 @@
 		"typescript": "^5.0.0"
 	},
 	"dependencies": {
-		"@cipherstash/jseql": "workspace:*",
+		"@cipherstash/protect": "workspace:*",
 		"drizzle-orm": "^0.33.0",
 		"pg": "^8.13.1",
 		"postgres": "^3.4.4"

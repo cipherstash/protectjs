@@ -1,7 +1,7 @@
 import 'dotenv/config'
 import { db } from './db'
 import { users } from './db/schema'
-import { eqlClient } from './eql'
+import { protectClient } from './protect'
 
 const sql = db
   .select({
@@ -15,7 +15,9 @@ console.log('[INFO] SQL statement:', sqlResult)
 const data = await sql.execute()
 
 const emails = await Promise.all(
-  data.map(async (row) => await eqlClient.decrypt(row.email as { c: string })),
+  data.map(
+    async (row) => await protectClient.decrypt(row.email as { c: string }),
+  ),
 )
 
 console.log('[INFO] All emails have been decrypted by CipherStash Proxy')

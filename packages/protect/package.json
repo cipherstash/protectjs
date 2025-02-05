@@ -1,21 +1,21 @@
 {
-	"name": "@cipherstash/jseql",
+	"name": "@cipherstash/protect",
 	"version": "4.0.0",
-	"description": "Encrypted Query Language JavaScript Library",
+	"description": "CipherStash Protech for JavaScript",
 	"keywords": [
 		"encrypted",
 		"query",
 		"language",
 		"typescript",
 		"ts",
-		"eql"
+		"protect"
 	],
 	"bugs": {
-		"url": "https://github.com/cipherstash/jseql/issues"
+		"url": "https://github.com/cipherstash/protectjs/issues"
 	},
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/cipherstash/jseql.git"
+		"url": "git+https://github.com/cipherstash/protectjs.git"
 	},
 	"license": "MIT",
 	"author": "CipherStash <hello@cipherstash.com>",

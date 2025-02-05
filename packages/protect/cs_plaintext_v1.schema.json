@@ -27,10 +27,7 @@
           "pattern": "^[a-zA-Z_]{1}[0-9a-zA-Z_]*$"
         }
       },
-      "required": [
-        "t",
-        "c"
-      ]
+      "required": ["t", "c"]
     },
     "p": {
       "title": "plaintext",
@@ -40,19 +37,8 @@
       "title": "for query",
       "description": "Specifies that the plaintext should be encrypted for a specific query operation. If null, source encryption and encryption for all indexes will be performed.",
       "type": "string",
-      "enum": [
-        "match",
-        "ore",
-        "unique",
-        "ste_vec",
-        "ejson_path"
-      ]
+      "enum": ["match", "ore", "unique", "ste_vec", "ejson_path"]
     }
   },
-  "required": [
-    "v",
-    "k",
-    "i",
-    "p"
-  ]
+  "required": ["v", "k", "i", "p"]
 }

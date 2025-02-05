@@ -1,10 +1,10 @@
 import 'dotenv/config'
 import {
   customType,
+  jsonb,
   pgTable,
   serial,
   varchar,
-  jsonb,
 } from 'drizzle-orm/pg-core'
 
 // Custom types will be implemented in the future - this is an example for now
