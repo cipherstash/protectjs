@@ -120,17 +120,12 @@ describe('encryption and decryption', () => {
   })
 
   it('should encrypt and decrypt a payload', async () => {
-    console.log('process.env.CS_CLIENT_ID', process.env.CS_CLIENT_ID)
     const protectClient = await protect()
-
-    console.log('protectClient has been created')
 
     const ciphertext = await protectClient.encrypt('plaintext', {
       column: 'column_name',
       table: 'users',
     })
-
-    console.log('ciphertext has been created')
 
     const plaintext = await protectClient.decrypt(ciphertext)
 
