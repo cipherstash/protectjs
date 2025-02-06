@@ -44,7 +44,7 @@
 		"execa": "^9.5.2",
 		"json-schema-to-typescript": "^15.0.2",
 		"tsup": "^8.3.0",
-		"vitest": "^2.1.8"
+		"vitest": "^2.1.9"
 	},
 	"peerDependencies": {
 		"typescript": "^5.0.0"
