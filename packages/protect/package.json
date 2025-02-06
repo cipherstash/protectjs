@@ -1,6 +1,6 @@
 {
 	"name": "@cipherstash/protect",
-	"version": "4.0.0",
+	"version": "5.0.0",
 	"description": "CipherStash Protech for JavaScript",
 	"keywords": [
 		"encrypted",
