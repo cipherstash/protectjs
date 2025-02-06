@@ -1,5 +1,11 @@
 # @cipherstash/jseql
 
+## 5.0.0
+
+### Major Changes
+
+- 76599e5: Rebrand jseql to protect.
+
 ## 4.0.0
 
 ### Major Changes

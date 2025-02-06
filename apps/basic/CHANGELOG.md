@@ -1,5 +1,16 @@
 # @cipherstash/basic-example
 
+## 1.0.0
+
+### Major Changes
+
+- 76599e5: Rebrand jseql to protect.
+
+### Patch Changes
+
+- Updated dependencies [76599e5]
+  - @cipherstash/protect@5.0.0
+
 ## 0.1.2
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # @cipherstash/nextjs
 
+## 2.0.0
+
+### Major Changes
+
+- 76599e5: Rebrand jseql to protect.
+
 ## 1.2.0
 
 ### Minor Changes
