@@ -1,9 +1,9 @@
+import { decodeJwt } from 'jose'
+import { cookies } from 'next/headers'
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
-import { setCtsToken, fetchCtsToken } from './cts'
 import { logger } from '../../utils/logger'
-import { decodeJwt } from 'jose'
+import { fetchCtsToken, setCtsToken } from './cts'
 
 function getSubjectFromToken(jwt: string): string | undefined {
   const payload = decodeJwt(jwt)
@@ -74,7 +74,7 @@ export const resetCtsToken = (res?: NextResponse) => {
   return response
 }
 
-export const jseqlMiddleware = async (
+export const protectMiddleware = async (
   oidcToken: string,
   req: NextRequest,
   res?: NextResponse,

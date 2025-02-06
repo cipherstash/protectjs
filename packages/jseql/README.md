@@ -1,4 +1,4 @@
 # @cipherstash/jseql
 
-This is the main package for the Encrypted Query Language (EQL) JavaScript/TypeScript library.
-Please refer to the [main README](https://github.com/cipherstash/jseql) for more information.
+The `@cipherstash/jseql` package has been deprecated in favor of the `@cipherstash/protect` package.
+Please refer to the [main README](https://github.com/cipherstash/protectjs) for more information.

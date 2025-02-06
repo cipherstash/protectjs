@@ -1,6 +1,6 @@
 # CipherStash JSEQL + Supabase + Hono Example
 
-This project demonstrates how to encrypt data using [@cipherstash/jseql](https://www.npmjs.com/package/@cipherstash/jseql) before storing it in a [Supabase](https://supabase.com/) Postgres database. It uses [Hono](https://hono.dev/) to create a minimal RESTful API, showcasing how to seamlessly integrate field-level encryption into a typical web application workflow.
+This project demonstrates how to encrypt data using [@cipherstash/protect](https://www.npmjs.com/package/@cipherstash/protect) before storing it in a [Supabase](https://supabase.com/) Postgres database. It uses [Hono](https://hono.dev/) to create a minimal RESTful API, showcasing how to seamlessly integrate field-level encryption into a typical web application workflow.
 
 ## Table of Contents
 - [Overview](#overview)  
@@ -23,7 +23,7 @@ This project demonstrates how to encrypt data using [@cipherstash/jseql](https:/
 ## Overview
 
 **What does this example show?**  
-1. **Encrypting data** with [@cipherstash/jseql](https://www.npmjs.com/package/@cipherstash/jseql).  
+1. **Encrypting data** with [@cipherstash/protect](https://www.npmjs.com/package/@cipherstash/protect).  
 2. **Storing encrypted data** in a Postgres database (using Supabase).  
 3. **Retrieving and decrypting** that data in a minimal Hono-based REST API.  
 
@@ -53,8 +53,8 @@ This project demonstrates how to encrypt data using [@cipherstash/jseql](https:/
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/cipherstash/jseql.git
-cd jseql/apps/hono-supabase
+git clone https://github.com/cipherstash/jsprotect.git
+cd jsprotect/apps/hono-supabase
 ```
 
 ### 2. Install dependencies
@@ -167,12 +167,12 @@ import { createClient } from '@supabase/supabase-js'
 import { Hono } from 'hono'
 import { createRequire } from 'node:module'
 
-// We use ES6 require for @cipherstash/jseql due to dynamic import limitations
+// We use ES6 require for @cipherstash/protect due to dynamic import limitations
 const require = createRequire(import.meta.url)
-const { eql } = require('@cipherstash/jseql')
+const { protect } = require('@cipherstash/protect')
 
 // 1. Initialize the CipherStash EQL client using environment variables
-const eqlClient = await eql()
+const protectClient = await protect()
 
 // 2. Initialize Supabase client
 const supabaseUrl = process.env.SUPABASE_URL
@@ -190,7 +190,7 @@ app.get('/users', async (c) => {
   if (users && users.length > 0) {
     const decryptedusers = await Promise.all(
       users.map(async (user) => {
-        const plaintextEmail = await eqlClient.decrypt(user.email)
+        const plaintextEmail = await protectClient.decrypt(user.email)
         return { ...user, email: plaintextEmail }
       })
     )
@@ -200,7 +200,7 @@ app.get('/users', async (c) => {
 })
 
 // 5. POST /users
-//    - Encrypts the `email` field using jseql
+//    - Encrypts the `email` field using jsprotect
 //    - Inserts the encrypted data into the `users` table
 app.post('/users', async (c) => {
   const { email, name } = await c.req.json()
@@ -209,7 +209,7 @@ app.post('/users', async (c) => {
   }
 
   // Encrypt the email
-  const encryptedEmail = await eqlClient.encrypt(email, {
+  const encryptedEmail = await protectClient.encrypt(email, {
     column: 'email',
     table: 'users',
   })
@@ -236,7 +236,7 @@ serve({
 ```
 
 **Key points to note:**
-- `@cipherstash/jseql` provides two primary functions: `encrypt()` and `decrypt()`.
+- `@cipherstash/protect` provides two primary functions: `encrypt()` and `decrypt()`.
 - The encrypted field is stored as JSON in the format `{ c: "ciphertext" }`.
 - `@hono/node-server` is used to run the Hono application as a Node.js server.
 - `dotenv/config` automatically loads environment variables from your `.env` file.
@@ -246,6 +246,6 @@ serve({
 
 ## Additional Resources
 
-- [CipherStash JSEQL Documentation](https://github.com/cipherstash/jseql)
+- [@cipherstash/protect Documentation](https://github.com/cipherstash/protectjs)
 - [Hono Framework](https://hono.dev/)
 - [Supabase Documentation](https://supabase.com/docs)

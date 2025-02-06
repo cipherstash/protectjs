@@ -1,19 +1,19 @@
 import {
-  newClient,
-  encrypt as ffiEncrypt,
   decrypt as ffiDecrypt,
-  encryptBulk as ffiEncryptBulk,
   decryptBulk as ffiDecryptBulk,
+  encrypt as ffiEncrypt,
+  encryptBulk as ffiEncryptBulk,
+  newClient,
 } from '@cipherstash/jseql-ffi'
 import { logger } from '../../../utils/logger'
+import type { LockContext } from '../identify'
 import { checkEnvironmentVariables } from './env-check'
 import {
-  normalizeBulkEncryptPayloads,
   normalizeBulkDecryptPayloads,
-  normalizeBulkEncryptPayloadsWithLockContext,
   normalizeBulkDecryptPayloadsWithLockContext,
+  normalizeBulkEncryptPayloads,
+  normalizeBulkEncryptPayloadsWithLockContext,
 } from './payload-helpers'
-import type { LockContext } from '../identify'
 
 // ------------------------
 // Type Definitions
@@ -544,7 +544,7 @@ class BulkDecryptOperationWithLockContext
 // ------------------------
 // Main EQL Client
 // ------------------------
-export class EqlClient {
+export class ProtectClient {
   private client: Client
   private workspaceId: string | undefined
 
@@ -558,7 +558,7 @@ export class EqlClient {
     this.workspaceId = process.env.CS_WORKSPACE_ID
   }
 
-  async init(): Promise<EqlClient> {
+  async init(): Promise<ProtectClient> {
     const c = await newClient()
     this.client = c
     return this

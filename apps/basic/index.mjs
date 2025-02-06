@@ -1,15 +1,15 @@
 import 'dotenv/config'
-import { eql } from '@cipherstash/jseql'
+import { protect } from '@cipherstash/protect'
 
 async function main() {
-  const eqlClient = await eql()
+  const protectClient = await protect()
 
-  const ciphertext = await eqlClient.encrypt('plaintext', {
+  const ciphertext = await protectClient.encrypt('plaintext', {
     column: 'column_name',
     table: 'users',
   })
 
-  const plaintext = await eqlClient.decrypt(ciphertext)
+  const plaintext = await protectClient.decrypt(ciphertext)
 
   console.log('The plaintext is:', plaintext)
 }

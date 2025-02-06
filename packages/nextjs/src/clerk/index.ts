@@ -1,11 +1,11 @@
 import type { ClerkMiddlewareAuth } from '@clerk/nextjs/server'
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
-import { CS_COOKIE_NAME, resetCtsToken } from '../index'
-import { setCtsToken } from '../cts'
 import { logger } from '../../../utils/logger'
+import { setCtsToken } from '../cts'
+import { CS_COOKIE_NAME, resetCtsToken } from '../index'
 
-export const jseqlClerkMiddleware = async (
+export const protectClerkMiddleware = async (
   auth: ClerkMiddlewareAuth,
   req: NextRequest,
 ) => {

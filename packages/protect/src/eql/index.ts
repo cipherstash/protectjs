@@ -1,12 +1,12 @@
+import { logger } from '../../../utils/logger'
 import type {
+  Column,
   CsPlaintextV1Schema,
   ForQuery,
+  Plaintext,
   SchemaVersion,
   Table,
-  Column,
-  Plaintext,
 } from '../cs_plaintext_v1'
-import { logger } from '../../../utils/logger'
 
 export type CreateEqlPayload = {
   plaintext: Plaintext

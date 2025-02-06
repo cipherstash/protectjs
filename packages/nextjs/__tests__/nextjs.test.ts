@@ -1,6 +1,6 @@
-// cts.test.ts
-import { describe, it, expect, vi, afterEach } from 'vitest'
 import { type NextRequest, NextResponse } from 'next/server'
+// cts.test.ts
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 // ---------------------------------------------
 // 1) Mock next/headers before importing it
@@ -48,11 +48,11 @@ vi.mock('../src/', async () => {
 import { cookies } from 'next/headers'
 import { logger } from '../../utils/logger'
 import {
-  getCtsToken,
-  resetCtsToken,
-  jseqlMiddleware,
   CS_COOKIE_NAME,
   type CtsToken,
+  getCtsToken,
+  jseqlMiddleware,
+  resetCtsToken,
 } from '../src/'
 
 describe('getCtsToken', () => {

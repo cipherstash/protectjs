@@ -1,7 +1,7 @@
 import 'dotenv/config'
 import { describe, expect, it } from 'vitest'
 
-import { createEqlPayload, getPlaintext, eql, LockContext } from '../src'
+import { LockContext, createEqlPayload, getPlaintext, protect } from '../src'
 import type { CsPlaintextV1Schema } from '../src/cs_plaintext_v1'
 
 describe('createEqlPayload', () => {
@@ -120,27 +120,27 @@ describe('encryption and decryption', () => {
   })
 
   it('should encrypt and decrypt a payload', async () => {
-    const eqlClient = await eql()
+    const protectClient = await protect()
 
-    const ciphertext = await eqlClient.encrypt('plaintext', {
+    const ciphertext = await protectClient.encrypt('plaintext', {
       column: 'column_name',
       table: 'users',
     })
 
-    const plaintext = await eqlClient.decrypt(ciphertext)
+    const plaintext = await protectClient.decrypt(ciphertext)
 
     expect(plaintext).toEqual('plaintext')
   }, 30000)
 
   it('should return null if plaintext is null', async () => {
-    const eqlClient = await eql()
+    const protectClient = await protect()
 
-    const ciphertext = await eqlClient.encrypt(null, {
+    const ciphertext = await protectClient.encrypt(null, {
       column: 'column_name',
       table: 'users',
     })
 
-    const plaintext = await eqlClient.decrypt(ciphertext)
+    const plaintext = await protectClient.decrypt(ciphertext)
 
     expect(plaintext).toEqual(null)
   }, 30000)
@@ -148,8 +148,8 @@ describe('encryption and decryption', () => {
 
 describe('bulk encryption', () => {
   it('should bulk encrypt and decrypt a payload', async () => {
-    const eqlClient = await eql()
-    const ciphertexts = await eqlClient.bulkEncrypt(
+    const protectClient = await protect()
+    const ciphertexts = await protectClient.bulkEncrypt(
       [
         {
           plaintext: 'test',
@@ -166,7 +166,7 @@ describe('bulk encryption', () => {
       },
     )
 
-    const plaintexts = await eqlClient.bulkDecrypt(ciphertexts)
+    const plaintexts = await protectClient.bulkDecrypt(ciphertexts)
 
     expect(plaintexts).toEqual([
       {
@@ -181,8 +181,8 @@ describe('bulk encryption', () => {
   }, 30000)
 
   it('should return null if plaintexts is empty', async () => {
-    const eqlClient = await eql()
-    const ciphertexts = await eqlClient.bulkEncrypt([], {
+    const protectClient = await protect()
+    const ciphertexts = await protectClient.bulkEncrypt([], {
       table: 'users',
       column: 'column_name',
     })
@@ -190,9 +190,9 @@ describe('bulk encryption', () => {
   }, 30000)
 
   it('should return null if decrypting empty ciphertexts', async () => {
-    const eqlClient = await eql()
+    const protectClient = await protect()
     const ciphertexts = null
-    const plaintexts = await eqlClient.bulkDecrypt(ciphertexts)
+    const plaintexts = await protectClient.bulkDecrypt(ciphertexts)
     expect(plaintexts).toEqual(null)
   }, 30000)
 })
@@ -205,19 +205,19 @@ describe('bulk encryption', () => {
 // const userJwt = ''
 // describe('encryption and decryption with lock context', () => {
 //   it('should encrypt and decrypt a payload with lock context', async () => {
-//     const eqlClient = await eql()
+//     const protectClient = await protect()
 
 //     const lc = new LockContext()
 //     const lockContext = await lc.identify(userJwt)
 
-//     const ciphertext = await eqlClient
+//     const ciphertext = await protectClient
 //       .encrypt('plaintext', {
 //         column: 'column_name',
 //         table: 'users',
 //       })
 //       .withLockContext(lockContext)
 
-//     const plaintext = await eqlClient
+//     const plaintext = await protectClient
 //       .decrypt(ciphertext)
 //       .withLockContext(lockContext)
 
@@ -225,12 +225,12 @@ describe('bulk encryption', () => {
 //   }, 30000)
 
 //   it('should encrypt with context and be unable to decrypt without context', async () => {
-//     const eqlClient = await eql()
+//     const protectClient = await protect()
 
 //     const lc = new LockContext()
 //     const lockContext = await lc.identify(userJwt)
 
-//     const ciphertext = await eqlClient
+//     const ciphertext = await protectClient
 //       .encrypt('plaintext', {
 //         column: 'column_name',
 //         table: 'users',
@@ -238,7 +238,7 @@ describe('bulk encryption', () => {
 //       .withLockContext(lockContext)
 
 //     try {
-//       await eqlClient.decrypt(ciphertext)
+//       await protectClient.decrypt(ciphertext)
 //     } catch (error) {
 //       const e = error as Error
 //       expect(e.message.startsWith('Failed to retrieve key')).toEqual(true)
@@ -246,12 +246,12 @@ describe('bulk encryption', () => {
 //   }, 30000)
 
 //   it('should bulk encrypt and decrypt a payload with lock context', async () => {
-//     const eqlClient = await eql()
+//     const protectClient = await protect()
 
 //     const lc = new LockContext()
 //     const lockContext = await lc.identify(userJwt)
 
-//     const ciphertexts = await eqlClient
+//     const ciphertexts = await protectClient
 //       .bulkEncrypt(
 //         [
 //           {
@@ -270,7 +270,7 @@ describe('bulk encryption', () => {
 //       )
 //       .withLockContext(lockContext)
 
-//     const plaintexts = await eqlClient
+//     const plaintexts = await protectClient
 //       .bulkDecrypt(ciphertexts)
 //       .withLockContext(lockContext)
 
