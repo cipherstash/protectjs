@@ -158,7 +158,7 @@ class EncryptOperationWithLockContext implements PromiseLike<EncryptedPayload> {
     const context = this.lockContext?.getLockContext()
 
     if (!context?.success) {
-      throw new Error(`[jseql]: ${context?.error}`)
+      throw new Error(`[protect]: ${context?.error}`)
     }
 
     const val = await ffiEncrypt(
@@ -259,7 +259,7 @@ class DecryptOperationWithLockContext implements PromiseLike<string | null> {
     const context = this.lockContext?.getLockContext()
 
     if (!context?.success) {
-      throw new Error(`[jseql]: ${context?.error}`)
+      throw new Error(`[protect]: ${context?.error}`)
     }
 
     return await ffiDecrypt(
@@ -394,7 +394,7 @@ class BulkEncryptOperationWithLockContext
     const context = this.lockContext.getLockContext()
 
     if (!context.success) {
-      throw new Error(`[jseql]: ${context?.error}`)
+      throw new Error(`[protect]: ${context?.error}`)
     }
 
     const encryptedData = await ffiEncryptBulk(
@@ -522,7 +522,7 @@ class BulkDecryptOperationWithLockContext
     const context = this.lockContext.getLockContext()
 
     if (!context.success) {
-      throw new Error(`[jseql]: ${context?.error}`)
+      throw new Error(`[protect]: ${context?.error}`)
     }
 
     const decryptedData = await ffiDecryptBulk(

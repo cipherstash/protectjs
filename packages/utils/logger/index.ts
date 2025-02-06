@@ -16,19 +16,19 @@ const currentLevel = getLevelValue(envLogLevel)
 
 function debug(...args: unknown[]): void {
   if (currentLevel <= getLevelValue('debug')) {
-    console.debug('[jseql] DEBUG', ...args)
+    console.debug('[protect] DEBUG', ...args)
   }
 }
 
 function info(...args: unknown[]): void {
   if (currentLevel <= getLevelValue('info')) {
-    console.info('[jseql] INFO', ...args)
+    console.info('[protect] INFO', ...args)
   }
 }
 
 function error(...args: unknown[]): void {
   if (currentLevel <= getLevelValue('error')) {
-    console.error('[jseql] ERROR', ...args)
+    console.error('[protect] ERROR', ...args)
   }
 }
 

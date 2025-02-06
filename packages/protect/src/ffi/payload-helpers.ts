@@ -11,7 +11,7 @@ const getLockContextPayload = (lockContext: LockContext) => {
 
   if (!context.ctsToken?.accessToken) {
     throw new Error(
-      '[jseql]: LockContext must be initialized with a valid CTS token before using it.',
+      '[protect]: LockContext must be initialized with a valid CTS token before using it.',
     )
   }
 

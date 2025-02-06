@@ -10,7 +10,7 @@ export const checkEnvironmentVariables = () => {
     )
 
     logger.error(message)
-    throw new Error(`[jseql]: ${message}`)
+    throw new Error(`[protect]: ${message}`)
   }
 
   if (!process.env.CS_CLIENT_ID || !process.env.CS_CLIENT_KEY) {
@@ -19,7 +19,7 @@ export const checkEnvironmentVariables = () => {
     )
 
     logger.error(message)
-    throw new Error(`[jseql]: ${message}`)
+    throw new Error(`[protect]: ${message}`)
   }
 
   if (!process.env.CS_CLIENT_ACCESS_KEY) {
@@ -28,6 +28,6 @@ export const checkEnvironmentVariables = () => {
     )
 
     logger.error(message)
-    throw new Error(`[jseql]: ${message}`)
+    throw new Error(`[protect]: ${message}`)
   }
 }
