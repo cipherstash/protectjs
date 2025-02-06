@@ -47,7 +47,7 @@ export class LockContext {
       const errorMessage =
         'CS_WORKSPACE_ID environment variable is not set, and is required to initialize a LockContext.'
       logger.error(errorMessage)
-      throw new Error(`[jseql]: ${errorMessage}`)
+      throw new Error(`[protect]: ${errorMessage}`)
     }
 
     if (ctsToken) {
@@ -79,7 +79,7 @@ export class LockContext {
 
     if (!ctsResponse.ok) {
       throw new Error(
-        `[jseql]: Failed to fetch CTS token: ${ctsResponse.statusText}`,
+        `[protect]: Failed to fetch CTS token: ${ctsResponse.statusText}`,
       )
     }
 
