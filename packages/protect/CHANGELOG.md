@@ -1,5 +1,11 @@
 # @cipherstash/jseql
 
+## 5.1.0
+
+### Minor Changes
+
+- 5a34e76: Rebranded logging context and fixed tests.
+
 ## 5.0.0
 
 ### Major Changes
