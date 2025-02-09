@@ -24,6 +24,8 @@
   ],
   "scripts": {
     "build": "turbo build --filter './packages/*'",
+    "build:ffi": "turbo build --filter './packages/protect-ffi'",
+    "build:js": "turbo build --filter './packages/protect' --filter './packages/nextjs'",
     "changeset": "changeset",
     "changeset:version": "changeset version",
     "changeset:publish": "changeset publish",
@@ -31,6 +33,7 @@
     "clean": "rimraf --glob **/.next **/.turbo **/dist **/node_modules",
     "code:fix": "biome check --write",
     "release": "turbo run build && changeset publish",
+    "release:ffi": "turbo run release --filter './packages/protect-ffi'",
     "test": "turbo test --filter './packages/*'"
   },
   "devDependencies": {
@@ -42,6 +45,6 @@
   },
   "packageManager": "pnpm@9.15.3",
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   }
 }

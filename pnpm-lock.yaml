@@ -123,9 +123,9 @@ importers:
 
   packages/protect:
     dependencies:
-      '@cipherstash/jseql-ffi':
-        specifier: 0.5.0
-        version: 0.5.0
+      '@cipherstash/protect-ffi':
+        specifier: workspace:*
+        version: link:../protect-ffi
       typescript:
         specifier: ^5.0.0
         version: 5.7.2
@@ -149,6 +149,25 @@ importers:
       vitest:
         specifier: ^2.1.9
         version: 2.1.9(@types/node@22.10.5)
+
+  packages/protect-ffi:
+    dependencies:
+      '@neon-rs/load':
+        specifier: ^0.1.82
+        version: 0.1.82
+    devDependencies:
+      '@neon-rs/cli':
+        specifier: ^0.1.82
+        version: 0.1.82
+      '@tsconfig/node20':
+        specifier: ^20.1.4
+        version: 20.1.4
+      '@types/node':
+        specifier: ^20.11.16
+        version: 20.17.12
+      typescript:
+        specifier: ^5.3.3
+        version: 5.7.2
 
 packages:
 
@@ -213,6 +232,56 @@ packages:
     cpu: [x64]
     os: [win32]
 
+  '@cargo-messages/android-arm-eabi@0.1.81':
+    resolution: {integrity: sha512-cpRbgb56e9LmAj96Tixtz9/bTlaJAeplWNNv4obu+eqQyZd3ZjX04TJd9fM1bjHDGVyR9GTVlgBsbQEntIGkwg==}
+    cpu: [arm]
+    os: [android]
+
+  '@cargo-messages/darwin-arm64@0.1.81':
+    resolution: {integrity: sha512-OwGqsw+tbJx37a/vH4T8R9qkrrFYoTIOnckbA9+MhQodE2FSWyk3HvLh+z8jjl+QZa1RSOU9Ax6gt/46h0BiTg==}
+    cpu: [arm64]
+    os: [darwin]
+
+  '@cargo-messages/darwin-x64@0.1.81':
+    resolution: {integrity: sha512-Iu761bPk25Ce6yUdDCjjeVuT8/xbBmczyaNB7oYBmAZEE5rshvCJ42TqSShYYP+S7pKkN42nBhkFooaZrqaz9g==}
+    cpu: [x64]
+    os: [darwin]
+
+  '@cargo-messages/linux-arm-gnueabihf@0.1.81':
+    resolution: {integrity: sha512-iIuy7KTJAEhbiqlIlcxQOdW6opI6M9LXlgd/jdsHbP2FjmTyhTLnd3JCJ6JeAeidwknCDs+CFlaVmPxTKSytsg==}
+    cpu: [arm]
+    os: [linux]
+
+  '@cargo-messages/linux-arm64-gnu@0.1.81':
+    resolution: {integrity: sha512-QPQRsHj9m/9ga8wRBlLh8t2AXyr40+/H55FIKVj7zIjV++waY/TbSTPofDZQhMycd5VSGLKztfhahiCO7c/RAQ==}
+    cpu: [arm64]
+    os: [linux]
+
+  '@cargo-messages/linux-arm64-musl@0.1.81':
+    resolution: {integrity: sha512-9O0ATesIOjDTz2L01OtlGHYwP86I31/mzXMC+ryQkzbbIKj7KUiSqmEc29I14I517UYO8/sMeow6q6MVBpehlA==}
+    cpu: [arm64]
+    os: [linux]
+
+  '@cargo-messages/linux-x64-gnu@0.1.81':
+    resolution: {integrity: sha512-wEFYxCdtHNiEvp5KEg17CfRCUdfRTtkL+1GASROyvYEUV6DQf6TXxfHuuWg2xlVxh5fqiTGFSRfiqFrCDL/xrw==}
+    cpu: [x64]
+    os: [linux]
+
+  '@cargo-messages/linux-x64-musl@0.1.81':
+    resolution: {integrity: sha512-zi5pKIh60oPwOCDQapAZ3Mya4y56MI2BoGvY8JtztYaXTorGmAoyf6jjb50Wt+HfoYYjM3OlPt03XMlCFZJnIQ==}
+    cpu: [x64]
+    os: [linux]
+
+  '@cargo-messages/win32-arm64-msvc@0.1.81':
+    resolution: {integrity: sha512-oyiT8AYLoguF7cFOMYDsPv3eirzBcFafOOfRsFyd3+wmaPTl/DdbCq446oThRmSAsEGJpzhzj7TafcnXMBkHbg==}
+    cpu: [arm64]
+    os: [win32]
+
+  '@cargo-messages/win32-x64-msvc@0.1.81':
+    resolution: {integrity: sha512-B5Ukf4AohtIv27uCP/AgM+7vYwQ4RacI6m8ZBr2XKeSrjZXcXguzlZd+wD7bD5+wa0capvXKUskZDnpG/DcYiA==}
+    cpu: [x64]
+    os: [win32]
+
   '@changesets/apply-release-plan@7.0.7':
     resolution: {integrity: sha512-qnPOcmmmnD0MfMg9DjU1/onORFyRpDXkMMl2IJg9mECY6RnxL3wN0TCCc92b2sXt1jt8DgjAUUsZYGUGTdYIXA==}
 
@@ -267,34 +336,6 @@ packages:
 
   '@changesets/write@0.3.2':
     resolution: {integrity: sha512-kDxDrPNpUgsjDbWBvUo27PzKX4gqeKOlhibaOXDJA6kuBisGqNHv/HwGJrAu8U/dSf8ZEFIeHIPtvSlZI1kULw==}
-
-  '@cipherstash/jseql-ffi-darwin-arm64@0.5.0':
-    resolution: {integrity: sha512-BEgTe+sgyj5lQ3/SST/jsd9pGSGJgbTNRIb+YmcuDAQ/aXqHI0hlD0b8mw6SYd839/DSCmpRoAKySQ6iH41oEA==}
-    cpu: [arm64]
-    os: [darwin]
-
-  '@cipherstash/jseql-ffi-darwin-x64@0.5.0':
-    resolution: {integrity: sha512-PoE5WLIgZBSnICZ/mALKAthpWYqPl3F+uhIvMp9WYUWp1F6Z94khkvWsgVYOPMVCsYa923aRLokQ7jAaXt7OMw==}
-    cpu: [x64]
-    os: [darwin]
-
-  '@cipherstash/jseql-ffi-linux-arm64-gnu@0.5.0':
-    resolution: {integrity: sha512-q5obr/xvzM7+/0ru1UxRLuZQo8ps8eoX6ctj60DHFauegZeq5pPcAPWq5RO4Emje+hAsmEhKVSywZ3q8KzIDyQ==}
-    cpu: [arm64]
-    os: [linux]
-
-  '@cipherstash/jseql-ffi-linux-x64-gnu@0.5.0':
-    resolution: {integrity: sha512-s14WrI4Ho4l1+3f1xAEVnVjGd1ACq3bYD0uSL04goQMe71kUj2bTl2ycP/Ae4JqMM1qMTNkp18aOCAx3BMht0g==}
-    cpu: [x64]
-    os: [linux]
-
-  '@cipherstash/jseql-ffi-win32-x64-msvc@0.5.0':
-    resolution: {integrity: sha512-NRBCJW/3ZBdnuGigPBKD0xeHAkS03BESS3P1rghom3Xds+mhyplv/c2bi0rL0mS+T7z/VnqVQcTpuq/gZ9qIww==}
-    cpu: [x64]
-    os: [win32]
-
-  '@cipherstash/jseql-ffi@0.5.0':
-    resolution: {integrity: sha512-eqouBHqdCw1JhUJpr4SmT/vW+eoDRRpwSQKZ5V/+cKC5+eypxDq22aQx1klmLmJUtt2dOsTVQU7Qh8QBuWAaUQ==}
 
   '@clerk/backend@1.21.5':
     resolution: {integrity: sha512-fZ+HuHQkPngYp9vAEqsJ1XJkhWjSWTin90UixeV3jNrbuPY2jd70LKYTAIEvggnnG42pYxdVupaQDUfqj0dy4Q==}
@@ -1189,6 +1230,10 @@ packages:
   '@manypkg/get-packages@1.1.3':
     resolution: {integrity: sha512-fo+QhuU3qE/2TQMQmbVMqaQ6EWbMhi4ABWP+O4AM1NqPBuy0OrApV5LO6BrrgnhtAHS2NH6RrVk9OL181tTi8A==}
 
+  '@neon-rs/cli@0.1.82':
+    resolution: {integrity: sha512-QrlGPQp9KOGuMvjjua79lEV2QTcE16m8JatG5ITdQpBAwRQpDw5xab57W9130y2iUEfMzYtp7v6pcN1fUB0Exg==}
+    hasBin: true
+
   '@neon-rs/load@0.1.82':
     resolution: {integrity: sha512-H4Gu2o5kPp+JOEhRrOQCnJnf7X6sv9FBLttM/wSbb4efsgFWeHzfU/ItZ01E5qqEk+U6QGdeVO7lxXIAtYHr5A==}
 
@@ -1488,6 +1533,9 @@ packages:
 
   '@swc/helpers@0.5.15':
     resolution: {integrity: sha512-JQ5TuMi45Owi4/BIMAJBoSQoOJu12oOk/gADqlcUL9JEdHB8vyjUSsxqeNXnmXHjYKMi2WcYtezGEEhqUI/E2g==}
+
+  '@tsconfig/node20@20.1.4':
+    resolution: {integrity: sha512-sqgsT69YFeLWf5NtJ4Xq/xAF8p4ZQHlmGW74Nu2tD4+g5fAsposc4ZfaaPixVu4y01BEiDCWLRDCvDM5JOsRxg==}
 
   '@types/estree@1.0.6':
     resolution: {integrity: sha512-AYnb1nQyY49te+VRAVgmzfcgjYS91mY5P0TKUDCLEM+gNnA+3T6rWITXRLYCpahpqSQbN5cE+gHpnPyXjHWxcw==}
@@ -2855,6 +2903,36 @@ snapshots:
   '@biomejs/cli-win32-x64@1.9.4':
     optional: true
 
+  '@cargo-messages/android-arm-eabi@0.1.81':
+    optional: true
+
+  '@cargo-messages/darwin-arm64@0.1.81':
+    optional: true
+
+  '@cargo-messages/darwin-x64@0.1.81':
+    optional: true
+
+  '@cargo-messages/linux-arm-gnueabihf@0.1.81':
+    optional: true
+
+  '@cargo-messages/linux-arm64-gnu@0.1.81':
+    optional: true
+
+  '@cargo-messages/linux-arm64-musl@0.1.81':
+    optional: true
+
+  '@cargo-messages/linux-x64-gnu@0.1.81':
+    optional: true
+
+  '@cargo-messages/linux-x64-musl@0.1.81':
+    optional: true
+
+  '@cargo-messages/win32-arm64-msvc@0.1.81':
+    optional: true
+
+  '@cargo-messages/win32-x64-msvc@0.1.81':
+    optional: true
+
   '@changesets/apply-release-plan@7.0.7':
     dependencies:
       '@changesets/config': 3.0.5
@@ -2996,31 +3074,6 @@ snapshots:
       fs-extra: 7.0.1
       human-id: 1.0.2
       prettier: 2.8.8
-
-  '@cipherstash/jseql-ffi-darwin-arm64@0.5.0':
-    optional: true
-
-  '@cipherstash/jseql-ffi-darwin-x64@0.5.0':
-    optional: true
-
-  '@cipherstash/jseql-ffi-linux-arm64-gnu@0.5.0':
-    optional: true
-
-  '@cipherstash/jseql-ffi-linux-x64-gnu@0.5.0':
-    optional: true
-
-  '@cipherstash/jseql-ffi-win32-x64-msvc@0.5.0':
-    optional: true
-
-  '@cipherstash/jseql-ffi@0.5.0':
-    dependencies:
-      '@neon-rs/load': 0.1.82
-    optionalDependencies:
-      '@cipherstash/jseql-ffi-darwin-arm64': 0.5.0
-      '@cipherstash/jseql-ffi-darwin-x64': 0.5.0
-      '@cipherstash/jseql-ffi-linux-arm64-gnu': 0.5.0
-      '@cipherstash/jseql-ffi-linux-x64-gnu': 0.5.0
-      '@cipherstash/jseql-ffi-win32-x64-msvc': 0.5.0
 
   '@clerk/backend@1.21.5(react-dom@19.0.0(react@19.0.0))(react@19.0.0)':
     dependencies:
@@ -3561,6 +3614,19 @@ snapshots:
       globby: 11.1.0
       read-yaml-file: 1.1.0
 
+  '@neon-rs/cli@0.1.82':
+    optionalDependencies:
+      '@cargo-messages/android-arm-eabi': 0.1.81
+      '@cargo-messages/darwin-arm64': 0.1.81
+      '@cargo-messages/darwin-x64': 0.1.81
+      '@cargo-messages/linux-arm-gnueabihf': 0.1.81
+      '@cargo-messages/linux-arm64-gnu': 0.1.81
+      '@cargo-messages/linux-arm64-musl': 0.1.81
+      '@cargo-messages/linux-x64-gnu': 0.1.81
+      '@cargo-messages/linux-x64-musl': 0.1.81
+      '@cargo-messages/win32-arm64-msvc': 0.1.81
+      '@cargo-messages/win32-x64-msvc': 0.1.81
+
   '@neon-rs/load@0.1.82': {}
 
   '@next/env@15.1.4': {}
@@ -3772,6 +3838,8 @@ snapshots:
   '@swc/helpers@0.5.15':
     dependencies:
       tslib: 2.8.1
+
+  '@tsconfig/node20@20.1.4': {}
 
   '@types/estree@1.0.6': {}
 

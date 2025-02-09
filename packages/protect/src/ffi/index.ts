@@ -4,7 +4,7 @@ import {
   encrypt as ffiEncrypt,
   encryptBulk as ffiEncryptBulk,
   newClient,
-} from '@cipherstash/jseql-ffi'
+} from '@cipherstash/protect-ffi'
 import { logger } from '../../../utils/logger'
 import type { LockContext } from '../identify'
 import { checkEnvironmentVariables } from './env-check'

@@ -1,7 +1,7 @@
 import type {
   BulkDecryptPayload as InternalBulkDecryptPayload,
   BulkEncryptPayload as InternalBulkEncryptPayload,
-} from '@cipherstash/jseql-ffi'
+} from '@cipherstash/protect-ffi'
 
 import type { LockContext } from '../identify'
 import type { BulkEncryptPayload, BulkEncryptedData } from './index'

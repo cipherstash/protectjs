@@ -3,3 +3,15 @@ node_modules
 dist
 mise.local.toml
 .env
+
+# FFI
+
+target
+index.node
+**/node_modules
+**/.DS_Store
+npm-debug.log*
+cargo.log
+cross.log
+mise.local.toml
+!.github/.env

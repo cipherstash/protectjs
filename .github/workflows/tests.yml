@@ -1,4 +1,4 @@
-name: Package Tests
+name: Test JS
 
 on:
   push:
