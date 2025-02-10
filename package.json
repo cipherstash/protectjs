@@ -30,7 +30,7 @@
     "dev": "turbo dev --filter './packages/*'",
     "clean": "rimraf --glob **/.next **/.turbo **/dist **/node_modules",
     "code:fix": "biome check --write",
-    "release": "turbo run build && changeset publish",
+    "release": "turbo build --filter './packages/*' && changeset publish",
     "test": "turbo test --filter './packages/*'"
   },
   "devDependencies": {
