@@ -3,7 +3,6 @@ node_modules
 dist
 mise.local.toml
 .env
-!.github/.env
 
 # dependencies
 /node_modules
@@ -61,3 +60,4 @@ npm-debug.log*
 cargo.log
 cross.log
 mise.local.toml
+!.github/.env
