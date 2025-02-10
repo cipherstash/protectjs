@@ -1,0 +1,44 @@
+name: Test JS
+
+on:
+  push:
+    branches:
+      - 'main'
+  pull_request:
+    branches:
+      - "**"
+
+jobs:
+  run-tests:
+    name: Run Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+
+      - uses: pnpm/action-setup@v4
+        name: Install pnpm
+        with:
+          run_install: false
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Create .env file in ./packages/protect/
+        run: |
+          touch ./packages/protect/.env
+          echo "CS_WORKSPACE_ID=${{ secrets.CS_WORKSPACE_ID }}" >> ./packages/protect/.env
+          echo "CS_CLIENT_ID=${{ secrets.CS_CLIENT_ID }}" >> ./packages/protect/.env
+          echo "CS_CLIENT_KEY=${{ secrets.CS_CLIENT_KEY }}" >> ./packages/protect/.env
+          echo "CS_CLIENT_ACCESS_KEY=${{ secrets.CS_CLIENT_ACCESS_KEY }}" >> ./packages/protect/.env
+
+      # Run TurboRepo tests
+      - name: Run tests
+        run: pnpm run test

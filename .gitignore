@@ -3,6 +3,7 @@ node_modules
 dist
 mise.local.toml
 .env
+!.github/.env
 
 # dependencies
 /node_modules
@@ -50,3 +51,13 @@ next-env.d.ts
 
 node_modules
 .next
+
+# ffi
+target
+index.node
+**/node_modules
+**/.DS_Store
+npm-debug.log*
+cargo.log
+cross.log
+mise.local.toml
