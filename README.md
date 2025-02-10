@@ -1,13 +1,13 @@
-# CipherStash Protect for JavaScript/TypeScript
+# Protect.js
 
 [![Package Tests](https://github.com/cipherstash/protectjs/actions/workflows/tests.yaml/badge.svg)](https://github.com/cipherstash/protectjs/actions/workflows/tests.yaml)
 [![Built by CipherStash](https://raw.githubusercontent.com/cipherstash/meta/refs/heads/main/csbadge.svg)](https://cipherstash.com)
 
-`@cipherstash/protect` is a JavaScript/TypeScript package for encrypting and decrypting data in PostgreSQL databases.
+Protect.js is a JavaScript/TypeScript package for encrypting and decrypting data in PostgreSQL databases.
 Encryption operations happen directly in your app, and the ciphertext is stored in your PostgreSQL database.
 
-Every value you encrypt with `@cipherstash/protect` has a unique key, made possible by CipherStash [ZeroKMS](https://cipherstash.com/products/zerokms)'s blazing fast bulk key operations.
-Under the hood `@cipherstash/protect` uses CipherStash [Encrypt Query Language (EQL)](https://github.com/cipherstash/encrypt-query-language), and all ZeroKMS data keys are backed by a root key in [AWS KMS](https://docs.aws.amazon.com/kms/latest/developerguide/overview.html).
+Every value you encrypt with Protect.js has a unique key, made possible by CipherStash [ZeroKMS](https://cipherstash.com/products/zerokms)'s blazing fast bulk key operations.
+Under the hood Protect.js uses CipherStash [Encrypt Query Language (EQL)](https://github.com/cipherstash/encrypt-query-language), and all ZeroKMS data keys are backed by a root key in [AWS KMS](https://docs.aws.amazon.com/kms/latest/developerguide/overview.html).
 
 ## Table of Contents
 
@@ -23,12 +23,12 @@ Under the hood `@cipherstash/protect` uses CipherStash [Encrypt Query Language (
 
 ## Features
 
-`@cipherstash/protect` is built on to protect data in a PostgreSQL database using industry standard encryption, and a key management service called [ZeroKMS](https://cipherstash.com/products/zerokms) that's built to work with data at scale.
+Protect.js is built on to protect data in a PostgreSQL database using industry standard encryption, and a key management service called [ZeroKMS](https://cipherstash.com/products/zerokms) that's built to work with data at scale.
 
 **Features:**
-- **Bulk encryption and decryption**: `@cipherstash/protect` uses [ZeroKMS](https://cipherstash.com/products/zerokms) for encrypting and decrypting thousands of records at once, while using a unique key for every value.
-- **Single item encryption and decryption**: Just looking for a way to encrypt and decrypt single values? `@cipherstash/protect` has you covered.
-- **Really fast:** ZeroKMS's performance makes using millions of unique keys feasible and performant for real-world applications built with `@cipherstash/protect`.
+- **Bulk encryption and decryption**: Protect.js uses [ZeroKMS](https://cipherstash.com/products/zerokms) for encrypting and decrypting thousands of records at once, while using a unique key for every value.
+- **Single item encryption and decryption**: Just looking for a way to encrypt and decrypt single values? Protect.js has you covered.
+- **Really fast:** ZeroKMS's performance makes using millions of unique keys feasible and performant for real-world applications built with Protect.js.
 - **Identity-aware encryption**: Lock down access to sensitive data by requiring a valid JWT to perform a decryption.
 - **TypeScript support**: Strongly typed with TypeScript interfaces and types.
 
@@ -518,7 +518,7 @@ const nextConfig = {
 
 - [Basic example](/apps/basic)
 - [Drizzle example](/apps/drizzle)
-- [Next.js, Drizzle, and Clerk example](https://github.com/cipherstash/protectjs-next-drizzle)
+- [Next.js and Lock Contexts example using Clerk](/apps/nextjs-clerk)
 
 `@cipherstash/protect` can be used with most ORMs that support PostgreSQL.
 If you're interested in using `@cipherstash/protect` with a specific ORM, please [create an issue](https://github.com/cipherstash/protectjs/issues/new).
