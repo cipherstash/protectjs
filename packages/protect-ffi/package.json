@@ -1,0 +1,56 @@
+{
+  "name": "@cipherstash/protect-ffi",
+  "version": "0.5.0",
+  "description": "",
+  "scripts": {
+    "test": "tsc &&cargo test",
+    "cargo-build": "tsc &&cargo build --message-format=json-render-diagnostics > cargo.log",
+    "cross-build": "tsc &&cross build --message-format=json-render-diagnostics > cross.log",
+    "postcargo-build": "neon dist < cargo.log",
+    "postcross-build": "neon dist -m /target < cross.log",
+    "debug": "pnpm run cargo-build",
+    "build": "pnpm run cargo-build --release",
+    "cross": "npm run cross-build --release",
+    "prepack": "tsc &&neon update",
+    "version": "neon bump --binaries platforms && git add .",
+    "release": "gh workflow run release-ffi.yml -f dryrun=false -f version=patch",
+    "dryrun": "gh workflow run publish.yml -f dryrun=true"
+  },
+  "author": "CipherStash <hello@cipherstash.com>",
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "types": "./dist/index.d.cts",
+  "files": [
+    "dist/**/*.?({c,m}){t,j}s"
+  ],
+  "neon": {
+    "type": "library",
+    "org": "@cipherstash",
+    "platforms": "common",
+    "load": "./src/load.cts",
+    "prefix": "protect-ffi-"
+  },
+  "devDependencies": {
+    "@neon-rs/cli": "^0.1.82",
+    "@tsconfig/node20": "^20.1.4",
+    "@types/node": "^20.11.16",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "@neon-rs/load": "^0.1.82"
+  },
+  "publishConfig": {
+		"access": "public"
+	}
+}
