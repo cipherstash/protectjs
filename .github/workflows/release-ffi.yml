@@ -45,7 +45,7 @@ jobs:
       - name: Validate Workflow Inputs
         if: ${{ inputs.version == 'custom' && inputs.custom == '' }}
         shell: bash
-        working-directory: ./packages/protect-ffi
+        working-directory: packages/protect-ffi
         run: |
           echo '::error::No custom version number provided'
           exit 1
@@ -53,13 +53,13 @@ jobs:
         name: Validate Dry Run Event
         if: ${{ inputs.dryrun }}
         shell: bash
-        working-directory: ./packages/protect-ffi
+        working-directory: packages/protect-ffi
         run: echo dryrun=true | tee -a $GITHUB_OUTPUT
       - id: publish
         name: Validate Publish Event
         if: ${{ !inputs.dryrun }}
         shell: bash
-        working-directory: ./packages/protect-ffi
+        working-directory: packages/protect-ffi
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
@@ -86,7 +86,7 @@ jobs:
         if: ${{ !inputs.dryrun }}
         id: tag
         shell: bash
-        working-directory: ./packages/protect-ffi
+        working-directory: packages/protect-ffi
         run: |
           git config --global user.name $ACTIONS_USER
           git config --global user.email $ACTIONS_EMAIL
@@ -131,7 +131,7 @@ jobs:
           out-file-path: ./packages/protect-ffi/dist
       - name: Publish
         shell: bash
-        working-directory: ./packages/protect-ffi
+        working-directory: packages/protect-ffi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |

@@ -46,7 +46,7 @@ jobs:
       - name: Look Up Matrix Data
         id: matrixData
         shell: bash
-        working-directory: ./packages/protect-ffi
+        working-directory: packages/protect-ffi
         run: echo "json=$(pnpm exec neon show ci github | jq -rc)" | tee -a $GITHUB_OUTPUT
       - name: Compute Matrix
         id: matrix
@@ -101,7 +101,7 @@ jobs:
       - name: Pack
         id: pack
         shell: bash
-        working-directory: ./packages/protect-ffi
+        working-directory: packages/protect-ffi
         run: |
           mkdir -p dist
           echo filename=$(basename $(npm pack ./platforms/${{ matrix.cfg.platform }} --silent --pack-destination=./dist --json | jq -r '.[0].filename')) | tee -a $GITHUB_OUTPUT
@@ -128,7 +128,7 @@ jobs:
       - name: Pack
         id: pack
         shell: bash
-        working-directory: ./packages/protect-ffi
+        working-directory: packages/protect-ffi
         run: |
           mkdir -p dist
           echo "filename=$(npm pack --silent --pack-destination=./dist)" | tee -a $GITHUB_OUTPUT
