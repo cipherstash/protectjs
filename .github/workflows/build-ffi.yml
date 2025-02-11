@@ -46,7 +46,7 @@ jobs:
       - name: Look Up Matrix Data
         id: matrixData
         shell: bash
-        working-directory: ./packages/protect-ffi
+        working-directory: './packages/protect-ffi'
         run: echo "json=$(pnpm exec neon show ci github | jq -rc)" | tee -a $GITHUB_OUTPUT
       - name: Compute Matrix
         id: matrix
@@ -85,15 +85,9 @@ jobs:
         with:
           use-cross: ${{ matrix.cfg.script == 'cross' }}
           platform: ${{ matrix.cfg.platform }}
-      - name: Update Version
-        if: ${{ inputs.update-version }}
-        shell: bash
-        run: |
-          git config --global user.name $ACTIONS_USER
-          git config --global user.email $ACTIONS_EMAIL
-          pnpm version ${{ inputs.version }} -m "v%s"
       - name: Build
         shell: bash
+        working-directory: './packages/protect-ffi'
         env:
           CARGO_BUILD_TARGET: ${{ steps.neon.outputs.target }}
           NEON_BUILD_PLATFORM: ${{ matrix.cfg.platform }}
@@ -101,10 +95,10 @@ jobs:
       - name: Pack
         id: pack
         shell: bash
-        working-directory: ./packages/protect-ffi
+        working-directory: './packages/protect-ffi'
         run: |
           mkdir -p dist
-          echo filename=$(basename $(npm pack ./platforms/${{ matrix.cfg.platform }} --silent --pack-destination=./dist --json | jq -r '.[0].filename')) | tee -a $GITHUB_OUTPUT
+          echo filename=$(basename $(pnpm pack ./platforms/${{ matrix.cfg.platform }} --silent --pack-destination=./dist --json | jq -r '.[0].filename')) | tee -a $GITHUB_OUTPUT
       - name: Release
         if: ${{ inputs.github-release }}
         uses: softprops/action-gh-release@9d7c94cfd0a1f3ed45544c887983e9fa900f0564 # v2.0.4
@@ -128,7 +122,7 @@ jobs:
       - name: Pack
         id: pack
         shell: bash
-        working-directory: ./packages/protect-ffi
+        working-directory: './packages/protect-ffi'
         run: |
           mkdir -p dist
           echo "filename=$(npm pack --silent --pack-destination=./dist)" | tee -a $GITHUB_OUTPUT
