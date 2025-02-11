@@ -62,12 +62,12 @@ jobs:
           platform: linux-x64-gnu
       - name: Build
         shell: bash
-        working-directory: packages/protect-ffi
+        working-directory: './packages/protect-ffi'
         env:
           CARGO_BUILD_TARGET: ${{ steps.neon.outputs.target }}
           NEON_BUILD_PLATFORM: linux-x64-gnu
         run: pnpm run debug
       - name: Test
         shell: bash
-        working-directory: packages/protect-ffi
+        working-directory: './packages/protect-ffi'
         run: pnpm test
