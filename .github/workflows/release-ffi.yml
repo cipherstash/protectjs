@@ -45,25 +45,24 @@ jobs:
       - name: Validate Workflow Inputs
         if: ${{ inputs.version == 'custom' && inputs.custom == '' }}
         shell: bash
+        working-directory: ./packages/protect-ffi
         run: |
-          cd packages/protect-ffi
           echo '::error::No custom version number provided'
           exit 1
       - id: dryrun
         name: Validate Dry Run Event
         if: ${{ inputs.dryrun }}
         shell: bash
-        run: |
-          cd packages/protect-ffi
-          echo dryrun=true | tee -a $GITHUB_OUTPUT
+        working-directory: ./packages/protect-ffi
+        run: echo dryrun=true | tee -a $GITHUB_OUTPUT
       - id: publish
         name: Validate Publish Event
         if: ${{ !inputs.dryrun }}
         shell: bash
+        working-directory: ./packages/protect-ffi
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
-          cd packages/protect-ffi
           if [[ -z $NPM_TOKEN ]]; then
             echo "::error::Secret NPM_TOKEN is not defined for this GitHub repo."
             echo "::error::To publish to npm, this action requires:"
@@ -87,8 +86,8 @@ jobs:
         if: ${{ !inputs.dryrun }}
         id: tag
         shell: bash
+        working-directory: ./packages/protect-ffi
         run: |
-          cd packages/protect-ffi
           git config --global user.name $ACTIONS_USER
           git config --global user.email $ACTIONS_EMAIL
           pnpm version -m 'v%s' '${{ (inputs.version == 'custom' && inputs.custom) || inputs.version }}'
@@ -132,10 +131,10 @@ jobs:
           out-file-path: ./packages/protect-ffi/dist
       - name: Publish
         shell: bash
+        working-directory: ./packages/protect-ffi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
-          cd packages/protect-ffi
           for p in ./dist/*.tgz ; do
             pnpm publish --access public $p
           done
