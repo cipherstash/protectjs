@@ -85,6 +85,14 @@ jobs:
         with:
           use-cross: ${{ matrix.cfg.script == 'cross' }}
           platform: ${{ matrix.cfg.platform }}
+      - name: Update Version
+        if: ${{ inputs.update-version }}
+        shell: bash
+        working-directory: './packages/protect-ffi'
+        run: |
+          git config --global user.name $ACTIONS_USER
+          git config --global user.email $ACTIONS_EMAIL
+          pnpm version ${{ inputs.version }} -m "v%s" --no-workspaces-update
       - name: Build
         shell: bash
         working-directory: './packages/protect-ffi'

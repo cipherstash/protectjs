@@ -79,6 +79,17 @@ jobs:
         uses: ./.github/actions/setup
         with:
           use-rust: false
+      - name: Tag Release
+        if: ${{ !inputs.dryrun }}
+        id: tag
+        shell: bash
+        working-directory: './packages/protect-ffi'
+        run: |
+          git config --global user.name $ACTIONS_USER
+          git config --global user.email $ACTIONS_EMAIL
+          pnpm version -m 'v%s' '${{ (inputs.version == 'custom' && inputs.custom) || inputs.version }}' --no-workspaces-update
+          git push --follow-tags
+          echo tag=$(git describe --abbrev=0) | tee -a $GITHUB_OUTPUT
 
   build:
     name: Build
