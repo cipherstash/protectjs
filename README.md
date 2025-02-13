@@ -1,6 +1,6 @@
 # Protect.js
 
-[![Package Tests](https://github.com/cipherstash/protectjs/actions/workflows/tests.yaml/badge.svg)](https://github.com/cipherstash/protectjs/actions/workflows/tests.yaml)
+[![Tests](https://github.com/cipherstash/protectjs/actions/workflows/tests.yml/badge.svg)](https://github.com/cipherstash/protectjs/actions/workflows/tests.yml)
 [![Built by CipherStash](https://raw.githubusercontent.com/cipherstash/meta/refs/heads/main/csbadge.svg)](https://cipherstash.com)
 
 Protect.js is a JavaScript/TypeScript package for encrypting and decrypting data in PostgreSQL databases.
