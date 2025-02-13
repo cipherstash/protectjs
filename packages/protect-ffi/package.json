@@ -52,12 +52,5 @@
   },
   "publishConfig": {
     "access": "public"
-  },
-  "optionalDependencies": {
-    "@cipherstash/protect-ffi-win32-x64-msvc": "0.6.0",
-    "@cipherstash/protect-ffi-darwin-x64": "0.6.0",
-    "@cipherstash/protect-ffi-darwin-arm64": "0.6.0",
-    "@cipherstash/protect-ffi-linux-x64-gnu": "0.6.0",
-    "@cipherstash/protect-ffi-linux-arm64-gnu": "0.6.0"
   }
 }
