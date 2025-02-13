@@ -85,11 +85,7 @@ jobs:
         shell: bash
         working-directory: './packages/protect-ffi'
         run: |
-          git config --global user.name $ACTIONS_USER
-          git config --global user.email $ACTIONS_EMAIL
-          pnpm version -m 'v%s' '${{ (inputs.version == 'custom' && inputs.custom) || inputs.version }}' --no-workspaces-update
-          git push --follow-tags
-          echo tag=$(git describe --abbrev=0) | tee -a $GITHUB_OUTPUT
+          echo tag=@cipherstash/protect-ffi@${{ (inputs.version == 'custom' && inputs.custom) || inputs.version }} | tee -a $GITHUB_OUTPUT
 
   build:
     name: Build
