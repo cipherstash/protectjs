@@ -104,4 +104,4 @@ jobs:
         uses: softprops/action-gh-release@9d7c94cfd0a1f3ed45544c887983e9fa900f0564 # v2.0.4
         with:
           files: ./packages/protect-ffi/dist/${{ steps.pack.outputs.filename }}
-          tag_name: '@cipherstash/protect-ffi@${{ inputs.tag }}'
+          tag_name: ${{ inputs.tag }}
