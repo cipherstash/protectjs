@@ -1,7 +1,7 @@
 {
   "name": "@cipherstash/protect-ffi-win32-x64-msvc",
   "description": "Prebuilt binary package for `@cipherstash/protect-ffi` on `win32-x64-msvc`.",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "os": [
     "win32"
   ],

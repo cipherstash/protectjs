@@ -1,7 +1,7 @@
 {
   "name": "@cipherstash/protect-ffi-darwin-arm64",
   "description": "Prebuilt binary package for `@cipherstash/protect-ffi` on `darwin-arm64`.",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "os": [
     "darwin"
   ],
