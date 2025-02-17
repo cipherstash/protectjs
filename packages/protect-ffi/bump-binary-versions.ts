@@ -144,9 +144,6 @@ function bumpRootOptionalDependencies() {
 async function main() {
   // 1. Bump versions in platforms/*
   bumpPlatformPackages()
-
-  // 2. Bump optional dependencies in the root package.json
-  bumpRootOptionalDependencies()
 }
 
 main().catch((err) => {
