@@ -37,7 +37,8 @@
 		"dev": "tsup --watch",
 		"update-schema": "node ./generateSchema.mjs",
 		"generate-types": "json2ts ./cs_plaintext_v1.schema.json --output ./src/cs_plaintext_v1.ts",
-		"test": "vitest run"
+		"test": "vitest run",
+		"release": "tsup"
 	},
 	"devDependencies": {
 		"dotenv": "^16.4.7",

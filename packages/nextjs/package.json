@@ -32,7 +32,8 @@
 	},
 	"scripts": {
 		"build": "tsup",
-		"dev": "tsup --watch"
+		"dev": "tsup --watch",
+		"release": "tsup"
 	},
 	"devDependencies": {
 		"@clerk/nextjs": "^6.9.7",
