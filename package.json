@@ -32,7 +32,7 @@
     "dev": "turbo dev --filter './packages/*'",
     "clean": "rimraf --glob **/.next **/.turbo **/dist **/node_modules",
     "code:fix": "biome check --write",
-    "release": "pnpm run build && changeset publish",
+    "release": "turbo run release --filter './packages/*'",
     "release:ffi": "turbo run release --filter './packages/protect-ffi'",
     "test": "turbo test --filter './packages/*'"
   },

@@ -12,8 +12,9 @@
     "build": "pnpm run cargo-build --release",
     "cross": "npm run cross-build --release",
     "prepack": "tsc &&neon update",
-    "version": "neon bump --binaries platforms && git add .",
-    "release": "gh workflow run release-ffi.yml -f dryrun=false -f version=patch",
+    "bump-binary-versions": "ts-node ./bump-binary-versions.ts && git add .",
+    "release": "pnpm run bump-binary-versions && pnpm run build",
+    "release:binaries": "gh workflow run release-ffi.yml -f dryrun=false -f version=patch",
     "dryrun": "gh workflow run publish.yml -f dryrun=true"
   },
   "author": "CipherStash <hello@cipherstash.com>",
@@ -45,6 +46,7 @@
     "@neon-rs/cli": "^0.1.82",
     "@tsconfig/node20": "^20.1.4",
     "@types/node": "^20.11.16",
+    "ts-node": "^10.9.2",
     "typescript": "^5.3.3"
   },
   "dependencies": {

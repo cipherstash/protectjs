@@ -79,6 +79,13 @@ jobs:
         uses: ./.github/actions/setup
         with:
           use-rust: false
+      - name: Tag Release
+        if: ${{ !inputs.dryrun }}
+        id: tag
+        shell: bash
+        working-directory: './packages/protect-ffi'
+        run: |
+          echo tag=@cipherstash/protect-ffi@${{ (inputs.version == 'custom' && inputs.custom) || inputs.version }} | tee -a $GITHUB_OUTPUT
 
   build:
     name: Build
@@ -122,5 +129,5 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           for p in ./dist/*.tgz ; do
-            pnpm publish --access public $p
+            pnpm publish --no-git-checks --access public $p
           done

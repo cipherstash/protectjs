@@ -98,34 +98,7 @@ jobs:
         working-directory: './packages/protect-ffi'
         run: |
           mkdir -p dist
-          echo filename=$(basename $(pnpm pack ./platforms/${{ matrix.cfg.platform }} --silent --pack-destination=./dist --json | jq -r '.[0].filename')) | tee -a $GITHUB_OUTPUT
-      - name: Release
-        if: ${{ inputs.github-release }}
-        uses: softprops/action-gh-release@9d7c94cfd0a1f3ed45544c887983e9fa900f0564 # v2.0.4
-        with:
-          files: ./packages/protect-ffi/dist/${{ steps.pack.outputs.filename }}
-          tag_name: ${{ inputs.tag }}
-
-  main:
-    name: Main
-    needs: [matrix]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ inputs.ref }}
-      - name: Setup Neon Environment
-        uses: ./.github/actions/setup
-        with:
-          use-rust: false
-      - name: Pack
-        id: pack
-        shell: bash
-        working-directory: './packages/protect-ffi'
-        run: |
-          mkdir -p dist
-          echo "filename=$(npm pack --silent --pack-destination=./dist)" | tee -a $GITHUB_OUTPUT
+          echo filename=$(basename $(npm pack ./platforms/${{ matrix.cfg.platform }} --silent --pack-destination=./dist --json | jq -r '.[0].filename')) | tee -a $GITHUB_OUTPUT
       - name: Release
         if: ${{ inputs.github-release }}
         uses: softprops/action-gh-release@9d7c94cfd0a1f3ed45544c887983e9fa900f0564 # v2.0.4
