@@ -525,8 +525,8 @@ If you're interested in using `@cipherstash/protect` with a specific ORM, please
 
 ## CipherStash Client
 
-`@cipherstash/protect` is built on top of the CipherStash Client Rust SDK which is integrated with the `@cipherstash/jseql-ffi` package.
-The `@cipherstash/jseql-ffi` package is [public on NPM](https://www.npmjs.com/package/@cipherstash/jseql-ffi), and the source code will be released on GitHub soon.
+Protect.js is built on top of the CipherStash Client Rust SDK which is integrated with the `@cipherstash/protect-ffi` package.
+The `@cipherstash/protect-ffi` source code is available on [GitHub](https://github.com/cipherstash/protectjs-ffi).
 
 The Cipherstash Client is configured by environment variables, which are used to initialize the client when the `protect` function is called:
 
