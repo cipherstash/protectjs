@@ -1,5 +1,11 @@
 # @cipherstash/jseql
 
+## 5.2.0
+
+### Minor Changes
+
+- 499c246: Implemented protectjs-ffi.
+
 ## 5.1.0
 
 ### Minor Changes
