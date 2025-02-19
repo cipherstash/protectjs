@@ -102,7 +102,7 @@ const decryptedResults = await protectClient.bulkDecrypt(encryptedPayloads).with
    - **Description**:
      An array of objects containing the **ciphertext** (`c`) and the **id**. If this array is empty or `null`, the function returns `null`.
 
-### Return value
+**Return value**
 
 - **Type**: `Promise<Array<{ plaintext: string; id: string }> | null>`
 - Returns an array of objects, where:
