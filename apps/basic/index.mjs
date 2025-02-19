@@ -9,6 +9,8 @@ async function main() {
     table: 'users',
   })
 
+  console.log('The ciphertext is:', ciphertext)
+
   const plaintext = await protectClient.decrypt(ciphertext)
 
   console.log('The plaintext is:', plaintext)
