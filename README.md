@@ -39,6 +39,18 @@ This enables every encrypted value, in every column, in every row in your databa
 - **Meet compliance requirements faster:** achieve and exceed the data encryption requirements of SOC2 and ISO27001.
 - **Reduce the blast radius of data breaches:** limit the impact of exploited vulnerabilities to only the data your end-users can decrypt.
 
+## Example applications
+
+New to Protect.js?
+Check out the example applications:
+
+- [Basic example](/apps/basic) demonstrates how to perform encryption operations
+- [Drizzle example](/apps/drizzle) demonstrates how to use Protect.js with an ORM
+- [Next.js and lock contexts example using Clerk](/apps/nextjs-clerk) demonstrates how to protect data with identity-aware encryption
+
+`@cipherstash/protect` can be used with most ORMs that support PostgreSQL.
+If you're interested in using `@cipherstash/protect` with a specific ORM, please [create an issue](https://github.com/cipherstash/protectjs/issues/new).
+
 ## Installation
 
 Install the [`@cipherstash/protect` package](https://www.npmjs.com/package/@cipherstash/protect) with your package manager of choice:
@@ -348,15 +360,6 @@ PROTECT_LOG_LEVEL=debug  # Enable debug logging
 PROTECT_LOG_LEVEL=info   # Enable info logging
 PROTECT_LOG_LEVEL=error  # Enable error logging
 ```
-
-## Examples
-
-- [Basic example](/apps/basic)
-- [Drizzle example](/apps/drizzle)
-- [Next.js and Lock Contexts example using Clerk](/apps/nextjs-clerk)
-
-`@cipherstash/protect` can be used with most ORMs that support PostgreSQL.
-If you're interested in using `@cipherstash/protect` with a specific ORM, please [create an issue](https://github.com/cipherstash/protectjs/issues/new).
 
 ## CipherStash Client
 
