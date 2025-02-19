@@ -205,82 +205,35 @@ To decrypt data with a lock context, call the optional `withLockContext` method 
 const plaintext = await protectClient.decrypt(ciphertext).withLockContext(lockContext)
 ```
 
-### Storing encrypted data in a database
-
-To store the encrypted data in PostgreSQL, you will need to specify the column type as `jsonb`.
-
-```sql
-CREATE TABLE users (
-  id SERIAL PRIMARY KEY,
-  email VARCHAR(255) NOT NULL,
-  encrypted_data jsonb NOT NULL
-);
-```
-
-### Bulk Encryption/Decryption
+## Bulk encryption and decryption
 
 If you have a large list of items to encrypt or decrypt, you can use the **`bulkEncrypt`** and **`bulkDecrypt`** methods to batch encryption/decryption.
-`bulkEncrypt` and `bulkDecrypt` give your app significantly better throughput than the single-item `encrypt` / `decrypt` methods.
+`bulkEncrypt` and `bulkDecrypt` give your app significantly better throughput than the single-item [`encrypt`](#encrypting-data) and [`decrypt`](#decrypting-data) methods.
 
-#### bulkEncrypt
 
-```ts
-const encryptedResults = await protectClient.bulkEncrypt(plaintextsToEncrypt, {
-  column: 'email',
-  table: 'Users',
-})
+### Bulk encrypting data
 
-// or with lock context
-
-const encryptedResults = await protectClient.bulkEncrypt(plaintextsToEncrypt, {
-  column: 'email',
-  table: 'Users',
-}).withLockContext(lockContext)
-```
-
-**Parameters**
-
-1. **`plaintexts`**
-   - **Type**: `{ plaintext: string; id: string }[]`
-   - **Description**:
-     An array of objects containing the **plaintext** and an **id**.
-     - **plaintext**: The string you want encrypted.
-     - **id**: A unique identifier you can use to map the returned ciphertext back to its source. For example, if you have a `User` with `id: 1`, you might pass `id: '1'`.
-
-2. **`column`**
-   - **Type**: `string`
-   - **Description**:
-     The name of the column you’re encrypting (e.g., "email"). This is typically used in logging or contextual purposes when constructing the payload for the encryption engine.
-
-3. **`table`**
-   - **Type**: `string`
-   - **Description**:
-     The name of the table you’re encrypting data in (e.g., "Users").
-
-### Return Value
-
-- **Type**: `Promise<Array<{ c: string; id: string }> | null>`
-- Returns an array of objects, where:
-  - **`c`** is the ciphertext.
-  - **`id`** is the same **id** you passed in, so you can correlate which ciphertext matches which original plaintext.
-- If `plaintexts` is an empty array, it returns `null`.
-
-### Example Usage
+Build a list of records to encrypt:
 
 ```ts
-// 1) Gather your data. For example, a list of users with plaintext fields.
 const users = [
   { id: '1', name: 'CJ', email: 'cj@example.com' },
   { id: '2', name: 'Alex', email: 'alex@example.com' },
 ]
+```
 
-// 2) Prepare the array for bulk encryption (only encrypting the "email" field here).
+Prepare the array for bulk encryption:
+
+```ts
 const plaintextsToEncrypt = users.map((user) => ({
   plaintext: user.email, // The data to encrypt
   id: user.id,           // Keep track by user ID
 }))
+```
 
-// 3) Call bulkEncrypt
+Perform the bulk encryption:
+
+```ts
 const encryptedResults = await bulkEncrypt(plaintextsToEncrypt, {
   column: 'email',
   table: 'Users',
@@ -291,60 +244,45 @@ const encryptedResults = await bulkEncrypt(plaintextsToEncrypt, {
 //   { c: 'ENCRYPTED_VALUE_1', id: '1' },
 //   { c: 'ENCRYPTED_VALUE_2', id: '2' },
 // ]
-
-// 4) Reassemble data by matching IDs
-if (encryptedResults) {
-  encryptedResults.forEach((result) => {
-    // Find the corresponding user
-    const user = users.find((u) => u.id === result.id)
-    if (user) {
-      user.email = result.c  // Store ciphertext back into the user object
-    }
-  })
-}
 ```
 
-#### bulkDecrypt
+Reassemble data by matching IDs:
 
 ```ts
-const decryptedResults = await protectClient.bulkDecrypt(encryptedPayloads)
-
-// or with lock context
-
-const decryptedResults = await protectClient.bulkDecrypt(encryptedPayloads).withLockContext(lockContext)
+encryptedResults.forEach((result) => {
+  // Find the corresponding user
+  const user = users.find((u) => u.id === result.id)
+  if (user) {
+    user.email = result.c  // Store ciphertext back into the user object
+  }
+})
 ```
 
-**Parameters**
+Learn more about [bulk encryption](./docs/bulk-encryption-decryption.md#bulk-encrypting-data)
 
-1. **`encryptedPayloads`**
-   - **Type**: `Array<{ c: string; id: string }> | null`
-   - **Description**:
-     An array of objects containing the **ciphertext** (`c`) and the **id**. If this array is empty or `null`, the function returns `null`.
+### Bulk decrypting data
 
-### Return Value
-
-- **Type**: `Promise<Array<{ plaintext: string; id: string }> | null>`
-- Returns an array of objects, where:
-  - **`plaintext`** is the decrypted value.
-  - **`id`** is the same **id** you passed in, so you can correlate which plaintext matches which original ciphertext.
-- Returns `null` if the provided `encryptedPayloads` is empty or `null`.
-
-### Example Usage
+Build an array of records to decrypt:
 
 ```ts
-// Suppose you've retrieved an array of users where their email fields are ciphertext:
 const users = [
   { id: '1', name: 'CJ', email: 'ENCRYPTED_VALUE_1' },
   { id: '2', name: 'Alex', email: 'ENCRYPTED_VALUE_2' },
 ]
+```
 
-// 1) Prepare the array for bulk decryption
+Prepare the array for bulk decryption:
+
+```ts
 const encryptedPayloads = users.map((user) => ({
   c: user.email,
   id: user.id,
 }))
+```
 
-// 2) Call bulkDecrypt
+Perform the bulk decryption:
+
+```
 const decryptedResults = await bulkDecrypt(encryptedPayloads)
 
 // decryptedResults might look like:
@@ -352,17 +290,20 @@ const decryptedResults = await bulkDecrypt(encryptedPayloads)
 //   { plaintext: 'cj@example.com', id: '1' },
 //   { plaintext: 'alex@example.com', id: '2' },
 // ]
-
-// 3) Reassemble data by matching IDs
-if (decryptedResults) {
-  decryptedResults.forEach((result) => {
-    const user = users.find((u) => u.id === result.id)
-    if (user) {
-      user.email = result.plaintext  // Put the decrypted value back in place
-    }
-  })
-}
 ```
+
+Reassemble data by matching IDs:
+
+```ts
+decryptedResults.forEach((result) => {
+  const user = users.find((u) => u.id === result.id)
+  if (user) {
+    user.email = result.plaintext  // Put the decrypted value back in place
+  }
+})
+```
+
+Learn more about [bulk decryption](./docs/bulk-encryption-decryption.md#bulk-decrypting-data)
 
 ## Supported data types
 
