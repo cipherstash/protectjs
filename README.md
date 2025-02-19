@@ -73,21 +73,24 @@ Lastly, install the CipherStash CLI:
 ### Configuration
 
 > [!IMPORTANT]
-> These values are required to use the `@cipherstash/protect` package.
-> The names of the variables must match the values above or the package will not work.
+> Make sure you have [installed the CipherStash CLI](#installation) before following these steps.
 
-#### client keys
+To set up all the configuration and credentials required for Protect.js:
 
-At the time of this writing, you will need to use the [CipherStash CLI to generate a new client key](https://cipherstash.com/docs/how-to/client-keys).
+```bash
+stash setup
+```
 
-#### workspace id
+If you have not already signed up for a CipherStash account, this will prompt you to do so along the way.
 
-`CS_WORKSPACE_ID` is the ID of the workspace you want to use, and can be found in the [CipherStash dashboard](  https://dashboard.cipherstash.com/).
+At the end of `stash setup`, you will have two files in your project:
 
-#### access key
+- `cipherstash.toml` which contains the configuration for Protect.js
+- `cipherstash.secret.toml`: which contains the credentials for Protect.js
 
-`CS_CLIENT_ACCESS_KEY` is used to authenticate with the CipherStash API.
-You can generate an access token in the dashboard or the CLI.
+> [!WARNING]
+> `cipherstash.secret.toml` should not be committed to git, because it contains sensitive credentials.
+
 
 ### Initialize the EQL client
 
