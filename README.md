@@ -128,6 +128,9 @@ The `encrypt` function returns an object with a `c` key, and the value is the en
 }
 ```
 
+> [!TIP]
+> You can get significantly better encryption performance by using the [`bulkEncrypt` function](#bulk-encrypting-data).
+
 ### Decrypting data
 
 Use the `decrypt` function to decrypt data.
@@ -143,6 +146,9 @@ The `decrypt` function returns a string containing the plaintext data.
 'secret@squirrel.example'
 ```
 
+> [!TIP]
+> You can get significantly better decryption performance by using the [`bulkDecrypt` function](#bulk-decrypting-data).
+
 ## Identity-aware encryption
 
 Protect.js can add an additional layer of protection to your data by requiring a valid JWT to perform a decryption.
@@ -153,11 +159,12 @@ Protect.js does this through a mechanism called a _lock context_.
 
 ### Lock context
 
-> [!CAUTION]
-> If you use a lock context to encrypt data, you must also use the same lock context to decrypt the data.
-> Otherwise, you will receive a `400` error from ZeroKMS indicating that the request was unable to generate a data key, and you will be unable to decrypt the data.
+Lock contexts ensure that only specific users can access sensitive data.
 
-`@cipherstash/protect` supports lock contexts to ensure that only the intended users can access sensitive data.
+> [!CAUTION]
+> You must use the same lock context to encrypt and decrypt data.
+> If you use different lock contexts, you will be unable to decrypt the data.
+
 To use a lock context, initialize a `LockContext` object with the identity claims.
 
 ```typescript
@@ -168,7 +175,7 @@ const lc = new LockContext()
 ```
 
 > [!NOTE]
-> When initializing a `LockContext` the default context is set to use the `sub` Identity Claim.
+> When initializing a `LockContext`, the default context is set to use the `sub` Identity Claim.
 
 **Custom context**
 
