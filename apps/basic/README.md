@@ -2,7 +2,7 @@
 
 This basic example demonstrates how to use the `@cipherstash/protect` package to encrypt arbitrary input.
 
-## Install
+## Installing the basic example
 
 > [!IMPORTANT]
 > Make sure you have installed Node.js and [pnpm](https://pnpm.io/installation) before following these steps.
@@ -38,12 +38,12 @@ Lastly, install the CipherStash CLI:
     - [Linux x86_64](https://github.com/cipherstash/cli-releases/releases/latest/download/stash-x86_64-unknown-linux-gnu)
 
 
-## Configure
+## Configuring the basic example
 
 > [!IMPORTANT]
 > Make sure you have [installed the CipherStash CLI](#installation) before following these steps.
 
-To set up all the configuration and credentials required for Protect.js:
+Set up all the configuration and credentials required for Protect.js:
 
 ```bash
 stash setup
@@ -54,13 +54,13 @@ If you have not already signed up for a CipherStash account, this will prompt yo
 At the end of `stash setup`, you will have two files in your project:
 
 - `cipherstash.toml` which contains the configuration for Protect.js
-- `cipherstash.secret.toml`: which contains the credentials for Protect.js
+- `cipherstash.secret.toml` which contains the credentials for Protect.js
 
 > [!WARNING]
-> `cipherstash.secret.toml` should not be committed to git, because it contains sensitive credentials.
+> Do not commit `cipherstash.secret.toml` to git, because it contains sensitive credentials.
 
 
-## Usage
+## Using the basic example
 
 Run the example:
 
@@ -68,4 +68,4 @@ Run the example:
 pnpm start
 ```
 
-The application will log the plaintext to the console which has been encrypted using the CipherStash, decrypted, and logged the original plaintext.
+The application will log the plaintext to the console that has been encrypted using the CipherStash, decrypted, and logged the original plaintext.
