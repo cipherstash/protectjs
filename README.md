@@ -149,6 +149,17 @@ The `decrypt` function returns a string containing the plaintext data.
 > [!TIP]
 > You can get significantly better decryption performance by using the [`bulkDecrypt` function](#bulk-decrypting-data).
 
+### Storing encrypted data in a database
+
+To store the encrypted data in PostgreSQL, you will need to specify the column type as `jsonb`.
+
+```sql
+CREATE TABLE users (
+  id SERIAL PRIMARY KEY,
+  email jsonb NOT NULL,
+);
+```
+
 ## Identity-aware encryption
 
 Protect.js can add an additional layer of protection to your data by requiring a valid JWT to perform a decryption.
