@@ -143,6 +143,14 @@ The `decrypt` function returns a string containing the plaintext data.
 'secret@squirrel.example'
 ```
 
+## Identity-aware encryption
+
+Protect.js can add an additional layer of protection to your data by requiring a valid JWT to perform a decryption.
+
+This ensures that only the user who encrypted data is able to decrypt it.
+
+Protect.js does this through a mechanism called a _lock context_.
+
 ### Lock context
 
 > [!CAUTION]
