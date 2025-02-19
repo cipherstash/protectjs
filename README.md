@@ -23,7 +23,9 @@ Under the hood Protect.js uses CipherStash [Encrypt Query Language (EQL)](https:
 
 ## Features
 
-Protect.js is built on to protect data in a PostgreSQL database using industry standard encryption, and a key management service called [ZeroKMS](https://cipherstash.com/products/zerokms) that's built to work with data at scale.
+Protect.js protects data in PostgreSQL databases using industry standard AES encryption.
+Protect.js uses [ZeroKMS](https://cipherstash.com/products/zerokms) for bulk encryption and decryption operations.
+This enables every encrypted value, in every column, in every row in your database to have a unique key — without sacrificing performance.
 
 **Features:**
 - **Bulk encryption and decryption**: Protect.js uses [ZeroKMS](https://cipherstash.com/products/zerokms) for encrypting and decrypting thousands of records at once, while using a unique key for every value.
