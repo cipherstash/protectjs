@@ -349,38 +349,6 @@ PROTECT_LOG_LEVEL=info   # Enable info logging
 PROTECT_LOG_LEVEL=error  # Enable error logging
 ```
 
-## Builds and bundling
-
-`@cipherstash/protect` is a native Node.js module, and relies on native Node.js `require` to load the package.
-
-### Next.js
-
-Using `@cipherstash/protect` with Next.js? You need to opt-out from the Server Components bundling and use native Node.js `require` instead.
-
-#### Using version 15 or later
-
-`next.config.ts` [configuration](https://nextjs.org/docs/app/api-reference/config/next-config-js/serverExternalPackages):
-
-```js
-const nextConfig = {
-  ...
-  serverExternalPackages: ['@cipherstash/protect'],
-}
-```
-
-#### Using version 14
-
-`next.config.mjs` [configuration](https://nextjs.org/docs/14/app/api-reference/next-config-js/serverComponentsExternalPackages):
-
-```js
-const nextConfig = {
-  ...
-  experimental: {
-    serverComponentsExternalPackages: ['@cipherstash/protect'],
-  },
-}
-```
-
 ## Examples
 
 - [Basic example](/apps/basic)
@@ -411,6 +379,12 @@ The Cipherstash Client is configured by environment variables, which are used to
 
 - If you've created a Workspace in a region other than `ap-southeast-2`, you will need to set the `CS_ZEROKMS_HOST` environment variable to the appropriate region. For example, if you are using ZeroKMS in the `eu-central-1` region, you need to set the `CS_ZEROKMS_HOST` variable to `https://eu-central-1.aws.viturhosted.net`. This is a known usability issue that will be addressed.
 - In most hosting environments, the `CS_CONFIG_PATH` environment variable will need to be set to a path that the user running the application has permission to write to. Setting `CS_CONFIG_PATH` to `/tmp/.cipherstash` will work in most cases, and has been tested on [Vercel](https://vercel.com/), [AWS Lambda](https://aws.amazon.com/lambda/), and other hosting environments.
+
+## Builds and bundling
+
+`@cipherstash/protect` is a native Node.js module, and relies on native Node.js `require` to load the package.
+
+If you are using `@cipherstash/protect` with Next.js, you must opt out from the Server Components bundling and [use native Node.js `require` instead](./docs/nextjs.md).
 
 ## Contributing
 
