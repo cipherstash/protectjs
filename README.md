@@ -94,14 +94,14 @@ At the end of `stash setup`, you will have two files in your project:
 
 ### Initialize the EQL client
 
-Import the `protect` function from the `@cipherstash/protect` package and initialize a client with your CipherStash credentials.
+In your application, import the `protect` function from the `@cipherstash/protect` package, and initialize a client with your CipherStash credentials.
 
 ```typescript
 const { protect } = require('@cipherstash/protect')
 const protectClient = await protect()
 ```
 
-.. or using ES6?
+If you are using ES6:
 
 ```typescript
 import { protect } from '@cipherstash/protect'
@@ -110,12 +110,12 @@ const protectClient = await protect()
 
 ### Encrypting data
 
-To encrypt data, use the `encrypt` function.
-This function takes a plaintext string and an object with the table and column name as parameters.
+Use the `encrypt` function to encrypt data.
+`encrypt` takes a plaintext string, and an object with the table and column name as parameters.
 
 ```typescript
-const ciphertext = await protectClient.encrypt('plaintext', {
-  column: 'column_name',
+const ciphertext = await protectClient.encrypt('secret@squirrel.example', {
+  column: 'email',
   table: 'users',
 })
 ```
@@ -124,20 +124,24 @@ The `encrypt` function returns an object with a `c` key, and the value is the en
 
 ```typescript
 {
-  c: 'encrypted-data'
+  c: '\\\\\\\\\\\\\\\\x61202020202020472aaf602219d48c4a...'
 }
 ```
 
 ### Decrypting data
 
-To decrypt data, use the `decrypt` function.
-This function takes an encrypted data object and an object with the lock context as parameters.
+Use the `decrypt` function to decrypt data.
+`decrypt` takes an encrypted data object, and an object with the lock context as parameters.
 
 ```typescript
 const plaintext = await protectClient.decrypt(ciphertext)
 ```
 
-The `decrypt` function returns a string with the plaintext data.
+The `decrypt` function returns a string containing the plaintext data.
+
+```typescript
+'secret@squirrel.example'
+```
 
 ### Lock context
 
