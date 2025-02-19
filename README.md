@@ -68,7 +68,7 @@ Lastly, install the CipherStash CLI:
     - [Linux x86_64](https://github.com/cipherstash/cli-releases/releases/latest/download/stash-x86_64-unknown-linux-gnu)
 
 
-## Usage
+## Getting started
 
 ### Configuration
 
@@ -360,7 +360,7 @@ If you're interested in using `@cipherstash/protect` with a specific ORM, please
 
 ## CipherStash Client
 
-Protect.js is built on top of the CipherStash Client Rust SDK which is integrated with the `@cipherstash/protect-ffi` package.
+Protect.js is built on top of the CipherStash Client Rust SDK which is embedded with the `@cipherstash/protect-ffi` package.
 The `@cipherstash/protect-ffi` source code is available on [GitHub](https://github.com/cipherstash/protectjs-ffi).
 
 The Cipherstash Client is configured by environment variables, which are used to initialize the client when the `protect` function is called:
