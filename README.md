@@ -9,21 +9,25 @@ Encryption operations happen directly in your app, and the ciphertext is stored 
 Every value you encrypt with Protect.js has a unique key, made possible by CipherStash [ZeroKMS](https://cipherstash.com/products/zerokms)'s blazing fast bulk key operations.
 Under the hood Protect.js uses CipherStash [Encrypt Query Language (EQL)](https://github.com/cipherstash/encrypt-query-language), and all ZeroKMS data keys are backed by a root key in [AWS KMS](https://docs.aws.amazon.com/kms/latest/developerguide/overview.html).
 
-## Table of Contents
+## Table of contents
 
 - [Features](#features)
-- [Installation](#installation)
-- [Platform Support](#platform-support)
-- [Usage](#usage)
+- [Example applications](#example-applications)
+- [Installing Protect.js](#installing-protectjs)
+- [Getting started](#getting-started)
+- [Identity-aware encryption](#identity-aware-decryption)
+- [Bulk encryption and decryption](#bulk-encryption-and-decryption)
+- [Supported data types](#supported-data-types)
+- [Searchable encryption](#searchable-encryption)
 - [Logging](#logging)
-- [Examples](#examples)
 - [CipherStash Client](#cipherstash-client)
+- [Builds and bundling](#builds-and-bundling)
 - [Contributing](#contributing)
 - [License](#license)
 
 ## Features
 
-Protect.js protects data in PostgreSQL databases using industry standard AES encryption.
+Protect.js protects data in PostgreSQL databases using industry-standard AES encryption.
 Protect.js uses [ZeroKMS](https://cipherstash.com/products/zerokms) for bulk encryption and decryption operations.
 This enables every encrypted value, in every column, in every row in your database to have a unique key — without sacrificing performance.
 
@@ -51,7 +55,7 @@ Check out the example applications:
 `@cipherstash/protect` can be used with most ORMs that support PostgreSQL.
 If you're interested in using `@cipherstash/protect` with a specific ORM, please [create an issue](https://github.com/cipherstash/protectjs/issues/new).
 
-## Installation
+## Installing Protect.js
 
 Install the [`@cipherstash/protect` package](https://www.npmjs.com/package/@cipherstash/protect) with your package manager of choice:
 
@@ -104,7 +108,7 @@ At the end of `stash setup`, you will have two files in your project:
 > `cipherstash.secret.toml` should not be committed to git, because it contains sensitive credentials.
 
 
-### Initialize the EQL client
+### Initializing the EQL client
 
 In your application, import the `protect` function from the `@cipherstash/protect` package, and initialize a client with your CipherStash credentials.
 
@@ -141,7 +145,7 @@ The `encrypt` function returns an object with a `c` key, and the value is the en
 ```
 
 > [!TIP]
-> You can get significantly better encryption performance by using the [`bulkEncrypt` function](#bulk-encrypting-data).
+> Get significantly better encryption performance by using the [`bulkEncrypt` function](#bulk-encrypting-data).
 
 ### Decrypting data
 
@@ -159,7 +163,7 @@ The `decrypt` function returns a string containing the plaintext data.
 ```
 
 > [!TIP]
-> You can get significantly better decryption performance by using the [`bulkDecrypt` function](#bulk-decrypting-data).
+> Get significantly better decryption performance by using the [`bulkDecrypt` function](#bulk-decrypting-data).
 
 ### Storing encrypted data in a database
 
@@ -200,7 +204,7 @@ const lc = new LockContext()
 > [!NOTE]
 > When initializing a `LockContext`, the default context is set to use the `sub` Identity Claim.
 
-### Identify a user for a lock context
+### Identifying a user for a lock context
 
 A lock context needs to be locked to a user.
 To identify the user, call the `identify` method on the lock context object, and pass a valid JWT from a user's session:
@@ -335,7 +339,7 @@ Other data types like booleans, dates, ints, floats, and JSON are extremely well
 Until support for other data types are available in `@cipherstash/protect`, you can:
 
 - Read [about how these data types work in EQL](https://github.com/cipherstash/encrypt-query-language/blob/main/docs/reference/INDEX.md)
-- Vote for this feature by adding a :+1: on this [GitHub Issue](https://github.com/cipherstash/protectjs/issues/48).
+- Express interest in this feature by adding a :+1: on this [GitHub Issue](https://github.com/cipherstash/protectjs/issues/48).
 
 ## Searchable encryption
 
@@ -344,7 +348,7 @@ Searchable encryption is an extremely well supported capability in other CipherS
 Until searchable encryption support is released in `@cipherstash/protect`, you can:
 
 - Read [about how searchable encryption works in EQL](https://github.com/cipherstash/encrypt-query-language)
-- Vote for this feature by adding a :+1: on this [GitHub Issue](https://github.com/cipherstash/protectjs/issues/46).
+- Express interest in this feature by adding a :+1: on this [GitHub Issue](https://github.com/cipherstash/protectjs/issues/46).
 
 ## Logging
 
@@ -353,7 +357,7 @@ Until searchable encryption support is released in `@cipherstash/protect`, you c
 > This is by design to prevent sensitive data from leaking into logs.
 
 `@cipherstash/protect` and `@cipherstash/nextjs` will log to the console with a log level of `info` by default.
-You can enable the logger by configuring the following environment variable:
+To enable the logger, configure the following environment variable:
 
 ```bash
 PROTECT_LOG_LEVEL=debug  # Enable debug logging
@@ -368,7 +372,7 @@ The `@cipherstash/protect-ffi` source code is available on [GitHub](https://gith
 
 The Cipherstash Client is configured by environment variables, which are used to initialize the client when the `protect` function is called:
 
-|      Variable Name     |                           Description                           | Required |                    Default                   |
+|      Variable name     |                           Description                           | Required |                    Default                   |
 |:----------------------:|:---------------------------------------------------------------:|:--------:|:--------------------------------------------:|
 | `CS_CLIENT_ID`         | The client ID for your CipherStash account.                     | Yes      |                                              |
 | `CS_CLIENT_KEY`        | The client key for your CipherStash account.                    | Yes      |                                              |
