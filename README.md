@@ -41,7 +41,7 @@ This enables every encrypted value, in every column, in every row in your databa
 
 ## Installation
 
-Install `@cipherstash/protect` via one of the following methods:
+Install the [`@cipherstash/protect` package](https://www.npmjs.com/package/@cipherstash/protect) with your package manager of choice:
 
 ```bash
 npm install @cipherstash/protect
