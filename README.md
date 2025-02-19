@@ -51,11 +51,8 @@ yarn add @cipherstash/protect
 pnpm add @cipherstash/protect
 ```
 
-### Bun (experimental)
-
-[Bun](https://bun.sh/) is an alternate JavaScript runtime that targets Node compatibility.
-The underlying [CipherStash Client](#cipherstash-client) is written in Rust and adpated to JavaScript using [Neon](https://github.com/neon-bindings/neon).
-At the moment, Bun is not supported due to the lack of Node API compatibility.
+> [!TIP]
+> [Bun](https://bun.sh/) is not currently supported due to a lack of [Node-API compatibility](https://github.com/oven-sh/bun/issues/158). Under the hood, Protect.js uses [CipherStash Client](#cipherstash-client) which is written in Rust and embedded using [Neon](https://github.com/neon-bindings/neon).
 
 ## Usage
 
