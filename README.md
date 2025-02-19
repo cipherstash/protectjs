@@ -54,20 +54,23 @@ pnpm add @cipherstash/protect
 > [!TIP]
 > [Bun](https://bun.sh/) is not currently supported due to a lack of [Node-API compatibility](https://github.com/oven-sh/bun/issues/158). Under the hood, Protect.js uses [CipherStash Client](#cipherstash-client) which is written in Rust and embedded using [Neon](https://github.com/neon-bindings/neon).
 
+
+Lastly, install the CipherStash CLI:
+
+- On macOS:
+
+  ```bash
+  brew install cipherstash/tap/stash
+  ```
+
+- On Linux, download the binary for your platform, and put it on your `PATH`:
+    - [Linux ARM64](https://github.com/cipherstash/cli-releases/releases/latest/download/stash-aarch64-unknown-linux-gnu)
+    - [Linux x86_64](https://github.com/cipherstash/cli-releases/releases/latest/download/stash-x86_64-unknown-linux-gnu)
+
+
 ## Usage
 
-### Define environment variables
-
-Create an account with [CipherStash](https://cipherstash.com) and get your `client id`, `client key`, `workspace id`, and `access key` from the [CipherStash dashboard](https://dashboard.cipherstash.com/).
-
-Create a `.env` file in the root directory of your project with the following contents:
-
-```
-CS_CLIENT_ID=your-client-id
-CS_CLIENT_KEY=your-client-key
-CS_WORKSPACE_ID=your-workspace-id
-CS_CLIENT_ACCESS_KEY=your-client-access-key
-```
+### Configuration
 
 > [!IMPORTANT]
 > These values are required to use the `@cipherstash/protect` package.
