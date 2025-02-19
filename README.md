@@ -177,127 +177,18 @@ const lc = new LockContext()
 > [!NOTE]
 > When initializing a `LockContext`, the default context is set to use the `sub` Identity Claim.
 
-**Custom context**
+### Identify a user for a lock context
 
-If you want to override the default context, you can pass a custom context to the `LockContext` constructor.
-
-```typescript
-import { LockContext } from '@cipherstash/protect/identify'
-
-// protectClient from the previous steps
-const lc = new LockContext({
-  context: {
-    identityClaim: ['sub'], // this is the default context
-  },
-})
-```
-
-**Context and identity claim options**
-
-The context object contains an `identityClaim` property.
-The `identityClaim` property must be an array of strings that correspond to the Identity Claim(s) you want to lock the encryption operation to.
-
-Currently supported Identity Claims are:
-
-| Identity Claim | Description |
-| -------------- | ----------- |
-| `sub`          | The user's subject identifier. |
-| `scopes`       | The user's scopes set by your IDP policy. |
-
-#### Identifying the user
-
-The lock context needs to be tied to a specific user.
-To identify the user, call the `identify` method on the lock context object.
+A lock context needs to be locked to a user.
+To identify the user, call the `identify` method on the lock context object, and pass a valid JWT from a user's session:
 
 ```typescript
-const lockContext = await lc.identify('jwt_token_from_identiti_provider')
-```
-
-The `jwt_token_from_identiti_provider` is the JWT token from your identity provider, and can be retrieved from the user's session.
-
-### Lock context with Next.js and Clerk
-
-If you're using [Clerk](https://clerk.com/) as your identity provider, you can use the `protectClerkMiddleware` function to automatically set the CTS token for every user session.
-
-Install the `@cipherstash/nextjs` package:
-
-```bash
-npm install @cipherstash/nextjs
-# or
-yarn add @cipherstash/nextjs
-# or
-pnpm add @cipherstash/nextjs
-```
-
-In your `middleware.ts` file, add the following code:
-
-```typescript
-import { clerkMiddleware } from '@clerk/nextjs/server'
-import { protectClerkMiddleware } from '@cipherstash/nextjs/clerk'
-
-export default clerkMiddleware(async (auth, req: NextRequest) => {
-  return protectClerkMiddleware(auth, req)
-})
-```
-
-#### Retrieving the CTS token in Next.js 
-
-You can then use the `getCtsToken` function to retrieve the CTS token for the current user session.
-
-```typescript
-import { getCtsToken } from '@cipherstash/nextjs'
-
-export default async function Page() {
-  const ctsToken = await getCtsToken()
-
-  // getCtsToken returns either
-  // ---
-  // { success: true, ctsToken: CtsToken }
-  // or
-  // { success: false, error: string }
-
-  if (!ctsToken.success) {
-    // handle error
-  }
-
-  return (
-    <div>
-      <h1>Server side rendered page</h1>
-    </div>
-  )
-}
-```
-
-#### Contructing a LockContext with an existing CTS token
-
-Since the CTS token is already available, you can construct a `LockContext` object with the existing CTS token.
-
-```typescript
-import { LockContext } from '@cipherstash/protect/identify'
-import { getCtsToken } from '@cipherstash/nextjs'
-
-export default async function Page() {
-  const ctsToken = await getCtsToken()
-
-  if (!ctsToken.success) {
-    // handle error
-  }
-
-  const lockContext = new LockContext({
-    ctsToken
-  })
-
-  return (
-    <div>
-      <h1>Server side rendered page</h1>
-    </div>
-  )
-}
+const lockContext = await lc.identify(jwt)
 ```
 
 ### Encrypting data with a lock context
 
-To encrypt data with a lock context, call the optional `withLockContext` method on the `encrypt` function and pass the lock context object as a parameter.
+To encrypt data with a lock context, call the optional `withLockContext` method on the `encrypt` function and pass the lock context object as a parameter:
 
 ```typescript
 const ciphertext = await protectClient.encrypt('plaintext', {
@@ -308,7 +199,7 @@ const ciphertext = await protectClient.encrypt('plaintext', {
 
 ### Decrypting data with a lock context
 
-To decrypt data with a lock context, call the optional `withLockContext` method on the `decrypt` function and pass the lock context object as a parameter.
+To decrypt data with a lock context, call the optional `withLockContext` method on the `decrypt` function and pass the lock context object as a parameter:
 
 ```typescript
 const plaintext = await protectClient.decrypt(ciphertext).withLockContext(lockContext)
