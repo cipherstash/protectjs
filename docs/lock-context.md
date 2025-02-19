@@ -1,7 +1,7 @@
 
-#### Lock context with Next.js and Clerk
+## Lock context with Next.js and Clerk
 
-If you're using [Clerk](https://clerk.com/) as your identity provider, you can use the `protectClerkMiddleware` function to automatically set the CTS token for every user session.
+If you're using [Clerk](https://clerk.com/) as your identity provider, use the `protectClerkMiddleware` function to automatically set the CTS token for every user session.
 
 Install the `@cipherstash/nextjs` package:
 
@@ -24,7 +24,7 @@ export default clerkMiddleware(async (auth, req: NextRequest) => {
 })
 ```
 
-##### Retrieving the CTS token in Next.js
+### Retrieving the CTS token in Next.js
 
 You can then use the `getCtsToken` function to retrieve the CTS token for the current user session.
 
@@ -52,7 +52,7 @@ export default async function Page() {
 }
 ```
 
-#### Contructing a LockContext with an existing CTS token
+### Contructing a LockContext with an existing CTS token
 
 Since the CTS token is already available, you can construct a `LockContext` object with the existing CTS token.
 
@@ -80,7 +80,7 @@ export default async function Page() {
 ```
 
 
-### Custom lock contexts
+#### Custom lock contexts
 
 If you want to override the default context, you can pass a custom context to the `LockContext` constructor.
 
