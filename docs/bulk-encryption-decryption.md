@@ -3,7 +3,7 @@
 If you have a large list of items to encrypt or decrypt, you can use the **`bulkEncrypt`** and **`bulkDecrypt`** methods to batch encryption/decryption.
 `bulkEncrypt` and `bulkDecrypt` give your app significantly better throughput than the single-item [`encrypt`](../README.md#encrypting-data) / [`decrypt`](../README.md#decrypting-data) methods.
 
-#### Bulk encrypting data
+### Bulk encrypting data
 
 ```ts
 const encryptedResults = await protectClient.bulkEncrypt(plaintextsToEncrypt, {
@@ -26,7 +26,7 @@ const encryptedResults = await protectClient.bulkEncrypt(plaintextsToEncrypt, {
    - **Description**:
      An array of objects containing the **plaintext** and an **id**.
      - **plaintext**: The string you want encrypted.
-     - **id**: A unique identifier you can use to map the returned ciphertext back to its source. For example, if you have a `User` with `id: 1`, you might pass `id: '1'`.
+     - **id**: A unique identifier to map the returned ciphertext back to its source. For example, if you have a `User` with `id: 1`, you might pass `id: '1'`.
 
 2. **`column`**
    - **Type**: `string`
@@ -38,7 +38,7 @@ const encryptedResults = await protectClient.bulkEncrypt(plaintextsToEncrypt, {
    - **Description**:
      The name of the table you’re encrypting data in (e.g., "Users").
 
-**Return Value**
+**Return value**
 
 - **Type**: `Promise<Array<{ c: string; id: string }> | null>`
 - Returns an array of objects, where:
@@ -46,7 +46,7 @@ const encryptedResults = await protectClient.bulkEncrypt(plaintextsToEncrypt, {
   - **`id`** is the same **id** you passed in, so you can correlate which ciphertext matches which original plaintext.
 - If `plaintexts` is an empty array, it returns `null`.
 
-### Example Usage
+#### Example usage
 
 ```ts
 // 1) Gather your data. For example, a list of users with plaintext fields.
@@ -85,7 +85,7 @@ if (encryptedResults) {
 }
 ```
 
-#### Bulk decrypting data
+### Bulk decrypting data
 
 ```ts
 const decryptedResults = await protectClient.bulkDecrypt(encryptedPayloads)
@@ -102,7 +102,7 @@ const decryptedResults = await protectClient.bulkDecrypt(encryptedPayloads).with
    - **Description**:
      An array of objects containing the **ciphertext** (`c`) and the **id**. If this array is empty or `null`, the function returns `null`.
 
-### Return Value
+### Return value
 
 - **Type**: `Promise<Array<{ plaintext: string; id: string }> | null>`
 - Returns an array of objects, where:
@@ -110,7 +110,7 @@ const decryptedResults = await protectClient.bulkDecrypt(encryptedPayloads).with
   - **`id`** is the same **id** you passed in, so you can correlate which plaintext matches which original ciphertext.
 - Returns `null` if the provided `encryptedPayloads` is empty or `null`.
 
-### Example Usage
+#### Example usage
 
 ```ts
 // Suppose you've retrieved an array of users where their email fields are ciphertext:
