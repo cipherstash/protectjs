@@ -212,8 +212,8 @@ importers:
   packages/protect:
     dependencies:
       '@cipherstash/protect-ffi':
-        specifier: 0.9.0
-        version: 0.9.0
+        specifier: 0.10.0
+        version: 0.10.0
       typescript:
         specifier: ^5.0.0
         version: 5.7.2
@@ -388,33 +388,33 @@ packages:
   '@cipherstash/jseql-ffi@0.5.0':
     resolution: {integrity: sha512-eqouBHqdCw1JhUJpr4SmT/vW+eoDRRpwSQKZ5V/+cKC5+eypxDq22aQx1klmLmJUtt2dOsTVQU7Qh8QBuWAaUQ==}
 
-  '@cipherstash/protect-ffi-darwin-arm64@0.9.0':
-    resolution: {integrity: sha512-8AeQX0ZlPUIzIZ/CT9wqW9YvfT4w/z9Rb+GFy3uhWMyrZKuFy8AYCJZt7NrrTJL3uKiptvC+TOEZB/sMJtMwjg==}
+  '@cipherstash/protect-ffi-darwin-arm64@0.10.0':
+    resolution: {integrity: sha512-7XsdXlIOVWyOjMJNxFVxWT9nsWu0cNt0lYPYD6W7ZZ2LqliwAsvkmcT0CnB+5sCRureduilcwds8/fFIh4H6fw==}
     cpu: [arm64]
     os: [darwin]
 
-  '@cipherstash/protect-ffi-darwin-x64@0.9.0':
-    resolution: {integrity: sha512-YGzyiuHO0QfKkEA7zK1WaQ6awjHtGzT5lBpU8ODCUlU/9jrazvsqQmI4WANw+JS1dcCAqouEV0UUerfUwrPQGQ==}
+  '@cipherstash/protect-ffi-darwin-x64@0.10.0':
+    resolution: {integrity: sha512-uoo13u9PlLhcBQ1+xCGvSJ58ZQHEA28hDnDwSlYTrDOtKkVhqSB1fHFUtZs9pl6kvK5lp715STBKJ9qAQD1d9w==}
     cpu: [x64]
     os: [darwin]
 
-  '@cipherstash/protect-ffi-linux-arm64-gnu@0.9.0':
-    resolution: {integrity: sha512-Hvv9wF8nl6Yrfi9AEsljEnqqth2KW6mrrGjAp/VlNNQU1NEhZYuGxzahyAm900uEwUwx9owS3/5DgpSNnR3uYw==}
+  '@cipherstash/protect-ffi-linux-arm64-gnu@0.10.0':
+    resolution: {integrity: sha512-wqHv76OdME6kMLREyzAjkpDbVrMhf58n7nVCg61TrQZYGgOjqgIipJPSoTmVGJjHhk9XhKNSs1MNewxdWiV61w==}
     cpu: [arm64]
     os: [linux]
 
-  '@cipherstash/protect-ffi-linux-x64-gnu@0.9.0':
-    resolution: {integrity: sha512-S+6tMcuydexqcjGUWmPDBRAnuyTEeAazp9zrtw1NMRBbAlEMqTCKrpAJKmRChLkLftwyBAhw0cX4W3g6EgIcpA==}
+  '@cipherstash/protect-ffi-linux-x64-gnu@0.10.0':
+    resolution: {integrity: sha512-yyeArxZt3v2lnrnU0T3HzX1KiBXVwhLnmTyeks0OhhGJ0G+qPQS4zEZDeh4alIaxzW0fQLtbnfacRiZCR5TjDw==}
     cpu: [x64]
     os: [linux]
 
-  '@cipherstash/protect-ffi-win32-x64-msvc@0.9.0':
-    resolution: {integrity: sha512-JbpxZ057KhNar8symV/bkudscRRMji/JJ1308wFoBnt8PIFO0TNd5tD6qOcjm9jix9u5laF024WPFSfK/yunPg==}
+  '@cipherstash/protect-ffi-win32-x64-msvc@0.10.0':
+    resolution: {integrity: sha512-1ALSnE3m4FcGXWPVvAqHvfuGzmxTxJ907b1LjE6KyC6CXjm3IzfSc8p6gl49Y7QXgQeXFEX/BQBEi80iYdegKg==}
     cpu: [x64]
     os: [win32]
 
-  '@cipherstash/protect-ffi@0.9.0':
-    resolution: {integrity: sha512-MnZpJFy802LODdjT0XlYGyd/jLOP7Sxd9rUbmaI35vgQUi4+dw93uUsgheXlif1WwnR6rC+wnBtptf/eKL7nAg==}
+  '@cipherstash/protect-ffi@0.10.0':
+    resolution: {integrity: sha512-zxyhV/5wuVdb8rAmKFlRddviXtgvFKiaJsJiGwwq9rVLMrdKb+Zz5OT3IGRKvZ6X+fvS2hKtAFk61Ysumix5tA==}
 
   '@cipherstash/protect@5.1.0':
     resolution: {integrity: sha512-iYcg9ZKWKetnelcWQgvaDAqvVA8AzCE2m9JSMZulBtrUl/Z5NPMeeN6s9Nr/Zss9oWLPg3fyvLsl/rTViDi5fA==}
@@ -3890,30 +3890,30 @@ snapshots:
       '@cipherstash/jseql-ffi-linux-x64-gnu': 0.5.0
       '@cipherstash/jseql-ffi-win32-x64-msvc': 0.5.0
 
-  '@cipherstash/protect-ffi-darwin-arm64@0.9.0':
+  '@cipherstash/protect-ffi-darwin-arm64@0.10.0':
     optional: true
 
-  '@cipherstash/protect-ffi-darwin-x64@0.9.0':
+  '@cipherstash/protect-ffi-darwin-x64@0.10.0':
     optional: true
 
-  '@cipherstash/protect-ffi-linux-arm64-gnu@0.9.0':
+  '@cipherstash/protect-ffi-linux-arm64-gnu@0.10.0':
     optional: true
 
-  '@cipherstash/protect-ffi-linux-x64-gnu@0.9.0':
+  '@cipherstash/protect-ffi-linux-x64-gnu@0.10.0':
     optional: true
 
-  '@cipherstash/protect-ffi-win32-x64-msvc@0.9.0':
+  '@cipherstash/protect-ffi-win32-x64-msvc@0.10.0':
     optional: true
 
-  '@cipherstash/protect-ffi@0.9.0':
+  '@cipherstash/protect-ffi@0.10.0':
     dependencies:
       '@neon-rs/load': 0.1.82
     optionalDependencies:
-      '@cipherstash/protect-ffi-darwin-arm64': 0.9.0
-      '@cipherstash/protect-ffi-darwin-x64': 0.9.0
-      '@cipherstash/protect-ffi-linux-arm64-gnu': 0.9.0
-      '@cipherstash/protect-ffi-linux-x64-gnu': 0.9.0
-      '@cipherstash/protect-ffi-win32-x64-msvc': 0.9.0
+      '@cipherstash/protect-ffi-darwin-arm64': 0.10.0
+      '@cipherstash/protect-ffi-darwin-x64': 0.10.0
+      '@cipherstash/protect-ffi-linux-arm64-gnu': 0.10.0
+      '@cipherstash/protect-ffi-linux-x64-gnu': 0.10.0
+      '@cipherstash/protect-ffi-win32-x64-msvc': 0.10.0
 
   '@cipherstash/protect@5.1.0(typescript@5.7.2)':
     dependencies:

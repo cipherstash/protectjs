@@ -54,7 +54,7 @@
 		"access": "public"
 	},
 	"dependencies": {
-		"@cipherstash/protect-ffi": "0.9.0"
+		"@cipherstash/protect-ffi": "0.10.0"
 	},
 	"optionalDependencies": {
 		"@rollup/rollup-linux-x64-gnu": "4.24.0"

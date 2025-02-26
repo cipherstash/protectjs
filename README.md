@@ -25,6 +25,8 @@ Under the hood Protect.js uses CipherStash [Encrypt Query Language (EQL)](https:
 - [Contributing](#contributing)
 - [License](#license)
 
+For more specific documentation, please refer to the [docs](https://github.com/cipherstash/protectjs/tree/main/docs).
+
 ## Features
 
 Protect.js protects data in PostgreSQL databases using industry-standard AES encryption.
@@ -106,7 +108,9 @@ At the end of `stash setup`, you will have two files in your project:
 
 > [!WARNING]
 > `cipherstash.secret.toml` should not be committed to git, because it contains sensitive credentials.
+> The `stash setup` command will attempt to append to your `.gitignore` file with the `cipherstash.secret.toml` file.
 
+You can read more about [configuration via toml file or environment variables here](./docs/configuration.md).
 
 ### Initializing the EQL client
 
@@ -370,28 +374,16 @@ PROTECT_LOG_LEVEL=error  # Enable error logging
 Protect.js is built on top of the CipherStash Client Rust SDK which is embedded with the `@cipherstash/protect-ffi` package.
 The `@cipherstash/protect-ffi` source code is available on [GitHub](https://github.com/cipherstash/protectjs-ffi).
 
-The Cipherstash Client is configured by environment variables, which are used to initialize the client when the `protect` function is called:
-
-|      Variable name     |                           Description                           | Required |                    Default                   |
-|:----------------------:|:---------------------------------------------------------------:|:--------:|:--------------------------------------------:|
-| `CS_CLIENT_ID`         | The client ID for your CipherStash account.                     | Yes      |                                              |
-| `CS_CLIENT_KEY`        | The client key for your CipherStash account.                    | Yes      |                                              |
-| `CS_WORKSPACE_ID`      | The workspace ID for your CipherStash account.                  | Yes      |                                              |
-| `CS_CLIENT_ACCESS_KEY` | The access key for your CipherStash account.                    | Yes      |                                              |
-| `CS_ZEROKMS_HOST`      | The host for the ZeroKMS server.                                | No       | `https://ap-southeast-2.aws.viturhosted.net` |
-| `CS_CONFIG_PATH`       | A temporary path to store the CipherStash client configuration. | No       | `/home/{username}/.cipherstash`              |
-
-> [!TIP]
-> There are some configuration details you should take note of when deploying `@cipherstash/protect` in your production apps.
-
-- If you've created a Workspace in a region other than `ap-southeast-2`, you will need to set the `CS_ZEROKMS_HOST` environment variable to the appropriate region. For example, if you are using ZeroKMS in the `eu-central-1` region, you need to set the `CS_ZEROKMS_HOST` variable to `https://eu-central-1.aws.viturhosted.net`. This is a known usability issue that will be addressed.
-- In most hosting environments, the `CS_CONFIG_PATH` environment variable will need to be set to a path that the user running the application has permission to write to. Setting `CS_CONFIG_PATH` to `/tmp/.cipherstash` will work in most cases, and has been tested on [Vercel](https://vercel.com/), [AWS Lambda](https://aws.amazon.com/lambda/), and other hosting environments.
+Read more about configuring the CipherStash client in the [configuration docs](./docs/configuration.md).
 
 ## Builds and bundling
 
 `@cipherstash/protect` is a native Node.js module, and relies on native Node.js `require` to load the package.
 
-If you are using `@cipherstash/protect` with Next.js, you must opt out from the Server Components bundling and [use native Node.js `require` instead](./docs/nextjs.md).
+Here are a few resources to help based on your tool set:
+
+- [Required Next.js configuration](./docs/nextjs.md).
+- [SST and AWS serverless functions](./docs/sst.md).
 
 ## Contributing
 
@@ -399,4 +391,4 @@ Please read the [contribution guide](CONTRIBUTE.md).
 
 ## License
 
-`@cipherstash/protect` is [MIT licensed](./LICENSE.md).
+Protect.js is [MIT licensed](./LICENSE.md).
