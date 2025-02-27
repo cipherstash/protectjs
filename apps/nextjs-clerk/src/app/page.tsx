@@ -27,12 +27,23 @@ async function getUsers(): Promise<EncryptedUser[]> {
     const cts_token = token.ctsToken
     const lockContext = getLockContext(cts_token)
 
-    const promises = results.map(
-      async (row) =>
-        await protectClient
-          .decrypt(row.email as { c: string })
-          .withLockContext(lockContext),
-    )
+    const promises = results.map(async (row) => {
+      const decryptResult = await protectClient
+        .decrypt(row.email as { c: string })
+        .withLockContext(lockContext)
+
+      if (decryptResult.failure) {
+        console.error(
+          'Failed to decrypt the email for user',
+          row.id,
+          decryptResult.failure.message,
+        )
+
+        return row.email
+      }
+
+      return decryptResult.data
+    })
 
     const data = (await Promise.allSettled(promises)) as PromiseSettledResult<
       string | null

@@ -2,6 +2,7 @@ import 'dotenv/config'
 import { db } from './db'
 import { users } from './db/schema'
 import { protectClient } from './protect'
+import type { ProtectError, Result } from '@cipherstash/protect'
 
 const sql = db
   .select({

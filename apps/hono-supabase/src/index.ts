@@ -2,17 +2,12 @@ import 'dotenv/config'
 import { serve } from '@hono/node-server'
 import { createClient } from '@supabase/supabase-js'
 import { Hono } from 'hono'
-
-// At the time of this writing, jseql does not support dynamic require,
-// so we are using ES6 require to import the package.
-import { createRequire } from 'node:module'
-const require = createRequire(import.meta.url)
-const { eql } = require('@cipherstash/jseql')
+import { protect } from '@cipherstash/protect'
 
 // Initialize the EQL client
 // Make sure you have the following environment variables defined in your .env file:
 // CS_CLIENT_ID, CS_CLIENT_KEY, CS_CLIENT_ACCESS_KEY, CS_WORKSPACE_ID
-const eqlClient = await eql()
+const protectClient = await protect()
 
 // Create a single supabase client for interacting with the database
 const supabaseUrl = process.env.SUPABASE_URL
@@ -39,7 +34,19 @@ app.get('/users', async (c) => {
       users.map(async (user) => {
         // The encrypted data is stored in the EQL format: { c: 'ciphertext' }
         // and the decrypt function expects the data to be in this format.
-        const plaintext = await eqlClient.decrypt(user.email)
+        const decryptResult = await protectClient.decrypt(user.email)
+
+        if (decryptResult.failure) {
+          console.error(
+            'Failed to decrypt the email for user',
+            user.id,
+            decryptResult.failure.message,
+          )
+
+          return user
+        }
+
+        const plaintext = decryptResult.data
         return { ...user, email: plaintext }
       }),
     )
@@ -63,10 +70,20 @@ app.post('/users', async (c) => {
   // The encrypt function expects the plaintext to be of type string
   // and the second argument to be an object with the table and column
   // names of the table where you are storing the data.
-  const encryptedEmail = await eqlClient.encrypt(email, {
+  const encryptedResult = await protectClient.encrypt(email, {
     column: 'email',
     table: 'users',
   })
+
+  if (encryptedResult.failure) {
+    console.error(
+      'Failed to encrypt the email',
+      encryptedResult.failure.message,
+    )
+    return c.json({ message: 'Failed to encrypt the email' }, 500)
+  }
+
+  const encryptedEmail = encryptedResult.data
 
   // The encrypt function will return an object with a c key, which is the encrypted data.
   // We are logging the encrypted data to the console for demonstration purposes.

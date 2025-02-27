@@ -11,12 +11,24 @@ const encryptedResults = await protectClient.bulkEncrypt(plaintextsToEncrypt, {
   table: 'Users',
 })
 
+if (encryptedResults.failure) {
+  // Handle the failure
+}
+
+const encryptedValues = encryptedResults.data
+
 // or with lock context
 
 const encryptedResults = await protectClient.bulkEncrypt(plaintextsToEncrypt, {
   column: 'email',
   table: 'Users',
 }).withLockContext(lockContext)
+
+if (encryptedResults.failure) {
+  // Handle the failure
+}
+
+const encryptedValues = encryptedResults.data
 ```
 
 **Parameters**
@@ -40,11 +52,14 @@ const encryptedResults = await protectClient.bulkEncrypt(plaintextsToEncrypt, {
 
 **Return value**
 
-- **Type**: `Promise<Array<{ c: string; id: string }> | null>`
-- Returns an array of objects, where:
-  - **`c`** is the ciphertext.
-  - **`id`** is the same **id** you passed in, so you can correlate which ciphertext matches which original plaintext.
-- If `plaintexts` is an empty array, it returns `null`.
+- **Type**: `Promise<Result<Array<{ c: string; id: string }> | null, ProtectError>>`
+- Returns a `Result` object, where:
+  - **`data`** is an array of objects or `null`, where:
+    - **`c`** is the ciphertext.
+    - **`id`** is the same **id** you passed in, so you can correlate which ciphertext matches which original plaintext.
+  - **`failure`** is an object with the following properties:
+    - **`type`** is a string with the error type.
+    - **`message`** is a string with the error message.
 
 #### Example usage
 
@@ -67,15 +82,21 @@ const encryptedResults = await bulkEncrypt(plaintextsToEncrypt, {
   table: 'Users',
 })
 
-// encryptedResults might look like:
+if (encryptedResults.failure) {
+  // Handle the failure
+}
+
+const encryptedValues = encryptedResults.data
+
+// encryptedValues might look like:
 // [
 //   { c: 'ENCRYPTED_VALUE_1', id: '1' },
 //   { c: 'ENCRYPTED_VALUE_2', id: '2' },
 // ]
 
 // 4) Reassemble data by matching IDs
-if (encryptedResults) {
-  encryptedResults.forEach((result) => {
+if (encryptedValues) {
+  encryptedValues.forEach((result) => {
     // Find the corresponding user
     const user = users.find((u) => u.id === result.id)
     if (user) {
@@ -104,11 +125,14 @@ const decryptedResults = await protectClient.bulkDecrypt(encryptedPayloads).with
 
 **Return value**
 
-- **Type**: `Promise<Array<{ plaintext: string; id: string }> | null>`
-- Returns an array of objects, where:
-  - **`plaintext`** is the decrypted value.
-  - **`id`** is the same **id** you passed in, so you can correlate which plaintext matches which original ciphertext.
-- Returns `null` if the provided `encryptedPayloads` is empty or `null`.
+- **Type**: `Promise<Result<Array<{ plaintext: string; id: string }> | null, ProtectError>>`
+- Returns a `Result` object, where:
+  - **`data`** is an array of objects or `null`, where:
+    - **`plaintext`** is the decrypted value.
+    - **`id`** is the same **id** you passed in, so you can correlate which plaintext matches which original ciphertext.
+  - **`failure`** is an object with the following properties:
+    - **`type`** is a string with the error type.
+    - **`message`** is a string with the error message.
 
 #### Example usage
 
@@ -128,15 +152,21 @@ const encryptedPayloads = users.map((user) => ({
 // 2) Call bulkDecrypt
 const decryptedResults = await bulkDecrypt(encryptedPayloads)
 
-// decryptedResults might look like:
+if (decryptedResults.failure) {
+  // Handle the failure
+}
+
+const decryptedValues = decryptedResults.data
+
+// decryptedValues might look like:
 // [
 //   { plaintext: 'cj@example.com', id: '1' },
 //   { plaintext: 'alex@example.com', id: '2' },
 // ]
 
 // 3) Reassemble data by matching IDs
-if (decryptedResults) {
-  decryptedResults.forEach((result) => {
+if (decryptedValues) {
+  decryptedValues.forEach((result) => {
     const user = users.find((u) => u.id === result.id)
     if (user) {
       user.email = result.plaintext  // Put the decrypted value back in place

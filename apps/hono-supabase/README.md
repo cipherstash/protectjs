@@ -190,8 +190,20 @@ app.get('/users', async (c) => {
   if (users && users.length > 0) {
     const decryptedusers = await Promise.all(
       users.map(async (user) => {
-        const plaintextEmail = await protectClient.decrypt(user.email)
-        return { ...user, email: plaintextEmail }
+        const plaintextResult = await protectClient.decrypt(user.email)
+
+        if (plaintextResult.failure) {
+          console.error(
+            'Failed to decrypt the email for user',
+            user.id,
+            plaintextResult.failure.message,
+          )
+
+          return user
+        }
+
+        const plaintext = plaintextResult.data
+        return { ...user, email: plaintext }
       })
     )
     return c.json({ users: decryptedusers })
@@ -209,10 +221,16 @@ app.post('/users', async (c) => {
   }
 
   // Encrypt the email
-  const encryptedEmail = await protectClient.encrypt(email, {
+  const encryptedResult = await protectClient.encrypt(email, {
     column: 'email',
     table: 'users',
   })
+
+  if (encryptedResult.failure) {
+    return c.json({ message: 'Failed to encrypt the email' }, 500)
+  }
+
+  const encryptedEmail = encryptedResult.data
 
   // Insert the encrypted data
   const result = await supabase

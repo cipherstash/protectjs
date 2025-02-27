@@ -134,22 +134,40 @@ Use the `encrypt` function to encrypt data.
 `encrypt` takes a plaintext string, and an object with the table and column name as parameters.
 
 ```typescript
-const ciphertext = await protectClient.encrypt('secret@squirrel.example', {
+const encryptResult = await protectClient.encrypt('secret@squirrel.example', {
   column: 'email',
   table: 'users',
 })
+
+if (encryptResult.failure) {
+  // Handle the failure
+}
+
+const ciphertext = encryptResult.data
 ```
 
-The `encrypt` function returns an object with a `c` key, and the value is the encrypted data.
+The `encrypt` function will return a `Result` object with either a `data` key, or a `failure` key.
+The `encryptResult` will return one of the following:
 
 ```typescript
+// Success
 {
-  c: '\\\\\\\\\\\\\\\\x61202020202020472aaf602219d48c4a...'
+  data: {
+    c: '\\\\\\\\\\\\\\\\x61202020202020472aaf602219d48c4a...'
+  }
+}
+
+// Failure
+{
+  failure: {
+    type: 'EncryptionError',
+    message: 'A message about the error'
+  }
 }
 ```
 
 > [!TIP]
-> Get significantly better encryption performance by using the [`bulkEncrypt` function](#bulk-encrypting-data).
+> Get significantly better encryption performance by using the [`bulkEncrypt` function](#bulk-encrypting-data) for large payloads.
 
 ### Decrypting data
 
@@ -157,17 +175,35 @@ Use the `decrypt` function to decrypt data.
 `decrypt` takes an encrypted data object, and an object with the lock context as parameters.
 
 ```typescript
-const plaintext = await protectClient.decrypt(ciphertext)
+const decryptResult = await protectClient.decrypt(ciphertext)
+
+if (decryptResult.failure) {
+  // Handle the failure
+}
+
+const plaintext = decryptResult.data
 ```
 
-The `decrypt` function returns a string containing the plaintext data.
+The `decrypt` function returns a `Result` object with either a `data` key, or a `failure` key.
+The `decryptResult` will return one of the following:
 
 ```typescript
-'secret@squirrel.example'
+// Success
+{
+  data: 'secret@squirrel.example'
+}
+
+// Failure
+{
+  failure: {
+    type: 'DecryptionError',
+    message: 'A message about the error'
+  }
+}
 ```
 
 > [!TIP]
-> Get significantly better decryption performance by using the [`bulkDecrypt` function](#bulk-decrypting-data).
+> Get significantly better decryption performance by using the [`bulkDecrypt` function](#bulk-decrypting-data) for large payloads.
 
 ### Storing encrypted data in a database
 
@@ -214,7 +250,14 @@ A lock context needs to be locked to a user.
 To identify the user, call the `identify` method on the lock context object, and pass a valid JWT from a user's session:
 
 ```typescript
-const lockContext = await lc.identify(jwt)
+const identifyResult = await lc.identify(jwt)
+
+// The identify method returns the same Result pattern as the encrypt and decrypt methods. 
+if (identifyResult.failure) {
+  // Hanlde the failure
+}
+
+const lockContext = identifyResult.data
 ```
 
 ### Encrypting data with a lock context
@@ -222,10 +265,16 @@ const lockContext = await lc.identify(jwt)
 To encrypt data with a lock context, call the optional `withLockContext` method on the `encrypt` function and pass the lock context object as a parameter:
 
 ```typescript
-const ciphertext = await protectClient.encrypt('plaintext', {
+const encryptResult = await protectClient.encrypt('plaintext', {
   table: 'users',
   column: 'email',
 }).withLockContext(lockContext)
+
+if (encryptResult.failure) {
+  // Handle the failure
+}
+
+const ciphertext = encryptResult.data
 ```
 
 ### Decrypting data with a lock context
@@ -233,7 +282,13 @@ const ciphertext = await protectClient.encrypt('plaintext', {
 To decrypt data with a lock context, call the optional `withLockContext` method on the `decrypt` function and pass the lock context object as a parameter:
 
 ```typescript
-const plaintext = await protectClient.decrypt(ciphertext).withLockContext(lockContext)
+const decryptResult = await protectClient.decrypt(ciphertext).withLockContext(lockContext)
+
+if (decryptResult.failure) {
+  // Handle the failure
+}
+
+const plaintext = decryptResult.data
 ```
 
 ## Bulk encryption and decryption
@@ -270,7 +325,13 @@ const encryptedResults = await bulkEncrypt(plaintextsToEncrypt, {
   table: 'Users',
 })
 
-// encryptedResults might look like:
+if (encryptedResults.failure) {
+  // Handle the failure
+}
+
+const encryptedValues = encryptedResults.data
+
+// encryptedValues might look like:
 // [
 //   { c: 'ENCRYPTED_VALUE_1', id: '1' },
 //   { c: 'ENCRYPTED_VALUE_2', id: '2' },
@@ -280,7 +341,7 @@ const encryptedResults = await bulkEncrypt(plaintextsToEncrypt, {
 Reassemble data by matching IDs:
 
 ```ts
-encryptedResults.forEach((result) => {
+encryptedValues.forEach((result) => {
   // Find the corresponding user
   const user = users.find((u) => u.id === result.id)
   if (user) {
@@ -313,10 +374,16 @@ const encryptedPayloads = users.map((user) => ({
 
 Perform the bulk decryption:
 
-```
+```ts
 const decryptedResults = await bulkDecrypt(encryptedPayloads)
 
-// decryptedResults might look like:
+if (decryptedResults.failure) {
+  // Handle the failure
+}
+
+const decryptedValues = decryptedResults.data
+
+// decryptedValues might look like:
 // [
 //   { plaintext: 'cj@example.com', id: '1' },
 //   { plaintext: 'alex@example.com', id: '2' },
@@ -326,7 +393,7 @@ const decryptedResults = await bulkDecrypt(encryptedPayloads)
 Reassemble data by matching IDs:
 
 ```ts
-decryptedResults.forEach((result) => {
+decryptedValues.forEach((result) => {
   const user = users.find((u) => u.id === result.id)
   if (user) {
     user.email = result.plaintext  // Put the decrypted value back in place

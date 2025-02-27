@@ -1,3 +1,5 @@
+import type { Result } from '@byteslice/result'
+import type { ProtectError } from '..'
 import type {
   BulkDecryptPayload as InternalBulkDecryptPayload,
   BulkEncryptPayload as InternalBulkEncryptPayload,
@@ -6,19 +8,8 @@ import type {
 import type { LockContext } from '../identify'
 import type { BulkEncryptPayload, BulkEncryptedData } from './index'
 
-const getLockContextPayload = (lockContext: LockContext) => {
-  const context = lockContext.getLockContext()
-
-  if (!context.ctsToken?.accessToken) {
-    throw new Error(
-      '[protect]: LockContext must be initialized with a valid CTS token before using it.',
-    )
-  }
-
-  return {
-    lockContext: context.context,
-  }
-}
+const getLockContextPayload = async (lockContext: LockContext) =>
+  await lockContext.getLockContext()
 
 export const normalizeBulkDecryptPayloads = (
   encryptedPayloads: BulkEncryptedData,
@@ -46,32 +37,48 @@ export const normalizeBulkEncryptPayloads = (
     return acc
   }, [] as InternalBulkEncryptPayload[])
 
-export const normalizeBulkDecryptPayloadsWithLockContext = (
+export async function normalizeBulkDecryptPayloadsWithLockContext(
   encryptedPayloads: BulkEncryptedData,
   lockContext: LockContext,
-) =>
-  encryptedPayloads?.reduce((acc, encryptedPayload) => {
-    const payload = {
-      ciphertext: encryptedPayload.c,
-      ...getLockContextPayload(lockContext),
-    }
+): Promise<Result<InternalBulkDecryptPayload[], ProtectError>> {
+  const lockContextPayload = await getLockContextPayload(lockContext)
 
-    acc.push(payload)
-    return acc
-  }, [] as InternalBulkDecryptPayload[])
+  if (lockContextPayload.failure) return lockContextPayload
+  if (!encryptedPayloads) return { data: [] }
 
-export const normalizeBulkEncryptPayloadsWithLockContext = (
+  return {
+    data: encryptedPayloads?.reduce((acc, encryptedPayload) => {
+      const payload = {
+        ciphertext: encryptedPayload.c,
+        ...lockContextPayload,
+      }
+
+      acc.push(payload)
+      return acc
+    }, [] as InternalBulkDecryptPayload[]),
+  }
+}
+
+export async function normalizeBulkEncryptPayloadsWithLockContext(
   plaintexts: BulkEncryptPayload,
   column: string,
   lockContext: LockContext,
-) =>
-  plaintexts.reduce((acc, plaintext) => {
-    const payload = {
-      plaintext: plaintext.plaintext,
-      column,
-      ...getLockContextPayload(lockContext),
-    }
+): Promise<Result<InternalBulkEncryptPayload[], ProtectError>> {
+  const lockContextPayload = await getLockContextPayload(lockContext)
 
-    acc.push(payload)
-    return acc
-  }, [] as InternalBulkEncryptPayload[])
+  if (lockContextPayload.failure) return lockContextPayload
+  if (!plaintexts) return { data: [] }
+
+  return {
+    data: plaintexts.reduce((acc, plaintext) => {
+      const payload = {
+        plaintext: plaintext.plaintext,
+        column,
+        ...lockContextPayload,
+      }
+
+      acc.push(payload)
+      return acc
+    }, [] as InternalBulkEncryptPayload[]),
+  }
+}

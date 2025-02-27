@@ -2,7 +2,7 @@
 
 Protect.js is configured with [toml](https://toml.io/en/) files or environment variables, and is used to initialize the client when Protect.js is initialized.
 
-Environment variables will take precedence over configuration files and it's recommented to use them for sensitive values in production.
+Environment variables will take precedence over configuration files and it's recommented to use them for sensitive values.
 
 ## Jump to a section
 
@@ -45,7 +45,7 @@ The client key must be stored in `cipherstash.secret.toml` or in an environment 
 
 #### `[auth]` section
 
-- `workspace_id` (**required**): A UUID that identifies your workspace.  
+- `workspace_id` (**required**): A base-32 encoded encodings of 10-byte identifier that uniquely identifies the workspace.
 - `access_key` (**not allowed**): This is explicitly disallowed and will be rejected at runtime.
 The access key must be stored in `cipherstash.secret.toml` or in an environment variable `CS_CLIENT_ACCESS_KEY`.
 

@@ -19,15 +19,27 @@ async function main() {
   const protectClient = await protect()
   const input = await askQuestion();
 
-  const ciphertext = await protectClient.encrypt(input, {
+  const encryptResult = await protectClient.encrypt(input, {
     column: 'column_name',
     table: 'users',
   })
 
+  if (encryptResult.failure) {
+    throw new Error(`[protect]: ${encryptResult.failure.message}`)
+  }
+
+  const ciphertext = encryptResult.data
+
   console.log('Encrypting your name...')
   console.log('The ciphertext is:', ciphertext)
 
-  const plaintext = await protectClient.decrypt(ciphertext)
+  const decryptResult = await protectClient.decrypt(ciphertext)
+
+  if (decryptResult.failure) {
+    throw new Error(`[protect]: ${decryptResult.failure.message}`)
+  }
+
+  const plaintext = decryptResult.data
 
   console.log('Decrypting the ciphertext...')
   console.log('The plaintext is:', plaintext)

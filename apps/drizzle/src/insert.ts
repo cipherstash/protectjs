@@ -26,10 +26,16 @@ if (!email) {
   throw new Error('Email is required')
 }
 
-const encryptedEmail = await protectClient.encrypt(email, {
+const encryptedResult = await protectClient.encrypt(email, {
   column: users.email_encrypted.name,
   table: getTableName(users),
 })
+
+if (encryptedResult.failure) {
+  throw new Error(`[protect]: ${encryptedResult.failure.message}`)
+}
+
+const encryptedEmail = encryptedResult.data
 
 const sql = db.insert(users).values({
   email: email,
