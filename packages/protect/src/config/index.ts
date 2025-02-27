@@ -50,7 +50,7 @@ function getWorkspaceId(tomlString: string): string | undefined {
 export function loadWorkSpaceId(): string {
   const configPath = path.join(process.cwd(), 'cipherstash.toml')
 
-  if (!fs.existsSync(configPath) || !process.env.CS_WORKSPACE_ID) {
+  if (!fs.existsSync(configPath) && !process.env.CS_WORKSPACE_ID) {
     throw new Error(
       'You have not defined a workspace ID in your config file, or the CS_WORKSPACE_ID environment variable.',
     )
