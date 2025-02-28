@@ -215,8 +215,8 @@ importers:
         specifier: ^0.2.0
         version: 0.2.0
       '@cipherstash/protect-ffi':
-        specifier: 0.10.0
-        version: 0.10.0
+        specifier: 0.11.0
+        version: 0.11.0
       typescript:
         specifier: ^5.0.0
         version: 5.7.2
@@ -366,33 +366,33 @@ packages:
   '@changesets/write@0.3.2':
     resolution: {integrity: sha512-kDxDrPNpUgsjDbWBvUo27PzKX4gqeKOlhibaOXDJA6kuBisGqNHv/HwGJrAu8U/dSf8ZEFIeHIPtvSlZI1kULw==}
 
-  '@cipherstash/protect-ffi-darwin-arm64@0.10.0':
-    resolution: {integrity: sha512-7XsdXlIOVWyOjMJNxFVxWT9nsWu0cNt0lYPYD6W7ZZ2LqliwAsvkmcT0CnB+5sCRureduilcwds8/fFIh4H6fw==}
+  '@cipherstash/protect-ffi-darwin-arm64@0.11.0':
+    resolution: {integrity: sha512-dOmknDJxbH6RdmwSleNBgnHvM0nrOG/aAKs4pFpIBRSdRV0oFQDynaIAFa/hAcBtE37RRvZCOX6/zF1FQioDlg==}
     cpu: [arm64]
     os: [darwin]
 
-  '@cipherstash/protect-ffi-darwin-x64@0.10.0':
-    resolution: {integrity: sha512-uoo13u9PlLhcBQ1+xCGvSJ58ZQHEA28hDnDwSlYTrDOtKkVhqSB1fHFUtZs9pl6kvK5lp715STBKJ9qAQD1d9w==}
+  '@cipherstash/protect-ffi-darwin-x64@0.11.0':
+    resolution: {integrity: sha512-1eaXoY/RT3dhByZyErYocH7jGjxkXju9KsJ7Wx4sniwk5v+6bmmDrkhduORY7AdrQglNhLTKnUf48NIU+zkuiQ==}
     cpu: [x64]
     os: [darwin]
 
-  '@cipherstash/protect-ffi-linux-arm64-gnu@0.10.0':
-    resolution: {integrity: sha512-wqHv76OdME6kMLREyzAjkpDbVrMhf58n7nVCg61TrQZYGgOjqgIipJPSoTmVGJjHhk9XhKNSs1MNewxdWiV61w==}
+  '@cipherstash/protect-ffi-linux-arm64-gnu@0.11.0':
+    resolution: {integrity: sha512-O2o2gZpIzp0ADLGcswl2jk2G18MgevTB0zv4ij1b3Ut+c+8h7QMWjtzZaJpG6+2PZK91OAgb3GBdSgIv5e2jFQ==}
     cpu: [arm64]
     os: [linux]
 
-  '@cipherstash/protect-ffi-linux-x64-gnu@0.10.0':
-    resolution: {integrity: sha512-yyeArxZt3v2lnrnU0T3HzX1KiBXVwhLnmTyeks0OhhGJ0G+qPQS4zEZDeh4alIaxzW0fQLtbnfacRiZCR5TjDw==}
+  '@cipherstash/protect-ffi-linux-x64-gnu@0.11.0':
+    resolution: {integrity: sha512-tp8hHR9fxTrcbv2E+MNN/e8uwJS4ncBorAlxksosnkYnz28FBmnagz0kQiltOkCieMEZv9c1EqaGjTt1s2tr0g==}
     cpu: [x64]
     os: [linux]
 
-  '@cipherstash/protect-ffi-win32-x64-msvc@0.10.0':
-    resolution: {integrity: sha512-1ALSnE3m4FcGXWPVvAqHvfuGzmxTxJ907b1LjE6KyC6CXjm3IzfSc8p6gl49Y7QXgQeXFEX/BQBEi80iYdegKg==}
+  '@cipherstash/protect-ffi-win32-x64-msvc@0.11.0':
+    resolution: {integrity: sha512-DqUpDhsLSdO9JaDP7Jxfn5T++k4lM0fT+GoFQK5ITL+FBETN4eearV7BlPWNbH7iucAd624P88LKt98vg2orOg==}
     cpu: [x64]
     os: [win32]
 
-  '@cipherstash/protect-ffi@0.10.0':
-    resolution: {integrity: sha512-zxyhV/5wuVdb8rAmKFlRddviXtgvFKiaJsJiGwwq9rVLMrdKb+Zz5OT3IGRKvZ6X+fvS2hKtAFk61Ysumix5tA==}
+  '@cipherstash/protect-ffi@0.11.0':
+    resolution: {integrity: sha512-wyk9gEqQy1zFXUXU6Oaygcgy3NXx4M26sBN3HoRSmIVGU+C2agWDUqBqoGOdz2Q8v/YYApu8DnmVHDBaJeevgg==}
 
   '@clerk/backend@1.21.5':
     resolution: {integrity: sha512-fZ+HuHQkPngYp9vAEqsJ1XJkhWjSWTin90UixeV3jNrbuPY2jd70LKYTAIEvggnnG42pYxdVupaQDUfqj0dy4Q==}
@@ -3840,30 +3840,30 @@ snapshots:
       human-id: 1.0.2
       prettier: 2.8.8
 
-  '@cipherstash/protect-ffi-darwin-arm64@0.10.0':
+  '@cipherstash/protect-ffi-darwin-arm64@0.11.0':
     optional: true
 
-  '@cipherstash/protect-ffi-darwin-x64@0.10.0':
+  '@cipherstash/protect-ffi-darwin-x64@0.11.0':
     optional: true
 
-  '@cipherstash/protect-ffi-linux-arm64-gnu@0.10.0':
+  '@cipherstash/protect-ffi-linux-arm64-gnu@0.11.0':
     optional: true
 
-  '@cipherstash/protect-ffi-linux-x64-gnu@0.10.0':
+  '@cipherstash/protect-ffi-linux-x64-gnu@0.11.0':
     optional: true
 
-  '@cipherstash/protect-ffi-win32-x64-msvc@0.10.0':
+  '@cipherstash/protect-ffi-win32-x64-msvc@0.11.0':
     optional: true
 
-  '@cipherstash/protect-ffi@0.10.0':
+  '@cipherstash/protect-ffi@0.11.0':
     dependencies:
       '@neon-rs/load': 0.1.82
     optionalDependencies:
-      '@cipherstash/protect-ffi-darwin-arm64': 0.10.0
-      '@cipherstash/protect-ffi-darwin-x64': 0.10.0
-      '@cipherstash/protect-ffi-linux-arm64-gnu': 0.10.0
-      '@cipherstash/protect-ffi-linux-x64-gnu': 0.10.0
-      '@cipherstash/protect-ffi-win32-x64-msvc': 0.10.0
+      '@cipherstash/protect-ffi-darwin-arm64': 0.11.0
+      '@cipherstash/protect-ffi-darwin-x64': 0.11.0
+      '@cipherstash/protect-ffi-linux-arm64-gnu': 0.11.0
+      '@cipherstash/protect-ffi-linux-x64-gnu': 0.11.0
+      '@cipherstash/protect-ffi-win32-x64-msvc': 0.11.0
 
   '@clerk/backend@1.21.5(react-dom@19.0.0(react@19.0.0))(react@19.0.0)':
     dependencies:
