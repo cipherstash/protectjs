@@ -6,8 +6,8 @@ import {
   newClient,
 } from '@cipherstash/protect-ffi'
 import { withResult, type Result } from '@byteslice/result'
-import { loadWorkSpaceId } from '../config'
 import { type ProtectError, ProtectErrorTypes } from '..'
+import { loadWorkSpaceId } from '../../../utils/config'
 import { logger } from '../../../utils/logger'
 import type { LockContext } from '../identify'
 import {
