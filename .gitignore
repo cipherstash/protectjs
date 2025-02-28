@@ -61,3 +61,7 @@ cargo.log
 cross.log
 mise.local.toml
 !.github/.env
+
+# cipherstash
+cipherstash.toml
+cipherstash.secret.toml

@@ -25,6 +25,8 @@ Under the hood Protect.js uses CipherStash [Encrypt Query Language (EQL)](https:
 - [Contributing](#contributing)
 - [License](#license)
 
+For more specific documentation, please refer to the [docs](https://github.com/cipherstash/protectjs/tree/main/docs).
+
 ## Features
 
 Protect.js protects data in PostgreSQL databases using industry-standard AES encryption.
@@ -106,7 +108,9 @@ At the end of `stash setup`, you will have two files in your project:
 
 > [!WARNING]
 > `cipherstash.secret.toml` should not be committed to git, because it contains sensitive credentials.
+> The `stash setup` command will attempt to append to your `.gitignore` file with the `cipherstash.secret.toml` file.
 
+You can read more about [configuration via toml file or environment variables here](./docs/configuration.md).
 
 ### Initializing the EQL client
 
@@ -130,22 +134,40 @@ Use the `encrypt` function to encrypt data.
 `encrypt` takes a plaintext string, and an object with the table and column name as parameters.
 
 ```typescript
-const ciphertext = await protectClient.encrypt('secret@squirrel.example', {
+const encryptResult = await protectClient.encrypt('secret@squirrel.example', {
   column: 'email',
   table: 'users',
 })
+
+if (encryptResult.failure) {
+  // Handle the failure
+}
+
+const ciphertext = encryptResult.data
 ```
 
-The `encrypt` function returns an object with a `c` key, and the value is the encrypted data.
+The `encrypt` function will return a `Result` object with either a `data` key, or a `failure` key.
+The `encryptResult` will return one of the following:
 
 ```typescript
+// Success
 {
-  c: '\\\\\\\\\\\\\\\\x61202020202020472aaf602219d48c4a...'
+  data: {
+    c: '\\\\\\\\\\\\\\\\x61202020202020472aaf602219d48c4a...'
+  }
+}
+
+// Failure
+{
+  failure: {
+    type: 'EncryptionError',
+    message: 'A message about the error'
+  }
 }
 ```
 
 > [!TIP]
-> Get significantly better encryption performance by using the [`bulkEncrypt` function](#bulk-encrypting-data).
+> Get significantly better encryption performance by using the [`bulkEncrypt` function](#bulk-encrypting-data) for large payloads.
 
 ### Decrypting data
 
@@ -153,17 +175,35 @@ Use the `decrypt` function to decrypt data.
 `decrypt` takes an encrypted data object, and an object with the lock context as parameters.
 
 ```typescript
-const plaintext = await protectClient.decrypt(ciphertext)
+const decryptResult = await protectClient.decrypt(ciphertext)
+
+if (decryptResult.failure) {
+  // Handle the failure
+}
+
+const plaintext = decryptResult.data
 ```
 
-The `decrypt` function returns a string containing the plaintext data.
+The `decrypt` function returns a `Result` object with either a `data` key, or a `failure` key.
+The `decryptResult` will return one of the following:
 
 ```typescript
-'secret@squirrel.example'
+// Success
+{
+  data: 'secret@squirrel.example'
+}
+
+// Failure
+{
+  failure: {
+    type: 'DecryptionError',
+    message: 'A message about the error'
+  }
+}
 ```
 
 > [!TIP]
-> Get significantly better decryption performance by using the [`bulkDecrypt` function](#bulk-decrypting-data).
+> Get significantly better decryption performance by using the [`bulkDecrypt` function](#bulk-decrypting-data) for large payloads.
 
 ### Storing encrypted data in a database
 
@@ -210,7 +250,14 @@ A lock context needs to be locked to a user.
 To identify the user, call the `identify` method on the lock context object, and pass a valid JWT from a user's session:
 
 ```typescript
-const lockContext = await lc.identify(jwt)
+const identifyResult = await lc.identify(jwt)
+
+// The identify method returns the same Result pattern as the encrypt and decrypt methods. 
+if (identifyResult.failure) {
+  // Hanlde the failure
+}
+
+const lockContext = identifyResult.data
 ```
 
 ### Encrypting data with a lock context
@@ -218,10 +265,16 @@ const lockContext = await lc.identify(jwt)
 To encrypt data with a lock context, call the optional `withLockContext` method on the `encrypt` function and pass the lock context object as a parameter:
 
 ```typescript
-const ciphertext = await protectClient.encrypt('plaintext', {
+const encryptResult = await protectClient.encrypt('plaintext', {
   table: 'users',
   column: 'email',
 }).withLockContext(lockContext)
+
+if (encryptResult.failure) {
+  // Handle the failure
+}
+
+const ciphertext = encryptResult.data
 ```
 
 ### Decrypting data with a lock context
@@ -229,7 +282,13 @@ const ciphertext = await protectClient.encrypt('plaintext', {
 To decrypt data with a lock context, call the optional `withLockContext` method on the `decrypt` function and pass the lock context object as a parameter:
 
 ```typescript
-const plaintext = await protectClient.decrypt(ciphertext).withLockContext(lockContext)
+const decryptResult = await protectClient.decrypt(ciphertext).withLockContext(lockContext)
+
+if (decryptResult.failure) {
+  // Handle the failure
+}
+
+const plaintext = decryptResult.data
 ```
 
 ## Bulk encryption and decryption
@@ -266,7 +325,13 @@ const encryptedResults = await bulkEncrypt(plaintextsToEncrypt, {
   table: 'Users',
 })
 
-// encryptedResults might look like:
+if (encryptedResults.failure) {
+  // Handle the failure
+}
+
+const encryptedValues = encryptedResults.data
+
+// encryptedValues might look like:
 // [
 //   { c: 'ENCRYPTED_VALUE_1', id: '1' },
 //   { c: 'ENCRYPTED_VALUE_2', id: '2' },
@@ -276,7 +341,7 @@ const encryptedResults = await bulkEncrypt(plaintextsToEncrypt, {
 Reassemble data by matching IDs:
 
 ```ts
-encryptedResults.forEach((result) => {
+encryptedValues.forEach((result) => {
   // Find the corresponding user
   const user = users.find((u) => u.id === result.id)
   if (user) {
@@ -309,10 +374,16 @@ const encryptedPayloads = users.map((user) => ({
 
 Perform the bulk decryption:
 
-```
+```ts
 const decryptedResults = await bulkDecrypt(encryptedPayloads)
 
-// decryptedResults might look like:
+if (decryptedResults.failure) {
+  // Handle the failure
+}
+
+const decryptedValues = decryptedResults.data
+
+// decryptedValues might look like:
 // [
 //   { plaintext: 'cj@example.com', id: '1' },
 //   { plaintext: 'alex@example.com', id: '2' },
@@ -322,7 +393,7 @@ const decryptedResults = await bulkDecrypt(encryptedPayloads)
 Reassemble data by matching IDs:
 
 ```ts
-decryptedResults.forEach((result) => {
+decryptedValues.forEach((result) => {
   const user = users.find((u) => u.id === result.id)
   if (user) {
     user.email = result.plaintext  // Put the decrypted value back in place
@@ -370,28 +441,16 @@ PROTECT_LOG_LEVEL=error  # Enable error logging
 Protect.js is built on top of the CipherStash Client Rust SDK which is embedded with the `@cipherstash/protect-ffi` package.
 The `@cipherstash/protect-ffi` source code is available on [GitHub](https://github.com/cipherstash/protectjs-ffi).
 
-The Cipherstash Client is configured by environment variables, which are used to initialize the client when the `protect` function is called:
-
-|      Variable name     |                           Description                           | Required |                    Default                   |
-|:----------------------:|:---------------------------------------------------------------:|:--------:|:--------------------------------------------:|
-| `CS_CLIENT_ID`         | The client ID for your CipherStash account.                     | Yes      |                                              |
-| `CS_CLIENT_KEY`        | The client key for your CipherStash account.                    | Yes      |                                              |
-| `CS_WORKSPACE_ID`      | The workspace ID for your CipherStash account.                  | Yes      |                                              |
-| `CS_CLIENT_ACCESS_KEY` | The access key for your CipherStash account.                    | Yes      |                                              |
-| `CS_ZEROKMS_HOST`      | The host for the ZeroKMS server.                                | No       | `https://ap-southeast-2.aws.viturhosted.net` |
-| `CS_CONFIG_PATH`       | A temporary path to store the CipherStash client configuration. | No       | `/home/{username}/.cipherstash`              |
-
-> [!TIP]
-> There are some configuration details you should take note of when deploying `@cipherstash/protect` in your production apps.
-
-- If you've created a Workspace in a region other than `ap-southeast-2`, you will need to set the `CS_ZEROKMS_HOST` environment variable to the appropriate region. For example, if you are using ZeroKMS in the `eu-central-1` region, you need to set the `CS_ZEROKMS_HOST` variable to `https://eu-central-1.aws.viturhosted.net`. This is a known usability issue that will be addressed.
-- In most hosting environments, the `CS_CONFIG_PATH` environment variable will need to be set to a path that the user running the application has permission to write to. Setting `CS_CONFIG_PATH` to `/tmp/.cipherstash` will work in most cases, and has been tested on [Vercel](https://vercel.com/), [AWS Lambda](https://aws.amazon.com/lambda/), and other hosting environments.
+Read more about configuring the CipherStash client in the [configuration docs](./docs/configuration.md).
 
 ## Builds and bundling
 
 `@cipherstash/protect` is a native Node.js module, and relies on native Node.js `require` to load the package.
 
-If you are using `@cipherstash/protect` with Next.js, you must opt out from the Server Components bundling and [use native Node.js `require` instead](./docs/nextjs.md).
+Here are a few resources to help based on your tool set:
+
+- [Required Next.js configuration](./docs/nextjs.md).
+- [SST and AWS serverless functions](./docs/sst.md).
 
 ## Contributing
 
@@ -399,4 +458,4 @@ Please read the [contribution guide](CONTRIBUTE.md).
 
 ## License
 
-`@cipherstash/protect` is [MIT licensed](./LICENSE.md).
+Protect.js is [MIT licensed](./LICENSE.md).

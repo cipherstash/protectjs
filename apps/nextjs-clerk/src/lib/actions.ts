@@ -30,12 +30,20 @@ export async function addUser(formData: FormData) {
   }
 
   const lockContext = getLockContext(ctsToken.ctsToken)
-  const encryptedEmail = await protectClient
+  const encryptedResult = await protectClient
     .encrypt(email, {
       column: users.email.name,
       table: 'users',
     })
     .withLockContext(lockContext)
+
+  if (encryptedResult.failure) {
+    return {
+      error: 'Failed to add the user. There was an error encrypting the email.',
+    }
+  }
+
+  const encryptedEmail = encryptedResult.data
 
   try {
     await db.insert(users).values({ name, email: encryptedEmail, role })

@@ -112,13 +112,6 @@ describe('getPlaintext', () => {
 })
 
 describe('encryption and decryption', () => {
-  it('should have all required environment variables defined', () => {
-    expect(process.env.CS_CLIENT_ID).toBeDefined()
-    expect(process.env.CS_CLIENT_KEY).toBeDefined()
-    expect(process.env.CS_CLIENT_ACCESS_KEY).toBeDefined()
-    expect(process.env.CS_WORKSPACE_ID).toBeDefined()
-  })
-
   it('should encrypt and decrypt a payload', async () => {
     const protectClient = await protect()
 
@@ -127,9 +120,15 @@ describe('encryption and decryption', () => {
       table: 'users',
     })
 
-    const plaintext = await protectClient.decrypt(ciphertext)
+    if (ciphertext.failure) {
+      throw new Error(`[protect]: ${ciphertext.failure.message}`)
+    }
 
-    expect(plaintext).toEqual('plaintext')
+    const plaintext = await protectClient.decrypt(ciphertext.data)
+
+    expect(plaintext).toEqual({
+      data: 'plaintext',
+    })
   }, 30000)
 
   it('should return null if plaintext is null', async () => {
@@ -140,9 +139,15 @@ describe('encryption and decryption', () => {
       table: 'users',
     })
 
-    const plaintext = await protectClient.decrypt(ciphertext)
+    if (ciphertext.failure) {
+      throw new Error(`[protect]: ${ciphertext.failure.message}`)
+    }
 
-    expect(plaintext).toEqual(null)
+    const plaintext = await protectClient.decrypt(ciphertext.data)
+
+    expect(plaintext).toEqual({
+      data: null,
+    })
   }, 30000)
 })
 
@@ -166,18 +171,24 @@ describe('bulk encryption', () => {
       },
     )
 
-    const plaintexts = await protectClient.bulkDecrypt(ciphertexts)
+    if (ciphertexts.failure) {
+      throw new Error(`[protect]: ${ciphertexts.failure.message}`)
+    }
 
-    expect(plaintexts).toEqual([
-      {
-        plaintext: 'test',
-        id: '1',
-      },
-      {
-        plaintext: 'test2',
-        id: '2',
-      },
-    ])
+    const plaintexts = await protectClient.bulkDecrypt(ciphertexts.data)
+
+    expect(plaintexts).toEqual({
+      data: [
+        {
+          plaintext: 'test',
+          id: '1',
+        },
+        {
+          plaintext: 'test2',
+          id: '2',
+        },
+      ],
+    })
   }, 30000)
 
   it('should return null if plaintexts is empty', async () => {
@@ -186,14 +197,18 @@ describe('bulk encryption', () => {
       table: 'users',
       column: 'column_name',
     })
-    expect(ciphertexts).toEqual(null)
+    expect(ciphertexts).toEqual({
+      data: null,
+    })
   }, 30000)
 
   it('should return null if decrypting empty ciphertexts', async () => {
     const protectClient = await protect()
     const ciphertexts = null
     const plaintexts = await protectClient.bulkDecrypt(ciphertexts)
-    expect(plaintexts).toEqual(null)
+    expect(plaintexts).toEqual({
+      data: null,
+    })
   }, 30000)
 })
 

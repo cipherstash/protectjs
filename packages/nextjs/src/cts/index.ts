@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { logger } from '../../../utils/logger'
+import { loadWorkSpaceId } from '../../../utils/config'
 import {
   CS_COOKIE_NAME,
   type CtsToken,
@@ -8,7 +9,7 @@ import {
 
 // Can be used independently of the Next.js middleware
 export const fetchCtsToken = async (oidcToken: string): GetCtsTokenResponse => {
-  const workspaceId = process.env.CS_WORKSPACE_ID
+  const workspaceId = loadWorkSpaceId()
 
   if (!workspaceId) {
     logger.error(

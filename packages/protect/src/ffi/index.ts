@@ -5,9 +5,11 @@ import {
   encryptBulk as ffiEncryptBulk,
   newClient,
 } from '@cipherstash/protect-ffi'
+import { withResult, type Result } from '@byteslice/result'
+import { type ProtectError, ProtectErrorTypes } from '..'
+import { loadWorkSpaceId } from '../../../utils/config'
 import { logger } from '../../../utils/logger'
 import type { LockContext } from '../identify'
-import { checkEnvironmentVariables } from './env-check'
 import {
   normalizeBulkDecryptPayloads,
   normalizeBulkDecryptPayloadsWithLockContext,
@@ -59,7 +61,9 @@ const noClientError = () =>
 // ------------------------
 // Encrhyption operation implementations
 // ------------------------
-class EncryptOperation implements PromiseLike<EncryptedPayload> {
+class EncryptOperation
+  implements PromiseLike<Result<EncryptedPayload, ProtectError>>
+{
   private client: Client
   private plaintext: EncryptPayload
   private column: string
@@ -79,9 +83,14 @@ class EncryptOperation implements PromiseLike<EncryptedPayload> {
   }
 
   /** Implement the PromiseLike interface so `await` works. */
-  public then<TResult1 = EncryptedPayload, TResult2 = never>(
+  public then<
+    TResult1 = Result<EncryptedPayload, ProtectError>,
+    TResult2 = never,
+  >(
     onfulfilled?:
-      | ((value: EncryptedPayload) => TResult1 | PromiseLike<TResult1>)
+      | ((
+          value: Result<EncryptedPayload, ProtectError>,
+        ) => TResult1 | PromiseLike<TResult1>)
       | null,
     // biome-ignore lint/suspicious/noExplicitAny: Rejections require an any type
     onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null,
@@ -90,22 +99,30 @@ class EncryptOperation implements PromiseLike<EncryptedPayload> {
   }
 
   /** Actual encryption logic, deferred until `then()` is called. */
-  private async execute(): Promise<EncryptedPayload> {
-    if (!this.client) {
-      throw noClientError()
-    }
-
-    if (this.plaintext === null) {
-      return null
-    }
-
+  private async execute(): Promise<Result<EncryptedPayload, ProtectError>> {
     logger.debug('Encrypting data WITHOUT a lock context', {
       column: this.column,
       table: this.table,
     })
 
-    const val = await ffiEncrypt(this.client, this.plaintext, this.column)
-    return { c: val }
+    return await withResult(
+      async () => {
+        if (!this.client) {
+          throw noClientError()
+        }
+
+        if (this.plaintext === null) {
+          return null
+        }
+
+        const val = await ffiEncrypt(this.client, this.plaintext, this.column)
+        return { c: val }
+      },
+      (error) => ({
+        type: ProtectErrorTypes.EncryptionError,
+        message: error.message,
+      }),
+    )
   }
 
   public getOperation(): {
@@ -123,7 +140,9 @@ class EncryptOperation implements PromiseLike<EncryptedPayload> {
   }
 }
 
-class EncryptOperationWithLockContext implements PromiseLike<EncryptedPayload> {
+class EncryptOperationWithLockContext
+  implements PromiseLike<Result<EncryptedPayload, ProtectError>>
+{
   private operation: EncryptOperation
   private lockContext: LockContext
 
@@ -132,9 +151,14 @@ class EncryptOperationWithLockContext implements PromiseLike<EncryptedPayload> {
     this.lockContext = lockContext
   }
 
-  public then<TResult1 = EncryptedPayload, TResult2 = never>(
+  public then<
+    TResult1 = Result<EncryptedPayload, ProtectError>,
+    TResult2 = never,
+  >(
     onfulfilled?:
-      | ((value: EncryptedPayload) => TResult1 | PromiseLike<TResult1>)
+      | ((
+          value: Result<EncryptedPayload, ProtectError>,
+        ) => TResult1 | PromiseLike<TResult1>)
       | null,
     // biome-ignore lint/suspicious/noExplicitAny: Rejections require an any type
     onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null,
@@ -142,40 +166,54 @@ class EncryptOperationWithLockContext implements PromiseLike<EncryptedPayload> {
     return this.execute().then(onfulfilled, onrejected)
   }
 
-  private async execute(): Promise<EncryptedPayload> {
-    const { client, plaintext, column, table } = this.operation.getOperation()
+  private async execute(): Promise<Result<EncryptedPayload, ProtectError>> {
+    return await withResult(
+      async () => {
+        const { client, plaintext, column, table } =
+          this.operation.getOperation()
 
-    if (!client) {
-      throw noClientError()
-    }
+        logger.debug('Encrypting data WITH a lock context', {
+          column: column,
+          table: table,
+        })
 
-    if (plaintext === null) {
-      return null
-    }
+        if (!client) {
+          throw noClientError()
+        }
 
-    logger.debug('Encrypting data WITH a lock context')
+        if (plaintext === null) {
+          return null
+        }
 
-    const context = this.lockContext?.getLockContext()
+        const context = await this.lockContext?.getLockContext()
 
-    if (!context?.success) {
-      throw new Error(`[protect]: ${context?.error}`)
-    }
+        if (context.failure) {
+          throw new Error(`[protect]: ${context.failure.message}`)
+        }
 
-    const val = await ffiEncrypt(
-      client,
-      plaintext,
-      column,
-      context.context,
-      context.ctsToken,
+        const val = await ffiEncrypt(
+          client,
+          plaintext,
+          column,
+          context.data.context,
+          context.data.ctsToken,
+        )
+        return { c: val }
+      },
+      (error) => ({
+        type: ProtectErrorTypes.EncryptionError,
+        message: error.message,
+      }),
     )
-    return { c: val }
   }
 }
 
 // ------------------------
 // Decryption operation implementations
 // ------------------------
-class DecryptOperation implements PromiseLike<string | null> {
+class DecryptOperation
+  implements PromiseLike<Result<string | null, ProtectError>>
+{
   private client: Client
   private encryptedPayload: EncryptedPayload
 
@@ -190,9 +228,11 @@ class DecryptOperation implements PromiseLike<string | null> {
     return new DecryptOperationWithLockContext(this, lockContext)
   }
 
-  public then<TResult1 = string | null, TResult2 = never>(
+  public then<TResult1 = Result<string | null, ProtectError>, TResult2 = never>(
     onfulfilled?:
-      | ((value: string | null) => TResult1 | PromiseLike<TResult1>)
+      | ((
+          value: Result<string | null, ProtectError>,
+        ) => TResult1 | PromiseLike<TResult1>)
       | null,
     // biome-ignore lint/suspicious/noExplicitAny: Rejections require an any type
     onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null,
@@ -200,17 +240,25 @@ class DecryptOperation implements PromiseLike<string | null> {
     return this.execute().then(onfulfilled, onrejected)
   }
 
-  private async execute(): Promise<string | null> {
-    if (!this.client) {
-      throw noClientError()
-    }
+  private async execute(): Promise<Result<string | null, ProtectError>> {
+    return await withResult(
+      async () => {
+        if (!this.client) {
+          throw noClientError()
+        }
 
-    if (this.encryptedPayload === null) {
-      return null
-    }
+        if (this.encryptedPayload === null) {
+          return null
+        }
 
-    logger.debug('Decrypting data WITHOUT a lock context')
-    return await ffiDecrypt(this.client, this.encryptedPayload.c)
+        logger.debug('Decrypting data WITHOUT a lock context')
+        return await ffiDecrypt(this.client, this.encryptedPayload.c)
+      },
+      (error) => ({
+        type: ProtectErrorTypes.DecryptionError,
+        message: error.message,
+      }),
+    )
   }
 
   public getOperation(): {
@@ -224,7 +272,9 @@ class DecryptOperation implements PromiseLike<string | null> {
   }
 }
 
-class DecryptOperationWithLockContext implements PromiseLike<string | null> {
+class DecryptOperationWithLockContext
+  implements PromiseLike<Result<string | null, ProtectError>>
+{
   private operation: DecryptOperation
   private lockContext: LockContext
 
@@ -233,9 +283,11 @@ class DecryptOperationWithLockContext implements PromiseLike<string | null> {
     this.lockContext = lockContext
   }
 
-  public then<TResult1 = string | null, TResult2 = never>(
+  public then<TResult1 = Result<string | null, ProtectError>, TResult2 = never>(
     onfulfilled?:
-      | ((value: string | null) => TResult1 | PromiseLike<TResult1>)
+      | ((
+          value: Result<string | null, ProtectError>,
+        ) => TResult1 | PromiseLike<TResult1>)
       | null,
     // biome-ignore lint/suspicious/noExplicitAny: Rejections require an any type
     onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null,
@@ -243,30 +295,38 @@ class DecryptOperationWithLockContext implements PromiseLike<string | null> {
     return this.execute().then(onfulfilled, onrejected)
   }
 
-  private async execute(): Promise<string | null> {
-    const { client, encryptedPayload } = this.operation.getOperation()
+  private async execute(): Promise<Result<string | null, ProtectError>> {
+    return await withResult(
+      async () => {
+        const { client, encryptedPayload } = this.operation.getOperation()
 
-    if (!client) {
-      throw noClientError()
-    }
+        if (!client) {
+          throw noClientError()
+        }
 
-    if (encryptedPayload === null) {
-      return null
-    }
+        if (encryptedPayload === null) {
+          return null
+        }
 
-    logger.debug('Decrypting data WITH a lock context')
+        logger.debug('Decrypting data WITH a lock context')
 
-    const context = this.lockContext?.getLockContext()
+        const context = await this.lockContext?.getLockContext()
 
-    if (!context?.success) {
-      throw new Error(`[protect]: ${context?.error}`)
-    }
+        if (context.failure) {
+          throw new Error(`[protect]: ${context.failure.message}`)
+        }
 
-    return await ffiDecrypt(
-      client,
-      encryptedPayload.c,
-      context.context,
-      context.ctsToken,
+        return await ffiDecrypt(
+          client,
+          encryptedPayload.c,
+          context.data.context,
+          context.data.ctsToken,
+        )
+      },
+      (error) => ({
+        type: ProtectErrorTypes.DecryptionError,
+        message: error.message,
+      }),
     )
   }
 }
@@ -274,7 +334,9 @@ class DecryptOperationWithLockContext implements PromiseLike<string | null> {
 // ------------------------
 // Bulk Encryption operation implementations
 // ------------------------
-class BulkEncryptOperation implements PromiseLike<BulkEncryptedData> {
+class BulkEncryptOperation
+  implements PromiseLike<Result<BulkEncryptedData, ProtectError>>
+{
   private client: Client
   private plaintexts: BulkEncryptPayload
   private column: string
@@ -297,9 +359,14 @@ class BulkEncryptOperation implements PromiseLike<BulkEncryptedData> {
     return new BulkEncryptOperationWithLockContext(this, lockContext)
   }
 
-  public then<TResult1 = BulkEncryptedData, TResult2 = never>(
+  public then<
+    TResult1 = Result<BulkEncryptedData, ProtectError>,
+    TResult2 = never,
+  >(
     onfulfilled?:
-      | ((value: BulkEncryptedData) => TResult1 | PromiseLike<TResult1>)
+      | ((
+          value: Result<BulkEncryptedData, ProtectError>,
+        ) => TResult1 | PromiseLike<TResult1>)
       | null,
     // biome-ignore lint/suspicious/noExplicitAny: Rejections require an any type
     onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null,
@@ -307,30 +374,38 @@ class BulkEncryptOperation implements PromiseLike<BulkEncryptedData> {
     return this.execute().then(onfulfilled, onrejected)
   }
 
-  private async execute(): Promise<BulkEncryptedData> {
-    if (!this.client) {
-      throw noClientError()
-    }
+  private async execute(): Promise<Result<BulkEncryptedData, ProtectError>> {
+    return await withResult(
+      async () => {
+        if (!this.client) {
+          throw noClientError()
+        }
 
-    if (!this.plaintexts || this.plaintexts.length === 0) {
-      return null
-    }
+        if (!this.plaintexts || this.plaintexts.length === 0) {
+          return null
+        }
 
-    const encryptPayloads = normalizeBulkEncryptPayloads(
-      this.plaintexts,
-      this.column,
+        const encryptPayloads = normalizeBulkEncryptPayloads(
+          this.plaintexts,
+          this.column,
+        )
+
+        logger.debug('Bulk encrypting data WITHOUT a lock context', {
+          column: this.column,
+          table: this.table,
+        })
+
+        const encryptedData = await ffiEncryptBulk(this.client, encryptPayloads)
+        return encryptedData.map((enc, index) => ({
+          c: enc,
+          id: this.plaintexts[index].id,
+        }))
+      },
+      (error) => ({
+        type: ProtectErrorTypes.EncryptionError,
+        message: error.message,
+      }),
     )
-
-    logger.debug('Bulk encrypting data WITHOUT a lock context', {
-      column: this.column,
-      table: this.table,
-    })
-
-    const encryptedData = await ffiEncryptBulk(this.client, encryptPayloads)
-    return encryptedData.map((enc, index) => ({
-      c: enc,
-      id: this.plaintexts[index].id,
-    }))
   }
 
   public getOperation(): {
@@ -349,7 +424,7 @@ class BulkEncryptOperation implements PromiseLike<BulkEncryptedData> {
 }
 
 class BulkEncryptOperationWithLockContext
-  implements PromiseLike<BulkEncryptedData>
+  implements PromiseLike<Result<BulkEncryptedData, ProtectError>>
 {
   private operation: BulkEncryptOperation
   private lockContext: LockContext
@@ -359,9 +434,14 @@ class BulkEncryptOperationWithLockContext
     this.lockContext = lockContext
   }
 
-  public then<TResult1 = BulkEncryptedData, TResult2 = never>(
+  public then<
+    TResult1 = Result<BulkEncryptedData, ProtectError>,
+    TResult2 = never,
+  >(
     onfulfilled?:
-      | ((value: BulkEncryptedData) => TResult1 | PromiseLike<TResult1>)
+      | ((
+          value: Result<BulkEncryptedData, ProtectError>,
+        ) => TResult1 | PromiseLike<TResult1>)
       | null,
     // biome-ignore lint/suspicious/noExplicitAny: Rejections require an any type
     onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null,
@@ -369,51 +449,67 @@ class BulkEncryptOperationWithLockContext
     return this.execute().then(onfulfilled, onrejected)
   }
 
-  private async execute(): Promise<BulkEncryptedData> {
-    const { client, plaintexts, column, table } = this.operation.getOperation()
+  private async execute(): Promise<Result<BulkEncryptedData, ProtectError>> {
+    return await withResult(
+      async () => {
+        const { client, plaintexts, column, table } =
+          this.operation.getOperation()
 
-    if (!client) {
-      throw noClientError()
-    }
+        if (!client) {
+          throw noClientError()
+        }
 
-    if (!plaintexts || plaintexts.length === 0) {
-      return null
-    }
+        if (!plaintexts || plaintexts.length === 0) {
+          return null
+        }
 
-    const encryptPayloads = normalizeBulkEncryptPayloadsWithLockContext(
-      plaintexts,
-      column,
-      this.lockContext,
+        const encryptPayloads =
+          await normalizeBulkEncryptPayloadsWithLockContext(
+            plaintexts,
+            column,
+            this.lockContext,
+          )
+
+        if (encryptPayloads.failure) {
+          throw new Error(`[protect]: ${encryptPayloads.failure.message}`)
+        }
+
+        logger.debug('Bulk encrypting data WITH a lock context', {
+          column,
+          table,
+        })
+
+        const context = await this.lockContext.getLockContext()
+
+        if (context.failure) {
+          throw new Error(`[protect]: ${context.failure.message}`)
+        }
+
+        const encryptedData = await ffiEncryptBulk(
+          client,
+          encryptPayloads.data,
+          context.data.ctsToken,
+        )
+
+        return encryptedData.map((enc, index) => ({
+          c: enc,
+          id: plaintexts[index].id,
+        }))
+      },
+      (error) => ({
+        type: ProtectErrorTypes.EncryptionError,
+        message: error.message,
+      }),
     )
-
-    logger.debug('Bulk encrypting data WITH a lock context', {
-      column,
-      table,
-    })
-
-    const context = this.lockContext.getLockContext()
-
-    if (!context.success) {
-      throw new Error(`[protect]: ${context?.error}`)
-    }
-
-    const encryptedData = await ffiEncryptBulk(
-      client,
-      encryptPayloads,
-      context.ctsToken,
-    )
-
-    return encryptedData.map((enc, index) => ({
-      c: enc,
-      id: plaintexts[index].id,
-    }))
   }
 }
 
 // ------------------------
 // Bulk Decryption operation implementations
 // ------------------------
-class BulkDecryptOperation implements PromiseLike<BulkDecryptedData> {
+class BulkDecryptOperation
+  implements PromiseLike<Result<BulkDecryptedData, ProtectError>>
+{
   private client: Client
   private encryptedPayloads: BulkEncryptedData
 
@@ -428,9 +524,14 @@ class BulkDecryptOperation implements PromiseLike<BulkDecryptedData> {
     return new BulkDecryptOperationWithLockContext(this, lockContext)
   }
 
-  public then<TResult1 = BulkDecryptedData, TResult2 = never>(
+  public then<
+    TResult1 = Result<BulkDecryptedData, ProtectError>,
+    TResult2 = never,
+  >(
     onfulfilled?:
-      | ((value: BulkDecryptedData) => TResult1 | PromiseLike<TResult1>)
+      | ((
+          value: Result<BulkDecryptedData, ProtectError>,
+        ) => TResult1 | PromiseLike<TResult1>)
       | null,
     // biome-ignore lint/suspicious/noExplicitAny: Rejections require an any type
     onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null,
@@ -438,31 +539,41 @@ class BulkDecryptOperation implements PromiseLike<BulkDecryptedData> {
     return this.execute().then(onfulfilled, onrejected)
   }
 
-  private async execute(): Promise<BulkDecryptedData> {
-    if (!this.client) {
-      throw noClientError()
-    }
+  private async execute(): Promise<Result<BulkDecryptedData, ProtectError>> {
+    return await withResult(
+      async () => {
+        if (!this.client) {
+          throw noClientError()
+        }
 
-    if (!this.encryptedPayloads) {
-      return null
-    }
+        if (!this.encryptedPayloads) {
+          return null
+        }
 
-    const decryptPayloads = normalizeBulkDecryptPayloads(this.encryptedPayloads)
+        const decryptPayloads = normalizeBulkDecryptPayloads(
+          this.encryptedPayloads,
+        )
 
-    if (!decryptPayloads) {
-      return null
-    }
+        if (!decryptPayloads) {
+          return null
+        }
 
-    logger.debug('Bulk decrypting data WITHOUT a lock context')
+        logger.debug('Bulk decrypting data WITHOUT a lock context')
 
-    const decryptedData = await ffiDecryptBulk(this.client, decryptPayloads)
-    return decryptedData.map((dec, index) => {
-      if (!this.encryptedPayloads) return null
-      return {
-        plaintext: dec,
-        id: this.encryptedPayloads[index].id,
-      }
-    })
+        const decryptedData = await ffiDecryptBulk(this.client, decryptPayloads)
+        return decryptedData.map((dec, index) => {
+          if (!this.encryptedPayloads) return null
+          return {
+            plaintext: dec,
+            id: this.encryptedPayloads[index].id,
+          }
+        })
+      },
+      (error) => ({
+        type: ProtectErrorTypes.DecryptionError,
+        message: error.message,
+      }),
+    )
   }
 
   public getOperation(): {
@@ -477,7 +588,7 @@ class BulkDecryptOperation implements PromiseLike<BulkDecryptedData> {
 }
 
 class BulkDecryptOperationWithLockContext
-  implements PromiseLike<BulkDecryptedData>
+  implements PromiseLike<Result<BulkDecryptedData, ProtectError>>
 {
   private operation: BulkDecryptOperation
   private lockContext: LockContext
@@ -487,9 +598,14 @@ class BulkDecryptOperationWithLockContext
     this.lockContext = lockContext
   }
 
-  public then<TResult1 = BulkDecryptedData, TResult2 = never>(
+  public then<
+    TResult1 = Result<BulkDecryptedData, ProtectError>,
+    TResult2 = never,
+  >(
     onfulfilled?:
-      | ((value: BulkDecryptedData) => TResult1 | PromiseLike<TResult1>)
+      | ((
+          value: Result<BulkDecryptedData, ProtectError>,
+        ) => TResult1 | PromiseLike<TResult1>)
       | null,
     // biome-ignore lint/suspicious/noExplicitAny: Rejections require an any type
     onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null,
@@ -497,47 +613,60 @@ class BulkDecryptOperationWithLockContext
     return this.execute().then(onfulfilled, onrejected)
   }
 
-  private async execute(): Promise<BulkDecryptedData> {
-    const { client, encryptedPayloads } = this.operation.getOperation()
+  private async execute(): Promise<Result<BulkDecryptedData, ProtectError>> {
+    return await withResult(
+      async () => {
+        const { client, encryptedPayloads } = this.operation.getOperation()
 
-    if (!client) {
-      throw noClientError()
-    }
+        if (!client) {
+          throw noClientError()
+        }
 
-    if (!encryptedPayloads) {
-      return null
-    }
+        if (!encryptedPayloads) {
+          return null
+        }
 
-    const decryptPayloads = normalizeBulkDecryptPayloadsWithLockContext(
-      encryptedPayloads,
-      this.lockContext,
+        const decryptPayloads =
+          await normalizeBulkDecryptPayloadsWithLockContext(
+            encryptedPayloads,
+            this.lockContext,
+          )
+
+        if (decryptPayloads.failure) {
+          throw new Error(`[protect]: ${decryptPayloads.failure.message}`)
+        }
+
+        if (!decryptPayloads.data) {
+          return null
+        }
+
+        logger.debug('Bulk decrypting data WITH a lock context')
+
+        const context = await this.lockContext.getLockContext()
+
+        if (context.failure) {
+          throw new Error(`[protect]: ${context.failure.message}`)
+        }
+
+        const decryptedData = await ffiDecryptBulk(
+          client,
+          decryptPayloads.data,
+          context.data.ctsToken,
+        )
+
+        return decryptedData.map((dec, index) => {
+          if (!encryptedPayloads) return null
+          return {
+            plaintext: dec,
+            id: encryptedPayloads[index].id,
+          }
+        })
+      },
+      (error) => ({
+        type: ProtectErrorTypes.DecryptionError,
+        message: error.message,
+      }),
     )
-
-    if (!decryptPayloads) {
-      return null
-    }
-
-    logger.debug('Bulk decrypting data WITH a lock context')
-
-    const context = this.lockContext.getLockContext()
-
-    if (!context.success) {
-      throw new Error(`[protect]: ${context?.error}`)
-    }
-
-    const decryptedData = await ffiDecryptBulk(
-      client,
-      decryptPayloads,
-      context.ctsToken,
-    )
-
-    return decryptedData.map((dec, index) => {
-      if (!encryptedPayloads) return null
-      return {
-        plaintext: dec,
-        id: encryptedPayloads[index].id,
-      }
-    })
   }
 }
 
@@ -549,7 +678,7 @@ export class ProtectClient {
   private workspaceId: string | undefined
 
   constructor() {
-    checkEnvironmentVariables()
+    const workspaceId = loadWorkSpaceId()
 
     logger.info(
       'Successfully initialized the EQL client with your defined environment variables.',
@@ -558,10 +687,18 @@ export class ProtectClient {
     this.workspaceId = process.env.CS_WORKSPACE_ID
   }
 
-  async init(): Promise<ProtectClient> {
-    const c = await newClient()
-    this.client = c
-    return this
+  async init(): Promise<Result<ProtectClient, ProtectError>> {
+    return await withResult(
+      async () => {
+        const c = await newClient()
+        this.client = c
+        return this
+      },
+      (error) => ({
+        type: ProtectErrorTypes.ClientInitError,
+        message: error.message,
+      }),
+    )
   }
 
   /**
@@ -571,10 +708,6 @@ export class ProtectClient {
    *    await eqlClient.encrypt(plaintext, { column, table }).withLockContext(lockContext)
    */
   encrypt(plaintext: EncryptPayload, opts: EncryptOptions): EncryptOperation {
-    if (!this.client) {
-      throw noClientError()
-    }
-
     return new EncryptOperation(this.client, plaintext, opts)
   }
 
@@ -585,10 +718,6 @@ export class ProtectClient {
    *    await eqlClient.decrypt(encryptedPayload).withLockContext(lockContext)
    */
   decrypt(encryptedPayload: EncryptedPayload): DecryptOperation {
-    if (!this.client) {
-      throw noClientError()
-    }
-
     return new DecryptOperation(this.client, encryptedPayload)
   }
 
@@ -604,10 +733,6 @@ export class ProtectClient {
     plaintexts: BulkEncryptPayload,
     opts: EncryptOptions,
   ): BulkEncryptOperation {
-    if (!this.client) {
-      throw noClientError()
-    }
-
     return new BulkEncryptOperation(this.client, plaintexts, opts)
   }
 
@@ -618,10 +743,6 @@ export class ProtectClient {
    *    await eqlClient.bulkDecrypt(encryptedPayloads).withLockContext(lockContext)
    */
   bulkDecrypt(encryptedPayloads: BulkEncryptedData): BulkDecryptOperation {
-    if (!this.client) {
-      throw noClientError()
-    }
-
     return new BulkDecryptOperation(this.client, encryptedPayloads)
   }
 

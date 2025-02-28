@@ -11,7 +11,7 @@
 	},
 	"dependencies": {
 		"@cipherstash/nextjs": "workspace:*",
-		"@cipherstash/protect": "^5.1.0",
+		"@cipherstash/protect": "workspace:*",
 		"@clerk/nextjs": "6.9.15",
 		"@radix-ui/react-label": "^2.1.1",
 		"@radix-ui/react-select": "^2.1.4",

@@ -16,7 +16,7 @@ export type CreateEqlPayload = {
   queryType?: ForQuery | null
 }
 
-export type Result = {
+export type GetPlaintextResult = {
   failure?: boolean
   error?: Error
   plaintext?: Plaintext
@@ -47,7 +47,9 @@ export const createEqlPayload = ({
   return payload
 }
 
-export const getPlaintext = (payload: CsPlaintextV1Schema): Result => {
+export const getPlaintext = (
+  payload: CsPlaintextV1Schema,
+): GetPlaintextResult => {
   if (payload?.p && payload?.k === 'pt') {
     logger.debug('Returning the plaintext data from the EQL payload', payload)
     return {
