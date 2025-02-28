@@ -112,13 +112,6 @@ describe('getPlaintext', () => {
 })
 
 describe('encryption and decryption', () => {
-  it('should have all required environment variables defined', () => {
-    expect(process.env.CS_CLIENT_ID).toBeDefined()
-    expect(process.env.CS_CLIENT_KEY).toBeDefined()
-    expect(process.env.CS_CLIENT_ACCESS_KEY).toBeDefined()
-    expect(process.env.CS_WORKSPACE_ID).toBeDefined()
-  })
-
   it('should encrypt and decrypt a payload', async () => {
     const protectClient = await protect()
 

@@ -45,7 +45,7 @@ The client key must be stored in `cipherstash.secret.toml` or in an environment 
 
 #### `[auth]` section
 
-- `workspace_id` (**required**): A base-32 encoded encodings of 10-byte identifier that uniquely identifies the workspace.
+- `workspace_id` (**required**): A base-32 encoded 10-byte unique identifier.
 - `access_key` (**not allowed**): This is explicitly disallowed and will be rejected at runtime.
 The access key must be stored in `cipherstash.secret.toml` or in an environment variable `CS_CLIENT_ACCESS_KEY`.
 
