@@ -1,5 +1,13 @@
 # @cipherstash/jseql
 
+## 6.0.0
+
+### Major Changes
+
+- f4d8334: Released protectjs-ffi with toml file configuration support.
+  Added a `withResult` pattern to all public facing functions for better error handling.
+  Updated all documentation to reflect the new configuration pattern.
+
 ## 5.2.0
 
 ### Minor Changes

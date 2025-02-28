@@ -1,5 +1,11 @@
 # @cipherstash/nextjs
 
+## 3.0.0
+
+### Major Changes
+
+- 02dc980: Support configuration from environment variables or toml config.
+
 ## 2.1.0
 
 ### Minor Changes
