@@ -1,4 +1,5 @@
 import { ProtectClient } from './ffi'
+import type { EncryptConfig } from './ffi/encrypt-config'
 
 export const ProtectErrorTypes = {
   ClientInitError: 'ClientInitError',
@@ -13,9 +14,11 @@ export interface ProtectError {
   message: string
 }
 
-export const protect = async (): Promise<ProtectClient> => {
+export const protect = async (
+  encryptConfig?: EncryptConfig,
+): Promise<ProtectClient> => {
   const client = new ProtectClient()
-  const result = await client.init()
+  const result = await client.init(encryptConfig)
 
   if (result.failure) {
     throw new Error(`[protect]: ${result.failure.message}`)
@@ -25,6 +28,7 @@ export const protect = async (): Promise<ProtectClient> => {
 }
 
 export type { Result } from '@byteslice/result'
+export type { EncryptConfig } from './ffi/encrypt-config'
 export type { ProtectClient } from './ffi'
 export * from './cs_plaintext_v1'
 export * from './identify'

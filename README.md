@@ -114,19 +114,42 @@ You can read more about [configuration via toml file or environment variables he
 
 ### Initializing the EQL client
 
-In your application, import the `protect` function from the `@cipherstash/protect` package, and initialize a client with your CipherStash credentials.
+In your application, import the `protect` function and `EncryptConfig` type from the `@cipherstash/protect` package, and initialize a client with your encrypt config.
 
-```typescript
-const { protect } = require('@cipherstash/protect')
-const protectClient = await protect()
+To define your encrypt config, create an object that conforms to the `EncryptConfig` type.
+This object determines how data will be encrypted and decrypted, and which searchable indexes will be added.
+
+You will need to provide the following information:
+
+1. Which **tables** should be encrypted and decrypted.
+2. Which **columns** should be encrypted and decrypted.
+3. Which **indexes** should be built on the encrypted columns.
+
+An example config might look like this:
+
+```ts
+import { protect, type EncryptConfig } from '@cipherstash/protect'
+
+const config: EncryptConfig = {
+  v: 1,
+  tables: {
+    users: {
+      email: {
+        cast_as: 'text',
+        indexes: { ore: {}, match: {}, unique: {} },
+      },
+    },
+  },
+}
 ```
 
-If you are using ES6:
+Finally, initialize the client with your encrypt config:
 
-```typescript
-import { protect } from '@cipherstash/protect'
-const protectClient = await protect()
+```ts
+const protectClient = await protect(config)
 ```
+
+To learn more about the `EncryptConfig` type, please refer to the [Encrypt Config docs](./docs/encrypt-config.md).
 
 ### Encrypting data
 

@@ -16,6 +16,7 @@ import {
   normalizeBulkEncryptPayloads,
   normalizeBulkEncryptPayloadsWithLockContext,
 } from './payload-helpers'
+import { type EncryptConfig, encryptConfigSchema } from './encrypt-config'
 
 // ------------------------
 // Type Definitions
@@ -115,8 +116,14 @@ class EncryptOperation
           return null
         }
 
-        const val = await ffiEncrypt(this.client, this.plaintext, this.column)
-        return { c: val }
+        const val = await ffiEncrypt(
+          this.client,
+          this.plaintext,
+          this.column,
+          this.table,
+        )
+
+        return JSON.parse(val)
       },
       (error) => ({
         type: ProtectErrorTypes.EncryptionError,
@@ -195,6 +202,7 @@ class EncryptOperationWithLockContext
           client,
           plaintext,
           column,
+          table,
           context.data.context,
           context.data.ctsToken,
         )
@@ -675,22 +683,43 @@ class BulkDecryptOperationWithLockContext
 // ------------------------
 export class ProtectClient {
   private client: Client
+  private encryptConfig: EncryptConfig | undefined
   private workspaceId: string | undefined
 
   constructor() {
     const workspaceId = loadWorkSpaceId()
-
-    logger.info(
-      'Successfully initialized the EQL client with your defined environment variables.',
-    )
-
-    this.workspaceId = process.env.CS_WORKSPACE_ID
+    this.workspaceId = workspaceId
   }
 
-  async init(): Promise<Result<ProtectClient, ProtectError>> {
+  async init(
+    encryptConifg?: EncryptConfig,
+  ): Promise<Result<ProtectClient, ProtectError>> {
     return await withResult(
       async () => {
-        const c = await newClient()
+        let c: Client
+
+        if (encryptConifg) {
+          const validated: EncryptConfig =
+            encryptConfigSchema.parse(encryptConifg)
+
+          logger.debug(
+            'Initializing the Protect.js client with the following encrypt config:',
+            {
+              encryptConfig: validated,
+            },
+          )
+
+          c = await newClient(JSON.stringify(validated))
+          this.encryptConfig = validated
+        } else {
+          logger.debug(
+            'Initializing the Protect.js client with default encrypt config.',
+          )
+
+          c = await newClient()
+        }
+
+        logger.info('Successfully initialized the Protect.js client.')
         this.client = c
         return this
       },
