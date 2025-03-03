@@ -220,9 +220,40 @@ CREATE TABLE users (
 
 Protect.js can add an additional layer of protection to your data by requiring a valid JWT to perform a decryption.
 
-This ensures that only the user who encrypted data is able to decrypt it.
+This ensures that only the user who encrypted data is able to decrypt it. 
 
-Protect.js does this through a mechanism called a _lock context_.
+Protect.js does this through a mechanism called a _lock context_ which cryptographically links data to a user's identity claims.
+
+The lock context works with JWTs signed by Auth0, Okta or Clerk.
+
+### Specifying an identity provider
+
+To use the lock context you must first specify an identity provider.
+
+To add a provider, use the `oidc` subcommand of the `stash` CLI tool.
+You need to specify the `issuer` URL and the vendor identifier
+along with a workspace ID.
+
+For example, to add an Auth0 provider at the domain `example-dev.au.auth0.com`:
+
+```bash
+stash oidc provider add \
+  --vendor auth0 \
+  --issuer https://example-dev.au.auth0.com
+  --workspace-id C1U7RN47AJNSMABB
+```
+
+| Argument     | Description                                   | Allowed Values             |
+|--------------|-----------------------------------------------|----------------------------|
+| Vendor       | The Identity Provider                         | `auth0`, `okta` or `clerk` |
+| Issuer       | The service issuing JWTs                      | URL including `https://`   |
+| Workspace ID | The workspace to add the identity provider to | A workspace you own        |
+
+> [!TIP]
+> If you're not sure what to use for the `issuer` value, you can paste a JWT into [jwt.io](https://jwt.io).
+> Though make sure not to paste a JWT just anywhere!
+
+
 
 ### Lock context
 
