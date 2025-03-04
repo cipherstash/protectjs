@@ -72,7 +72,6 @@ pnpm add @cipherstash/protect
 > [!TIP]
 > [Bun](https://bun.sh/) is not currently supported due to a lack of [Node-API compatibility](https://github.com/oven-sh/bun/issues/158). Under the hood, Protect.js uses [CipherStash Client](#cipherstash-client) which is written in Rust and embedded using [Neon](https://github.com/neon-bindings/neon).
 
-
 Lastly, install the CipherStash CLI:
 
 - On macOS:
@@ -112,7 +111,7 @@ At the end of `stash setup`, you will have two files in your project:
 
 You can read more about [configuration via toml file or environment variables here](./docs/configuration.md).
 
-### Initializing the EQL client
+### Initializing the Protect client
 
 In your application, import the `protect` function from the `@cipherstash/protect` package, and initialize a client with your CipherStash credentials.
 
@@ -216,19 +215,83 @@ CREATE TABLE users (
 );
 ```
 
+## Context Locking
+
+Protect.js can refine data protection controls by requiring that specific conditions be met before decryption is allowed.
+This allows for the development of quite sophisticated (and verifiable) access controls with minimal code.
+
+### How it works
+
+When a value is encrypted using Protect.js, one or more context values can be specified.
+When decrypted, the _identical_ context values must be included or decryption will fail.
+
+To better explain this, we'll use an example.
+Consider a `Customer` record (defined using [Drizzle](https://orm.drizzle.team/)).
+
+```typescript
+import { sql } from "drizzle-orm";
+import { jsonb, pgTable, uuid } from "drizzle-orm/pg-core";
+
+const table = pgTable('table', {
+	id: uuid().defaultRandom(),
+  name: jsonb(),
+  email: jsonb()
+});
+```
+
+We'll store in a `customers` table in the database.
+The `name` and `email` fields will be encrypted so we'll use the JSONB type.
+
+```sql
+CREATE TABLE customers (
+  uuid PRIMARY KEY,
+  name jsonb,
+  email jsonb
+);
+```
+
+Note that the ID type is a `UUID` (Universally Unique ID) instead of a simple integer.
+This is so that we can specify the ID in the client rather than having the database generate one for us.
+We'll see why that's helpful in a moment.
+
+To encrypt a record, we'll use the same approach as above but with 2 important differences:
+
+1. We'll generate the ID ahead of time
+1. We'll include that ID in the _lock context_ of the encrypted value
+
+
+
+
 ## Identity-aware encryption
 
-Protect.js can add an additional layer of protection to your data by requiring a valid JWT to perform a decryption.
+Protect.js can add an additional layer of data protection by requiring that specific conditions be met before decryption is allowed.
 
-This ensures that only the user who encrypted data is able to decrypt it. 
+A powerful example of this is a condition that limits decryption only to the specific user that encrypted.
+In this way, you can enforce record ownership with only a few lines of code.
 
-Protect.js does this through a mechanism called a _lock context_ which cryptographically links data to a user's identity claims.
+Protect.js does this through a mechanism called _lock context_ which cryptographically encodes decryption conditions when data is encrypted.
 
-The lock context works with JWTs signed by Auth0, Okta or Clerk.
+> [!TIP]
+Lock context is a way to encode access policies directly into data in a way that prevents tampering and can be easily verified.
+
+### Role or attribute based encryption
+
+TODO: Explain how the Lock context can be used for RBAC or ABAC.
+Link to the glossary.
+
+Identity locks can be used to implement [Role](https://cipherstash.com/docs/glossary#rbac-role-based-access-control) or [Attribute](https://cipherstash.com/docs/glossary#abac-attribute-based-access-control) based access control (RBAC/ABAC) for the decryption of data.
+
+For example, 
 
 ### Specifying an identity provider
 
-To use the lock context you must first specify an identity provider.
+To include attributes from a user's (or system's) identity in the lock context you must first specify which identity provider your users authenticate with.
+
+CipherStash supports identity claims using [Open ID Connect](https://cipherstash.com/docs/glossary#oidc-open-id-connect) (OIDC) from:
+
+* [Auth0](https://auth0.com/docs/secure/tokens)
+* [Okta](https://developer.okta.com/docs/api/openapi/okta-oauth/guides/overview/#id-token)
+* [Clerk](https://clerk.com/docs/backend-requests/resources/session-tokens)
 
 To add a provider, use the `oidc` subcommand of the `stash` CLI tool.
 You need to specify the `issuer` URL and the vendor identifier
@@ -253,6 +316,7 @@ stash oidc provider add \
 > If you're not sure what to use for the `issuer` value, you can paste a JWT into [jwt.io](https://jwt.io).
 > Though make sure not to paste a JWT just anywhere!
 
+For more information on how to manage OIDC providers run `stash --help` or refer to the [Stash CLI reference docs](https://cipherstash.com/docs/sdk/reference/cli).
 
 
 ### Lock context
