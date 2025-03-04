@@ -226,10 +226,12 @@ To start encrypting data, add the following to `src/index.ts`:
 import { users } from './protect/schema'
 import { protectClient } from './protect'
 
-const encryptResult = await protectClient.encrypt('secret@squirrel.example', {
-  column: users.email,
-  table: users,
-})
+const encryptResult = await protectClient.encrypt(
+  'secret@squirrel.example', {
+    column: users.email,
+    table: users,
+  }
+)
 
 if (encryptResult.failure) {
   // Handle the failure
@@ -247,7 +249,7 @@ The `encryptResult` will return one of the following:
 // Success
 {
   data: {
-    c: '\\\\\\\\\\\\\\\\x61202020202020472aaf602219d48c4a...'
+    c: 'mBbKmsMMkbKBSN}s1THy_NfQN892!dercyd0s...'
   }
 }
 
