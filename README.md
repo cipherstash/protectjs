@@ -72,11 +72,6 @@ pnpm add @cipherstash/protect
 > [!TIP]
 > [Bun](https://bun.sh/) is not currently supported due to a lack of [Node-API compatibility](https://github.com/oven-sh/bun/issues/158). Under the hood, Protect.js uses [CipherStash Client](#cipherstash-client) which is written in Rust and embedded using [Neon](https://github.com/neon-bindings/neon).
 
-> [!IMPORTANT]
-> If you're using Next.js, SST or a framework that generates client-side bundles, you may run into errors after installing protect.
-> See the configuration instructions for [Next.js](./docs/nextjs.md) or [SST](./docs/sst.md) for more information.
-
-
 Lastly, install the CipherStash CLI:
 
 - On macOS:
@@ -88,7 +83,13 @@ Lastly, install the CipherStash CLI:
 - On Linux, download the binary for your platform, and put it on your `PATH`:
     - [Linux ARM64](https://github.com/cipherstash/cli-releases/releases/latest/download/stash-aarch64-unknown-linux-gnu)
     - [Linux x86_64](https://github.com/cipherstash/cli-releases/releases/latest/download/stash-x86_64-unknown-linux-gnu)
+ 
+### Opt-out of bundling
 
+Protect.js uses Node.js specific features and requires the use of the native Node.js `require`.
+You need to opt-out of bundling for tools like [Webpack](https://webpack.js.org/configuration/externals/), [esbuild](https://webpack.js.org/configuration/externals/), or [Next.js](https://nextjs.org/docs/app/api-reference/config/next-config-js/serverExternalPackages). 
+
+Read more about bundling [here](#builds-and-bundling).
 
 ## Getting started
 
