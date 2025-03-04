@@ -28,7 +28,7 @@ const getArgs = () => {
 const {filter, op} = getArgs()
 
 if (!filter) {
-  throw new Error('Email is required')
+  throw new Error('filter is required')
 }
 
 const fnForOp: (op: string) => BinaryOperator = op => {
