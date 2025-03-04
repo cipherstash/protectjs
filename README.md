@@ -139,10 +139,12 @@ Use the `encrypt` function to encrypt data.
 `encrypt` takes a plaintext string, and an object with the table and column name as parameters.
 
 ```typescript
-const encryptResult = await protectClient.encrypt('secret@squirrel.example', {
-  column: 'email',
-  table: 'users',
-})
+const encryptResult = await protectClient.encrypt(
+  'secret@squirrel.example', {
+    column: 'email',
+    table: 'users',
+  }
+)
 
 if (encryptResult.failure) {
   // Handle the failure
@@ -158,7 +160,7 @@ The `encryptResult` will return one of the following:
 // Success
 {
   data: {
-    c: '\\\\\\\\\\\\\\\\x61202020202020472aaf602219d48c4a...'
+    c: 'mBbKmsMMkbKBSN}s1THy_NfQN892!dercyd0s...'
   }
 }
 
