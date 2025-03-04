@@ -1,31 +1,11 @@
 import 'dotenv/config'
-import { protect, type EncryptConfig } from '@cipherstash/protect'
+import { protect, csColumn, csTable } from '@cipherstash/protect'
 
-const config: EncryptConfig = {
-  v: 1,
-  tables: {
-    users: {
-      email_encrypted: {
-        cast_as: 'text',
-        indexes: {
-          ore: {},
-          match: {
-            tokenizer: {
-              kind: 'ngram',
-              token_length: 3
-            },
-            token_filters: [
-              {
-                kind: 'downcase'
-              }
-            ],
-            k: 6,
-            m: 2048
-          },
-          unique: {} },
-      },
-    },
-  },
-}
+export const users = csTable('users', {
+  email_encrypted: csColumn('email_encrypted')
+    .equality()
+    .orderAndSort()
+    .freeTextSearch(),
+})
 
-export const protectClient = await protect(config)
+export const protectClient = await protect(users)

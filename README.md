@@ -117,54 +117,70 @@ At the end of `stash setup`, you will have two files in your project:
 
 You can read more about [configuration via toml file or environment variables here](./docs/configuration.md).
 
+### Basic file structure
+
+This is the basic file structure of the project. In the `src/protect` directory, we have table definition in `schema.ts` and the protect client in `index.ts`.
+
+```
+📦 <project root>
+ ├ 📂 src
+ │   ├ 📂 protect
+ │   │  ├ 📜 index.ts
+ │   │  └ 📜 schema.ts
+ │   └ 📜 index.ts
+ ├ 📜 .env
+ ├ 📜 cipherstash.toml
+ ├ 📜 cipherstash.secret.toml
+ ├ 📜 package.json
+ └ 📜 tsconfig.json
+```
+
+### Defining your schema
+
+Protect.js uses a schema to define the tables and columns that you want to encrypt and decrypt.
+
+In the `src/protect/schema.ts` file, you can define your tables and columns.
+
+```ts
+import { csTable, csColumn } from '@cipherstash/protect'
+
+export const users = csTable('users', {
+  email: csColumn('email').freeTextSearch().equality().orderAndSort(),
+})
+
+export const orders = csTable('orders', {
+  address: csColumn('address').freeTextSearch().orderAndSort(),
+})
+```
+
+Read more about [defining your schema here](./docs/schema.md).
+
 ### Initializing the EQL client
 
-In your application, import the `protect` function and `EncryptConfig` type from the `@cipherstash/protect` package, and initialize a client with your encrypt config.
+To initialize the protect client, import the `protect` function and initialize a client with your defined schema.
 
-To define your encrypt config, create an object that conforms to the `EncryptConfig` type.
-This object determines how data will be encrypted and decrypted, and which searchable indexes will be added.
-
-You will need to provide the following information:
-
-1. Which **tables** should be encrypted and decrypted.
-2. Which **columns** should be encrypted and decrypted.
-3. Which **indexes** should be built on the encrypted columns.
-
-An example config might look like this:
+In the `src/protect/index.ts` file:
 
 ```ts
-import { protect, type EncryptConfig } from '@cipherstash/protect'
+import { protect } from '@cipherstash/protect'
+import { users } from './schema'
 
-const config: EncryptConfig = {
-  v: 1,
-  tables: {
-    users: {
-      email: {
-        cast_as: 'text',
-        indexes: { ore: {}, match: {}, unique: {} },
-      },
-    },
-  },
-}
+// Pass all your tables to the protect function to initialize the client
+export const protectClient = await protect(users, orders)
 ```
-
-Finally, initialize the client with your encrypt config:
-
-```ts
-const protectClient = await protect(config)
-```
-
-To learn more about the `EncryptConfig` type, please refer to the [Encrypt Config docs](./docs/encrypt-config.md).
 
 ### Encrypting data
 
 Use the `encrypt` function to encrypt data.
-`encrypt` takes a plaintext string, and an object with the table and column name as parameters.
+`encrypt` takes a plaintext string, and an object with the table and column as parameters.
 
 ```typescript
+import { users } from './protect/schema'
+import { protectClient } from './protect'
+
 const encryptResult = await protectClient.encrypt('secret@squirrel.example', {
-  column: 'email',
-  table: 'users',
+  column: users.email,
+  table: users,
 })
 
 if (encryptResult.failure) {
@@ -203,6 +219,8 @@ Use the `decrypt` function to decrypt data.
 `decrypt` takes an encrypted data object, and an object with the lock context as parameters.
 
 ```typescript
+import { protectClient } from './protect'
+
 const decryptResult = await protectClient.decrypt(ciphertext)
 
 if (decryptResult.failure) {
@@ -293,9 +311,12 @@ const lockContext = identifyResult.data
 To encrypt data with a lock context, call the optional `withLockContext` method on the `encrypt` function and pass the lock context object as a parameter:
 
 ```typescript
+import { protectClient } from './protect'
+import { users } from './protect/schema'
+
 const encryptResult = await protectClient.encrypt('plaintext', {
-  table: 'users',
-  column: 'email',
+  table: users,
+  column: users.email,
 }).withLockContext(lockContext)
 
 if (encryptResult.failure) {
@@ -310,6 +331,8 @@ const ciphertext = encryptResult.data
 To decrypt data with a lock context, call the optional `withLockContext` method on the `decrypt` function and pass the lock context object as a parameter:
 
 ```typescript
+import { protectClient } from './protect'
+
 const decryptResult = await protectClient.decrypt(ciphertext).withLockContext(lockContext)
 
 if (decryptResult.failure) {

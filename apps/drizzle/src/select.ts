@@ -1,9 +1,9 @@
 import 'dotenv/config'
 import { db } from './db'
 import { users } from './db/schema'
-import { protectClient } from './protect'
-import { bindIfParam, sql } from 'drizzle-orm';
-import type { BinaryOperator, SQL, SQLWrapper } from 'drizzle-orm';
+import { protectClient, users as protectUsers } from './protect'
+import { bindIfParam, sql } from 'drizzle-orm'
+import type { BinaryOperator, SQL, SQLWrapper } from 'drizzle-orm'
 import { parseArgs } from 'node:util'
 
 const getArgs = () => {
@@ -15,7 +15,7 @@ const getArgs = () => {
       },
       op: {
         type: 'string',
-        default: 'match'
+        default: 'match',
       },
     },
     strict: true,
@@ -25,13 +25,13 @@ const getArgs = () => {
   return values
 }
 
-const {filter, op} = getArgs()
+const { filter, op } = getArgs()
 
 if (!filter) {
   throw new Error('filter is required')
 }
 
-const fnForOp: (op: string) => BinaryOperator = op => {
+const fnForOp: (op: string) => BinaryOperator = (op) => {
   switch (op) {
     case 'match':
       return csMatch
@@ -43,8 +43,8 @@ const fnForOp: (op: string) => BinaryOperator = op => {
 }
 
 const csEq: BinaryOperator = (left: SQLWrapper, right: unknown): SQL => {
-	return sql`cs_unique_v1(${left}) = cs_unique_v1(${bindIfParam(right, left)})`;
-};
+  return sql`cs_unique_v1(${left}) = cs_unique_v1(${bindIfParam(right, left)})`
+}
 
 // const csGt: BinaryOperator = (left: SQLWrapper, right: unknown): SQL => {
 // 	return sql`cs_ore_64_8_v1(${left}) > cs_ore_64_8_v1(${bindIfParam(right, left)})`;
@@ -55,19 +55,19 @@ const csEq: BinaryOperator = (left: SQLWrapper, right: unknown): SQL => {
 // };
 
 const csMatch: BinaryOperator = (left: SQLWrapper, right: unknown): SQL => {
-	return sql`cs_match_v1(${left}) @> cs_match_v1(${bindIfParam(right, left)})`;
-};
+  return sql`cs_match_v1(${left}) @> cs_match_v1(${bindIfParam(right, left)})`
+}
 
 const filterInput = await protectClient.encrypt(filter, {
-  column: 'email_encrypted',
-  table: 'users',
+  column: protectUsers.email_encrypted,
+  table: protectUsers,
 })
 
 if (filterInput.failure) {
   throw new Error(`[protect]: ${filterInput.failure.message}`)
 }
 
-const filterFn = fnForOp(op);
+const filterFn = fnForOp(op)
 
 const query = db
   .select({

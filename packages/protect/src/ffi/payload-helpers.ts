@@ -62,6 +62,7 @@ export async function normalizeBulkDecryptPayloadsWithLockContext(
 export async function normalizeBulkEncryptPayloadsWithLockContext(
   plaintexts: BulkEncryptPayload,
   column: string,
+  table: string,
   lockContext: LockContext,
 ): Promise<Result<InternalBulkEncryptPayload[], ProtectError>> {
   const lockContextPayload = await getLockContextPayload(lockContext)
@@ -74,6 +75,7 @@ export async function normalizeBulkEncryptPayloadsWithLockContext(
       const payload = {
         plaintext: plaintext.plaintext,
         column,
+        table,
         ...lockContextPayload,
       }
 

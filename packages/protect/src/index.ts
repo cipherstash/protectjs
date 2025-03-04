@@ -1,5 +1,9 @@
 import { ProtectClient } from './ffi'
-import type { EncryptConfig } from './ffi/encrypt-config'
+import {
+  type ProtectTable,
+  type ProtectTableColumn,
+  buildEncryptConfig,
+} from './schema'
 
 export const ProtectErrorTypes = {
   ClientInitError: 'ClientInitError',
@@ -15,9 +19,11 @@ export interface ProtectError {
 }
 
 export const protect = async (
-  encryptConfig?: EncryptConfig,
+  ...tables: Array<ProtectTable<ProtectTableColumn>>
 ): Promise<ProtectClient> => {
   const client = new ProtectClient()
+  const encryptConfig = buildEncryptConfig(...tables)
+
   const result = await client.init(encryptConfig)
 
   if (result.failure) {
@@ -28,8 +34,8 @@ export const protect = async (
 }
 
 export type { Result } from '@byteslice/result'
-export type { EncryptConfig } from './ffi/encrypt-config'
 export type { ProtectClient } from './ffi'
+export { csTable, csColumn } from './schema'
 export * from './cs_plaintext_v1'
 export * from './identify'
 export * from './eql'

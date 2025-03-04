@@ -16,7 +16,13 @@ import {
   normalizeBulkEncryptPayloads,
   normalizeBulkEncryptPayloadsWithLockContext,
 } from './payload-helpers'
-import { type EncryptConfig, encryptConfigSchema } from './encrypt-config'
+import {
+  type EncryptConfig,
+  encryptConfigSchema,
+  type ProtectTable,
+  type ProtectColumn,
+  type ProtectTableColumn,
+} from '../schema'
 
 // ------------------------
 // Type Definitions
@@ -45,8 +51,8 @@ export type BulkDecryptedData =
   | null
 
 export type EncryptOptions = {
-  column: string
-  table: string
+  column: ProtectColumn
+  table: ProtectTable<Record<string, ProtectColumn>>
 }
 
 type Client = Awaited<ReturnType<typeof newClient>> | undefined
@@ -67,8 +73,8 @@ class EncryptOperation
 {
   private client: Client
   private plaintext: EncryptPayload
-  private column: string
-  private table: string
+  private column: ProtectColumn
+  private table: ProtectTable<ProtectTableColumn>
 
   constructor(client: Client, plaintext: EncryptPayload, opts: EncryptOptions) {
     this.client = client
@@ -102,8 +108,8 @@ class EncryptOperation
   /** Actual encryption logic, deferred until `then()` is called. */
   private async execute(): Promise<Result<EncryptedPayload, ProtectError>> {
     logger.debug('Encrypting data WITHOUT a lock context', {
-      column: this.column,
-      table: this.table,
+      column: this.column.getName(),
+      table: this.table.tableName,
     })
 
     return await withResult(
@@ -119,8 +125,8 @@ class EncryptOperation
         const val = await ffiEncrypt(
           this.client,
           this.plaintext,
-          this.column,
-          this.table,
+          this.column.getName(),
+          this.table.tableName,
         )
 
         return JSON.parse(val)
@@ -135,8 +141,8 @@ class EncryptOperation
   public getOperation(): {
     client: Client
     plaintext: EncryptPayload
-    column: string
-    table: string
+    column: ProtectColumn
+    table: ProtectTable<ProtectTableColumn>
   } {
     return {
       client: this.client,
@@ -201,8 +207,8 @@ class EncryptOperationWithLockContext
         const val = await ffiEncrypt(
           client,
           plaintext,
-          column,
-          table,
+          column.getName(),
+          table.tableName,
           context.data.context,
           context.data.ctsToken,
         )
@@ -347,8 +353,8 @@ class BulkEncryptOperation
 {
   private client: Client
   private plaintexts: BulkEncryptPayload
-  private column: string
-  private table: string
+  private column: ProtectColumn
+  private table: ProtectTable<ProtectTableColumn>
 
   constructor(
     client: Client,
@@ -395,12 +401,12 @@ class BulkEncryptOperation
 
         const encryptPayloads = normalizeBulkEncryptPayloads(
           this.plaintexts,
-          this.column,
+          this.column.getName(),
         )
 
         logger.debug('Bulk encrypting data WITHOUT a lock context', {
-          column: this.column,
-          table: this.table,
+          column: this.column.getName(),
+          table: this.table.tableName,
         })
 
         const encryptedData = await ffiEncryptBulk(this.client, encryptPayloads)
@@ -419,8 +425,8 @@ class BulkEncryptOperation
   public getOperation(): {
     client: Client
     plaintexts: BulkEncryptPayload
-    column: string
-    table: string
+    column: ProtectColumn
+    table: ProtectTable<ProtectTableColumn>
   } {
     return {
       client: this.client,
@@ -474,7 +480,8 @@ class BulkEncryptOperationWithLockContext
         const encryptPayloads =
           await normalizeBulkEncryptPayloadsWithLockContext(
             plaintexts,
-            column,
+            column.getName(),
+            table.tableName,
             this.lockContext,
           )
 

@@ -1,21 +1,19 @@
 import 'dotenv/config'
 import { describe, expect, it } from 'vitest'
 
-import { LockContext, createEqlPayload, getPlaintext, protect } from '../src'
+import {
+  LockContext,
+  createEqlPayload,
+  getPlaintext,
+  protect,
+  csTable,
+  csColumn,
+} from '../src'
 import type { CsPlaintextV1Schema } from '../src/cs_plaintext_v1'
-import type { EncryptConfig } from '../src/ffi/encrypt-config'
 
-const config: EncryptConfig = {
-  v: 1,
-  tables: {
-    users: {
-      email: {
-        cast_as: 'text',
-        indexes: { ore: {}, match: {}, unique: {} },
-      },
-    },
-  },
-}
+const users = csTable('users', {
+  email: csColumn('email').freeTextSearch().equality().orderAndSort(),
+})
 
 describe('createEqlPayload', () => {
   it('should create a payload with the correct default values', () => {
@@ -126,11 +124,11 @@ describe('getPlaintext', () => {
 
 describe('encryption and decryption', () => {
   it('should encrypt and decrypt a payload', async () => {
-    const protectClient = await protect(config)
+    const protectClient = await protect(users)
 
     const ciphertext = await protectClient.encrypt('plaintext', {
-      column: 'email',
-      table: 'users',
+      column: users.email,
+      table: users,
     })
 
     if (ciphertext.failure) {
@@ -145,11 +143,11 @@ describe('encryption and decryption', () => {
   }, 30000)
 
   it('should return null if plaintext is null', async () => {
-    const protectClient = await protect(config)
+    const protectClient = await protect(users)
 
     const ciphertext = await protectClient.encrypt(null, {
-      column: 'email',
-      table: 'users',
+      column: users.email,
+      table: users,
     })
 
     console.log('ciphertext', ciphertext)
@@ -168,67 +166,67 @@ describe('encryption and decryption', () => {
   }, 30000)
 })
 
-// TODO: Searchable encryption is not yet supported for bukl ops
-// describe('bulk encryption', () => {
-//   it('should bulk encrypt and decrypt a payload', async () => {
-//     const protectClient = await protect()
-//     const ciphertexts = await protectClient.bulkEncrypt(
-//       [
-//         {
-//           plaintext: 'test',
-//           id: '1',
-//         },
-//         {
-//           plaintext: 'test2',
-//           id: '2',
-//         },
-//       ],
-//       {
-//         table: 'users',
-//         column: 'column_name',
-//       },
-//     )
+// TODO: Still have some issues with bulk encryption
+describe('bulk encryption', () => {
+  // it('should bulk encrypt and decrypt a payload', async () => {
+  //   const protectClient = await protect(users)
+  //   const ciphertexts = await protectClient.bulkEncrypt(
+  //     [
+  //       {
+  //         plaintext: 'test',
+  //         id: '1',
+  //       },
+  //       {
+  //         plaintext: 'test2',
+  //         id: '2',
+  //       },
+  //     ],
+  //     {
+  //       table: users,
+  //       column: users.email,
+  //     },
+  //   )
 
-//     if (ciphertexts.failure) {
-//       throw new Error(`[protect]: ${ciphertexts.failure.message}`)
-//     }
+  //   if (ciphertexts.failure) {
+  //     throw new Error(`[protect]: ${ciphertexts.failure.message}`)
+  //   }
 
-//     const plaintexts = await protectClient.bulkDecrypt(ciphertexts.data)
+  //   const plaintexts = await protectClient.bulkDecrypt(ciphertexts.data)
 
-//     expect(plaintexts).toEqual({
-//       data: [
-//         {
-//           plaintext: 'test',
-//           id: '1',
-//         },
-//         {
-//           plaintext: 'test2',
-//           id: '2',
-//         },
-//       ],
-//     })
-//   }, 30000)
+  //   expect(plaintexts).toEqual({
+  //     data: [
+  //       {
+  //         plaintext: 'test',
+  //         id: '1',
+  //       },
+  //       {
+  //         plaintext: 'test2',
+  //         id: '2',
+  //       },
+  //     ],
+  //   })
+  // }, 30000)
 
-//   it('should return null if plaintexts is empty', async () => {
-//     const protectClient = await protect()
-//     const ciphertexts = await protectClient.bulkEncrypt([], {
-//       table: 'users',
-//       column: 'column_name',
-//     })
-//     expect(ciphertexts).toEqual({
-//       data: null,
-//     })
-//   }, 30000)
+  it('should return null if plaintexts is empty', async () => {
+    const protectClient = await protect(users)
+    const ciphertexts = await protectClient.bulkEncrypt([], {
+      table: users,
+      column: users.email,
+    })
+    expect(ciphertexts).toEqual({
+      data: null,
+    })
+  }, 30000)
 
-//   it('should return null if decrypting empty ciphertexts', async () => {
-//     const protectClient = await protect()
-//     const ciphertexts = null
-//     const plaintexts = await protectClient.bulkDecrypt(ciphertexts)
-//     expect(plaintexts).toEqual({
-//       data: null,
-//     })
-//   }, 30000)
-// })
+  it('should return null if decrypting empty ciphertexts', async () => {
+    const protectClient = await protect(users)
+    const ciphertexts = null
+    const plaintexts = await protectClient.bulkDecrypt(ciphertexts)
+    expect(plaintexts).toEqual({
+      data: null,
+    })
+  }, 30000)
+})
 
 // ------------------------
 // TODO get bulk Encryption/Decryption working in CI.
