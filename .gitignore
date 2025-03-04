@@ -65,3 +65,4 @@ mise.local.toml
 # cipherstash
 cipherstash.toml
 cipherstash.secret.toml
+sql/cipherstash-*.sql
