@@ -6,25 +6,40 @@ import { bindIfParam, sql } from 'drizzle-orm';
 import type { BinaryOperator, SQL, SQLWrapper } from 'drizzle-orm';
 import { parseArgs } from 'node:util'
 
-const getEmail = () => {
+const getArgs = () => {
   const { values, positionals } = parseArgs({
     args: process.argv,
     options: {
-      email: {
+      filter: {
         type: 'string',
+      },
+      op: {
+        type: 'string',
+        default: 'match'
       },
     },
     strict: true,
     allowPositionals: true,
   })
 
-  return values.email
+  return values
 }
 
-const email = getEmail()
+const {filter, op} = getArgs()
 
-if (!email) {
+if (!filter) {
   throw new Error('Email is required')
+}
+
+const fnForOp: (op: string) => BinaryOperator = op => {
+  switch (op) {
+    case 'match':
+      return csMatch
+    case 'eq':
+      return csEq
+    default:
+      throw new Error(`unknown op: ${op}`)
+  }
 }
 
 const csEq: BinaryOperator = (left: SQLWrapper, right: unknown): SQL => {
@@ -39,11 +54,11 @@ const csEq: BinaryOperator = (left: SQLWrapper, right: unknown): SQL => {
 // 	return sql`cs_ore_64_8_v1(${left}) < cs_ore_64_8_v1(${bindIfParam(right, left)})`;
 // };
 
-// const csMatch: BinaryOperator = (left: SQLWrapper, right: unknown): SQL => {
-// 	return sql`cs_match_v1(${left}) @> cs_match_v1(${bindIfParam(right, left)})`;
-// };
+const csMatch: BinaryOperator = (left: SQLWrapper, right: unknown): SQL => {
+	return sql`cs_match_v1(${left}) @> cs_match_v1(${bindIfParam(right, left)})`;
+};
 
-const filterInput = await protectClient.encrypt(email, {
+const filterInput = await protectClient.encrypt(filter, {
   column: 'email_encrypted',
   table: 'users',
 })
@@ -52,12 +67,15 @@ if (filterInput.failure) {
   throw new Error(`[protect]: ${filterInput.failure.message}`)
 }
 
+const filterFn = fnForOp(op);
+
 const query = db
   .select({
     email: users.email_encrypted,
   })
   .from(users)
-  .where(csEq(users.email_encrypted, filterInput.data))
+  .where(filterFn(users.email_encrypted, filterInput.data))
+  .orderBy(sql`cs_ore_64_8_v1(users.email_encrypted)`)
 
 const sqlResult = query.toSQL()
 console.log('[INFO] SQL statement:', sqlResult)
