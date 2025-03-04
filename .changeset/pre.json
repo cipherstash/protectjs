@@ -1,0 +1,11 @@
+{
+  "mode": "pre",
+  "tag": "next",
+  "initialVersions": {
+    "@cipherstash/basic-example": "1.0.3",
+    "@cipherstash/nextjs-clerk-example": "0.0.1",
+    "@cipherstash/nextjs": "3.0.0",
+    "@cipherstash/protect": "6.0.0"
+  },
+  "changesets": []
+}

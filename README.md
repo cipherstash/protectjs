@@ -465,12 +465,8 @@ Until support for other data types are available in `@cipherstash/protect`, you 
 
 ## Searchable encryption
 
-`@cipherstash/protect` does not currently support searching encrypted data.
-Searchable encryption is an extremely well supported capability in other CipherStash products, and will be coming to `@cipherstash/protect`.
-Until searchable encryption support is released in `@cipherstash/protect`, you can:
-
-- Read [about how searchable encryption works in EQL](https://github.com/cipherstash/encrypt-query-language)
-- Express interest in this feature by adding a :+1: on this [GitHub Issue](https://github.com/cipherstash/protectjs/issues/46).
+The searchable encryption documentation is in the works and will be available soon.
+Express interest in this feature by adding a :+1: on this [GitHub Issue](https://github.com/cipherstash/protectjs/issues/46).
 
 ## Logging
 
