@@ -72,6 +72,10 @@ pnpm add @cipherstash/protect
 > [!TIP]
 > [Bun](https://bun.sh/) is not currently supported due to a lack of [Node-API compatibility](https://github.com/oven-sh/bun/issues/158). Under the hood, Protect.js uses [CipherStash Client](#cipherstash-client) which is written in Rust and embedded using [Neon](https://github.com/neon-bindings/neon).
 
+> [!IMPORTANT]
+> If you're using Next.js, SST or a framework that generates client-side bundles, you may run into errors after installing protect.
+> See the configuration instructions for [Next.js](./docs/nextjs.md) or [SST](./docs/sst.md) for more information.
+
 
 Lastly, install the CipherStash CLI:
 
