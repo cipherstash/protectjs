@@ -150,15 +150,11 @@ describe('encryption and decryption', () => {
       table: users,
     })
 
-    console.log('ciphertext', ciphertext)
-
     if (ciphertext.failure) {
       throw new Error(`[protect]: ${ciphertext.failure.message}`)
     }
 
     const plaintext = await protectClient.decrypt(ciphertext.data)
-
-    console.log('plaintext', plaintext)
 
     expect(plaintext).toEqual({
       data: null,
@@ -168,44 +164,48 @@ describe('encryption and decryption', () => {
 
 // TODO: Still have some issues with bulk encryption
 describe('bulk encryption', () => {
-  // it('should bulk encrypt and decrypt a payload', async () => {
-  //   const protectClient = await protect(users)
-  //   const ciphertexts = await protectClient.bulkEncrypt(
-  //     [
-  //       {
-  //         plaintext: 'test',
-  //         id: '1',
-  //       },
-  //       {
-  //         plaintext: 'test2',
-  //         id: '2',
-  //       },
-  //     ],
-  //     {
-  //       table: users,
-  //       column: users.email,
-  //     },
-  //   )
+  it('should bulk encrypt and decrypt a payload', async () => {
+    const protectClient = await protect(users)
+    const ciphertexts = await protectClient.bulkEncrypt(
+      [
+        {
+          plaintext: 'test',
+          id: '1',
+        },
+        {
+          plaintext: 'test2',
+          id: '2',
+        },
+      ],
+      {
+        table: users,
+        column: users.email,
+      },
+    )
 
-  //   if (ciphertexts.failure) {
-  //     throw new Error(`[protect]: ${ciphertexts.failure.message}`)
-  //   }
+    if (ciphertexts.failure) {
+      throw new Error(`[protect]: ${ciphertexts.failure.message}`)
+    }
 
-  //   const plaintexts = await protectClient.bulkDecrypt(ciphertexts.data)
+    const plaintextResult = await protectClient.bulkDecrypt(ciphertexts.data)
 
-  //   expect(plaintexts).toEqual({
-  //     data: [
-  //       {
-  //         plaintext: 'test',
-  //         id: '1',
-  //       },
-  //       {
-  //         plaintext: 'test2',
-  //         id: '2',
-  //       },
-  //     ],
-  //   })
-  // }, 30000)
+    if (plaintextResult.failure) {
+      throw new Error(`[protect]: ${plaintextResult.failure.message}`)
+    }
+
+    const plaintexts = plaintextResult.data
+
+    expect(plaintexts).toEqual([
+      {
+        plaintext: 'test',
+        id: '1',
+      },
+      {
+        plaintext: 'test2',
+        id: '2',
+      },
+    ])
+  }, 30000)
 
   it('should return null if plaintexts is empty', async () => {
     const protectClient = await protect(users)

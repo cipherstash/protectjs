@@ -38,7 +38,9 @@ export type BulkEncryptPayload = {
 
 export type BulkEncryptedData =
   | {
-      c: string
+      encryptedPayload: {
+        c: string
+      }
       id: string
     }[]
   | null
@@ -402,6 +404,7 @@ class BulkEncryptOperation
         const encryptPayloads = normalizeBulkEncryptPayloads(
           this.plaintexts,
           this.column.getName(),
+          this.table.tableName,
         )
 
         logger.debug('Bulk encrypting data WITHOUT a lock context', {
@@ -411,7 +414,7 @@ class BulkEncryptOperation
 
         const encryptedData = await ffiEncryptBulk(this.client, encryptPayloads)
         return encryptedData.map((enc, index) => ({
-          c: enc,
+          encryptedPayload: JSON.parse(enc),
           id: this.plaintexts[index].id,
         }))
       },
@@ -507,7 +510,7 @@ class BulkEncryptOperationWithLockContext
         )
 
         return encryptedData.map((enc, index) => ({
-          c: enc,
+          encryptedPayload: JSON.parse(enc),
           id: plaintexts[index].id,
         }))
       },

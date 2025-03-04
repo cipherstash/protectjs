@@ -14,9 +14,9 @@ const getLockContextPayload = async (lockContext: LockContext) =>
 export const normalizeBulkDecryptPayloads = (
   encryptedPayloads: BulkEncryptedData,
 ) =>
-  encryptedPayloads?.reduce((acc, encryptedPayload) => {
+  encryptedPayloads?.reduce((acc, data) => {
     const payload = {
-      ciphertext: encryptedPayload.c,
+      ciphertext: data.encryptedPayload.c,
     }
 
     acc.push(payload)
@@ -26,11 +26,13 @@ export const normalizeBulkDecryptPayloads = (
 export const normalizeBulkEncryptPayloads = (
   plaintexts: BulkEncryptPayload,
   column: string,
+  table: string,
 ) =>
   plaintexts.reduce((acc, plaintext) => {
     const payload = {
       plaintext: plaintext.plaintext,
       column,
+      table,
     }
 
     acc.push(payload)
@@ -47,9 +49,9 @@ export async function normalizeBulkDecryptPayloadsWithLockContext(
   if (!encryptedPayloads) return { data: [] }
 
   return {
-    data: encryptedPayloads?.reduce((acc, encryptedPayload) => {
+    data: encryptedPayloads?.reduce((acc, data) => {
       const payload = {
-        ciphertext: encryptedPayload.c,
+        ciphertext: data.encryptedPayload.c,
         ...lockContextPayload,
       }
 
