@@ -32,6 +32,12 @@ importers:
       dotenv:
         specifier: ^16.4.7
         version: 16.4.7
+      tsx:
+        specifier: ^4.19.2
+        version: 4.19.3
+      typescript:
+        specifier: ^5.0.0
+        version: 5.7.2
 
   apps/drizzle:
     dependencies:
@@ -47,9 +53,6 @@ importers:
       postgres:
         specifier: ^3.4.4
         version: 3.4.5
-      typescript:
-        specifier: ^5.0.0
-        version: 5.7.2
     devDependencies:
       '@types/node':
         specifier: ^22.10.2
@@ -66,6 +69,9 @@ importers:
       tsx:
         specifier: ^4.19.2
         version: 4.19.2
+      typescript:
+        specifier: ^5.0.0
+        version: 5.7.2
 
   apps/hono-supabase:
     dependencies:
