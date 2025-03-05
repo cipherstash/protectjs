@@ -5,6 +5,7 @@ import { protectClient, users as protectUsers } from './protect'
 import { bindIfParam, sql } from 'drizzle-orm'
 import type { BinaryOperator, SQL, SQLWrapper } from 'drizzle-orm'
 import { parseArgs } from 'node:util'
+import type { EncryptedData } from '@cipherstash/protect'
 
 const getArgs = () => {
   const { values, positionals } = parseArgs({
@@ -84,7 +85,7 @@ const data = await query.execute()
 
 const emails = await Promise.all(
   data.map(
-    async (row) => await protectClient.decrypt(row.email as { c: string }),
+    async (row) => await protectClient.decrypt(row.email as EncryptedData),
   ),
 )
 

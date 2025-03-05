@@ -18,9 +18,16 @@ export interface ProtectError {
   message: string
 }
 
+type AtLeastOneCsTable<T> = [T, ...T[]]
 export const protect = async (
-  ...tables: Array<ProtectTable<ProtectTableColumn>>
+  ...tables: AtLeastOneCsTable<ProtectTable<ProtectTableColumn>>
 ): Promise<ProtectClient> => {
+  if (!tables.length) {
+    throw new Error(
+      '[protect]: At least one csTable must be provided to initialize the protect client',
+    )
+  }
+
   const client = new ProtectClient()
   const encryptConfig = buildEncryptConfig(...tables)
 
@@ -34,8 +41,6 @@ export const protect = async (
 }
 
 export type { Result } from '@byteslice/result'
-export type { ProtectClient } from './ffi'
+export type { ProtectClient, EncryptedData } from './ffi'
 export { csTable, csColumn } from './schema'
-export * from './cs_plaintext_v1'
 export * from './identify'
-export * from './eql'

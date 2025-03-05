@@ -11,12 +11,18 @@ import type { BulkEncryptPayload, BulkEncryptedData } from './index'
 const getLockContextPayload = async (lockContext: LockContext) =>
   await lockContext.getLockContext()
 
-export const normalizeBulkDecryptPayloads = (
-  encryptedPayloads: BulkEncryptedData,
-) =>
-  encryptedPayloads?.reduce((acc, data) => {
+export const normalizeBulkDecryptPayloads = (payload: BulkEncryptedData) =>
+  payload?.reduce((acc, data) => {
+    if (!data.encryptedData) {
+      return acc
+    }
+
+    if (data.encryptedData.k !== 'ct') {
+      throw new Error('The encrypted data is not compliant with the EQL schema')
+    }
+
     const payload = {
-      ciphertext: data.encryptedPayload.c,
+      ciphertext: data.encryptedData.c,
     }
 
     acc.push(payload)
@@ -40,18 +46,28 @@ export const normalizeBulkEncryptPayloads = (
   }, [] as InternalBulkEncryptPayload[])
 
 export async function normalizeBulkDecryptPayloadsWithLockContext(
-  encryptedPayloads: BulkEncryptedData,
+  payloads: BulkEncryptedData,
   lockContext: LockContext,
 ): Promise<Result<InternalBulkDecryptPayload[], ProtectError>> {
   const lockContextPayload = await getLockContextPayload(lockContext)
 
   if (lockContextPayload.failure) return lockContextPayload
-  if (!encryptedPayloads) return { data: [] }
+  if (!payloads) return { data: [] }
 
   return {
-    data: encryptedPayloads?.reduce((acc, data) => {
+    data: payloads.reduce((acc, data) => {
+      if (!data.encryptedData) {
+        return acc
+      }
+
+      if (data.encryptedData.k !== 'ct') {
+        throw new Error(
+          'The encrypted data is not compliant with the EQL schema',
+        )
+      }
+
       const payload = {
-        ciphertext: data.encryptedPayload.c,
+        ciphertext: data.encryptedData.c,
         ...lockContextPayload,
       }
 

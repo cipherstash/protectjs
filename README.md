@@ -3,11 +3,16 @@
 [![Tests](https://github.com/cipherstash/protectjs/actions/workflows/tests.yml/badge.svg)](https://github.com/cipherstash/protectjs/actions/workflows/tests.yml)
 [![Built by CipherStash](https://raw.githubusercontent.com/cipherstash/meta/refs/heads/main/csbadge.svg)](https://cipherstash.com)
 
-Protect.js is a JavaScript/TypeScript package for encrypting and decrypting data in PostgreSQL databases.
-Encryption operations happen directly in your app, and the ciphertext is stored in your PostgreSQL database.
+Protect.js is a TypeScript package for encrypting and decrypting data.
+Encryption operations happen directly in your app, and the ciphertext is stored in your database.
 
-Every value you encrypt with Protect.js has a unique key, made possible by CipherStash [ZeroKMS](https://cipherstash.com/products/zerokms)'s blazing fast bulk key operations.
-Under the hood Protect.js uses CipherStash [Encrypt Query Language (EQL)](https://github.com/cipherstash/encrypt-query-language), and all ZeroKMS data keys are backed by a root key in [AWS KMS](https://docs.aws.amazon.com/kms/latest/developerguide/overview.html).
+Every value you encrypt with Protect.js has a unique key, made possible by CipherStash [ZeroKMS](https://cipherstash.com/products/zerokms)'s blazing fast bulk key operations, and backed by a root key in [AWS KMS](https://docs.aws.amazon.com/kms/latest/developerguide/overview.html).
+
+The encrypted data is structured as an [Encrypt Query Language (EQL)](https://github.com/cipherstash/encrypt-query-language) JSON payload, and can be stored in any database that supports JSONB.
+
+> [!IMPORTANT]
+> Searching, sorting, and filtering on encrypted data is only supported in PostgreSQL at the moment.
+> Read more about [searching encrypted data](./docs/searchable-encryption.md).
 
 ## Table of contents
 
@@ -29,7 +34,7 @@ For more specific documentation, please refer to the [docs](https://github.com/c
 
 ## Features
 
-Protect.js protects data in PostgreSQL databases using industry-standard AES encryption.
+Protect.js protects data in using industry-standard AES encryption.
 Protect.js uses [ZeroKMS](https://cipherstash.com/products/zerokms) for bulk encryption and decryption operations.
 This enables every encrypted value, in every column, in every row in your database to have a unique key — without sacrificing performance.
 
@@ -39,6 +44,7 @@ This enables every encrypted value, in every column, in every row in your databa
 - **Really fast:** ZeroKMS's performance makes using millions of unique keys feasible and performant for real-world applications built with Protect.js.
 - **Identity-aware encryption**: Lock down access to sensitive data by requiring a valid JWT to perform a decryption.
 - **TypeScript support**: Strongly typed with TypeScript interfaces and types.
+- **Searchable encryption**: Protect.js supports searching encrypted data in PostgreSQL.
 
 **Use cases:**
 - **Trusted data access**: make sure only your end-users can access their sensitive data stored in your product.
@@ -145,11 +151,23 @@ In the `src/protect/schema.ts` file, you can define your tables and columns.
 import { csTable, csColumn } from '@cipherstash/protect'
 
 export const users = csTable('users', {
-  email: csColumn('email').freeTextSearch().equality().orderAndSort(),
+  email: csColumn('email'),
 })
 
 export const orders = csTable('orders', {
-  address: csColumn('address').freeTextSearch().orderAndSort(),
+  address: csColumn('address'),
+})
+```
+
+**Searchable encryption**
+
+If you are looking to enable searchable encryption in a PostgreSQL database, you must declaratively enable the indexes in your schema.
+
+```ts
+import { csTable, csColumn } from '@cipherstash/protect'
+
+export const users = csTable('users', {
+  email: csColumn('email').freeTextSearch().equality().orderAndSort(),
 })
 ```
 
@@ -168,6 +186,8 @@ import { users } from './schema'
 // Pass all your tables to the protect function to initialize the client
 export const protectClient = await protect(users, orders)
 ```
+
+The `protect` function requires at least one `csTable` to be passed in.
 
 ### Encrypting data
 
@@ -253,12 +273,39 @@ The `decryptResult` will return one of the following:
 
 ### Storing encrypted data in a database
 
-To store the encrypted data in PostgreSQL, you will need to specify the column type as `jsonb`.
+Encrypted data can be stored in any database that supports JSONB, noting that searchable encryption is only supported in PostgreSQL at the moment.
+
+To store the encrypted data, you will need to specify the column type as `jsonb`.
 
 ```sql
 CREATE TABLE users (
   id SERIAL PRIMARY KEY,
   email jsonb NOT NULL,
+);
+```
+
+**Searchable encryption**
+
+To enable searchable encryption in PostgreSQL, you need to [install the EQL custom types and functions](https://github.com/cipherstash/encrypt-query-language?tab=readme-ov-file#installation).
+
+1. Download the latest EQL install script:
+
+   ```sh
+   curl -sLo cipherstash-encrypt.sql https://github.com/cipherstash/encrypt-query-language/releases/latest/download/cipherstash-encrypt.sql
+   ```
+
+2. Run this command to install the custom types and functions:
+
+   ```sh
+   psql -f cipherstash-encrypt.sql
+   ```
+
+EQL is now installed in your database and you can enable searchable encryption by adding the `cs_encrypted_v1` type to a column.
+
+```sql
+CREATE TABLE users (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    email cs_encrypted_v1
 );
 ```
 
@@ -384,8 +431,8 @@ const encryptedValues = encryptedResults.data
 
 // encryptedValues might look like:
 // [
-//   { c: 'ENCRYPTED_VALUE_1', id: '1' },
-//   { c: 'ENCRYPTED_VALUE_2', id: '2' },
+//   { encryptedData: { c: 'ENCRYPTED_VALUE_1', k: 'ct' }, id: '1' },
+//   { encryptedData: { c: 'ENCRYPTED_VALUE_2', k: 'ct' }, id: '2' },
 // ]
 ```
 
@@ -396,7 +443,7 @@ encryptedValues.forEach((result) => {
   // Find the corresponding user
   const user = users.find((u) => u.id === result.id)
   if (user) {
-    user.email = result.c  // Store ciphertext back into the user object
+    user.email = result.encryptedData  // Store the encrypted data back into the user object
   }
 })
 ```
@@ -465,8 +512,7 @@ Until support for other data types are available in `@cipherstash/protect`, you 
 
 ## Searchable encryption
 
-The searchable encryption documentation is in the works and will be available soon.
-Express interest in this feature by adding a :+1: on this [GitHub Issue](https://github.com/cipherstash/protectjs/issues/46).
+Read more about [searching encrypted data](./docs/searchable-encryption.md) in the docs.
 
 ## Logging
 

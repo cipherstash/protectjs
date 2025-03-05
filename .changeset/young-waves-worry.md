@@ -1,8 +1,6 @@
 ---
-"@cipherstash/protect": major
+"@cipherstash/protect": minor
 ---
-
-Released version 7.
 
 * Added support for searching encrypted data
 * Added a schema strategy for defining your schema

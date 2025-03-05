@@ -2,7 +2,7 @@
 
 import { users } from '@/core/db/schema'
 import { db } from '@/core/db'
-import { protectClient } from '@/core/protect'
+import { protectClient, users as protectUsers } from '@/core/protect'
 import { getLockContext } from '@/core/protect'
 import { getCtsToken } from '@cipherstash/nextjs'
 import { revalidatePath } from 'next/cache'
@@ -32,8 +32,8 @@ export async function addUser(formData: FormData) {
   const lockContext = getLockContext(ctsToken.ctsToken)
   const encryptedResult = await protectClient
     .encrypt(email, {
-      column: users.email.name,
-      table: 'users',
+      column: protectUsers.email,
+      table: protectUsers,
     })
     .withLockContext(lockContext)
 

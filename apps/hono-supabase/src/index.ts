@@ -2,12 +2,15 @@ import 'dotenv/config'
 import { serve } from '@hono/node-server'
 import { createClient } from '@supabase/supabase-js'
 import { Hono } from 'hono'
-import { protect } from '@cipherstash/protect'
 
-// Initialize the EQL client
-// Make sure you have the following environment variables defined in your .env file:
-// CS_CLIENT_ID, CS_CLIENT_KEY, CS_CLIENT_ACCESS_KEY, CS_WORKSPACE_ID
-const protectClient = await protect()
+// Consolidated protect and it's schemas into a single file
+import { protect, csColumn, csTable } from '@cipherstash/protect'
+
+export const users = csTable('users', {
+  email: csColumn('email'),
+})
+
+export const protectClient = await protect(users)
 
 // Create a single supabase client for interacting with the database
 const supabaseUrl = process.env.SUPABASE_URL
@@ -71,8 +74,8 @@ app.post('/users', async (c) => {
   // and the second argument to be an object with the table and column
   // names of the table where you are storing the data.
   const encryptedResult = await protectClient.encrypt(email, {
-    column: 'email',
-    table: 'users',
+    column: users.email,
+    table: users,
   })
 
   if (encryptedResult.failure) {
@@ -85,8 +88,6 @@ app.post('/users', async (c) => {
 
   const encryptedEmail = encryptedResult.data
 
-  // The encrypt function will return an object with a c key, which is the encrypted data.
-  // We are logging the encrypted data to the console for demonstration purposes.
   console.log(
     'Encrypted email that will be stored in the database:',
     encryptedEmail,

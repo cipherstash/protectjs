@@ -1,125 +1,10 @@
 import 'dotenv/config'
 import { describe, expect, it } from 'vitest'
 
-import {
-  LockContext,
-  createEqlPayload,
-  getPlaintext,
-  protect,
-  csTable,
-  csColumn,
-} from '../src'
-import type { CsPlaintextV1Schema } from '../src/cs_plaintext_v1'
+import { LockContext, protect, csTable, csColumn } from '../src'
 
 const users = csTable('users', {
   email: csColumn('email').freeTextSearch().equality().orderAndSort(),
-})
-
-describe('createEqlPayload', () => {
-  it('should create a payload with the correct default values', () => {
-    const result = createEqlPayload({
-      plaintext: 'test',
-      table: 'users',
-      column: 'email',
-    })
-
-    const expectedPayload: CsPlaintextV1Schema = {
-      v: 1,
-      k: 'pt',
-      p: 'test',
-      i: {
-        t: 'users',
-        c: 'email',
-      },
-    }
-
-    expect(result).toEqual(expectedPayload)
-  })
-
-  it('should set custom schemaVersion and queryType values when provided', () => {
-    const result = createEqlPayload({
-      plaintext: 'test',
-      table: 'users',
-      column: 'email',
-      schemaVersion: 2,
-      queryType: 'match',
-    })
-
-    const expectedPayload: CsPlaintextV1Schema = {
-      v: 2,
-      k: 'pt',
-      p: 'test',
-      i: {
-        t: 'users',
-        c: 'email',
-      },
-      q: 'match',
-    }
-
-    expect(result).toEqual(expectedPayload)
-  })
-
-  it('should set plaintext to an empty string if undefined', () => {
-    const result = createEqlPayload({
-      plaintext: '',
-      table: 'users',
-      column: 'email',
-    })
-
-    expect(result.p).toBe('')
-  })
-})
-
-describe('getPlaintext', () => {
-  it('should return plaintext if payload is valid and key is "pt"', () => {
-    const payload: CsPlaintextV1Schema = {
-      v: 1,
-      k: 'pt',
-      p: 'test',
-      i: {
-        t: 'users',
-        c: 'email',
-      },
-    }
-
-    const result = getPlaintext(payload)
-
-    expect(result).toEqual({
-      failure: false,
-      plaintext: 'test',
-    })
-  })
-
-  it('should return an error if payload is missing "p" or key is not "pt"', () => {
-    const invalidPayload = {
-      v: 1,
-      k: 'ct',
-      c: 'ciphertext',
-      p: '',
-      i: {
-        t: 'users',
-        c: 'email',
-      },
-    }
-
-    const result = getPlaintext(
-      invalidPayload as unknown as CsPlaintextV1Schema,
-    )
-
-    expect(result).toEqual({
-      failure: true,
-      error: new Error('No plaintext data found in the EQL payload'),
-    })
-  })
-
-  it('should return an error and log if payload is invalid', () => {
-    const result = getPlaintext(null as unknown as CsPlaintextV1Schema)
-
-    expect(result).toEqual({
-      failure: true,
-      error: new Error('No plaintext data found in the EQL payload'),
-    })
-  })
 })
 
 describe('encryption and decryption', () => {
@@ -233,43 +118,64 @@ describe('bulk encryption', () => {
 // These tests pass locally, given you provide a valid JWT.
 // To manually test locally, uncomment the following lines and provide a valid JWT in the userJwt variable.
 // ------------------------
-// const userJwt = ''
+// const userJwt =
+//   ''
 // describe('encryption and decryption with lock context', () => {
 //   it('should encrypt and decrypt a payload with lock context', async () => {
-//     const protectClient = await protect()
+//     const protectClient = await protect(users)
 
 //     const lc = new LockContext()
 //     const lockContext = await lc.identify(userJwt)
 
-//     const ciphertext = await protectClient
+//     if (lockContext.failure) {
+//       throw new Error(`[protect]: ${lockContext.failure.message}`)
+//     }
+
+//     const encryptResult = await protectClient
 //       .encrypt('plaintext', {
-//         column: 'column_name',
-//         table: 'users',
+//         column: users.email,
+//         table: users,
 //       })
-//       .withLockContext(lockContext)
+//       .withLockContext(lockContext.data)
+
+//     if (encryptResult.failure) {
+//       throw new Error(`[protect]: ${encryptResult.failure.message}`)
+//     }
 
 //     const plaintext = await protectClient
-//       .decrypt(ciphertext)
-//       .withLockContext(lockContext)
+//       .decrypt(encryptResult.data)
+//       .withLockContext(lockContext.data)
 
-//     expect(plaintext).toEqual('plaintext')
+//     if (plaintext.failure) {
+//       throw new Error(`[protect]: ${plaintext.failure.message}`)
+//     }
+
+//     expect(plaintext.data).toEqual('plaintext')
 //   }, 30000)
 
 //   it('should encrypt with context and be unable to decrypt without context', async () => {
-//     const protectClient = await protect()
+//     const protectClient = await protect(users)
 
 //     const lc = new LockContext()
 //     const lockContext = await lc.identify(userJwt)
 
+//     if (lockContext.failure) {
+//       throw new Error(`[protect]: ${lockContext.failure.message}`)
+//     }
+
 //     const ciphertext = await protectClient
 //       .encrypt('plaintext', {
-//         column: 'column_name',
-//         table: 'users',
+//         column: users.email,
+//         table: users,
 //       })
-//       .withLockContext(lockContext)
+//       .withLockContext(lockContext.data)
+
+//     if (ciphertext.failure) {
+//       throw new Error(`[protect]: ${ciphertext.failure.message}`)
+//     }
 
 //     try {
-//       await protectClient.decrypt(ciphertext)
+//       await protectClient.decrypt(ciphertext.data)
 //     } catch (error) {
 //       const e = error as Error
 //       expect(e.message.startsWith('Failed to retrieve key')).toEqual(true)
@@ -277,10 +183,14 @@ describe('bulk encryption', () => {
 //   }, 30000)
 
 //   it('should bulk encrypt and decrypt a payload with lock context', async () => {
-//     const protectClient = await protect()
+//     const protectClient = await protect(users)
 
 //     const lc = new LockContext()
 //     const lockContext = await lc.identify(userJwt)
+
+//     if (lockContext.failure) {
+//       throw new Error(`[protect]: ${lockContext.failure.message}`)
+//     }
 
 //     const ciphertexts = await protectClient
 //       .bulkEncrypt(
@@ -295,17 +205,25 @@ describe('bulk encryption', () => {
 //           },
 //         ],
 //         {
-//           table: 'users',
-//           column: 'column_name',
+//           table: users,
+//           column: users.email,
 //         },
 //       )
-//       .withLockContext(lockContext)
+//       .withLockContext(lockContext.data)
+
+//     if (ciphertexts.failure) {
+//       throw new Error(`[protect]: ${ciphertexts.failure.message}`)
+//     }
 
 //     const plaintexts = await protectClient
-//       .bulkDecrypt(ciphertexts)
-//       .withLockContext(lockContext)
+//       .bulkDecrypt(ciphertexts.data)
+//       .withLockContext(lockContext.data)
 
-//     expect(plaintexts).toEqual([
+//     if (plaintexts.failure) {
+//       throw new Error(`[protect]: ${plaintexts.failure.message}`)
+//     }
+
+//     expect(plaintexts.data).toEqual([
 //       {
 //         plaintext: 'test',
 //         id: '1',
