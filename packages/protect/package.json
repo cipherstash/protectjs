@@ -1,6 +1,6 @@
 {
 	"name": "@cipherstash/protect",
-	"version": "6.0.0-next.0",
+	"version": "6.0.0",
 	"description": "CipherStash Protect for JavaScript",
 	"keywords": [
 		"encrypted",
@@ -56,7 +56,7 @@
 	},
 	"dependencies": {
 		"@byteslice/result": "^0.2.0",
-		"@cipherstash/protect-ffi": "0.12.0-4",
+		"@cipherstash/protect-ffi": "0.12.0",
 		"zod": "^3.24.2"
 	},
 	"optionalDependencies": {
