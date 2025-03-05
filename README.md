@@ -248,7 +248,7 @@ The `encryptResult` will return one of the following:
 ### Decrypting data
 
 Use the `decrypt` function to decrypt data.
-`decrypt` takes an encrypted data object, and an object with the lock context as parameters.
+`decrypt` takes an encrypted data object as a parameter.
 
 ```typescript
 import { protectClient } from './protect'
@@ -515,12 +515,10 @@ Learn more about [bulk decryption](./docs/bulk-encryption-decryption.md#bulk-dec
 
 ## Supported data types
 
-`@cipherstash/protect` currently supports encrypting and decrypting text.
-Other data types like booleans, dates, ints, floats, and JSON are extremely well supported in other CipherStash products, and will be coming to `@cipherstash/protect`.
-Until support for other data types are available in `@cipherstash/protect`, you can:
+Protect.js currently supports encrypting and decrypting text.
+Other data types like booleans, dates, ints, floats, and JSON are well supported in other CipherStash products, and will be coming to Protect.js soon.
 
-- Read [about how these data types work in EQL](https://github.com/cipherstash/encrypt-query-language/blob/main/docs/reference/INDEX.md)
-- Express interest in this feature by adding a :+1: on this [GitHub Issue](https://github.com/cipherstash/protectjs/issues/48).
+Until support for other data types are available, you can express interest in this feature by adding a :+1: on this [GitHub Issue](https://github.com/cipherstash/protectjs/issues/48).
 
 ## Searchable encryption
 
