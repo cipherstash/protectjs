@@ -1,5 +1,5 @@
 <h1 align="center">
-  <img alt="CipherStash Logo" loading="lazy" width="200" height="60" decoding="async" data-nimg="1"   style="color:transparent" src="https://cipherstash.com/assets/cs-full-white.png">
+  <img alt="CipherStash Logo" loading="lazy" width="200" height="60" decoding="async" data-nimg="1"   style="color:transparent" src="https://cipherstash.com/assets/cs-github.png">
   </br>
 
   Protect.js</h1>
