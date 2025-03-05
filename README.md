@@ -1,14 +1,25 @@
-# Protect.js
+<h1 align="center">
+  <img alt="CipherStash Logo" loading="lazy" width="200" height="60" decoding="async" data-nimg="1"   style="color:transparent" src="https://cipherstash.com/assets/cs-full-white.png">
+  </br>
 
-[![Tests](https://github.com/cipherstash/protectjs/actions/workflows/tests.yml/badge.svg)](https://github.com/cipherstash/protectjs/actions/workflows/tests.yml)
-[![Built by CipherStash](https://raw.githubusercontent.com/cipherstash/meta/refs/heads/main/csbadge.svg)](https://cipherstash.com)
+  Protect.js</h1>
+<p align="center">
+  Implement robust data security without sacrificing performance or usability
+  <br/>
+  <a href="https://cipherstash.com">Built by CipherStash</a>
+</p>
+<br/>
+
+<!-- start -->
+
+## What's Protect.js?
 
 Protect.js is a TypeScript package for encrypting and decrypting data.
 Encryption operations happen directly in your app, and the ciphertext is stored in your database.
 
 Every value you encrypt with Protect.js has a unique key, made possible by CipherStash [ZeroKMS](https://cipherstash.com/products/zerokms)'s blazing fast bulk key operations, and backed by a root key in [AWS KMS](https://docs.aws.amazon.com/kms/latest/developerguide/overview.html).
 
-The encrypted data is structured as an [Encrypt Query Language (EQL)](https://github.com/cipherstash/encrypt-query-language) JSON payload, and can be stored in any database that supports JSONB.
+The encrypted data is structured as an [EQL](https://github.com/cipherstash/encrypt-query-language) JSON payload, and can be stored in any database that supports JSONB.
 
 > [!IMPORTANT]
 > Searching, sorting, and filtering on encrypted data is only supported in PostgreSQL at the moment.
@@ -43,8 +54,9 @@ This enables every encrypted value, in every column, in every row in your databa
 - **Single item encryption and decryption**: Just looking for a way to encrypt and decrypt single values? Protect.js has you covered.
 - **Really fast:** ZeroKMS's performance makes using millions of unique keys feasible and performant for real-world applications built with Protect.js.
 - **Identity-aware encryption**: Lock down access to sensitive data by requiring a valid JWT to perform a decryption.
-- **TypeScript support**: Strongly typed with TypeScript interfaces and types.
+- **Audit trail**: Every decryption event will be logged in ZeroKMS to help you prove compliance.
 - **Searchable encryption**: Protect.js supports searching encrypted data in PostgreSQL.
+- **TypeScript support**: Strongly typed with TypeScript interfaces and types.
 
 **Use cases:**
 - **Trusted data access**: make sure only your end-users can access their sensitive data stored in your product.
@@ -60,7 +72,7 @@ Check out the example applications:
 - [Drizzle example](/apps/drizzle) demonstrates how to use Protect.js with an ORM
 - [Next.js and lock contexts example using Clerk](/apps/nextjs-clerk) demonstrates how to protect data with identity-aware encryption
 
-`@cipherstash/protect` can be used with most ORMs that support PostgreSQL.
+`@cipherstash/protect` can be used with most ORMs.
 If you're interested in using `@cipherstash/protect` with a specific ORM, please [create an issue](https://github.com/cipherstash/protectjs/issues/new).
 
 ## Installing Protect.js
