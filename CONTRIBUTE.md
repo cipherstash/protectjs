@@ -98,6 +98,27 @@ We use [**Changesets**](https://github.com/changesets/changesets) to manage vers
 - Follow the prompts to indicate the type of version bump (patch, minor, major).
 - The [GitHub Actions](./.github/workflows/) (or other CI pipeline) will handle the **publish** step to npm once your PR is merged and the changeset is committed to `main`.
 
+## Pre release process
+
+We currently use [changesets to manage pre-releasing](https://github.com/changesets/changesets/blob/main/docs/prereleases.md) the `next` version of the package, and the process is executed manually.
+
+To do so, you need to:
+
+1. Check out the `next` branch
+2. Run `pnpm changeset pre enter next`
+3. Run `pnpm changeset version`
+4. Run `git add .`
+5. Run `git commit -m "Enter prerelease mode and version packages"`
+6. Run `pnpm changeset publish --tag next`
+7. Run `git push --follow-tags`
+
+When you are ready to release, you can run `pnpm changeset pre exit` to exit prerelease mode and commit the changes.
+When you merge the PR, the `next` branch will be merged into `main`, and the package will be published to npm without the prerelease tag.
+
+> [!IMPORTANT]
+> This process can be dangerous, so please be careful when using it as it's difficult to undo mistakes.
+> If you are unfamiliar with the process, please reach out to the maintainers for help.
+
 ## Additional Resources
 
 - [Turborepo Documentation](https://turbo.build/repo/docs)

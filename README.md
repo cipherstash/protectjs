@@ -1,13 +1,29 @@
-# Protect.js
+<h1 align="center">
+  <img alt="CipherStash Logo" loading="lazy" width="200" height="60" decoding="async" data-nimg="1"   style="color:transparent" src="https://cipherstash.com/assets/cs-github.png">
+  </br>
 
-[![Tests](https://github.com/cipherstash/protectjs/actions/workflows/tests.yml/badge.svg)](https://github.com/cipherstash/protectjs/actions/workflows/tests.yml)
-[![Built by CipherStash](https://raw.githubusercontent.com/cipherstash/meta/refs/heads/main/csbadge.svg)](https://cipherstash.com)
+  Protect.js</h1>
+<p align="center">
+  Implement robust data security without sacrificing performance or usability
+  <br/>
+  <a href="https://cipherstash.com">Built by CipherStash</a>
+</p>
+<br/>
 
-Protect.js is a JavaScript/TypeScript package for encrypting and decrypting data in PostgreSQL databases.
-Encryption operations happen directly in your app, and the ciphertext is stored in your PostgreSQL database.
+<!-- start -->
 
-Every value you encrypt with Protect.js has a unique key, made possible by CipherStash [ZeroKMS](https://cipherstash.com/products/zerokms)'s blazing fast bulk key operations.
-Under the hood Protect.js uses CipherStash [Encrypt Query Language (EQL)](https://github.com/cipherstash/encrypt-query-language), and all ZeroKMS data keys are backed by a root key in [AWS KMS](https://docs.aws.amazon.com/kms/latest/developerguide/overview.html).
+## What's Protect.js?
+
+Protect.js is a TypeScript package for encrypting and decrypting data.
+Encryption operations happen directly in your app, and the ciphertext is stored in your database.
+
+Every value you encrypt with Protect.js has a unique key, made possible by CipherStash [ZeroKMS](https://cipherstash.com/products/zerokms)'s blazing fast bulk key operations, and backed by a root key in [AWS KMS](https://docs.aws.amazon.com/kms/latest/developerguide/overview.html).
+
+The encrypted data is structured as an [EQL](https://github.com/cipherstash/encrypt-query-language) JSON payload, and can be stored in any database that supports JSONB.
+
+> [!IMPORTANT]
+> Searching, sorting, and filtering on encrypted data is only supported in PostgreSQL at the moment.
+> Read more about [searching encrypted data](./docs/searchable-encryption.md).
 
 ## Table of contents
 
@@ -29,7 +45,7 @@ For more specific documentation, please refer to the [docs](https://github.com/c
 
 ## Features
 
-Protect.js protects data in PostgreSQL databases using industry-standard AES encryption.
+Protect.js protects data in using industry-standard AES encryption.
 Protect.js uses [ZeroKMS](https://cipherstash.com/products/zerokms) for bulk encryption and decryption operations.
 This enables every encrypted value, in every column, in every row in your database to have a unique key — without sacrificing performance.
 
@@ -38,6 +54,8 @@ This enables every encrypted value, in every column, in every row in your databa
 - **Single item encryption and decryption**: Just looking for a way to encrypt and decrypt single values? Protect.js has you covered.
 - **Really fast:** ZeroKMS's performance makes using millions of unique keys feasible and performant for real-world applications built with Protect.js.
 - **Identity-aware encryption**: Lock down access to sensitive data by requiring a valid JWT to perform a decryption.
+- **Audit trail**: Every decryption event will be logged in ZeroKMS to help you prove compliance.
+- **Searchable encryption**: Protect.js supports searching encrypted data in PostgreSQL.
 - **TypeScript support**: Strongly typed with TypeScript interfaces and types.
 
 **Use cases:**
@@ -54,7 +72,7 @@ Check out the example applications:
 - [Drizzle example](/apps/drizzle) demonstrates how to use Protect.js with an ORM
 - [Next.js and lock contexts example using Clerk](/apps/nextjs-clerk) demonstrates how to protect data with identity-aware encryption
 
-`@cipherstash/protect` can be used with most ORMs that support PostgreSQL.
+`@cipherstash/protect` can be used with most ORMs.
 If you're interested in using `@cipherstash/protect` with a specific ORM, please [create an issue](https://github.com/cipherstash/protectjs/issues/new).
 
 ## Installing Protect.js
@@ -117,31 +135,84 @@ At the end of `stash setup`, you will have two files in your project:
 
 You can read more about [configuration via toml file or environment variables here](./docs/configuration.md).
 
+### Basic file structure
+
+This is the basic file structure of the project. In the `src/protect` directory, we have table definition in `schema.ts` and the protect client in `index.ts`.
+
+```
+📦 <project root>
+ ├ 📂 src
+ │   ├ 📂 protect
+ │   │  ├ 📜 index.ts
+ │   │  └ 📜 schema.ts
+ │   └ 📜 index.ts
+ ├ 📜 .env
+ ├ 📜 cipherstash.toml
+ ├ 📜 cipherstash.secret.toml
+ ├ 📜 package.json
+ └ 📜 tsconfig.json
+```
+
+### Defining your schema
+
+Protect.js uses a schema to define the tables and columns that you want to encrypt and decrypt.
+
+In the `src/protect/schema.ts` file, you can define your tables and columns.
+
+```ts
+import { csTable, csColumn } from '@cipherstash/protect'
+
+export const users = csTable('users', {
+  email: csColumn('email'),
+})
+
+export const orders = csTable('orders', {
+  address: csColumn('address'),
+})
+```
+
+**Searchable encryption**
+
+If you are looking to enable searchable encryption in a PostgreSQL database, you must declaratively enable the indexes in your schema.
+
+```ts
+import { csTable, csColumn } from '@cipherstash/protect'
+
+export const users = csTable('users', {
+  email: csColumn('email').freeTextSearch().equality().orderAndSort(),
+})
+```
+
+Read more about [defining your schema here](./docs/schema.md).
+
 ### Initializing the EQL client
 
-In your application, import the `protect` function from the `@cipherstash/protect` package, and initialize a client with your CipherStash credentials.
+To initialize the protect client, import the `protect` function and initialize a client with your defined schema.
 
-```typescript
-const { protect } = require('@cipherstash/protect')
-const protectClient = await protect()
-```
+In the `src/protect/index.ts` file:
 
-If you are using ES6:
-
-```typescript
+```ts
 import { protect } from '@cipherstash/protect'
-const protectClient = await protect()
+import { users } from './schema'
+
+// Pass all your tables to the protect function to initialize the client
+export const protectClient = await protect(users, orders)
 ```
+
+The `protect` function requires at least one `csTable` to be passed in.
 
 ### Encrypting data
 
 Use the `encrypt` function to encrypt data.
-`encrypt` takes a plaintext string, and an object with the table and column name as parameters.
+`encrypt` takes a plaintext string, and an object with the table and column as parameters.
 
 ```typescript
+import { users } from './protect/schema'
+import { protectClient } from './protect'
+
 const encryptResult = await protectClient.encrypt('secret@squirrel.example', {
-  column: 'email',
-  table: 'users',
+  column: users.email,
+  table: users,
 })
 
 if (encryptResult.failure) {
@@ -177,9 +248,11 @@ The `encryptResult` will return one of the following:
 ### Decrypting data
 
 Use the `decrypt` function to decrypt data.
-`decrypt` takes an encrypted data object, and an object with the lock context as parameters.
+`decrypt` takes an encrypted data object as a parameter.
 
 ```typescript
+import { protectClient } from './protect'
+
 const decryptResult = await protectClient.decrypt(ciphertext)
 
 if (decryptResult.failure) {
@@ -212,12 +285,39 @@ The `decryptResult` will return one of the following:
 
 ### Storing encrypted data in a database
 
-To store the encrypted data in PostgreSQL, you will need to specify the column type as `jsonb`.
+Encrypted data can be stored in any database that supports JSONB, noting that searchable encryption is only supported in PostgreSQL at the moment.
+
+To store the encrypted data, you will need to specify the column type as `jsonb`.
 
 ```sql
 CREATE TABLE users (
   id SERIAL PRIMARY KEY,
   email jsonb NOT NULL,
+);
+```
+
+**Searchable encryption**
+
+To enable searchable encryption in PostgreSQL, you need to [install the EQL custom types and functions](https://github.com/cipherstash/encrypt-query-language?tab=readme-ov-file#installation).
+
+1. Download the latest EQL install script:
+
+   ```sh
+   curl -sLo cipherstash-encrypt.sql https://github.com/cipherstash/encrypt-query-language/releases/latest/download/cipherstash-encrypt.sql
+   ```
+
+2. Run this command to install the custom types and functions:
+
+   ```sh
+   psql -f cipherstash-encrypt.sql
+   ```
+
+EQL is now installed in your database and you can enable searchable encryption by adding the `cs_encrypted_v1` type to a column.
+
+```sql
+CREATE TABLE users (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    email cs_encrypted_v1
 );
 ```
 
@@ -270,9 +370,12 @@ const lockContext = identifyResult.data
 To encrypt data with a lock context, call the optional `withLockContext` method on the `encrypt` function and pass the lock context object as a parameter:
 
 ```typescript
+import { protectClient } from './protect'
+import { users } from './protect/schema'
+
 const encryptResult = await protectClient.encrypt('plaintext', {
-  table: 'users',
-  column: 'email',
+  table: users,
+  column: users.email,
 }).withLockContext(lockContext)
 
 if (encryptResult.failure) {
@@ -287,6 +390,8 @@ const ciphertext = encryptResult.data
 To decrypt data with a lock context, call the optional `withLockContext` method on the `decrypt` function and pass the lock context object as a parameter:
 
 ```typescript
+import { protectClient } from './protect'
+
 const decryptResult = await protectClient.decrypt(ciphertext).withLockContext(lockContext)
 
 if (decryptResult.failure) {
@@ -338,8 +443,8 @@ const encryptedValues = encryptedResults.data
 
 // encryptedValues might look like:
 // [
-//   { c: 'ENCRYPTED_VALUE_1', id: '1' },
-//   { c: 'ENCRYPTED_VALUE_2', id: '2' },
+//   { encryptedData: { c: 'ENCRYPTED_VALUE_1', k: 'ct' }, id: '1' },
+//   { encryptedData: { c: 'ENCRYPTED_VALUE_2', k: 'ct' }, id: '2' },
 // ]
 ```
 
@@ -350,7 +455,7 @@ encryptedValues.forEach((result) => {
   // Find the corresponding user
   const user = users.find((u) => u.id === result.id)
   if (user) {
-    user.email = result.c  // Store ciphertext back into the user object
+    user.email = result.encryptedData  // Store the encrypted data back into the user object
   }
 })
 ```
@@ -410,21 +515,14 @@ Learn more about [bulk decryption](./docs/bulk-encryption-decryption.md#bulk-dec
 
 ## Supported data types
 
-`@cipherstash/protect` currently supports encrypting and decrypting text.
-Other data types like booleans, dates, ints, floats, and JSON are extremely well supported in other CipherStash products, and will be coming to `@cipherstash/protect`.
-Until support for other data types are available in `@cipherstash/protect`, you can:
+Protect.js currently supports encrypting and decrypting text.
+Other data types like booleans, dates, ints, floats, and JSON are well supported in other CipherStash products, and will be coming to Protect.js soon.
 
-- Read [about how these data types work in EQL](https://github.com/cipherstash/encrypt-query-language/blob/main/docs/reference/INDEX.md)
-- Express interest in this feature by adding a :+1: on this [GitHub Issue](https://github.com/cipherstash/protectjs/issues/48).
+Until support for other data types are available, you can express interest in this feature by adding a :+1: on this [GitHub Issue](https://github.com/cipherstash/protectjs/issues/48).
 
 ## Searchable encryption
 
-`@cipherstash/protect` does not currently support searching encrypted data.
-Searchable encryption is an extremely well supported capability in other CipherStash products, and will be coming to `@cipherstash/protect`.
-Until searchable encryption support is released in `@cipherstash/protect`, you can:
-
-- Read [about how searchable encryption works in EQL](https://github.com/cipherstash/encrypt-query-language)
-- Express interest in this feature by adding a :+1: on this [GitHub Issue](https://github.com/cipherstash/protectjs/issues/46).
+Read more about [searching encrypted data](./docs/searchable-encryption.md) in the docs.
 
 ## Logging
 

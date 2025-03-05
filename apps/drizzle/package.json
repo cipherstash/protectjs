@@ -8,16 +8,14 @@
 		"@types/pg": "^8.11.10",
 		"dotenv": "^16.4.7",
 		"drizzle-kit": "^0.24.2",
+		"typescript": "^5.0.0",
 		"tsx": "^4.19.2"
 	},
 	"scripts": {
-		"insert": "ts-node src/insert.ts",
-		"select": "ts-node src/select.ts",
+		"insert": "tsx src/insert.ts",
+		"select": "tsx src/select.ts",
 		"db:generate": "drizzle-kit generate",
 		"db:migrate": "drizzle-kit migrate"
-	},
-	"peerDependencies": {
-		"typescript": "^5.0.0"
 	},
 	"dependencies": {
 		"@cipherstash/protect": "workspace:*",

@@ -1,7 +1,7 @@
 {
 	"name": "@cipherstash/protect",
 	"version": "6.0.0",
-	"description": "CipherStash Protech for JavaScript",
+	"description": "CipherStash Protect for JavaScript",
 	"keywords": [
 		"encrypted",
 		"query",
@@ -35,8 +35,8 @@
 	"scripts": {
 		"build": "tsup",
 		"dev": "tsup --watch",
-		"update-schema": "node ./generateSchema.mjs",
-		"generate-types": "json2ts ./cs_plaintext_v1.schema.json --output ./src/cs_plaintext_v1.ts",
+		"eql:update": "tsx ./generateEqlSchema.ts",
+		"eql:generate": "json2ts ./eql.schema.json --output ./src/eql.schema.ts",
 		"test": "vitest run",
 		"release": "tsup"
 	},
@@ -45,6 +45,7 @@
 		"execa": "^9.5.2",
 		"json-schema-to-typescript": "^15.0.2",
 		"tsup": "^8.3.0",
+		"tsx": "^4.19.3",
 		"vitest": "^2.1.9"
 	},
 	"peerDependencies": {
@@ -55,7 +56,8 @@
 	},
 	"dependencies": {
 		"@byteslice/result": "^0.2.0",
-		"@cipherstash/protect-ffi": "0.11.0"
+		"@cipherstash/protect-ffi": "0.12.0",
+		"zod": "^3.24.2"
 	},
 	"optionalDependencies": {
 		"@rollup/rollup-linux-x64-gnu": "4.24.0"

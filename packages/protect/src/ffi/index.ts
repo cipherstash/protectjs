@@ -10,19 +10,26 @@ import { type ProtectError, ProtectErrorTypes } from '..'
 import { loadWorkSpaceId } from '../../../utils/config'
 import { logger } from '../../../utils/logger'
 import type { LockContext } from '../identify'
+import type { EqlSchema } from '../eql.schema'
 import {
   normalizeBulkDecryptPayloads,
   normalizeBulkDecryptPayloadsWithLockContext,
   normalizeBulkEncryptPayloads,
   normalizeBulkEncryptPayloadsWithLockContext,
 } from './payload-helpers'
+import {
+  type EncryptConfig,
+  encryptConfigSchema,
+  type ProtectTable,
+  type ProtectColumn,
+  type ProtectTableColumn,
+} from '../schema'
 
 // ------------------------
 // Type Definitions
 // ------------------------
 export type EncryptPayload = string | null
-
-export type EncryptedPayload = { c: string } | null
+export type EncryptedData = EqlSchema | null
 
 export type BulkEncryptPayload = {
   plaintext: string
@@ -31,7 +38,7 @@ export type BulkEncryptPayload = {
 
 export type BulkEncryptedData =
   | {
-      c: string
+      encryptedData: EncryptedData
       id: string
     }[]
   | null
@@ -44,8 +51,8 @@ export type BulkDecryptedData =
   | null
 
 export type EncryptOptions = {
-  column: string
-  table: string
+  column: ProtectColumn
+  table: ProtectTable<Record<string, ProtectColumn>>
 }
 
 type Client = Awaited<ReturnType<typeof newClient>> | undefined
@@ -62,12 +69,12 @@ const noClientError = () =>
 // Encrhyption operation implementations
 // ------------------------
 class EncryptOperation
-  implements PromiseLike<Result<EncryptedPayload, ProtectError>>
+  implements PromiseLike<Result<EncryptedData, ProtectError>>
 {
   private client: Client
   private plaintext: EncryptPayload
-  private column: string
-  private table: string
+  private column: ProtectColumn
+  private table: ProtectTable<ProtectTableColumn>
 
   constructor(client: Client, plaintext: EncryptPayload, opts: EncryptOptions) {
     this.client = client
@@ -83,13 +90,10 @@ class EncryptOperation
   }
 
   /** Implement the PromiseLike interface so `await` works. */
-  public then<
-    TResult1 = Result<EncryptedPayload, ProtectError>,
-    TResult2 = never,
-  >(
+  public then<TResult1 = Result<EncryptedData, ProtectError>, TResult2 = never>(
     onfulfilled?:
       | ((
-          value: Result<EncryptedPayload, ProtectError>,
+          value: Result<EncryptedData, ProtectError>,
         ) => TResult1 | PromiseLike<TResult1>)
       | null,
     // biome-ignore lint/suspicious/noExplicitAny: Rejections require an any type
@@ -99,10 +103,10 @@ class EncryptOperation
   }
 
   /** Actual encryption logic, deferred until `then()` is called. */
-  private async execute(): Promise<Result<EncryptedPayload, ProtectError>> {
+  private async execute(): Promise<Result<EncryptedData, ProtectError>> {
     logger.debug('Encrypting data WITHOUT a lock context', {
-      column: this.column,
-      table: this.table,
+      column: this.column.getName(),
+      table: this.table.tableName,
     })
 
     return await withResult(
@@ -115,8 +119,14 @@ class EncryptOperation
           return null
         }
 
-        const val = await ffiEncrypt(this.client, this.plaintext, this.column)
-        return { c: val }
+        const val = await ffiEncrypt(
+          this.client,
+          this.plaintext,
+          this.column.getName(),
+          this.table.tableName,
+        )
+
+        return JSON.parse(val)
       },
       (error) => ({
         type: ProtectErrorTypes.EncryptionError,
@@ -128,8 +138,8 @@ class EncryptOperation
   public getOperation(): {
     client: Client
     plaintext: EncryptPayload
-    column: string
-    table: string
+    column: ProtectColumn
+    table: ProtectTable<ProtectTableColumn>
   } {
     return {
       client: this.client,
@@ -141,7 +151,7 @@ class EncryptOperation
 }
 
 class EncryptOperationWithLockContext
-  implements PromiseLike<Result<EncryptedPayload, ProtectError>>
+  implements PromiseLike<Result<EncryptedData, ProtectError>>
 {
   private operation: EncryptOperation
   private lockContext: LockContext
@@ -151,13 +161,10 @@ class EncryptOperationWithLockContext
     this.lockContext = lockContext
   }
 
-  public then<
-    TResult1 = Result<EncryptedPayload, ProtectError>,
-    TResult2 = never,
-  >(
+  public then<TResult1 = Result<EncryptedData, ProtectError>, TResult2 = never>(
     onfulfilled?:
       | ((
-          value: Result<EncryptedPayload, ProtectError>,
+          value: Result<EncryptedData, ProtectError>,
         ) => TResult1 | PromiseLike<TResult1>)
       | null,
     // biome-ignore lint/suspicious/noExplicitAny: Rejections require an any type
@@ -166,7 +173,7 @@ class EncryptOperationWithLockContext
     return this.execute().then(onfulfilled, onrejected)
   }
 
-  private async execute(): Promise<Result<EncryptedPayload, ProtectError>> {
+  private async execute(): Promise<Result<EncryptedData, ProtectError>> {
     return await withResult(
       async () => {
         const { client, plaintext, column, table } =
@@ -185,7 +192,7 @@ class EncryptOperationWithLockContext
           return null
         }
 
-        const context = await this.lockContext?.getLockContext()
+        const context = await this.lockContext.getLockContext()
 
         if (context.failure) {
           throw new Error(`[protect]: ${context.failure.message}`)
@@ -194,11 +201,13 @@ class EncryptOperationWithLockContext
         const val = await ffiEncrypt(
           client,
           plaintext,
-          column,
+          column.getName(),
+          table.tableName,
           context.data.context,
           context.data.ctsToken,
         )
-        return { c: val }
+
+        return JSON.parse(val)
       },
       (error) => ({
         type: ProtectErrorTypes.EncryptionError,
@@ -215,11 +224,11 @@ class DecryptOperation
   implements PromiseLike<Result<string | null, ProtectError>>
 {
   private client: Client
-  private encryptedPayload: EncryptedPayload
+  private encryptedData: EncryptedData
 
-  constructor(client: Client, encryptedPayload: EncryptedPayload) {
+  constructor(client: Client, encryptedData: EncryptedData) {
     this.client = client
-    this.encryptedPayload = encryptedPayload
+    this.encryptedData = encryptedData
   }
 
   public withLockContext(
@@ -247,12 +256,18 @@ class DecryptOperation
           throw noClientError()
         }
 
-        if (this.encryptedPayload === null) {
+        if (this.encryptedData === null) {
           return null
         }
 
+        if (this.encryptedData.k !== 'ct') {
+          throw new Error(
+            'The encrypted data is not compliant with the EQL schema',
+          )
+        }
+
         logger.debug('Decrypting data WITHOUT a lock context')
-        return await ffiDecrypt(this.client, this.encryptedPayload.c)
+        return await ffiDecrypt(this.client, this.encryptedData.c)
       },
       (error) => ({
         type: ProtectErrorTypes.DecryptionError,
@@ -263,11 +278,11 @@ class DecryptOperation
 
   public getOperation(): {
     client: Client
-    encryptedPayload: EncryptedPayload
+    encryptedData: EncryptedData
   } {
     return {
       client: this.client,
-      encryptedPayload: this.encryptedPayload,
+      encryptedData: this.encryptedData,
     }
   }
 }
@@ -298,27 +313,33 @@ class DecryptOperationWithLockContext
   private async execute(): Promise<Result<string | null, ProtectError>> {
     return await withResult(
       async () => {
-        const { client, encryptedPayload } = this.operation.getOperation()
+        const { client, encryptedData } = this.operation.getOperation()
 
         if (!client) {
           throw noClientError()
         }
 
-        if (encryptedPayload === null) {
+        if (encryptedData === null) {
           return null
         }
 
         logger.debug('Decrypting data WITH a lock context')
 
-        const context = await this.lockContext?.getLockContext()
+        const context = await this.lockContext.getLockContext()
 
         if (context.failure) {
           throw new Error(`[protect]: ${context.failure.message}`)
         }
 
+        if (encryptedData.k !== 'ct') {
+          throw new Error(
+            'The encrypted data is not compliant with the EQL schema',
+          )
+        }
+
         return await ffiDecrypt(
           client,
-          encryptedPayload.c,
+          encryptedData.c,
           context.data.context,
           context.data.ctsToken,
         )
@@ -339,8 +360,8 @@ class BulkEncryptOperation
 {
   private client: Client
   private plaintexts: BulkEncryptPayload
-  private column: string
-  private table: string
+  private column: ProtectColumn
+  private table: ProtectTable<ProtectTableColumn>
 
   constructor(
     client: Client,
@@ -387,17 +408,18 @@ class BulkEncryptOperation
 
         const encryptPayloads = normalizeBulkEncryptPayloads(
           this.plaintexts,
-          this.column,
+          this.column.getName(),
+          this.table.tableName,
         )
 
         logger.debug('Bulk encrypting data WITHOUT a lock context', {
-          column: this.column,
-          table: this.table,
+          column: this.column.getName(),
+          table: this.table.tableName,
         })
 
         const encryptedData = await ffiEncryptBulk(this.client, encryptPayloads)
         return encryptedData.map((enc, index) => ({
-          c: enc,
+          encryptedData: JSON.parse(enc),
           id: this.plaintexts[index].id,
         }))
       },
@@ -411,8 +433,8 @@ class BulkEncryptOperation
   public getOperation(): {
     client: Client
     plaintexts: BulkEncryptPayload
-    column: string
-    table: string
+    column: ProtectColumn
+    table: ProtectTable<ProtectTableColumn>
   } {
     return {
       client: this.client,
@@ -466,7 +488,8 @@ class BulkEncryptOperationWithLockContext
         const encryptPayloads =
           await normalizeBulkEncryptPayloadsWithLockContext(
             plaintexts,
-            column,
+            column.getName(),
+            table.tableName,
             this.lockContext,
           )
 
@@ -492,7 +515,7 @@ class BulkEncryptOperationWithLockContext
         )
 
         return encryptedData.map((enc, index) => ({
-          c: enc,
+          encryptedData: JSON.parse(enc),
           id: plaintexts[index].id,
         }))
       },
@@ -511,11 +534,11 @@ class BulkDecryptOperation
   implements PromiseLike<Result<BulkDecryptedData, ProtectError>>
 {
   private client: Client
-  private encryptedPayloads: BulkEncryptedData
+  private encryptedDatas: BulkEncryptedData
 
-  constructor(client: Client, encryptedPayloads: BulkEncryptedData) {
+  constructor(client: Client, encryptedDatas: BulkEncryptedData) {
     this.client = client
-    this.encryptedPayloads = encryptedPayloads
+    this.encryptedDatas = encryptedDatas
   }
 
   public withLockContext(
@@ -546,12 +569,12 @@ class BulkDecryptOperation
           throw noClientError()
         }
 
-        if (!this.encryptedPayloads) {
+        if (!this.encryptedDatas) {
           return null
         }
 
         const decryptPayloads = normalizeBulkDecryptPayloads(
-          this.encryptedPayloads,
+          this.encryptedDatas,
         )
 
         if (!decryptPayloads) {
@@ -562,10 +585,10 @@ class BulkDecryptOperation
 
         const decryptedData = await ffiDecryptBulk(this.client, decryptPayloads)
         return decryptedData.map((dec, index) => {
-          if (!this.encryptedPayloads) return null
+          if (!this.encryptedDatas) return null
           return {
             plaintext: dec,
-            id: this.encryptedPayloads[index].id,
+            id: this.encryptedDatas[index].id,
           }
         })
       },
@@ -578,11 +601,11 @@ class BulkDecryptOperation
 
   public getOperation(): {
     client: Client
-    encryptedPayloads: BulkEncryptedData
+    encryptedDatas: BulkEncryptedData
   } {
     return {
       client: this.client,
-      encryptedPayloads: this.encryptedPayloads,
+      encryptedDatas: this.encryptedDatas,
     }
   }
 }
@@ -616,19 +639,19 @@ class BulkDecryptOperationWithLockContext
   private async execute(): Promise<Result<BulkDecryptedData, ProtectError>> {
     return await withResult(
       async () => {
-        const { client, encryptedPayloads } = this.operation.getOperation()
+        const { client, encryptedDatas } = this.operation.getOperation()
 
         if (!client) {
           throw noClientError()
         }
 
-        if (!encryptedPayloads) {
+        if (!encryptedDatas) {
           return null
         }
 
         const decryptPayloads =
           await normalizeBulkDecryptPayloadsWithLockContext(
-            encryptedPayloads,
+            encryptedDatas,
             this.lockContext,
           )
 
@@ -655,10 +678,10 @@ class BulkDecryptOperationWithLockContext
         )
 
         return decryptedData.map((dec, index) => {
-          if (!encryptedPayloads) return null
+          if (!encryptedDatas) return null
           return {
             plaintext: dec,
-            id: encryptedPayloads[index].id,
+            id: encryptedDatas[index].id,
           }
         })
       },
@@ -675,22 +698,43 @@ class BulkDecryptOperationWithLockContext
 // ------------------------
 export class ProtectClient {
   private client: Client
+  private encryptConfig: EncryptConfig | undefined
   private workspaceId: string | undefined
 
   constructor() {
     const workspaceId = loadWorkSpaceId()
-
-    logger.info(
-      'Successfully initialized the EQL client with your defined environment variables.',
-    )
-
-    this.workspaceId = process.env.CS_WORKSPACE_ID
+    this.workspaceId = workspaceId
   }
 
-  async init(): Promise<Result<ProtectClient, ProtectError>> {
+  async init(
+    encryptConifg?: EncryptConfig,
+  ): Promise<Result<ProtectClient, ProtectError>> {
     return await withResult(
       async () => {
-        const c = await newClient()
+        let c: Client
+
+        if (encryptConifg) {
+          const validated: EncryptConfig =
+            encryptConfigSchema.parse(encryptConifg)
+
+          logger.debug(
+            'Initializing the Protect.js client with the following encrypt config:',
+            {
+              encryptConfig: validated,
+            },
+          )
+
+          c = await newClient(JSON.stringify(validated))
+          this.encryptConfig = validated
+        } else {
+          logger.debug(
+            'Initializing the Protect.js client with default encrypt config.',
+          )
+
+          c = await newClient()
+        }
+
+        logger.info('Successfully initialized the Protect.js client.')
         this.client = c
         return this
       },
@@ -714,11 +758,11 @@ export class ProtectClient {
   /**
    * Decryption - returns a thenable object.
    * Usage:
-   *    await eqlClient.decrypt(encryptedPayload)
-   *    await eqlClient.decrypt(encryptedPayload).withLockContext(lockContext)
+   *    await eqlClient.decrypt(encryptedData)
+   *    await eqlClient.decrypt(encryptedData).withLockContext(lockContext)
    */
-  decrypt(encryptedPayload: EncryptedPayload): DecryptOperation {
-    return new DecryptOperation(this.client, encryptedPayload)
+  decrypt(encryptedData: EncryptedData): DecryptOperation {
+    return new DecryptOperation(this.client, encryptedData)
   }
 
   /**
@@ -739,11 +783,11 @@ export class ProtectClient {
   /**
    * Bulk Decrypt - returns a thenable object.
    * Usage:
-   *    await eqlClient.bulkDecrypt(encryptedPayloads)
-   *    await eqlClient.bulkDecrypt(encryptedPayloads).withLockContext(lockContext)
+   *    await eqlClient.bulkDecrypt(encryptedDatas)
+   *    await eqlClient.bulkDecrypt(encryptedDatas).withLockContext(lockContext)
    */
-  bulkDecrypt(encryptedPayloads: BulkEncryptedData): BulkDecryptOperation {
-    return new BulkDecryptOperation(this.client, encryptedPayloads)
+  bulkDecrypt(encryptedDatas: BulkEncryptedData): BulkDecryptOperation {
+    return new BulkDecryptOperation(this.client, encryptedDatas)
   }
 
   /** e.g., debugging or environment info */

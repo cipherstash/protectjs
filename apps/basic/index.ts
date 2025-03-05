@@ -1,27 +1,26 @@
 import 'dotenv/config'
-import { protect } from '@cipherstash/protect'
-import readline from 'node:readline';
+import { protectClient, users } from './protect'
+import readline from 'node:readline'
 
 const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout,
-});
+})
 
-const askQuestion = () => {
+const askQuestion = (): Promise<string> => {
   return new Promise((resolve) => {
-    rl.question("\n👋Hello\n\nWhat is your name? ", (answer) => {
-      resolve(answer);
-    });
-  });
-};
+    rl.question('\n👋Hello\n\nWhat is your name? ', (answer) => {
+      resolve(answer)
+    })
+  })
+}
 
 async function main() {
-  const protectClient = await protect()
-  const input = await askQuestion();
+  const input = await askQuestion()
 
   const encryptResult = await protectClient.encrypt(input, {
-    column: 'column_name',
-    table: 'users',
+    column: users.name,
+    table: users,
   })
 
   if (encryptResult.failure) {
@@ -44,7 +43,7 @@ async function main() {
   console.log('Decrypting the ciphertext...')
   console.log('The plaintext is:', plaintext)
 
-  rl.close();
+  rl.close()
 }
 
 main()

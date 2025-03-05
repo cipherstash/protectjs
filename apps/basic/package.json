@@ -4,7 +4,7 @@
   "version": "1.0.3",
   "main": "index.mjs",
   "scripts": {
-    "start": "node index.mjs"
+    "start": "tsx index.ts"
   },
   "keywords": [],
   "author": "",
@@ -12,6 +12,8 @@
   "description": "",
   "dependencies": {
     "@cipherstash/protect": "workspace:*",
+    "typescript": "^5.0.0",
+    "tsx": "^4.19.2",
     "dotenv": "^16.4.7"
   }
 }

@@ -1,3 +1,47 @@
 [tools]
 node = "22.11.0"
 pnpm = "9.15.3"
+
+[tasks."postgres:eql:download"]
+alias = 'e'
+description = "Download latest EQL release"
+outputs = [
+  "{{config_root}}/sql/cipherstash-encrypt.sql",
+  "{{config_root}}/sql/cipherstash-encrypt-uninstall.sql",
+]
+run = """
+mkdir sql
+
+# install script
+if [ -z "$CS_EQL_PATH" ]; then
+  curl -sLo sql/cipherstash-encrypt.sql https://github.com/cipherstash/encrypt-query-language/releases/latest/download/cipherstash-encrypt.sql
+else
+  echo "Using EQL: ${CS_EQL_PATH}"
+  cp "$CS_EQL_PATH" sql/cipherstash-encrypt.sql
+fi
+
+# uninstall script
+if [ -z "$CS_EQL_UNINSTALL_PATH" ]; then
+  curl -sLo sql/cipherstash-encrypt-uninstall.sql https://github.com/cipherstash/encrypt-query-language/releases/latest/download/cipherstash-encrypt-uninstall.sql
+else
+  echo "Using EQL: ${CS_EQL_PATH}"
+  cp "$CS_EQL_UNINSTALL_PATH" sql/cipherstash-encrypt-uninstall.sql
+fi
+"""
+
+[tasks."postgres:setup"]
+alias = 's'
+description = "Installs EQL and applies schema to database"
+run = """
+#!/bin/bash
+
+mise run postgres:eql:download
+cat sql/cipherstash-encrypt.sql | docker exec -i protectjs-postgres-1 psql postgresql://cipherstash:password@postgres:5432/cipherstash -f-
+"""
+
+[tasks."postgres:psql"]
+description = "Run psql (interactively) against the Postgres instance; assumes Postgres is already up"
+run = """
+set -eu
+docker exec -it protectjs-postgres-1 psql "postgresql://cipherstash:password@postgres:5432/cipherstash"
+"""
