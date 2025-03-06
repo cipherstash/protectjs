@@ -1,5 +1,13 @@
 # @cipherstash/jseql
 
+## 6.1.0
+
+### Minor Changes
+
+- 43e1acb: \* Added support for searching encrypted data
+  - Added a schema strategy for defining your schema
+  - Required schema to initialize the protect client
+
 ## 6.0.0
 
 ### Major Changes
