@@ -1,0 +1,130 @@
+# Searchable encryption
+
+Protect.js supports searching encrypted data, which enabled trusted data access so that you can:
+
+1. Prove to your customers that you can track exactly what data is being accessed in your application.
+2. Provide evidence for compliance requirements, such as [SOC2](https://cipherstash.com/compliance/soc2) and [BDSG](https://cipherstash.com/compliance/bdsg).
+
+## What does searchable encryption even mean? 
+
+The best way to describe searchable encryption is with an example.
+Let's say you have a table of users in your database, and you want to search for a user by their email address:
+
+```sql
+# SELECT * FROM users WHERE email = 'alice.johnson@example.com';
+ id |      name      |           email
+----+----------------+----------------------------
+  1 | Alice Johnson  | alice.johnson@example.com
+```
+
+Whether you executed this query directly in the database, or through an application ORM, you'd expect the result to be the same.
+
+**But what if the email address is encrypted before it's stored in the database?**
+
+Executing the following query will return all the rows in the table with the encrypted email address:
+
+```sql
+# SELECT * FROM users;
+ id |      name      |           email
+----+----------------+----------------------------
+  1 | Alice Johnson  | mBbKmsMMkbKBSN...
+  2 | Jane Doe       | s1THy_NfQdN892...
+  3 | Bob Smith      | 892!dercydsd0s...
+```
+
+Now, what's the issue if you execute the equality query with this data set? 
+
+```sql
+# SELECT * FROM users WHERE email = 'alice.johnson@example.com';
+ id |      name      |           email
+----+----------------+----------------------------
+```
+
+There would be no results returned, because `alice.johnson@example.com` does not equal `mBbKmsMMkbKBSN...`!
+
+## How do you search on encrypted data?
+
+There is prior art for this, and it's called [Homomorphic Encryption](https://en.wikipedia.org/wiki/Homomorphic_encryption), and is defined as:
+
+> "a form of encryption that allows computations to be performed on encrypted data without first having to decrypt it"
+
+The issue with homomorphic encryption isn't around the functionality, but rather performance in a modern application use case.
+
+CipherStash's approach to searchable encryption solves the performance problem without sacrificing security, usability, or functionality.
+
+### Using Encrypt Query Language (EQL)
+
+CipherStash uses [EQL](https://github.com/cipherstash/encrypt-query-language) to perform queries on encrypted data, and Protect.js makes it easy to use EQL with any TypeScipt application.
+
+```ts
+// 1) Encrypt the search term
+const searchTerm = 'alice.johnson@example.com'
+
+const encryptedParam = await protectClient.encrypt(searchTerm, {
+  column: protectedUsers.email, // Your Protect column definition
+  table: protectedUsers,        // Reference to the table schema
+})
+
+if (encryptedParam.failure) {
+  // Handle the failure
+}
+
+// 2) Build an equality query using EQL
+const equalitySQL = `
+  SELECT email
+  FROM users
+  WHERE cs_unique_v1($1) = cs_unique_v1($2)
+`
+
+// 3) Execute the query, passing in the Postgres column name
+//    and the encrypted search term as the second parameter
+//    (client is an arbitrary Postgres client)
+const result = await client.query(equalitySQL, [ protectedUser.email.getName(), encryptedParam.data ])
+```
+
+Using the above approach, Protect.js is generating the EQL payloads and which means you never have to drop down to writing complex SQL queries.
+
+So does this solve the original problem of searching on encrypted data?
+
+```sql
+# SELECT * FROM users WHERE WHERE cs_unique_v1(email) = cs_unique_v1(eql_payload_created_by_protect);
+ id |      name      |           email
+----+----------------+----------------------------
+  1 | Alice Johnson  | mBbKmsMMkbKBSN...
+```
+
+The answer is yes! And you can use Protect.js to [decrypt the results in your application](../../README.md#decrypting-data).
+
+## How fast is CipherStash's searchable encryption?
+
+Based on some [benchmarks](https://github.com/cipherstash/tfhe-ore-bench?tab=readme-ov-file#results) CipherStash's approach is ***410,000x faster*** than homomorphic encryption:
+
+| Operation          | Homomorphic | CipherStash | Speedup |
+|--------------------|----------------|---------------|-------------|
+| **Encrypt**        | 1.97 ms        | 48 µs         | ~41×        |
+| **a == b**         | 111 ms         | 238 ns        | ~466 000×    |
+| **a > b**          | 192 ms         | 238 ns        | ~807 000×    |
+| **a < b**          | 190 ms         | 240 ns        | ~792 000×    |
+| **a >= a**         | 44 ms          | 221 ns        | ~199 000×    |
+| **a <= a**         | 44 ms          | 226 ns        | ~195 000×    |
+
+## How does searchable encryption help me?
+
+Every single decryption event is logged in CipherStash [ZeroKMS](https://cipherstash.com/products/zerokms), giving you an audit trail of data access events to help you prove compliance with your data protection policies.
+
+With searchable encryption, you can:
+
+1. Prove to your customers that you can track exactly what data is being accessed in your application.
+2. Provide evidence for compliance requirements, such as [SOC2](https://cipherstash.com/compliance/soc2) and [BDSG](https://cipherstash.com/compliance/bdsg).
+
+## Bringing everything together 
+
+With searchable encryption:
+
+1. Data can be encrypted, stored, and searched in your existing PostgreSQL database.
+2. Encrypted data can be searched using equality, free text search, and range queries.
+3. Data remains encrypted, and will be decrypted using the Protect.js library in your application.
+4. Queries are blazing fast, and won't slow down your application experience.
+5. Every decryption event is logged, giving you an audit trail of data access events.
+
+Read more about the [implementation details](../reference/searchable-encryption-postgres.md) to get started.

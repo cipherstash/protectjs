@@ -11,12 +11,18 @@ import type { BulkEncryptPayload, BulkEncryptedData } from './index'
 const getLockContextPayload = async (lockContext: LockContext) =>
   await lockContext.getLockContext()
 
-export const normalizeBulkDecryptPayloads = (
-  encryptedPayloads: BulkEncryptedData,
-) =>
-  encryptedPayloads?.reduce((acc, encryptedPayload) => {
+export const normalizeBulkDecryptPayloads = (payload: BulkEncryptedData) =>
+  payload?.reduce((acc, data) => {
+    if (!data.encryptedData) {
+      return acc
+    }
+
+    if (data.encryptedData.k !== 'ct') {
+      throw new Error('The encrypted data is not compliant with the EQL schema')
+    }
+
     const payload = {
-      ciphertext: encryptedPayload.c,
+      ciphertext: data.encryptedData.c,
     }
 
     acc.push(payload)
@@ -26,11 +32,13 @@ export const normalizeBulkDecryptPayloads = (
 export const normalizeBulkEncryptPayloads = (
   plaintexts: BulkEncryptPayload,
   column: string,
+  table: string,
 ) =>
   plaintexts.reduce((acc, plaintext) => {
     const payload = {
       plaintext: plaintext.plaintext,
       column,
+      table,
     }
 
     acc.push(payload)
@@ -38,18 +46,28 @@ export const normalizeBulkEncryptPayloads = (
   }, [] as InternalBulkEncryptPayload[])
 
 export async function normalizeBulkDecryptPayloadsWithLockContext(
-  encryptedPayloads: BulkEncryptedData,
+  payloads: BulkEncryptedData,
   lockContext: LockContext,
 ): Promise<Result<InternalBulkDecryptPayload[], ProtectError>> {
   const lockContextPayload = await getLockContextPayload(lockContext)
 
   if (lockContextPayload.failure) return lockContextPayload
-  if (!encryptedPayloads) return { data: [] }
+  if (!payloads) return { data: [] }
 
   return {
-    data: encryptedPayloads?.reduce((acc, encryptedPayload) => {
+    data: payloads.reduce((acc, data) => {
+      if (!data.encryptedData) {
+        return acc
+      }
+
+      if (data.encryptedData.k !== 'ct') {
+        throw new Error(
+          'The encrypted data is not compliant with the EQL schema',
+        )
+      }
+
       const payload = {
-        ciphertext: encryptedPayload.c,
+        ciphertext: data.encryptedData.c,
         ...lockContextPayload,
       }
 
@@ -62,6 +80,7 @@ export async function normalizeBulkDecryptPayloadsWithLockContext(
 export async function normalizeBulkEncryptPayloadsWithLockContext(
   plaintexts: BulkEncryptPayload,
   column: string,
+  table: string,
   lockContext: LockContext,
 ): Promise<Result<InternalBulkEncryptPayload[], ProtectError>> {
   const lockContextPayload = await getLockContextPayload(lockContext)
@@ -74,6 +93,7 @@ export async function normalizeBulkEncryptPayloadsWithLockContext(
       const payload = {
         plaintext: plaintext.plaintext,
         column,
+        table,
         ...lockContextPayload,
       }
 

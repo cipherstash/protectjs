@@ -1,4 +1,9 @@
 import { ProtectClient } from './ffi'
+import {
+  type ProtectTable,
+  type ProtectTableColumn,
+  buildEncryptConfig,
+} from './schema'
 
 export const ProtectErrorTypes = {
   ClientInitError: 'ClientInitError',
@@ -13,9 +18,20 @@ export interface ProtectError {
   message: string
 }
 
-export const protect = async (): Promise<ProtectClient> => {
+type AtLeastOneCsTable<T> = [T, ...T[]]
+export const protect = async (
+  ...tables: AtLeastOneCsTable<ProtectTable<ProtectTableColumn>>
+): Promise<ProtectClient> => {
+  if (!tables.length) {
+    throw new Error(
+      '[protect]: At least one csTable must be provided to initialize the protect client',
+    )
+  }
+
   const client = new ProtectClient()
-  const result = await client.init()
+  const encryptConfig = buildEncryptConfig(...tables)
+
+  const result = await client.init(encryptConfig)
 
   if (result.failure) {
     throw new Error(`[protect]: ${result.failure.message}`)
@@ -25,7 +41,6 @@ export const protect = async (): Promise<ProtectClient> => {
 }
 
 export type { Result } from '@byteslice/result'
-export type { ProtectClient } from './ffi'
-export * from './cs_plaintext_v1'
+export type { ProtectClient, EncryptedData } from './ffi'
+export { csTable, csColumn } from './schema'
 export * from './identify'
-export * from './eql'

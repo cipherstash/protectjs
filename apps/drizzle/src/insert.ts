@@ -1,9 +1,8 @@
 import 'dotenv/config'
 import { parseArgs } from 'node:util'
-import { getTableName } from 'drizzle-orm'
 import { db } from './db'
 import { users } from './db/schema'
-import { protectClient } from './protect'
+import { protectClient, users as protectUsers } from './protect'
 
 const getEmail = () => {
   const { values, positionals } = parseArgs({
@@ -27,8 +26,8 @@ if (!email) {
 }
 
 const encryptedResult = await protectClient.encrypt(email, {
-  column: users.email_encrypted.name,
-  table: getTableName(users),
+  column: protectUsers.email_encrypted,
+  table: protectUsers,
 })
 
 if (encryptedResult.failure) {
