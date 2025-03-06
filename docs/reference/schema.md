@@ -62,7 +62,7 @@ If you are looking to enable searchable encryption in a PostgreSQL database, you
 import { csTable, csColumn } from "@cipherstash/protect";
 
 export const protectedUsers = csTable("users", {
-  email: csColumn("email").freeTextSearch().equality().orderAndSort(),
+  email: csColumn("email").freeTextSearch().equality().orderAndRange(),
 });
 ```
 
@@ -72,13 +72,13 @@ The following index options are available for your schema:
 
 | **Method** | **Description** | **SQL equivalent** |
 | ----------- | --------------- | ------------------ |
-| equality   | Enables a unique index for equality queries. | `WHERE email = 'example@example.com'` |
+| equality   | Enables a exact index for equality queries. | `WHERE email = 'example@example.com'` |
 | freeTextSearch   | Enables a match index for free text queries. | `WHERE description LIKE '%example%'` |
-| orderAndSort   | Enables an sorting and range queries index. | `ORDER BY price ASC` |
+| orderAndRange   | Enables an sorting and range queries index. | `ORDER BY price ASC` |
 
 You can chain these methods to your column to configure them in any combination.
 
-## Initializing the EQL client
+## Initializing the Protect client
 
 You will use your defined schemas to initialize the EQL client.
 Simply import your schemas and pass them to the `protect` function.

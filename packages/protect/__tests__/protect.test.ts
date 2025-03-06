@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest'
 import { LockContext, protect, csTable, csColumn } from '../src'
 
 const users = csTable('users', {
-  email: csColumn('email').freeTextSearch().equality().orderAndSort(),
+  email: csColumn('email').freeTextSearch().equality().orderAndRange(),
 })
 
 describe('encryption and decryption', () => {
@@ -47,7 +47,6 @@ describe('encryption and decryption', () => {
   }, 30000)
 })
 
-// TODO: Still have some issues with bulk encryption
 describe('bulk encryption', () => {
   it('should bulk encrypt and decrypt a payload', async () => {
     const protectClient = await protect(users)

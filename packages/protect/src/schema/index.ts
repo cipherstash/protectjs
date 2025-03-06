@@ -31,7 +31,7 @@ const tokenizerSchema = z
       token_length: z.number(),
     }),
   ])
-  .default({ kind: 'standard' })
+  .default({ kind: 'ngram', token_length: 3 })
   .optional()
 
 const oreIndexOptsSchema = z.object({})
@@ -120,13 +120,13 @@ export class ProtectColumn {
   /**
    * Enable ORE indexing (Order-Revealing Encryption).
    */
-  orderAndSort() {
+  orderAndRange() {
     this.indexesValue.ore = {}
     return this
   }
 
   /**
-   * Enable a Unique index. Optionally pass tokenFilters.
+   * Enable an Exact index. Optionally pass tokenFilters.
    */
   equality(tokenFilters?: TokenFilter[]) {
     this.indexesValue.unique = {
@@ -156,9 +156,8 @@ export class ProtectColumn {
 
   /**
    * Enable a STE Vec index, requires a prefix.
-   * TODO: Determine a better way to describe ste_vec
    */
-  steVec(prefix: string) {
+  josn(prefix: string) {
     this.indexesValue.ste_vec = { prefix }
     return this
   }

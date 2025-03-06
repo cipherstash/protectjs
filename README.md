@@ -179,13 +179,13 @@ If you are looking to enable searchable encryption in a PostgreSQL database, you
 import { csTable, csColumn } from '@cipherstash/protect'
 
 export const users = csTable('users', {
-  email: csColumn('email').freeTextSearch().equality().orderAndSort(),
+  email: csColumn('email').freeTextSearch().equality().orderAndRange(),
 })
 ```
 
 Read more about [defining your schema here](./docs/reference/schema.md).
 
-### Initializing the EQL client
+### Initializing the Protect client
 
 To initialize the protect client, import the `protect` function and initialize a client with your defined schema.
 
@@ -296,7 +296,7 @@ CREATE TABLE users (
 );
 ```
 
-**Searchable encryption**
+#### Searchable encryption in PostgreSQL
 
 To enable searchable encryption in PostgreSQL, you need to [install the EQL custom types and functions](https://github.com/cipherstash/encrypt-query-language?tab=readme-ov-file#installation).
 
@@ -324,7 +324,7 @@ CREATE TABLE users (
 ## Identity-aware encryption
 
 > [!IMPORTANT]
-> Identity-aware encryption is only supported if you are using [Clerk](https://clerk.com/) as your identity provider.
+> Right now identity-aware encryption is only supported if you are using [Clerk](https://clerk.com/) as your identity provider.
 > Read more about [lock contexts with Clerk and Next.js](./docs/how-to/lock-contexts-with-clerk.md).
 
 Protect.js can add an additional layer of protection to your data by requiring a valid JWT to perform a decryption.
