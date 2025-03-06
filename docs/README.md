@@ -1,20 +1,21 @@
 # Protect.js Documentation
 
-The main documentation for Protect.js is located in the [main README](https://github.com/cipherstash/protectjs).
+The documentation for Protect.js is organized into the following sections:
 
-## Docs table of contents
+- [Getting started](../README.md)
 
-### Setup
+## Concepts
 
-- [Configuration and production deployment](configuration.md)
+- [Searchable encryption](./concepts/searchable-encryption.md)
 
-### Usage
+## Reference
 
-- [Bulk encryption and decryption examples and best practices](bulk-encryption-and-decryption.md)
-- [Lock contexts with Clerk and Next.js](lock-context.md)
-- [Schema definition](schema.md)
+- [Configuration and production deployment](./reference/configuration.md)
+- [Bulk encryption and decryption](./reference/bulk-encryption-decryption.md)
+- [Protect.js schemas](./reference/schema.md)
 
-### How-to guides
+## How-to guides
 
-- [Next.js build notes](nextjs.md)
-- [SST and serverless function notes](sst.md)
+- [Lock contexts with Clerk and Next.js](./how-to/lock-contexts-with-clerk.md)
+- [Next.js build notes](./how-to/nextjs-external-packages.md)
+- [SST and serverless function notes](./how-to/sst-external-packages.md)

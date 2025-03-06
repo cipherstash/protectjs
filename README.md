@@ -23,7 +23,7 @@ The encrypted data is structured as an [EQL](https://github.com/cipherstash/encr
 
 > [!IMPORTANT]
 > Searching, sorting, and filtering on encrypted data is only supported in PostgreSQL at the moment.
-> Read more about [searching encrypted data](./docs/searchable-encryption.md).
+> Read more about [searching encrypted data](./docs/concepts/searchable-encryption.md).
 
 ## Table of contents
 
@@ -133,7 +133,7 @@ At the end of `stash setup`, you will have two files in your project:
 > `cipherstash.secret.toml` should not be committed to git, because it contains sensitive credentials.
 > The `stash setup` command will attempt to append to your `.gitignore` file with the `cipherstash.secret.toml` file.
 
-You can read more about [configuration via toml file or environment variables here](./docs/configuration.md).
+You can read more about [configuration via toml file or environment variables here](./docs/reference/configuration.md).
 
 ### Basic file structure
 
@@ -183,7 +183,7 @@ export const users = csTable('users', {
 })
 ```
 
-Read more about [defining your schema here](./docs/schema.md).
+Read more about [defining your schema here](./docs/reference/schema.md).
 
 ### Initializing the EQL client
 
@@ -460,7 +460,7 @@ encryptedValues.forEach((result) => {
 })
 ```
 
-Learn more about [bulk encryption](./docs/bulk-encryption-decryption.md#bulk-encrypting-data)
+Learn more about [bulk encryption](./docs/reference/bulk-encryption-decryption.md#bulk-encrypting-data)
 
 ### Bulk decrypting data
 
@@ -511,7 +511,7 @@ decryptedValues.forEach((result) => {
 })
 ```
 
-Learn more about [bulk decryption](./docs/bulk-encryption-decryption.md#bulk-decrypting-data)
+Learn more about [bulk decryption](./docs/reference/bulk-encryption-decryption.md#bulk-decrypting-data)
 
 ## Supported data types
 
@@ -522,7 +522,7 @@ Until support for other data types are available, you can express interest in th
 
 ## Searchable encryption
 
-Read more about [searching encrypted data](./docs/searchable-encryption.md) in the docs.
+Read more about [searching encrypted data](./docs/concepts/searchable-encryption.md) in the docs.
 
 ## Logging
 
@@ -544,7 +544,7 @@ PROTECT_LOG_LEVEL=error  # Enable error logging
 Protect.js is built on top of the CipherStash Client Rust SDK which is embedded with the `@cipherstash/protect-ffi` package.
 The `@cipherstash/protect-ffi` source code is available on [GitHub](https://github.com/cipherstash/protectjs-ffi).
 
-Read more about configuring the CipherStash client in the [configuration docs](./docs/configuration.md).
+Read more about configuring the CipherStash client in the [configuration docs](./docs/reference/configuration.md).
 
 ## Builds and bundling
 
@@ -552,8 +552,8 @@ Read more about configuring the CipherStash client in the [configuration docs](.
 
 Here are a few resources to help based on your tool set:
 
-- [Required Next.js configuration](./docs/nextjs.md).
-- [SST and AWS serverless functions](./docs/sst.md).
+- [Required Next.js configuration](./docs/how-to/nextjs-external-packages.md).
+- [SST and AWS serverless functions](./docs/how-to/sst-external-packages.md).
 
 ## Contributing
 

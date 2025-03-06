@@ -47,13 +47,13 @@ const csEq: BinaryOperator = (left: SQLWrapper, right: unknown): SQL => {
   return sql`cs_unique_v1(${left}) = cs_unique_v1(${bindIfParam(right, left)})`
 }
 
-// const csGt: BinaryOperator = (left: SQLWrapper, right: unknown): SQL => {
-// 	return sql`cs_ore_64_8_v1(${left}) > cs_ore_64_8_v1(${bindIfParam(right, left)})`;
-// };
+const csGt: BinaryOperator = (left: SQLWrapper, right: unknown): SQL => {
+  return sql`cs_ore_64_8_v1(${left}) > cs_ore_64_8_v1(${bindIfParam(right, left)})`
+}
 
-// const csLt: BinaryOperator = (left: SQLWrapper, right: unknown): SQL => {
-// 	return sql`cs_ore_64_8_v1(${left}) < cs_ore_64_8_v1(${bindIfParam(right, left)})`;
-// };
+const csLt: BinaryOperator = (left: SQLWrapper, right: unknown): SQL => {
+  return sql`cs_ore_64_8_v1(${left}) < cs_ore_64_8_v1(${bindIfParam(right, left)})`
+}
 
 const csMatch: BinaryOperator = (left: SQLWrapper, right: unknown): SQL => {
   return sql`cs_match_v1(${left}) @> cs_match_v1(${bindIfParam(right, left)})`
