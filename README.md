@@ -323,6 +323,10 @@ CREATE TABLE users (
 
 ## Identity-aware encryption
 
+> [!IMPORTANT]
+> Identity-aware encryption is only supported if you are using [Clerk](https://clerk.com/) as your identity provider.
+> Read more about [lock contexts with Clerk and Next.js](./docs/how-to/lock-contexts-with-clerk.md).
+
 Protect.js can add an additional layer of protection to your data by requiring a valid JWT to perform a decryption.
 
 This ensures that only the user who encrypted data is able to decrypt it.
