@@ -69,3 +69,7 @@ pnpm start
 ```
 
 The application will log the plaintext to the console that has been encrypted using the CipherStash, decrypted, and logged the original plaintext.
+
+## Next steps
+
+Check out the [Protect.js + Next.js + Clerk example app](../nextjs-clerk) to see how to add end-user identity as an extra control when encrypting data.
