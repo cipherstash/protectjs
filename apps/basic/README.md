@@ -21,7 +21,7 @@ cd protectjs
 pnpm build
 
 # Install deps for basic example
-cd protectjs/apps/basic
+cd apps/basic
 pnpm install
 ```
 
