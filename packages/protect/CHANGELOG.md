@@ -1,5 +1,11 @@
 # @cipherstash/jseql
 
+## 6.2.0
+
+### Minor Changes
+
+- fe4b443: Added symbolic link for protect readme.
+
 ## 6.1.0
 
 ### Minor Changes
