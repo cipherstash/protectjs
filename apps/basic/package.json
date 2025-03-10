@@ -2,7 +2,7 @@
   "name": "@cipherstash/basic-example",
   "private": true,
   "version": "1.0.4",
-  "main": "index.mjs",
+  "type": "module",
   "scripts": {
     "start": "tsx index.ts"
   },
