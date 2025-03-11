@@ -35,10 +35,10 @@
 		"@types/node": "^20",
 		"@types/react": "^19",
 		"@types/react-dom": "^19",
-		"drizzle-kit": "^0.30.1",
+		"drizzle-kit": "^0.30.5",
 		"postcss": "^8",
 		"tailwindcss": "^3.4.1",
-		"tsx": "^4.19.2",
-		"typescript": "^5"
+		"tsx": "catalog:repo",
+		"typescript": "catalog:repo"
 	}
 }

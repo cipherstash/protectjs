@@ -38,12 +38,12 @@
 	"devDependencies": {
 		"@clerk/nextjs": "^6.9.7",
 		"dotenv": "^16.4.7",
-		"tsup": "^8.3.0",
-		"vitest": "^2.1.9"
+		"tsup": "catalog:repo",
+		"typescript": "catalog:repo",
+		"vitest": "catalog:repo"
 	},
 	"peerDependencies": {
-		"next": "^14 || ^15",
-		"typescript": "^5.0.0"
+		"next": "^14 || ^15"
 	},
 	"publishConfig": {
 		"access": "public"
