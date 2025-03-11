@@ -4,6 +4,7 @@ import {
   encrypt as ffiEncrypt,
   encryptBulk as ffiEncryptBulk,
   newClient,
+  type EncryptPayload as FFIEncryptPayload,
 } from '@cipherstash/protect-ffi'
 import { withResult, type Result } from '@byteslice/result'
 import { type ProtectError, ProtectErrorTypes } from '..'
@@ -119,12 +120,11 @@ class EncryptOperation
           return null
         }
 
-        const val = await ffiEncrypt(
-          this.client,
-          this.plaintext,
-          this.column.getName(),
-          this.table.tableName,
-        )
+        const val = await ffiEncrypt(this.client, {
+          plaintext: this.plaintext,
+          column: this.column.getName(),
+          table: this.table.tableName,
+        })
 
         return JSON.parse(val)
       },
@@ -200,10 +200,12 @@ class EncryptOperationWithLockContext
 
         const val = await ffiEncrypt(
           client,
-          plaintext,
-          column.getName(),
-          table.tableName,
-          context.data.context,
+          {
+            plaintext: plaintext,
+            column: column.getName(),
+            table: table.tableName,
+            lockContext: context.data.context,
+          },
           context.data.ctsToken,
         )
 

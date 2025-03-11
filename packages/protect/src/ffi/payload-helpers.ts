@@ -2,7 +2,7 @@ import type { Result } from '@byteslice/result'
 import type { ProtectError } from '..'
 import type {
   BulkDecryptPayload as InternalBulkDecryptPayload,
-  BulkEncryptPayload as InternalBulkEncryptPayload,
+  EncryptPayload as InternalBulkEncryptPayload,
 } from '@cipherstash/protect-ffi'
 
 import type { LockContext } from '../identify'
