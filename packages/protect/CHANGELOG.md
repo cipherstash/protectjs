@@ -1,5 +1,11 @@
 # @cipherstash/jseql
 
+## 6.3.0
+
+### Minor Changes
+
+- a564f21: Bumped versions of dependencies to address CWE-346.
+
 ## 6.2.0
 
 ### Minor Changes
