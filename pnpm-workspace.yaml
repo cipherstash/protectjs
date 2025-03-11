@@ -1,3 +1,11 @@
 packages:
   - 'packages/*'
   - 'apps/*'
+
+catalogs:
+  # Can be referened as catalog:repo
+  repo:
+    tsup: 8.4.0
+    typescript: 5.6.3
+    tsx: 4.19.3
+    vitest: 3.0.8

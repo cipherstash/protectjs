@@ -12,8 +12,10 @@
   "description": "",
   "dependencies": {
     "@cipherstash/protect": "workspace:*",
-    "typescript": "^5.0.0",
-    "tsx": "^4.19.2",
     "dotenv": "^16.4.7"
+  },
+  "devDependencies": {
+    "tsx": "catalog:repo",
+    "typescript": "catalog:repo"
   }
 }
