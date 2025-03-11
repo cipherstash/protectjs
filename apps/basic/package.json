@@ -1,7 +1,7 @@
 {
   "name": "@cipherstash/basic-example",
   "private": true,
-  "version": "1.0.5",
+  "version": "1.0.6",
   "type": "module",
   "scripts": {
     "start": "tsx index.ts"

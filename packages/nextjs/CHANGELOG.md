@@ -1,5 +1,11 @@
 # @cipherstash/nextjs
 
+## 3.1.0
+
+### Minor Changes
+
+- a564f21: Bumped versions of dependencies to address CWE-346.
+
 ## 3.0.0
 
 ### Major Changes
