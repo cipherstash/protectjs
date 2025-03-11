@@ -37,7 +37,7 @@
 		"dev": "tsup --watch",
 		"eql:update": "tsx ./generateEqlSchema.ts",
 		"eql:generate": "json2ts ./eql.schema.json --output ./src/eql.schema.ts",
-		"test": "vitest run",
+		"test": "tsc --noEmit && vitest run",
 		"release": "tsup"
 	},
 	"devDependencies": {
