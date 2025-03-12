@@ -45,7 +45,6 @@ The encrypted data is structured as an [EQL](https://github.com/cipherstash/encr
 ## Table of contents
 
 - [Features](#features)
-- [Example applications](#example-applications)
 - [Installing Protect.js](#installing-protectjs)
 - [Getting started](#getting-started)
 - [Identity-aware encryption](#identity-aware-encryption)
@@ -54,6 +53,7 @@ The encrypted data is structured as an [EQL](https://github.com/cipherstash/encr
 - [Searchable encryption](#searchable-encryption)
 - [Logging](#logging)
 - [CipherStash Client](#cipherstash-client)
+- [Example applications](#example-applications)
 - [Builds and bundling](#builds-and-bundling)
 - [Contributing](#contributing)
 - [License](#license)
@@ -79,18 +79,6 @@ This enables every encrypted value, in every column, in every row in your databa
 - **Trusted data access**: make sure only your end-users can access their sensitive data stored in your product.
 - **Meet compliance requirements faster:** meet and exceed the data encryption requirements of SOC2 and ISO27001.
 - **Reduce the blast radius of data breaches:** limit the impact of exploited vulnerabilities to only the data your end-users can decrypt.
-
-## Example applications
-
-New to Protect.js?
-Check out the example applications:
-
-- [Basic example](/apps/basic) demonstrates how to perform encryption operations
-- [Drizzle example](/apps/drizzle) demonstrates how to use Protect.js with an ORM
-- [Next.js and lock contexts example using Clerk](/apps/nextjs-clerk) demonstrates how to protect data with identity-aware encryption
-
-`@cipherstash/protect` can be used with most ORMs.
-If you're interested in using `@cipherstash/protect` with a specific ORM, please [create an issue](https://github.com/cipherstash/protectjs/issues/new).
 
 ## Installing Protect.js
 
@@ -566,6 +554,18 @@ Protect.js is built on top of the CipherStash Client Rust SDK which is embedded 
 The `@cipherstash/protect-ffi` source code is available on [GitHub](https://github.com/cipherstash/protectjs-ffi).
 
 Read more about configuring the CipherStash client in the [configuration docs](./docs/reference/configuration.md).
+
+## Example applications
+
+New to Protect.js?
+Check out the example applications:
+
+- [Basic example](/apps/basic) demonstrates how to perform encryption operations
+- [Drizzle example](/apps/drizzle) demonstrates how to use Protect.js with an ORM
+- [Next.js and lock contexts example using Clerk](/apps/nextjs-clerk) demonstrates how to protect data with identity-aware encryption
+
+`@cipherstash/protect` can be used with most ORMs.
+If you're interested in using `@cipherstash/protect` with a specific ORM, please [create an issue](https://github.com/cipherstash/protectjs/issues/new).
 
 ## Builds and bundling
 
