@@ -8,20 +8,20 @@
   <br/>
   <div align="center" style="display: flex; justify-content: center; gap: 1rem;">
     <a href="https://cipherstash.com">
-      <img 
-        src="https://raw.githubusercontent.com/cipherstash/meta/refs/heads/main/csbadge.svg" 
-        alt="Built by CipherStash" 
+      <img
+        src="https://raw.githubusercontent.com/cipherstash/meta/refs/heads/main/csbadge.svg"
+        alt="Built by CipherStash"
       />
     </a>
     <a href="https://www.npmjs.com/package/@cipherstash/protect">
       <img
-        alt="NPM version" 
+        alt="NPM version"
         src="https://img.shields.io/npm/v/@cipherstash/protect.svg?style=for-the-badge&labelColor=000000"
       />
     </a>
     <a href="https://github.com/cipherstash/protectjs/blob/main/LICENSE.md">
       <img
-        alt="License" 
+        alt="License"
         src="https://img.shields.io/npm/l/@cipherstash/protect.svg?style=for-the-badge&labelColor=000000"
       />
     </a>
@@ -118,11 +118,11 @@ Lastly, install the CipherStash CLI:
 - On Linux, download the binary for your platform, and put it on your `PATH`:
     - [Linux ARM64](https://github.com/cipherstash/cli-releases/releases/latest/download/stash-aarch64-unknown-linux-gnu)
     - [Linux x86_64](https://github.com/cipherstash/cli-releases/releases/latest/download/stash-x86_64-unknown-linux-gnu)
- 
+
 ### Opt-out of bundling
 
 Protect.js uses Node.js specific features and requires the use of the native Node.js `require`.
-You need to opt-out of bundling for tools like [Webpack](https://webpack.js.org/configuration/externals/), [esbuild](https://webpack.js.org/configuration/externals/), or [Next.js](https://nextjs.org/docs/app/api-reference/config/next-config-js/serverExternalPackages). 
+You need to opt-out of bundling for tools like [Webpack](https://webpack.js.org/configuration/externals/), [esbuild](https://webpack.js.org/configuration/externals/), or [Next.js](https://nextjs.org/docs/app/api-reference/config/next-config-js/serverExternalPackages).
 
 Read more about bundling [here](#builds-and-bundling).
 
@@ -378,7 +378,7 @@ To identify the user, call the `identify` method on the lock context object, and
 ```typescript
 const identifyResult = await lc.identify(jwt)
 
-// The identify method returns the same Result pattern as the encrypt and decrypt methods. 
+// The identify method returns the same Result pattern as the encrypt and decrypt methods.
 if (identifyResult.failure) {
   // Hanlde the failure
 }
