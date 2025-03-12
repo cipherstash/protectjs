@@ -31,8 +31,6 @@
 
 <!-- start -->
 
-## What's Protect.js?
-
 Protect.js is a TypeScript package for encrypting and decrypting data.
 Encryption operations happen directly in your app, and the ciphertext is stored in your database.
 
@@ -50,7 +48,7 @@ The encrypted data is structured as an [EQL](https://github.com/cipherstash/encr
 - [Example applications](#example-applications)
 - [Installing Protect.js](#installing-protectjs)
 - [Getting started](#getting-started)
-- [Identity-aware encryption](#identity-aware-decryption)
+- [Identity-aware encryption](#identity-aware-encryption)
 - [Bulk encryption and decryption](#bulk-encryption-and-decryption)
 - [Supported data types](#supported-data-types)
 - [Searchable encryption](#searchable-encryption)
@@ -60,7 +58,7 @@ The encrypted data is structured as an [EQL](https://github.com/cipherstash/encr
 - [Contributing](#contributing)
 - [License](#license)
 
-For more specific documentation, please refer to the [docs](https://github.com/cipherstash/protectjs/tree/main/docs).
+For more specific documentation, refer to the [docs](https://github.com/cipherstash/protectjs/tree/main/docs).
 
 ## Features
 
@@ -79,7 +77,7 @@ This enables every encrypted value, in every column, in every row in your databa
 
 **Use cases:**
 - **Trusted data access**: make sure only your end-users can access their sensitive data stored in your product.
-- **Meet compliance requirements faster:** achieve and exceed the data encryption requirements of SOC2 and ISO27001.
+- **Meet compliance requirements faster:** meet and exceed the data encryption requirements of SOC2 and ISO27001.
 - **Reduce the blast radius of data breaches:** limit the impact of exploited vulnerabilities to only the data your end-users can decrypt.
 
 ## Example applications
@@ -141,7 +139,7 @@ To set up all the configuration and credentials required for Protect.js:
 stash setup
 ```
 
-If you have not already signed up for a CipherStash account, this will prompt you to do so along the way.
+If you haven't already signed up for a CipherStash account, this will prompt you to do so along the way.
 
 At the end of `stash setup`, you will have two files in your project:
 
@@ -149,7 +147,7 @@ At the end of `stash setup`, you will have two files in your project:
 - `cipherstash.secret.toml`: which contains the credentials for Protect.js
 
 > [!WARNING]
-> `cipherstash.secret.toml` should not be committed to git, because it contains sensitive credentials.
+> Don't commit `cipherstash.secret.toml` to git; it contains sensitive credentials.
 > The `stash setup` command will attempt to append to your `.gitignore` file with the `cipherstash.secret.toml` file.
 
 You can read more about [configuration via toml file or environment variables here](./docs/reference/configuration.md).
