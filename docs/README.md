@@ -2,7 +2,7 @@
 
 The documentation for Protect.js is organized into the following sections:
 
-- [Getting started](../README.md)
+- [Getting started](./getting-started.md)
 
 ## Concepts
 

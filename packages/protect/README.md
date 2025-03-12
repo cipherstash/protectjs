@@ -8,20 +8,20 @@
   <br/>
   <div align="center" style="display: flex; justify-content: center; gap: 1rem;">
     <a href="https://cipherstash.com">
-      <img 
-        src="https://raw.githubusercontent.com/cipherstash/meta/refs/heads/main/csbadge.svg" 
-        alt="Built by CipherStash" 
+      <img
+        src="https://raw.githubusercontent.com/cipherstash/meta/refs/heads/main/csbadge.svg"
+        alt="Built by CipherStash"
       />
     </a>
     <a href="https://www.npmjs.com/package/@cipherstash/protect">
       <img
-        alt="NPM version" 
+        alt="NPM version"
         src="https://img.shields.io/npm/v/@cipherstash/protect.svg?style=for-the-badge&labelColor=000000"
       />
     </a>
     <a href="https://github.com/cipherstash/protectjs/blob/main/LICENSE.md">
       <img
-        alt="License" 
+        alt="License"
         src="https://img.shields.io/npm/l/@cipherstash/protect.svg?style=for-the-badge&labelColor=000000"
       />
     </a>
@@ -45,7 +45,6 @@ The encrypted data is structured as an [EQL](https://github.com/cipherstash/encr
 ## Table of contents
 
 - [Features](#features)
-- [Example applications](#example-applications)
 - [Installing Protect.js](#installing-protectjs)
 - [Getting started](#getting-started)
 - [Identity-aware encryption](#identity-aware-encryption)
@@ -54,6 +53,7 @@ The encrypted data is structured as an [EQL](https://github.com/cipherstash/encr
 - [Searchable encryption](#searchable-encryption)
 - [Logging](#logging)
 - [CipherStash Client](#cipherstash-client)
+- [Example applications](#example-applications)
 - [Builds and bundling](#builds-and-bundling)
 - [Contributing](#contributing)
 - [License](#license)
@@ -79,18 +79,6 @@ This enables every encrypted value, in every column, in every row in your databa
 - **Trusted data access**: make sure only your end-users can access their sensitive data stored in your product.
 - **Meet compliance requirements faster:** meet and exceed the data encryption requirements of SOC2 and ISO27001.
 - **Reduce the blast radius of data breaches:** limit the impact of exploited vulnerabilities to only the data your end-users can decrypt.
-
-## Example applications
-
-New to Protect.js?
-Check out the example applications:
-
-- [Basic example](/apps/basic) demonstrates how to perform encryption operations
-- [Drizzle example](/apps/drizzle) demonstrates how to use Protect.js with an ORM
-- [Next.js and lock contexts example using Clerk](/apps/nextjs-clerk) demonstrates how to protect data with identity-aware encryption
-
-`@cipherstash/protect` can be used with most ORMs.
-If you're interested in using `@cipherstash/protect` with a specific ORM, please [create an issue](https://github.com/cipherstash/protectjs/issues/new).
 
 ## Installing Protect.js
 
@@ -118,20 +106,26 @@ Lastly, install the CipherStash CLI:
 - On Linux, download the binary for your platform, and put it on your `PATH`:
     - [Linux ARM64](https://github.com/cipherstash/cli-releases/releases/latest/download/stash-aarch64-unknown-linux-gnu)
     - [Linux x86_64](https://github.com/cipherstash/cli-releases/releases/latest/download/stash-x86_64-unknown-linux-gnu)
- 
-### Opt-out of bundling
 
-Protect.js uses Node.js specific features and requires the use of the native Node.js `require`.
-You need to opt-out of bundling for tools like [Webpack](https://webpack.js.org/configuration/externals/), [esbuild](https://webpack.js.org/configuration/externals/), or [Next.js](https://nextjs.org/docs/app/api-reference/config/next-config-js/serverExternalPackages). 
-
-Read more about bundling [here](#builds-and-bundling).
+> [!NOTE]
+> **You need to opt-out of bundling when using Protect.js.**
+>
+> Protect.js uses Node.js specific features and requires the use of the [native Node.js `require`](https://nodejs.org/api/modules.html#requireid).
+>
+> You need to opt-out of bundling for tools like [Webpack](https://webpack.js.org/configuration/externals/), [esbuild](https://webpack.js.org/configuration/externals/), or [Next.js](https://nextjs.org/docs/app/api-reference/config/next-config-js/serverExternalPackages).
+>
+> Read more about [building and bundling with Protect.js](#builds-and-bundling).
 
 ## Getting started
+
+If you are following this getting started guide with an existing app, you can skip to [the next step](#configuration).
+
+If you are following this getting started guide with a clean slate, check out the dedicated [getting started guide](./docs/getting-started.md)
 
 ### Configuration
 
 > [!IMPORTANT]
-> Make sure you have [installed the CipherStash CLI](#installation) before following these steps.
+> Make sure you have [installed the CipherStash CLI](#installing-protectjs) before following these steps.
 
 To set up all the configuration and credentials required for Protect.js:
 
@@ -150,11 +144,12 @@ At the end of `stash setup`, you will have two files in your project:
 > Don't commit `cipherstash.secret.toml` to git; it contains sensitive credentials.
 > The `stash setup` command will attempt to append to your `.gitignore` file with the `cipherstash.secret.toml` file.
 
-You can read more about [configuration via toml file or environment variables here](./docs/reference/configuration.md).
+Read more about [configuration via TOML file or environment variables](./docs/reference/configuration.md).
 
 ### Basic file structure
 
-This is the basic file structure of the project. In the `src/protect` directory, we have table definition in `schema.ts` and the protect client in `index.ts`.
+This is the basic file structure of the project.
+In the `src/protect/` directory, we have the table definition in `schema.ts` and the protect client in `index.ts`.
 
 ```
 📦 <project root>
@@ -170,11 +165,11 @@ This is the basic file structure of the project. In the `src/protect` directory,
  └ 📜 tsconfig.json
 ```
 
-### Defining your schema
+### Define your schema
 
 Protect.js uses a schema to define the tables and columns that you want to encrypt and decrypt.
 
-In the `src/protect/schema.ts` file, you can define your tables and columns.
+Define your tables and columns by adding this to `src/protect/schema.ts`:
 
 ```ts
 import { csTable, csColumn } from '@cipherstash/protect'
@@ -188,9 +183,9 @@ export const orders = csTable('orders', {
 })
 ```
 
-**Searchable encryption**
+**Searchable encryption:**
 
-If you are looking to enable searchable encryption in a PostgreSQL database, you must declaratively enable the indexes in your schema.
+If you want to search encrypted data in your PostgreSQL database, you must declare the indexes in schema in `src/protect/schema.ts`:
 
 ```ts
 import { csTable, csColumn } from '@cipherstash/protect'
@@ -198,15 +193,17 @@ import { csTable, csColumn } from '@cipherstash/protect'
 export const users = csTable('users', {
   email: csColumn('email').freeTextSearch().equality().orderAndRange(),
 })
+
+export const orders = csTable('orders', {
+  address: csColumn('address'),
+})
 ```
 
-Read more about [defining your schema here](./docs/reference/schema.md).
+Read more about [defining your schema](./docs/reference/schema.md).
 
-### Initializing the Protect client
+### Initialize the Protect client
 
-To initialize the protect client, import the `protect` function and initialize a client with your defined schema.
-
-In the `src/protect/index.ts` file:
+Import the `protect` function and initialize a client with your defined schema, by adding this to `src/protect/index.ts`:
 
 ```ts
 import { protect } from '@cipherstash/protect'
@@ -216,12 +213,14 @@ import { users } from './schema'
 export const protectClient = await protect(users, orders)
 ```
 
-The `protect` function requires at least one `csTable` to be passed in.
+The `protect` function requires at least one `csTable` be provided.
 
-### Encrypting data
+### Encrypt data
 
-Use the `encrypt` function to encrypt data.
+Protect.js provides the `encrypt` function on `protectClient` to encrypt data.
 `encrypt` takes a plaintext string, and an object with the table and column as parameters.
+
+Start encrypting data by adding this to `src/index.ts`:
 
 ```typescript
 import { users } from './protect/schema'
@@ -234,9 +233,11 @@ const encryptResult = await protectClient.encrypt('secret@squirrel.example', {
 
 if (encryptResult.failure) {
   // Handle the failure
+  console.log("error when encrypting:", encryptResult.failure.type, encryptResult.failure.message)
 }
 
 const ciphertext = encryptResult.data
+console.log("ciphertext:", ciphertext)
 ```
 
 The `encrypt` function will return a `Result` object with either a `data` key, or a `failure` key.
@@ -262,10 +263,12 @@ The `encryptResult` will return one of the following:
 > [!TIP]
 > Get significantly better encryption performance by using the [`bulkEncrypt` function](#bulk-encrypting-data) for large payloads.
 
-### Decrypting data
+### Decrypt data
 
-Use the `decrypt` function to decrypt data.
+Protect.js provides the `decrypt` function on `protectClient` to decrypt data.
 `decrypt` takes an encrypted data object as a parameter.
+
+Start decrypting data by adding this to `src/index.ts`:
 
 ```typescript
 import { protectClient } from './protect'
@@ -274,9 +277,11 @@ const decryptResult = await protectClient.decrypt(ciphertext)
 
 if (decryptResult.failure) {
   // Handle the failure
+  console.log("error when decrypting:", decryptResult.failure.type, decryptResult.failure.message)
 }
 
 const plaintext = decryptResult.data
+console.log("plaintext:", plaintext)
 ```
 
 The `decrypt` function returns a `Result` object with either a `data` key, or a `failure` key.
@@ -300,7 +305,7 @@ The `decryptResult` will return one of the following:
 > [!TIP]
 > Get significantly better decryption performance by using the [`bulkDecrypt` function](#bulk-decrypting-data) for large payloads.
 
-### Storing encrypted data in a database
+### Store encrypted data in a database
 
 Encrypted data can be stored in any database that supports JSONB, noting that searchable encryption is only supported in PostgreSQL at the moment.
 
@@ -378,7 +383,7 @@ To identify the user, call the `identify` method on the lock context object, and
 ```typescript
 const identifyResult = await lc.identify(jwt)
 
-// The identify method returns the same Result pattern as the encrypt and decrypt methods. 
+// The identify method returns the same Result pattern as the encrypt and decrypt methods.
 if (identifyResult.failure) {
   // Hanlde the failure
 }
@@ -566,6 +571,18 @@ Protect.js is built on top of the CipherStash Client Rust SDK which is embedded 
 The `@cipherstash/protect-ffi` source code is available on [GitHub](https://github.com/cipherstash/protectjs-ffi).
 
 Read more about configuring the CipherStash client in the [configuration docs](./docs/reference/configuration.md).
+
+## Example applications
+
+Looking for examples of how to use Protect.js?
+Check out the [example applications](./apps):
+
+- [Basic example](/apps/basic) demonstrates how to perform encryption operations
+- [Drizzle example](/apps/drizzle) demonstrates how to use Protect.js with an ORM
+- [Next.js and lock contexts example using Clerk](/apps/nextjs-clerk) demonstrates how to protect data with identity-aware encryption
+
+`@cipherstash/protect` can be used with most ORMs.
+If you're interested in using `@cipherstash/protect` with a specific ORM, please [create an issue](https://github.com/cipherstash/protectjs/issues/new).
 
 ## Builds and bundling
 
