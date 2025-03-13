@@ -210,7 +210,7 @@ import { protect } from '@cipherstash/protect'
 import { users } from './schema'
 
 // Pass all your tables to the protect function to initialize the client
-export const protectClient = await protect(users, orders)
+export const protectClient = await protect(users)
 ```
 
 The `protect` function requires at least one `csTable` be provided.
