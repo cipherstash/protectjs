@@ -2,8 +2,8 @@
 
 This getting started guide steps you through:
 
-- Installing and configuring Protect.js in a standalone project
-- Encrypting, searching, and decrypting data in a PostgreSQL database
+1. Installing and configuring Protect.js in a standalone project
+2. Encrypting, searching, and decrypting data in a PostgreSQL database
 
 > [!IMPORTANT]
 > **Prerequisites:** Before you start you need to have this software installed:
@@ -13,8 +13,8 @@ This getting started guide steps you through:
 
 ### Step 0: Basic file structure
 
-This is the basic file structure of the standalone project for this getting started guide.
-In the `src/protect/` directory, we have table definition in `schema.ts` and the Protect.js client in `index.ts`.
+The following is the basic file structure of the standalone project for this getting started guide.
+In the `src/protect/` directory, we have the table definition in `schema.ts` and the Protect.js client in `index.ts`.
 
 ```
 📦 <project root>
@@ -30,9 +30,9 @@ In the `src/protect/` directory, we have table definition in `schema.ts` and the
  └ 📜 tsconfig.json
 ```
 
-If you are following this getting started guide with an existing app, you can skip to [the next step](#step-1-install-protectjs).
+If you're following this getting started guide with an existing app, skip to [the next step](#step-1-install-protectjs).
 
-If you are following this getting started guide with a clean slate, create a basic structure by running:
+If you're following this getting started guide with a clean slate, create a basic structure by running:
 
 ```bash
 mkdir -p protect-example/src/protect
@@ -69,15 +69,15 @@ Lastly, install the CipherStash CLI:
     - [Linux x86_64](https://github.com/cipherstash/cli-releases/releases/latest/download/stash-x86_64-unknown-linux-gnu)
 
 > [!NOTE]
-> **You need to opt-out of bundling when using Protect.js.**
+> **You need to opt out of bundling when using Protect.js.**
 >
 > Protect.js uses Node.js specific features and requires the use of the [native Node.js `require`](https://nodejs.org/api/modules.html#requireid).
 >
-> You need to opt-out of bundling for tools like [Webpack](https://webpack.js.org/configuration/externals/), [esbuild](https://webpack.js.org/configuration/externals/), or [Next.js](https://nextjs.org/docs/app/api-reference/config/next-config-js/serverExternalPackages).
+> You need to opt out of bundling for tools like [Webpack](https://webpack.js.org/configuration/externals/), [esbuild](https://webpack.js.org/configuration/externals/), or [Next.js](https://nextjs.org/docs/app/api-reference/config/next-config-js/serverExternalPackages).
 >
 > Read more about [building and bundling with Protect.js](#builds-and-bundling).
 
-### Step 2: Setup credentials
+### Step 2: Set up credentials
 
 > [!IMPORTANT]
 > Make sure you have [installed the CipherStash CLI](#step-1-install-protectjs) before following these steps.
@@ -92,8 +92,8 @@ If you haven't already signed up for a CipherStash account, this will prompt you
 
 At the end of `stash setup`, you will have two files in your project:
 
-- `cipherstash.toml` which contains the configuration for Protect.js
-- `cipherstash.secret.toml`: which contains the credentials for Protect.js
+- `cipherstash.toml`, which contains the configuration for Protect.js
+- `cipherstash.secret.toml`, which contains the credentials for Protect.js
 
 > [!WARNING]
 > Don't commit `cipherstash.secret.toml` to git; it contains sensitive credentials.
@@ -105,7 +105,7 @@ Read more about [configuration via TOML file or environment variables](./docs/re
 
 Protect.js uses a schema to define the tables and columns that you want to encrypt and decrypt.
 
-Define your tables and columns by adding this to `src/protect/schema.ts`:
+To define your tables and columns, add the following to `src/protect/schema.ts`:
 
 ```ts
 import { csTable, csColumn } from '@cipherstash/protect'
@@ -139,7 +139,7 @@ Read more about [defining your schema](./docs/reference/schema.md).
 
 ### Step 4: Initialize the Protect client
 
-Import the `protect` function and initialize a client with your defined schema, by adding this to `src/protect/index.ts`:
+To import the `protect` function and initialize a client with your defined schema, add the following to `src/protect/index.ts`:
 
 ```ts
 import { protect } from '@cipherstash/protect'
@@ -149,7 +149,7 @@ import { users } from './schema'
 export const protectClient = await protect(users, orders)
 ```
 
-The `protect` function requires at least one `csTable` be provided.
+The `protect` function requires at least one `csTable` to be provided.
 
 ### Step 5: Encrypt data
 
@@ -247,7 +247,7 @@ The `decryptResult` will return one of the following:
 
 Encrypted data can be stored in any database that supports JSONB.
 
-To store the encrypted data, you will need to specify the column type as `jsonb`:
+To store the encrypted data, specify the column type as `jsonb`:
 
 ```sql
 CREATE TABLE users (

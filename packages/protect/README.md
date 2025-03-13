@@ -108,19 +108,19 @@ Lastly, install the CipherStash CLI:
     - [Linux x86_64](https://github.com/cipherstash/cli-releases/releases/latest/download/stash-x86_64-unknown-linux-gnu)
 
 > [!NOTE]
-> **You need to opt-out of bundling when using Protect.js.**
+> **You need to opt out of bundling when using Protect.js.**
 >
 > Protect.js uses Node.js specific features and requires the use of the [native Node.js `require`](https://nodejs.org/api/modules.html#requireid).
 >
-> You need to opt-out of bundling for tools like [Webpack](https://webpack.js.org/configuration/externals/), [esbuild](https://webpack.js.org/configuration/externals/), or [Next.js](https://nextjs.org/docs/app/api-reference/config/next-config-js/serverExternalPackages).
+> You need to opt out of bundling for tools like [Webpack](https://webpack.js.org/configuration/externals/), [esbuild](https://webpack.js.org/configuration/externals/), or [Next.js](https://nextjs.org/docs/app/api-reference/config/next-config-js/serverExternalPackages).
 >
 > Read more about [building and bundling with Protect.js](#builds-and-bundling).
 
 ## Getting started
 
-If you are following this getting started guide with an existing app, you can skip to [the next step](#configuration).
+If you're following this getting started guide with an existing app, skip to [the next step](#configuration).
 
-If you are following this getting started guide with a clean slate, check out the dedicated [getting started guide](./docs/getting-started.md)
+If you're following this getting started guide with a clean slate, check out the dedicated [getting started guide](./docs/getting-started.md)
 
 ### Configuration
 
@@ -148,7 +148,7 @@ Read more about [configuration via TOML file or environment variables](./docs/re
 
 ### Basic file structure
 
-This is the basic file structure of the project.
+The following is the basic file structure of the project.
 In the `src/protect/` directory, we have the table definition in `schema.ts` and the protect client in `index.ts`.
 
 ```
@@ -203,7 +203,7 @@ Read more about [defining your schema](./docs/reference/schema.md).
 
 ### Initialize the Protect client
 
-Import the `protect` function and initialize a client with your defined schema, by adding this to `src/protect/index.ts`:
+To import the `protect` function and initialize a client with your defined schema, add the following to `src/protect/index.ts`:
 
 ```ts
 import { protect } from '@cipherstash/protect'
@@ -220,7 +220,7 @@ The `protect` function requires at least one `csTable` be provided.
 Protect.js provides the `encrypt` function on `protectClient` to encrypt data.
 `encrypt` takes a plaintext string, and an object with the table and column as parameters.
 
-Start encrypting data by adding this to `src/index.ts`:
+To start encrypting data, add the following to `src/index.ts`:
 
 ```typescript
 import { users } from './protect/schema'
@@ -268,7 +268,7 @@ The `encryptResult` will return one of the following:
 Protect.js provides the `decrypt` function on `protectClient` to decrypt data.
 `decrypt` takes an encrypted data object as a parameter.
 
-Start decrypting data by adding this to `src/index.ts`:
+To start decrypting data, add the following to `src/index.ts`:
 
 ```typescript
 import { protectClient } from './protect'
@@ -309,7 +309,7 @@ The `decryptResult` will return one of the following:
 
 Encrypted data can be stored in any database that supports JSONB, noting that searchable encryption is only supported in PostgreSQL at the moment.
 
-To store the encrypted data, you will need to specify the column type as `jsonb`.
+To store the encrypted data, specify the column type as `jsonb`.
 
 ```sql
 CREATE TABLE users (
@@ -320,7 +320,7 @@ CREATE TABLE users (
 
 #### Searchable encryption in PostgreSQL
 
-To enable searchable encryption in PostgreSQL, you need to [install the EQL custom types and functions](https://github.com/cipherstash/encrypt-query-language?tab=readme-ov-file#installation).
+To enable searchable encryption in PostgreSQL, [install the EQL custom types and functions](https://github.com/cipherstash/encrypt-query-language?tab=readme-ov-file#installation).
 
 1. Download the latest EQL install script:
 
@@ -429,7 +429,7 @@ const plaintext = decryptResult.data
 
 ## Bulk encryption and decryption
 
-If you have a large list of items to encrypt or decrypt, you can use the **`bulkEncrypt`** and **`bulkDecrypt`** methods to batch encryption/decryption.
+If you have a large list of items to encrypt or decrypt, use the **`bulkEncrypt`** and **`bulkDecrypt`** methods to batch encryption/decryption.
 `bulkEncrypt` and `bulkDecrypt` give your app significantly better throughput than the single-item [`encrypt`](#encrypting-data) and [`decrypt`](#decrypting-data) methods.
 
 
@@ -542,7 +542,7 @@ Learn more about [bulk decryption](./docs/reference/bulk-encryption-decryption.m
 ## Supported data types
 
 Protect.js currently supports encrypting and decrypting text.
-Other data types like booleans, dates, ints, floats, and JSON are well supported in other CipherStash products, and will be coming to Protect.js soon.
+Other data types like booleans, dates, ints, floats, and JSON are well-supported in other CipherStash products, and will be coming to Protect.js soon.
 
 Until support for other data types are available, you can express interest in this feature by adding a :+1: on this [GitHub Issue](https://github.com/cipherstash/protectjs/issues/48).
 
@@ -570,7 +570,7 @@ PROTECT_LOG_LEVEL=error  # Enable error logging
 Protect.js is built on top of the CipherStash Client Rust SDK which is embedded with the `@cipherstash/protect-ffi` package.
 The `@cipherstash/protect-ffi` source code is available on [GitHub](https://github.com/cipherstash/protectjs-ffi).
 
-Read more about configuring the CipherStash client in the [configuration docs](./docs/reference/configuration.md).
+Read more about configuring the CipherStash Client in the [configuration docs](./docs/reference/configuration.md).
 
 ## Example applications
 
