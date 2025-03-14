@@ -118,9 +118,9 @@ Lastly, install the CipherStash CLI:
 
 ## Getting started
 
-If you're following this getting started guide with an existing app, skip to [the next step](#configuration).
+🆕 **Existing app?** Skip to [the next step](#configuration).
 
-If you're following this getting started guide with a clean slate, check out the dedicated [getting started guide](./docs/getting-started.md)
+🌱 **Clean slate?** Check out the [getting started tutorial](./docs/getting-started.md).
 
 ### Configuration
 
