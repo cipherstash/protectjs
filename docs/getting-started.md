@@ -143,7 +143,7 @@ To import the `protect` function and initialize a client with your defined schem
 
 ```ts
 import { protect } from '@cipherstash/protect'
-import { users } from './schema'
+import { users, orders } from './schema'
 
 // Pass all your tables to the protect function to initialize the client
 export const protectClient = await protect(users, orders)
