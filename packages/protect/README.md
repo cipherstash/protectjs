@@ -107,14 +107,16 @@ Lastly, install the CipherStash CLI:
     - [Linux ARM64](https://github.com/cipherstash/cli-releases/releases/latest/download/stash-aarch64-unknown-linux-gnu)
     - [Linux x86_64](https://github.com/cipherstash/cli-releases/releases/latest/download/stash-x86_64-unknown-linux-gnu)
 
-> [!NOTE]
-> **You need to opt out of bundling when using Protect.js.**
->
-> Protect.js uses Node.js specific features and requires the use of the [native Node.js `require`](https://nodejs.org/api/modules.html#requireid).
->
-> You need to opt out of bundling for tools like [Webpack](https://webpack.js.org/configuration/externals/), [esbuild](https://webpack.js.org/configuration/externals/), or [Next.js](https://nextjs.org/docs/app/api-reference/config/next-config-js/serverExternalPackages).
->
-> Read more about [building and bundling with Protect.js](#builds-and-bundling).
+### Opt-out of bundling
+
+> [!IMPORTANT]
+> **You need to opt-out of bundling when using Protect.js.**
+
+Protect.js uses Node.js specific features and requires the use of the [native Node.js `require`](https://nodejs.org/api/modules.html#requireid).
+
+When using Protect.js, you need to opt-out of bundling for tools like [Webpack](https://webpack.js.org/configuration/externals/), [esbuild](https://webpack.js.org/configuration/externals/), or [Next.js](https://nextjs.org/docs/app/api-reference/config/next-config-js/serverExternalPackages).
+
+Read more about [building and bundling with Protect.js](#builds-and-bundling).
 
 ## Getting started
 
