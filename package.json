@@ -36,7 +36,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.3",
-    "@changesets/cli": "^2.27.9",
+    "@changesets/cli": "^2.28.1",
     "@types/node": "^22.10.2",
     "rimraf": "6.0.1",
     "turbo": "2.1.1"
@@ -44,5 +44,10 @@
   "packageManager": "pnpm@9.15.3",
   "engines": {
     "node": ">=22"
+  },
+  "pnpm": {
+   "overrides": {
+      "@babel/runtime": "7.26.10"
+    }
   }
 }
