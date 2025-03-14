@@ -107,20 +107,22 @@ Lastly, install the CipherStash CLI:
     - [Linux ARM64](https://github.com/cipherstash/cli-releases/releases/latest/download/stash-aarch64-unknown-linux-gnu)
     - [Linux x86_64](https://github.com/cipherstash/cli-releases/releases/latest/download/stash-x86_64-unknown-linux-gnu)
 
-> [!NOTE]
-> **You need to opt out of bundling when using Protect.js.**
->
-> Protect.js uses Node.js specific features and requires the use of the [native Node.js `require`](https://nodejs.org/api/modules.html#requireid).
->
-> You need to opt out of bundling for tools like [Webpack](https://webpack.js.org/configuration/externals/), [esbuild](https://webpack.js.org/configuration/externals/), or [Next.js](https://nextjs.org/docs/app/api-reference/config/next-config-js/serverExternalPackages).
->
-> Read more about [building and bundling with Protect.js](#builds-and-bundling).
+### Opt-out of bundling
+
+> [!IMPORTANT]
+> **You need to opt-out of bundling when using Protect.js.**
+
+Protect.js uses Node.js specific features and requires the use of the [native Node.js `require`](https://nodejs.org/api/modules.html#requireid).
+
+When using Protect.js, you need to opt-out of bundling for tools like [Webpack](https://webpack.js.org/configuration/externals/), [esbuild](https://webpack.js.org/configuration/externals/), or [Next.js](https://nextjs.org/docs/app/api-reference/config/next-config-js/serverExternalPackages).
+
+Read more about [building and bundling with Protect.js](#builds-and-bundling).
 
 ## Getting started
 
-If you're following this getting started guide with an existing app, skip to [the next step](#configuration).
+🆕 **Existing app?** Skip to [the next step](#configuration).
 
-If you're following this getting started guide with a clean slate, check out the dedicated [getting started guide](./docs/getting-started.md)
+🌱 **Clean slate?** Check out the [getting started tutorial](./docs/getting-started.md).
 
 ### Configuration
 
@@ -207,7 +209,7 @@ To import the `protect` function and initialize a client with your defined schem
 
 ```ts
 import { protect } from '@cipherstash/protect'
-import { users } from './schema'
+import { users, orders } from './schema'
 
 // Pass all your tables to the protect function to initialize the client
 export const protectClient = await protect(users, orders)
