@@ -2,6 +2,9 @@
 node = "22.11.0"
 pnpm = "9.15.3"
 
+[env]
+CS_EQL_VERSION="eql-1.0.0"
+
 [tasks."postgres:eql:download"]
 alias = 'e'
 description = "Download latest EQL release"
@@ -14,7 +17,7 @@ mkdir sql
 
 # install script
 if [ -z "$CS_EQL_PATH" ]; then
-  curl -sLo sql/cipherstash-encrypt.sql https://github.com/cipherstash/encrypt-query-language/releases/latest/download/cipherstash-encrypt.sql
+  curl -sLo sql/cipherstash-encrypt.sql https://github.com/cipherstash/encrypt-query-language/releases/download/${CS_EQL_VERSION}/cipherstash-encrypt.sql
 else
   echo "Using EQL: ${CS_EQL_PATH}"
   cp "$CS_EQL_PATH" sql/cipherstash-encrypt.sql
@@ -22,7 +25,7 @@ fi
 
 # uninstall script
 if [ -z "$CS_EQL_UNINSTALL_PATH" ]; then
-  curl -sLo sql/cipherstash-encrypt-uninstall.sql https://github.com/cipherstash/encrypt-query-language/releases/latest/download/cipherstash-encrypt-uninstall.sql
+  curl -sLo sql/cipherstash-encrypt-uninstall.sql https://github.com/cipherstash/encrypt-query-language/releases/download/${CS_EQL_VERSION}/cipherstash-encrypt-uninstall.sql
 else
   echo "Using EQL: ${CS_EQL_PATH}"
   cp "$CS_EQL_UNINSTALL_PATH" sql/cipherstash-encrypt-uninstall.sql
