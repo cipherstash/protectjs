@@ -1,5 +1,11 @@
 # @cipherstash/nextjs
 
+## 3.2.0
+
+### Minor Changes
+
+- 9377b47: Updated versions to address Next.js CVE.
+
 ## 3.1.0
 
 ### Minor Changes

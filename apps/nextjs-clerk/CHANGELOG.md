@@ -1,5 +1,16 @@
 # @cipherstash/nextjs-clerk-example
 
+## 0.1.0
+
+### Minor Changes
+
+- 9377b47: Updated versions to address Next.js CVE.
+
+### Patch Changes
+
+- Updated dependencies [9377b47]
+  - @cipherstash/nextjs@3.2.0
+
 ## 0.0.4
 
 ### Patch Changes
