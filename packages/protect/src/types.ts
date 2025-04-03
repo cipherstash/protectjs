@@ -1,5 +1,8 @@
 import type { newClient } from '@cipherstash/protect-ffi'
 import type { EqlSchema } from './eql.schema'
+import type { ProtectTableColumn } from './schema'
+import type { ProtectTable } from './schema'
+import type { ProtectColumn } from './schema'
 
 /**
  * Type to represent the client object
@@ -9,7 +12,21 @@ export type Client = Awaited<ReturnType<typeof newClient>> | undefined
 /**
  * Represents an encrypted payload in the database
  */
-export type EncryptedPayload = EqlSchema
+export type EncryptedPayload = EqlSchema | null
+
+/**
+ * Represents a payload to be encrypted using the `encrypt` function
+ * We currently only support the encryption of strings
+ */
+export type EncryptPayload = string | null
+
+/**
+ * Represents the options for encrypting a payload using the `encrypt` function
+ */
+export type EncryptOptions = {
+  column: ProtectColumn
+  table: ProtectTable<ProtectTableColumn>
+}
 
 /**
  * Type to identify encrypted fields in a model
