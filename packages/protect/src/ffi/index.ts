@@ -5,7 +5,16 @@ import { loadWorkSpaceId } from '../../../utils/config'
 import { logger } from '../../../utils/logger'
 import type { LockContext } from '../identify'
 import type { Client, Decrypted } from '../types'
-import { decryptModelFields, encryptModelFields } from './model-helpers'
+import {
+  bulkDecryptModels,
+  bulkDecryptModelsWithLockContext,
+  bulkEncryptModels,
+  bulkEncryptModelsWithLockContext,
+  decryptModelFields,
+  decryptModelFieldsWithLockContext,
+  encryptModelFields,
+  encryptModelFieldsWithLockContext,
+} from './model-helpers'
 import {
   type EncryptConfig,
   encryptConfigSchema,
@@ -70,15 +79,7 @@ class EncryptModelOperation<T extends Record<string, unknown>>
           throw noClientError()
         }
 
-        const result = await encryptModelFields(
-          this.model,
-          this.table,
-          this.client,
-        )
-        if (result.failure) {
-          throw new Error(result.failure.message)
-        }
-        return result.data
+        return await encryptModelFields<T>(this.model, this.table, this.client)
       },
       (error) => ({
         type: ProtectErrorTypes.EncryptionError,
@@ -140,11 +141,12 @@ class EncryptModelOperationWithLockContext<T extends Record<string, unknown>>
           throw new Error(`[protect]: ${context.failure.message}`)
         }
 
-        const result = await encryptModelFields(model, table, client)
-        if (result.failure) {
-          throw new Error(result.failure.message)
-        }
-        return result.data
+        return await encryptModelFieldsWithLockContext<T>(
+          model,
+          table,
+          client,
+          context.data,
+        )
       },
       (error) => ({
         type: ProtectErrorTypes.EncryptionError,
@@ -195,11 +197,7 @@ class DecryptModelOperation<T extends Record<string, unknown>>
           throw noClientError()
         }
 
-        const result = await decryptModelFields(this.model, this.client)
-        if (result.failure) {
-          throw new Error(result.failure.message)
-        }
-        return result.data
+        return await decryptModelFields<T>(this.model, this.client)
       },
       (error) => ({
         type: ProtectErrorTypes.DecryptionError,
@@ -259,11 +257,11 @@ class DecryptModelOperationWithLockContext<T extends Record<string, unknown>>
           throw new Error(`[protect]: ${context.failure.message}`)
         }
 
-        const result = await decryptModelFields(model, client)
-        if (result.failure) {
-          throw new Error(result.failure.message)
-        }
-        return result.data
+        return await decryptModelFieldsWithLockContext<T>(
+          model,
+          client,
+          context.data,
+        )
       },
       (error) => ({
         type: ProtectErrorTypes.DecryptionError,
@@ -326,23 +324,7 @@ class BulkEncryptModelsOperation<T extends Record<string, unknown>>
           return []
         }
 
-        const results: T[] = []
-
-        for (const model of this.models) {
-          const result = await encryptModelFields(
-            model,
-            this.table,
-            this.client,
-          )
-
-          if (result.failure) {
-            throw new Error(result.failure.message)
-          }
-
-          results.push(result.data)
-        }
-
-        return results
+        return await bulkEncryptModels<T>(this.models, this.table, this.client)
       },
       (error) => ({
         type: ProtectErrorTypes.EncryptionError,
@@ -414,19 +396,12 @@ class BulkEncryptModelsOperationWithLockContext<
           throw new Error(`[protect]: ${context.failure.message}`)
         }
 
-        const results: T[] = []
-
-        for (const model of models) {
-          const result = await encryptModelFields(model, table, client)
-
-          if (result.failure) {
-            throw new Error(result.failure.message)
-          }
-
-          results.push(result.data)
-        }
-
-        return results
+        return await bulkEncryptModelsWithLockContext<T>(
+          models,
+          table,
+          client,
+          context.data,
+        )
       },
       (error) => ({
         type: ProtectErrorTypes.EncryptionError,
@@ -484,19 +459,7 @@ class BulkDecryptModelsOperation<T extends Record<string, unknown>>
           return []
         }
 
-        const results: Decrypted<T>[] = []
-
-        for (const model of this.models) {
-          const result = await decryptModelFields(model, this.client)
-
-          if (result.failure) {
-            throw new Error(result.failure.message)
-          }
-
-          results.push(result.data)
-        }
-
-        return results
+        return await bulkDecryptModels<T>(this.models, this.client)
       },
       (error) => ({
         type: ProtectErrorTypes.DecryptionError,
@@ -567,19 +530,11 @@ class BulkDecryptModelsOperationWithLockContext<
           throw new Error(`[protect]: ${context.failure.message}`)
         }
 
-        const results: Decrypted<T>[] = []
-
-        for (const model of models) {
-          const result = await decryptModelFields(model, client)
-
-          if (result.failure) {
-            throw new Error(result.failure.message)
-          }
-
-          results.push(result.data)
-        }
-
-        return results
+        return await bulkDecryptModelsWithLockContext<T>(
+          models,
+          client,
+          context.data,
+        )
       },
       (error) => ({
         type: ProtectErrorTypes.DecryptionError,

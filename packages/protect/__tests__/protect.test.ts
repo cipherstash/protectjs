@@ -1,5 +1,5 @@
 import 'dotenv/config'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import { LockContext, protect, csTable, csColumn } from '../src'
 
@@ -191,6 +191,235 @@ describe('bulk encryption', () => {
 
     expect(decryptedResult.data).toEqual([])
   }, 30000)
+})
+
+describe('bulk encryption edge cases', () => {
+  it('should handle mixed null and non-null values in bulk operations', async () => {
+    const protectClient = await protect(users)
+    const decryptedModels = [
+      {
+        id: '1',
+        email: 'test1',
+        address: null,
+        createdAt: new Date('2021-01-01'),
+        updatedAt: new Date('2021-01-01'),
+        number: 1,
+      },
+      {
+        id: '2',
+        email: null,
+        address: '123 Main St',
+        createdAt: new Date('2021-01-01'),
+        updatedAt: new Date('2021-01-01'),
+        number: 2,
+      },
+      {
+        id: '3',
+        email: 'test3',
+        address: '456 Oak St',
+        createdAt: new Date('2021-01-01'),
+        updatedAt: new Date('2021-01-01'),
+        number: 3,
+      },
+    ]
+
+    // Encrypt the models
+    const encryptedModels = await protectClient.bulkEncryptModels(
+      decryptedModels,
+      users,
+    )
+
+    if (encryptedModels.failure) {
+      throw new Error(`[protect]: ${encryptedModels.failure.message}`)
+    }
+
+    // Decrypt the models
+    const decryptedResult = await protectClient.bulkDecryptModels(
+      encryptedModels.data,
+    )
+
+    if (decryptedResult.failure) {
+      throw new Error(`[protect]: ${decryptedResult.failure.message}`)
+    }
+
+    expect(decryptedResult.data).toEqual(decryptedModels)
+  }, 30000)
+
+  it('should handle empty models in bulk operations', async () => {
+    const protectClient = await protect(users)
+    const decryptedModels = [
+      {
+        id: '1',
+        createdAt: new Date('2021-01-01'),
+        updatedAt: new Date('2021-01-01'),
+        number: 1,
+      }, // No encrypted fields
+      {
+        id: '2',
+        email: 'test2',
+        createdAt: new Date('2021-01-01'),
+        updatedAt: new Date('2021-01-01'),
+        number: 2,
+      },
+      {
+        id: '3',
+        createdAt: new Date('2021-01-01'),
+        updatedAt: new Date('2021-01-01'),
+        number: 3,
+      }, // No encrypted fields
+    ]
+
+    // Encrypt the models
+    const encryptedModels = await protectClient.bulkEncryptModels(
+      decryptedModels,
+      users,
+    )
+
+    if (encryptedModels.failure) {
+      throw new Error(`[protect]: ${encryptedModels.failure.message}`)
+    }
+
+    // Decrypt the models
+    const decryptedResult = await protectClient.bulkDecryptModels(
+      encryptedModels.data,
+    )
+
+    if (decryptedResult.failure) {
+      throw new Error(`[protect]: ${decryptedResult.failure.message}`)
+    }
+
+    expect(decryptedResult.data).toEqual(decryptedModels)
+  }, 30000)
+})
+
+describe('error handling', () => {
+  it('should handle invalid encrypted payloads', async () => {
+    const protectClient = await protect(users)
+    const validModel = {
+      id: '1',
+      email: 'test@example.com',
+      createdAt: new Date('2021-01-01'),
+      updatedAt: new Date('2021-01-01'),
+      address: '123 Main St',
+      number: 1,
+    }
+
+    // First encrypt a valid model
+    const encryptedModel = await protectClient.encryptModel<User>(
+      validModel,
+      users,
+    )
+    if (encryptedModel.failure) {
+      throw new Error(`[protect]: ${encryptedModel.failure.message}`)
+    }
+
+    // Create an invalid model by removing required fields
+    const invalidModel = {
+      id: '1',
+      // Missing required fields
+    }
+
+    try {
+      await protectClient.decryptModel<User>(invalidModel as User)
+      throw new Error('Expected decryption to fail')
+    } catch (error) {
+      expect(error).toBeDefined()
+    }
+  }, 30000)
+
+  it('should handle missing required fields', async () => {
+    const protectClient = await protect(users)
+    const model = {
+      id: '1',
+      email: null,
+      createdAt: new Date('2021-01-01'),
+      updatedAt: new Date('2021-01-01'),
+      address: null,
+      number: 1,
+    }
+
+    try {
+      await protectClient.encryptModel<User>(model, users)
+      throw new Error('Expected encryption to fail')
+    } catch (error) {
+      expect(error).toBeDefined()
+    }
+  }, 30000)
+})
+
+describe('type safety', () => {
+  it('should maintain type safety with complex nested objects', async () => {
+    const protectClient = await protect(users)
+    const model = {
+      id: '1',
+      email: 'test@example.com',
+      createdAt: new Date('2021-01-01'),
+      updatedAt: new Date('2021-01-01'),
+      address: '123 Main St',
+      number: 1,
+      metadata: {
+        preferences: {
+          notifications: true,
+          theme: 'dark',
+        },
+      },
+    }
+
+    // Encrypt the model
+    const encryptedModel = await protectClient.encryptModel<User>(model, users)
+
+    if (encryptedModel.failure) {
+      throw new Error(`[protect]: ${encryptedModel.failure.message}`)
+    }
+
+    // Decrypt the model
+    const decryptedResult = await protectClient.decryptModel<User>(
+      encryptedModel.data,
+    )
+
+    if (decryptedResult.failure) {
+      throw new Error(`[protect]: ${decryptedResult.failure.message}`)
+    }
+
+    expect(decryptedResult.data).toEqual(model)
+  }, 30000)
+})
+
+describe('performance', () => {
+  it('should handle large numbers of models efficiently', async () => {
+    const protectClient = await protect(users)
+    const largeModels = Array(10)
+      .fill(null)
+      .map((_, i) => ({
+        id: i.toString(),
+        email: `test${i}@example.com`,
+        address: `Address ${i}`,
+        createdAt: new Date('2021-01-01'),
+        updatedAt: new Date('2021-01-01'),
+        number: i,
+      }))
+
+    // Encrypt the models
+    const encryptedModels = await protectClient.bulkEncryptModels(
+      largeModels,
+      users,
+    )
+
+    if (encryptedModels.failure) {
+      throw new Error(`[protect]: ${encryptedModels.failure.message}`)
+    }
+
+    // Decrypt the models
+    const decryptedResult = await protectClient.bulkDecryptModels(
+      encryptedModels.data,
+    )
+
+    if (decryptedResult.failure) {
+      throw new Error(`[protect]: ${decryptedResult.failure.message}`)
+    }
+
+    expect(decryptedResult.data).toEqual(largeModels)
+  }, 60000)
 })
 
 // ------------------------
