@@ -1,27 +1,13 @@
-import { newClient } from '@cipherstash/protect-ffi'
 import { withResult, type Result } from '@byteslice/result'
 import { noClientError } from '../index'
 import { type ProtectError, ProtectErrorTypes } from '../..'
-import { loadWorkSpaceId } from '../../../../utils/config'
 import { logger } from '../../../../utils/logger'
 import type { LockContext } from '../../identify'
 import type { Client, Decrypted } from '../../types'
 import {
-  bulkDecryptModels,
-  bulkDecryptModelsWithLockContext,
-  bulkEncryptModels,
-  bulkEncryptModelsWithLockContext,
   decryptModelFields,
   decryptModelFieldsWithLockContext,
-  encryptModelFields,
-  encryptModelFieldsWithLockContext,
 } from '../model-helpers'
-import {
-  type EncryptConfig,
-  encryptConfigSchema,
-  type ProtectTable,
-  type ProtectTableColumn,
-} from '../../schema'
 
 export class DecryptModelOperation<T extends Record<string, unknown>>
   implements PromiseLike<Result<Decrypted<T>, ProtectError>>

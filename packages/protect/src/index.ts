@@ -41,11 +41,4 @@ export type { Result } from '@byteslice/result'
 export type { ProtectClient } from './ffi'
 export { csTable, csColumn } from './schema'
 export * from './identify'
-export type {
-  Client,
-  Decrypted,
-  EncryptedPayload,
-  EncryptedFields,
-  OtherFields,
-  DecryptedFields,
-} from './types'
+export * from './types'

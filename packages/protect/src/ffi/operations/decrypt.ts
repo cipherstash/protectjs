@@ -1,4 +1,4 @@
-import { newClient, decrypt as ffiDecrypt } from '@cipherstash/protect-ffi'
+import { decrypt as ffiDecrypt } from '@cipherstash/protect-ffi'
 import { withResult, type Result } from '@byteslice/result'
 import { noClientError } from '../index'
 import { type ProtectError, ProtectErrorTypes } from '../..'
