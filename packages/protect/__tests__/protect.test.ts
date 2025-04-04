@@ -5,23 +5,25 @@ import { LockContext, protect, csTable, csColumn } from '../src'
 
 const users = csTable('users', {
   email: csColumn('email').freeTextSearch().equality().orderAndRange(),
-  address: csColumn('address'),
+  address: csColumn('address').freeTextSearch(),
 })
 
 type User = {
   id: string
-  email: string | null
-  createdAt: Date
-  updatedAt: Date
-  address: string | null
-  number: number
+  email?: string | null
+  createdAt?: Date
+  updatedAt?: Date
+  address?: string | null
+  number?: number
 }
 
 describe('encryption and decryption', () => {
   it('should encrypt and decrypt a payload', async () => {
     const protectClient = await protect(users)
 
-    const ciphertext = await protectClient.encrypt('plaintext', {
+    const email = 'hello@example.com'
+
+    const ciphertext = await protectClient.encrypt(email, {
       column: users.email,
       table: users,
     })
@@ -33,7 +35,7 @@ describe('encryption and decryption', () => {
     const plaintext = await protectClient.decrypt(ciphertext.data)
 
     expect(plaintext).toEqual({
-      data: 'plaintext',
+      data: email,
     })
   }, 30000)
 
@@ -166,7 +168,7 @@ describe('bulk encryption', () => {
     ]
 
     // Encrypt the models
-    const encryptedModels = await protectClient.bulkEncryptModels(
+    const encryptedModels = await protectClient.bulkEncryptModels<User>(
       decryptedModels,
       users,
     )
@@ -176,7 +178,7 @@ describe('bulk encryption', () => {
     }
 
     // Decrypt the models
-    const decryptedResult = await protectClient.bulkDecryptModels(
+    const decryptedResult = await protectClient.bulkDecryptModels<User>(
       encryptedModels.data,
     )
 
@@ -208,7 +210,10 @@ describe('bulk encryption', () => {
     const protectClient = await protect(users)
 
     // Encrypt empty array of models
-    const encryptedModels = await protectClient.bulkEncryptModels([], users)
+    const encryptedModels = await protectClient.bulkEncryptModels<User>(
+      [],
+      users,
+    )
 
     if (encryptedModels.failure) {
       throw new Error(`[protect]: ${encryptedModels.failure.message}`)
@@ -221,7 +226,7 @@ describe('bulk encryption', () => {
     const protectClient = await protect(users)
 
     // Decrypt empty array of models
-    const decryptedResult = await protectClient.bulkDecryptModels([])
+    const decryptedResult = await protectClient.bulkDecryptModels<User>([])
 
     if (decryptedResult.failure) {
       throw new Error(`[protect]: ${decryptedResult.failure.message}`)
@@ -262,7 +267,7 @@ describe('bulk encryption edge cases', () => {
     ]
 
     // Encrypt the models
-    const encryptedModels = await protectClient.bulkEncryptModels(
+    const encryptedModels = await protectClient.bulkEncryptModels<User>(
       decryptedModels,
       users,
     )
@@ -272,7 +277,7 @@ describe('bulk encryption edge cases', () => {
     }
 
     // Decrypt the models
-    const decryptedResult = await protectClient.bulkDecryptModels(
+    const decryptedResult = await protectClient.bulkDecryptModels<User>(
       encryptedModels.data,
     )
 
@@ -308,7 +313,7 @@ describe('bulk encryption edge cases', () => {
     ]
 
     // Encrypt the models
-    const encryptedModels = await protectClient.bulkEncryptModels(
+    const encryptedModels = await protectClient.bulkEncryptModels<User>(
       decryptedModels,
       users,
     )
@@ -318,7 +323,7 @@ describe('bulk encryption edge cases', () => {
     }
 
     // Decrypt the models
-    const decryptedResult = await protectClient.bulkDecryptModels(
+    const decryptedResult = await protectClient.bulkDecryptModels<User>(
       encryptedModels.data,
     )
 
@@ -438,7 +443,7 @@ describe('performance', () => {
       }))
 
     // Encrypt the models
-    const encryptedModels = await protectClient.bulkEncryptModels(
+    const encryptedModels = await protectClient.bulkEncryptModels<User>(
       largeModels,
       users,
     )
@@ -448,7 +453,7 @@ describe('performance', () => {
     }
 
     // Decrypt the models
-    const decryptedResult = await protectClient.bulkDecryptModels(
+    const decryptedResult = await protectClient.bulkDecryptModels<User>(
       encryptedModels.data,
     )
 
@@ -461,13 +466,44 @@ describe('performance', () => {
 })
 
 // ------------------------
-// TODO get bulk Encryption/Decryption working in CI.
+// TODO get LockContext working in CI.
 // These tests pass locally, given you provide a valid JWT.
 // To manually test locally, uncomment the following lines and provide a valid JWT in the userJwt variable.
 // ------------------------
-// const userJwt =
-//   ''
+// const userJwt = ''
 // describe('encryption and decryption with lock context', () => {
+//   it('should encrypt and decrypt a payload with lock context', async () => {
+//     const protectClient = await protect(users)
+
+//     const lc = new LockContext()
+//     const lockContext = await lc.identify(userJwt)
+
+//     if (lockContext.failure) {
+//       throw new Error(`[protect]: ${lockContext.failure.message}`)
+//     }
+
+//     const email = 'hello@example.com'
+
+//     const ciphertext = await protectClient
+//       .encrypt(email, {
+//         column: users.email,
+//         table: users,
+//       })
+//       .withLockContext(lockContext.data)
+
+//     if (ciphertext.failure) {
+//       throw new Error(`[protect]: ${ciphertext.failure.message}`)
+//     }
+
+//     const plaintext = await protectClient
+//       .decrypt(ciphertext.data)
+//       .withLockContext(lockContext.data)
+
+//     expect(plaintext).toEqual({
+//       data: email,
+//     })
+//   }, 30000)
+
 //   it('should encrypt and decrypt a model with lock context', async () => {
 //     const protectClient = await protect(users)
 
