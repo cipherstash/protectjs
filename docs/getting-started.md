@@ -5,11 +5,11 @@ This getting started guide steps you through:
 1. Installing and configuring Protect.js in a standalone project
 2. Encrypting, searching, and decrypting data in a PostgreSQL database
 
-> [!IMPORTANT]
-> **Prerequisites:** Before you start you need to have this software installed:
->  - [Node.js](https://nodejs.org/)
->  - [TypeScript](https://www.typescriptlang.org/)
->  - [PostgreSQL](https://www.postgresql.org/) — see PostgreSQL's [documentation for installing](https://www.postgresql.org/download/)
+> [!IMPORTANT] > **Prerequisites:** Before you start you need to have this software installed:
+>
+> - [Node.js](https://nodejs.org/)
+> - [TypeScript](https://www.typescriptlang.org/)
+> - [PostgreSQL](https://www.postgresql.org/) — see PostgreSQL's [documentation for installing](https://www.postgresql.org/download/)
 
 ### Step 0: Basic file structure
 
@@ -53,8 +53,7 @@ yarn add @cipherstash/protect
 pnpm add @cipherstash/protect
 ```
 
-> [!TIP]
-> [Bun](https://bun.sh/) is not currently supported due to a lack of [Node-API compatibility](https://github.com/oven-sh/bun/issues/158). Under the hood, Protect.js uses [CipherStash Client](#cipherstash-client) which is written in Rust and embedded using [Neon](https://github.com/neon-bindings/neon).
+> [!TIP] > [Bun](https://bun.sh/) is not currently supported due to a lack of [Node-API compatibility](https://github.com/oven-sh/bun/issues/158). Under the hood, Protect.js uses [CipherStash Client](#cipherstash-client) which is written in Rust and embedded using [Neon](https://github.com/neon-bindings/neon).
 
 Lastly, install the CipherStash CLI:
 
@@ -65,11 +64,10 @@ Lastly, install the CipherStash CLI:
   ```
 
 - On Linux, download the binary for your platform, and put it on your `PATH`:
-    - [Linux ARM64](https://github.com/cipherstash/cli-releases/releases/latest/download/stash-aarch64-unknown-linux-gnu)
-    - [Linux x86_64](https://github.com/cipherstash/cli-releases/releases/latest/download/stash-x86_64-unknown-linux-gnu)
+  - [Linux ARM64](https://github.com/cipherstash/cli-releases/releases/latest/download/stash-aarch64-unknown-linux-gnu)
+  - [Linux x86_64](https://github.com/cipherstash/cli-releases/releases/latest/download/stash-x86_64-unknown-linux-gnu)
 
-> [!NOTE]
-> **You need to opt out of bundling when using Protect.js.**
+> [!NOTE] > **You need to opt out of bundling when using Protect.js.**
 >
 > Protect.js uses Node.js specific features and requires the use of the [native Node.js `require`](https://nodejs.org/api/modules.html#requireid).
 >
@@ -108,15 +106,15 @@ Protect.js uses a schema to define the tables and columns that you want to encry
 To define your tables and columns, add the following to `src/protect/schema.ts`:
 
 ```ts
-import { csTable, csColumn } from '@cipherstash/protect'
+import { csTable, csColumn } from "@cipherstash/protect";
 
-export const users = csTable('users', {
-  email: csColumn('email'),
-})
+export const users = csTable("users", {
+  email: csColumn("email"),
+});
 
-export const orders = csTable('orders', {
-  address: csColumn('address'),
-})
+export const orders = csTable("orders", {
+  address: csColumn("address"),
+});
 ```
 
 **Searchable encryption:**
@@ -124,15 +122,15 @@ export const orders = csTable('orders', {
 If you want to search encrypted data in your PostgreSQL database, you must declare the indexes in schema in `src/protect/schema.ts`:
 
 ```ts
-import { csTable, csColumn } from '@cipherstash/protect'
+import { csTable, csColumn } from "@cipherstash/protect";
 
-export const users = csTable('users', {
-  email: csColumn('email').freeTextSearch().equality().orderAndRange(),
-})
+export const users = csTable("users", {
+  email: csColumn("email").freeTextSearch().equality().orderAndRange(),
+});
 
-export const orders = csTable('orders', {
-  address: csColumn('address'),
-})
+export const orders = csTable("orders", {
+  address: csColumn("address"),
+});
 ```
 
 Read more about [defining your schema](./docs/reference/schema.md).
@@ -142,11 +140,11 @@ Read more about [defining your schema](./docs/reference/schema.md).
 To import the `protect` function and initialize a client with your defined schema, add the following to `src/protect/index.ts`:
 
 ```ts
-import { protect } from '@cipherstash/protect'
-import { users, orders } from './schema'
+import { protect } from "@cipherstash/protect";
+import { users, orders } from "./schema";
 
 // Pass all your tables to the protect function to initialize the client
-export const protectClient = await protect(users, orders)
+export const protectClient = await protect(users, orders);
 ```
 
 The `protect` function requires at least one `csTable` to be provided.
@@ -159,21 +157,25 @@ Protect.js provides the `encrypt` function on `protectClient` to encrypt data.
 Start encrypting data by adding this to `src/index.ts`:
 
 ```typescript
-import { users } from './protect/schema'
-import { protectClient } from './protect'
+import { users } from "./protect/schema";
+import { protectClient } from "./protect";
 
-const encryptResult = await protectClient.encrypt('secret@squirrel.example', {
+const encryptResult = await protectClient.encrypt("secret@squirrel.example", {
   column: users.email,
   table: users,
-})
+});
 
 if (encryptResult.failure) {
   // Handle the failure
-  console.log("error when encrypting:", encryptResult.failure.type, encryptResult.failure.message)
+  console.log(
+    "error when encrypting:",
+    encryptResult.failure.type,
+    encryptResult.failure.message
+  );
 }
 
-const ciphertext = encryptResult.data
-console.log("ciphertext:", ciphertext)
+const ciphertext = encryptResult.data;
+console.log("ciphertext:", ciphertext);
 ```
 
 Run this with:
@@ -203,7 +205,7 @@ The `encryptResult` will return one of the following:
 ```
 
 > [!TIP]
-> Get significantly better encryption performance by using the [`bulkEncrypt` function](#bulk-encrypting-data) for large payloads.
+> Working with large payloads? Check out the [model operations with bulk crypto functions](./reference/model-operations.md) docs.
 
 ### Step 6: Decrypt data
 
@@ -211,15 +213,15 @@ Use the `decrypt` function to decrypt data.
 `decrypt` takes an encrypted data object as a parameter.
 
 ```typescript
-import { protectClient } from './protect'
+import { protectClient } from "./protect";
 
-const decryptResult = await protectClient.decrypt(ciphertext)
+const decryptResult = await protectClient.decrypt(ciphertext);
 
 if (decryptResult.failure) {
   // Handle the failure
 }
 
-const plaintext = decryptResult.data
+const plaintext = decryptResult.data;
 ```
 
 The `decrypt` function returns a `Result` object with either a `data` key, or a `failure` key.
@@ -241,7 +243,7 @@ The `decryptResult` will return one of the following:
 ```
 
 > [!TIP]
-> Get significantly better decryption performance by using the [`bulkDecrypt` function](#bulk-decrypting-data) for large payloads.
+> Working with large payloads? Check out the [model operations with bulk crypto functions](./reference/model-operations.md) docs.
 
 ### Step 7: Store encrypted data in a database
 

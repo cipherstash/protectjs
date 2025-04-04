@@ -9,43 +9,43 @@
  * The EQL encrypted JSON payload used for storage.
  */
 export type EqlSchema = {
-  v: SchemaVersion;
-  k: Kind;
-  i: Ident;
-  [k: string]: unknown;
+  v: SchemaVersion
+  k: Kind
+  i: Ident
+  [k: string]: unknown
 } & (
   | {
-      k?: "ct";
-      c: Ciphertext;
-      u?: UniqueIndex;
-      o?: OreIndex;
-      m?: MatchIndex;
-      [k: string]: unknown;
+      k?: 'ct'
+      c: Ciphertext
+      u?: UniqueIndex
+      o?: OreIndex
+      m?: MatchIndex
+      [k: string]: unknown
     }
   | {
-      k?: "sv";
-      sv: StructuredEncryptionVector;
-      [k: string]: unknown;
+      k?: 'sv'
+      sv: StructuredEncryptionVector
+      [k: string]: unknown
     }
-);
-export type SchemaVersion = number;
-export type Kind = "ct" | "sv";
-export type Table = string;
-export type Column = string;
-export type Ciphertext = string;
-export type UniqueIndex = string;
+)
+export type SchemaVersion = number
+export type Kind = 'ct' | 'sv'
+export type Table = string
+export type Column = string
+export type Ciphertext = string
+export type UniqueIndex = string
 /**
  * @minItems 1
  */
-export type OreIndex = [string, ...string[]];
+export type OreIndex = [string, ...string[]]
 /**
  * @minItems 1
  */
-export type MatchIndex = [number, ...number[]];
-export type StructuredEncryptionVector = string[][];
+export type MatchIndex = [number, ...number[]]
+export type StructuredEncryptionVector = string[][]
 
 export interface Ident {
-  t: Table;
-  c: Column;
-  [k: string]: unknown;
+  t: Table
+  c: Column
+  [k: string]: unknown
 }
