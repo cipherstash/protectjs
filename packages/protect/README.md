@@ -39,7 +39,7 @@ Every value you encrypt with Protect.js has a unique key, made possible by Ciphe
 The encrypted data is structured as an [EQL](https://github.com/cipherstash/encrypt-query-language) JSON payload, and can be stored in any database that supports JSONB.
 
 > [!IMPORTANT]
-> Searching, sorting, and filtering on encrypted data is only supported when storing encrypted data in PostgreSQL at the moment.
+> Searching, sorting, and filtering on encrypted data is currently only supported when storing encrypted data in PostgreSQL.
 > Read more about [searching encrypted data](./docs/concepts/searchable-encryption.md).
 
 ## Table of contents
