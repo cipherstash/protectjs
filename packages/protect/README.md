@@ -313,7 +313,8 @@ The `decryptResult` will return one of the following:
 
 ### Working with models and objects
 
-Protect.js provides model-level encryption methods that make it easy to encrypt and decrypt entire objects. These methods automatically handle the encryption of fields defined in your schema.
+Protect.js provides model-level encryption methods that make it easy to encrypt and decrypt entire objects. 
+These methods automatically handle the encryption of fields defined in your schema.
 
 If you are working with a large data set, the model operations are significantly faster than encrypting and decrypting individual objects as they are able to perform bulk operations.
 
