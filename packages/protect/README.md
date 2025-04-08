@@ -425,7 +425,7 @@ The type system ensures that:
 This type safety helps catch potential issues at compile time and provides better IDE support with autocompletion and type hints.
 
 > [!TIP]
-> When using TypeScript with an ORM, you can reuse your ORM's model types directly with Protect.js's model operations for seamless integration.
+> When using TypeScript with an ORM, you can reuse your ORM's model types directly with Protect.js's model operations.
 
 Example with Drizzle infered types:
 
