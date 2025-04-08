@@ -359,7 +359,8 @@ Other fields (like `id` and `createdAt` in the example above) will remain unchan
 
 #### Type safety with models
 
-Protect.js provides strong TypeScript support for model operations. You can specify your model's type to ensure end-to-end type safety:
+Protect.js provides strong TypeScript support for model operations. 
+You can specify your model's type to ensure end-to-end type safety:
 
 ```typescript
 import { protectClient } from "./protect";
