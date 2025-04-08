@@ -711,7 +711,8 @@ Read more about [searching encrypted data](./docs/concepts/searchable-encryption
 
 ## Logging
 
-> [!IMPORTANT] > `@cipherstash/protect` will NEVER log plaintext data.
+> [!IMPORTANT] 
+> `@cipherstash/protect` will NEVER log plaintext data.
 > This is by design to prevent sensitive data from leaking into logs.
 
 `@cipherstash/protect` and `@cipherstash/nextjs` will log to the console with a log level of `info` by default.
