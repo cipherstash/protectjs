@@ -111,7 +111,8 @@ Lastly, install the CipherStash CLI:
 
 ### Opt-out of bundling
 
-> [!IMPORTANT] > **You need to opt-out of bundling when using Protect.js.**
+> [!IMPORTANT] 
+> **You need to opt-out of bundling when using Protect.js.**
 
 Protect.js uses Node.js specific features and requires the use of the [native Node.js `require`](https://nodejs.org/api/modules.html#requireid).
 
