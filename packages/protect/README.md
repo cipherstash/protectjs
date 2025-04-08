@@ -354,7 +354,8 @@ const encryptedUser = encryptedResult.data;
 console.log("encrypted user:", encryptedUser);
 ```
 
-The `encryptModel` function will only encrypt fields that are defined in your schema. Other fields (like `id` and `createdAt` in the example above) will remain unchanged.
+The `encryptModel` function will only encrypt fields that are defined in your schema. 
+Other fields (like `id` and `createdAt` in the example above) will remain unchanged.
 
 #### Type safety with models
 
