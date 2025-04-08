@@ -246,7 +246,7 @@ The `decryptResult` will return one of the following:
 ```
 
 > [!TIP]
-> Working with large payloads? Check out the [model operations with bulk crypto functions](./reference/model-operations.md) docs.
+> Working with large payloads? Check out the [model operations with bulk cryptography functions](./reference/model-operations.md) docs.
 
 ### Step 7: Store encrypted data in a database
 
