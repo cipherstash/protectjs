@@ -70,7 +70,7 @@ const decryptedUser = decryptedResult.data;
 
 ## Bulk Model Operations
 
-For better performance when working with multiple models, use the bulk operations methods.
+For better performance when working with multiple models, use these bulk encryption methods.
 
 ### Bulk Encryption
 
