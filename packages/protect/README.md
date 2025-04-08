@@ -523,7 +523,8 @@ if (decryptedResult.failure) {
 const decryptedUsers = decryptedResult.data;
 ```
 
-The model encryption methods provide a higher-level interface that's particularly useful when working with ORMs or when you need to encrypt multiple fields in an object. They automatically handle the mapping between your model's structure and the encrypted fields defined in your schema.
+The model encryption methods provide a higher-level interface that's particularly useful when working with ORMs or when you need to encrypt multiple fields in an object. 
+They automatically handle the mapping between your model's structure and the encrypted fields defined in your schema.
 
 ### Store encrypted data in a database
 
