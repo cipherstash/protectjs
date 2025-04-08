@@ -1,5 +1,11 @@
 # @cipherstash/jseql
 
+## 7.0.0
+
+### Major Changes
+
+- 2cb2d84: Replaced bulk operations with model operations.
+
 ## 6.3.0
 
 ### Minor Changes
