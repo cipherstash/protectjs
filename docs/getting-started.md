@@ -5,7 +5,8 @@ This getting started guide steps you through:
 1. Installing and configuring Protect.js in a standalone project
 2. Encrypting, searching, and decrypting data in a PostgreSQL database
 
-> [!IMPORTANT] > **Prerequisites:** Before you start you need to have this software installed:
+> [!IMPORTANT] 
+> **Prerequisites:** Before you start you need to have this software installed:
 >
 > - [Node.js](https://nodejs.org/)
 > - [TypeScript](https://www.typescriptlang.org/)
