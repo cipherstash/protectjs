@@ -1,6 +1,7 @@
 # Model Operations
 
-Model operations in Protect.js provide a high-level interface for encrypting and decrypting entire objects. These operations automatically handle the encryption of fields defined in your schema while preserving other fields.
+Model operations in Protect.js provide a high-level interface for encrypting and decrypting entire objects. 
+These operations automatically handle the encryption of fields defined in your schema while preserving other fields.
 
 ## Table of Contents
 
