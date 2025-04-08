@@ -69,7 +69,8 @@ Lastly, install the CipherStash CLI:
   - [Linux ARM64](https://github.com/cipherstash/cli-releases/releases/latest/download/stash-aarch64-unknown-linux-gnu)
   - [Linux x86_64](https://github.com/cipherstash/cli-releases/releases/latest/download/stash-x86_64-unknown-linux-gnu)
 
-> [!NOTE] > **You need to opt out of bundling when using Protect.js.**
+> [!NOTE] 
+> **You need to opt out of bundling when using Protect.js.**
 >
 > Protect.js uses Node.js specific features and requires the use of the [native Node.js `require`](https://nodejs.org/api/modules.html#requireid).
 >
