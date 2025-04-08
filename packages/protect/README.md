@@ -320,6 +320,7 @@ If you are working with a large data set, the model operations are significantly
 
 > [!TIP]
 > CipherStash [ZeroKMS](https://cipherstash.com/products/zerokms) is optimized for bulk operations.
+>
 > All the model operations are able to take advantage of this performance for real-world use cases by only making a single call to ZeroKMS regardless of the number of objects you are encrypting or decrypting while still using a unique key for each record.
 
 #### Encrypting a model
