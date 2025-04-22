@@ -759,3 +759,9 @@ Please read the [contribution guide](CONTRIBUTE.md).
 ## License
 
 Protect.js is [MIT licensed](./LICENSE.md).
+
+---
+
+### Didn't find what you wanted?
+
+[Click here to let us know what was missing from our docs.](https://github.com/cipherstash/protectjs/issues/new?template=docs-feedback.yml&title=[Docs:]%20Feedback%20on%20README.md)
