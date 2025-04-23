@@ -1,4 +1,4 @@
-## SST and esbuild
+# SST and esbuild
 
 Using `@cipherstash/protect` in a serverless function deployed with [SST](https://sst.dev/)?
 
@@ -14,3 +14,9 @@ nodejs: {
 },
 ...
 ```
+
+---
+
+### Didn't find what you wanted?
+
+[Click here to let us know what was missing from our docs.](https://github.com/cipherstash/protectjs/issues/new?template=docs-feedback.yml&title=[Docs:]%20Feedback%20on%sst-external-packages.md)
