@@ -3,9 +3,18 @@
 Protect.js supports searching encrypted data, which enabled trusted data access so that you can:
 
 1. Prove to your customers that you can track exactly what data is being accessed in your application.
-2. Provide evidence for compliance requirements, such as [SOC2](https://cipherstash.com/compliance/soc2) and [BDSG](https://cipherstash.com/compliance/bdsg).
+2. Provide evidence for compliance requirements, such as [SOC 2](https://cipherstash.com/compliance/soc2) and [BDSG](https://cipherstash.com/compliance/bdsg).
 
-## What does searchable encryption even mean? 
+## Table of contents
+
+- [What is searchable encryption?](#what-is-searchable-encryption)
+- [Searching on encrypted data](#searching-on-encrypted-data)
+  - [Using Encrypt Query Language (EQL)](#using-encrypt-query-language-eql)
+- [How fast is CipherStash's searchable encryption?](#how-fast-is-cipherstashs-searchable-encryption)
+- [How does searchable encryption help?](#how-does-searchable-encryption-help)
+- [Bringing everything together](#bringing-everything-together)
+
+## What is searchable encryption? 
 
 The best way to describe searchable encryption is with an example.
 Let's say you have a table of users in your database, and you want to search for a user by their email address:
@@ -42,7 +51,7 @@ Now, what's the issue if you execute the equality query with this data set?
 
 There would be no results returned, because `alice.johnson@example.com` does not equal `mBbKmsMMkbKBSN...`!
 
-## How do you search on encrypted data?
+## Searching on encrypted data
 
 There is prior art for this, and it's called [Homomorphic Encryption](https://en.wikipedia.org/wiki/Homomorphic_encryption), and is defined as:
 
@@ -108,23 +117,29 @@ Based on some [benchmarks](https://github.com/cipherstash/tfhe-ore-bench?tab=rea
 | **a >= a**         | 44 ms          | 221 ns        | ~199 000×    |
 | **a <= a**         | 44 ms          | 226 ns        | ~195 000×    |
 
-## How does searchable encryption help me?
+## How does searchable encryption help?
 
 Every single decryption event is logged in CipherStash [ZeroKMS](https://cipherstash.com/products/zerokms), giving you an audit trail of data access events to help you prove compliance with your data protection policies.
 
 With searchable encryption, you can:
 
-1. Prove to your customers that you can track exactly what data is being accessed in your application.
-2. Provide evidence for compliance requirements, such as [SOC2](https://cipherstash.com/compliance/soc2) and [BDSG](https://cipherstash.com/compliance/bdsg).
+- Prove to your customers that you can track exactly what data is being accessed in your application.
+- Provide evidence for compliance requirements, such as [SOC2](https://cipherstash.com/compliance/soc2) and [BDSG](https://cipherstash.com/compliance/bdsg).
 
 ## Bringing everything together 
 
 With searchable encryption:
 
-1. Data can be encrypted, stored, and searched in your existing PostgreSQL database.
-2. Encrypted data can be searched using equality, free text search, and range queries.
-3. Data remains encrypted, and will be decrypted using the Protect.js library in your application.
-4. Queries are blazing fast, and won't slow down your application experience.
-5. Every decryption event is logged, giving you an audit trail of data access events.
+- Data can be encrypted, stored, and searched in your existing PostgreSQL database.
+- Encrypted data can be searched using equality, free text search, and range queries.
+- Data remains encrypted, and will be decrypted using the Protect.js library in your application.
+- Queries are blazing fast, and won't slow down your application experience.
+- Every decryption event is logged, giving you an audit trail of data access events.
 
 Read more about the [implementation details](../reference/searchable-encryption-postgres.md) to get started.
+
+---
+
+### Didn't find what you wanted?
+
+[Click here to let us know what was missing from our docs.](https://github.com/cipherstash/protectjs/issues/new?template=docs-feedback.yml&title=[Docs:]%20Feedback%20on%20searchable-encryption.md)
