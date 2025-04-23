@@ -2,6 +2,15 @@
 
 Protect.js lets you define a schema in TypeScript with properties that map to your database columns, and define indexes and casting for each column which are used when searching on encrypted data.
 
+## Table of contents
+
+- [Creating schema files](#creating-schema-files)
+- [Understanding schema files](#understanding-schema-files)
+- [Defining your schema](#defining-your-schema)
+  - [Searchable encryption](#searchable-encryption)
+- [Available index options](#available-index-options)
+- [Initializing the Protect client](#initializing-the-protect-client)
+
 ## Creating schema files
 
 You can declare your Protect.js schema directly in TypeScript either in a single `schema.ts` file, or you can split your schema into multiple files. It's up to you.
@@ -54,9 +63,9 @@ export const protectedUsers = csTable("users", {
 });
 ```
 
-**Searchable encryption**
+### Searchable encryption
 
-If you are looking to enable searchable encryption in a PostgreSQL database, you must declaratively enable the indexes in your schema by chanining the index options to the column.
+If you are looking to enable searchable encryption in a PostgreSQL database, you must declaratively enable the indexes in your schema by chaining the index options to the column.
 
 ```ts
 import { csTable, csColumn } from "@cipherstash/protect";
@@ -91,3 +100,9 @@ const protectClient = await protect(protectedUsers, ...);
 ```
 
 The `protect` function requires at least one `csTable` to be passed in.
+
+---
+
+### Didn't find what you wanted?
+
+[Click here to let us know what was missing from our docs.](https://github.com/cipherstash/protectjs/issues/new?template=docs-feedback.yml&title=[Docs:]%20Feedback%20on%schema.md)
