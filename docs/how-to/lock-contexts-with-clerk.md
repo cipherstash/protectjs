@@ -1,5 +1,16 @@
 
-## Lock context with Next.js and Clerk
+# Locking context with Next.js and Clerk
+
+This how-to guide shows you how to lock context if you're using [Clerk](https://clerk.com/) with Next.js.
+
+## Table of contents
+
+- [Getting started](#getting-started)
+- [Retrieving the CTS token in Next.js](#retrieving-the-cts-token-in-nextjs)
+- [Constructing a LockContext with an existing CTS token](#constructing-a-lockcontext-with-an-existing-cts-token)
+- [Custom lock contexts](#custom-lock-contexts)
+
+## Getting started
 
 If you're using [Clerk](https://clerk.com/) as your identity provider, use the `protectClerkMiddleware` function to automatically set the CTS token for every user session.
 
@@ -24,7 +35,7 @@ export default clerkMiddleware(async (auth, req: NextRequest) => {
 })
 ```
 
-### Retrieving the CTS token in Next.js
+## Retrieving the CTS token in Next.js
 
 You can then use the `getCtsToken` function to retrieve the CTS token for the current user session.
 
@@ -52,7 +63,7 @@ export default async function Page() {
 }
 ```
 
-### Contructing a LockContext with an existing CTS token
+## Constructing a LockContext with an existing CTS token
 
 Since the CTS token is already available, you can construct a `LockContext` object with the existing CTS token.
 
@@ -79,8 +90,7 @@ export default async function Page() {
 }
 ```
 
-
-#### Custom lock contexts
+## Custom lock contexts
 
 If you want to override the default context, you can pass a custom context to the `LockContext` constructor.
 
@@ -106,3 +116,9 @@ Currently supported Identity Claims are:
 | -------------- | ----------- |
 | `sub`          | The user's subject identifier. |
 | `scopes`       | The user's scopes set by your IDP policy. |
+
+---
+
+### Didn't find what you wanted?
+
+[Click here to let us know what was missing from our docs.](https://github.com/cipherstash/protectjs/issues/new?template=docs-feedback.yml&title=[Docs:]%20Feedback%20on%lock-contexts-with-clerk.md)
