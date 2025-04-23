@@ -1,25 +1,25 @@
-# Model Operations
+# Model operations
 
 Model operations in Protect.js provide a high-level interface for encrypting and decrypting entire objects. 
 These operations automatically handle the encryption of fields defined in your schema while preserving other fields.
 
-## Table of Contents
+## Table of contents
 
-- [Basic Model Operations](#basic-model-operations)
-  - [Encrypting a Model](#encrypting-a-model)
-  - [Decrypting a Model](#decrypting-a-model)
-- [Bulk Model Operations](#bulk-model-operations)
-  - [Bulk Encryption](#bulk-encryption)
-  - [Bulk Decryption](#bulk-decryption)
-- [Type Safety](#type-safety)
-  - [Using Type Parameters](#using-type-parameters)
-  - [Type Inference from Schema](#type-inference-from-schema)
-- [Identity-Aware Model Operations](#identity-aware-model-operations)
-- [Error Handling](#error-handling)
+- [Basic model operations](#basic-model-operations)
+  - [Encrypting a model](#encrypting-a-model)
+  - [Decrypting a model](#decrypting-a-model)
+- [Bulk model operations](#bulk-model-operations)
+  - [Bulk encryption](#bulk-encryption)
+  - [Bulk decryption](#bulk-decryption)
+- [Type safety](#type-safety)
+  - [Using type parameters](#using-type-parameters)
+  - [Type inference from schema](#type-inference-from-schema)
+- [Identity-aware model operations](#identity-aware-model-operations)
+- [Error handling](#error-handling)
 
-## Basic Model Operations
+## Basic model operations
 
-### Encrypting a Model
+### Encrypting a model
 
 The `encryptModel` method encrypts fields in your model that are defined in your schema while leaving other fields unchanged.
 
@@ -52,7 +52,7 @@ const encryptedUser = encryptedResult.data;
 // }
 ```
 
-### Decrypting a Model
+### Decrypting a model
 
 The `decryptModel` method automatically detects and decrypts any encrypted fields in your model.
 
@@ -68,11 +68,11 @@ const decryptedUser = decryptedResult.data;
 // Result: Original model with decrypted values
 ```
 
-## Bulk Model Operations
+## Bulk model operations
 
 For better performance when working with multiple models, use these bulk encryption methods.
 
-### Bulk Encryption
+### Bulk encryption
 
 ```typescript
 const users = [
@@ -98,7 +98,7 @@ if (encryptedResult.failure) {
 const encryptedUsers = encryptedResult.data;
 ```
 
-### Bulk Decryption
+### Bulk decryption
 
 ```typescript
 const decryptedResult = await protectClient.bulkDecryptModels(encryptedUsers);
@@ -111,9 +111,9 @@ if (decryptedResult.failure) {
 const decryptedUsers = decryptedResult.data;
 ```
 
-## Type Safety
+## Type safety
 
-### Using Type Parameters
+### Using type parameters
 
 Protect.js provides strong TypeScript support through generic type parameters:
 
@@ -152,7 +152,7 @@ The type system ensures:
 - Preservation of nested object structures
 - Type safety for encrypted and decrypted results
 
-### Type Inference from Schema
+### Type inference from schema
 
 The model operations can infer types from your schema definition:
 
@@ -167,7 +167,7 @@ const result = await protectClient.encryptModel(user, users);
 // Result type includes encrypted fields for email and address
 ```
 
-## Identity-Aware Model Operations
+## Identity-aware model operations
 
 All model operations support lock contexts for identity-aware encryption:
 
@@ -191,7 +191,7 @@ const bulkDecryptedResult = await protectClient
   .withLockContext(lockContext);
 ```
 
-## Error Handling
+## Error handling
 
 All model operations return a `Result` type that includes either a `data` or `failure` property:
 
@@ -226,3 +226,9 @@ Common error types:
 
 > [!TIP]
 > Always handle both the success and failure cases when working with model operations. The `Result` type ensures you don't accidentally ignore error cases.
+>
+> ---
+
+### Didn't find what you wanted?
+
+[Click here to let us know what was missing from our docs.](https://github.com/cipherstash/protectjs/issues/new?template=docs-feedback.yml&title=[Docs:]%20Feedback%20on%model-operations.md)
