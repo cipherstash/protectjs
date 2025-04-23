@@ -2,6 +2,16 @@
 
 This reference guide outlines the different query patterns you can use to search encrypted data with Protect.js.
 
+## Table of contents
+
+- [Before you start](#before-you-start)
+- [Equality query](#equality-query)
+- [Free-text search](#free-text-search)
+- [Sorting data](#sorting-data)
+- [Range queries](#range-queries)
+
+## Before you start
+
 You will have needed to [define your schema and initialized the protect client](../../README.md#defining-your-schema), and have [installed the EQL custom types and functions](../../README.md#searchable-encryption-in-postgresql).
 
 The below examples assume you have a schema defined:
@@ -45,13 +55,13 @@ const equalitySQL = `
 const result = await client.query(equalitySQL, [ protectedUser.email.getName(), encryptedParam.data ])
 ```
 
-### Explanation
+**Explanation:**
 
 `WHERE cs_unique_v1($1) = cs_unique_v1($2)`
 
 The first `$1` is the Postgres column name, and the second `$2` is the encrypted search term. 
 
-## Free-Text search
+## Free-text search
 
 For partial matches or full-text searches, use the `cs_match_v1` function.
 
@@ -79,7 +89,7 @@ const matchSQL = `
 const result = await client.query(matchSQL, [ protectedUser.email.getName(), encryptedParam.data ])
 ```
 
-### Explanation
+**Explanation:**
 
 `WHERE cs_match_v1($1) @> cs_match_v1($2)`
 
@@ -108,4 +118,10 @@ The `cs_ore_64_8_v1` function doesn't require any encrypted parameters, but rath
 
 ## Range queries
 
-TODO: flesh this out (sorry it's not done yet)
+TODO: flesh this out (sorry it's not done yet!)
+
+---
+
+### Didn't find what you wanted?
+
+[Click here to let us know what was missing from our docs.](https://github.com/cipherstash/protectjs/issues/new?template=docs-feedback.yml&title=[Docs:]%20Feedback%20on%searchable-encryption-postgres.md)
