@@ -1,15 +1,20 @@
-# Protect.js Configuration
+# Protect.js configuration
 
 Protect.js is configured with [toml](https://toml.io/en/) files or environment variables, and is used to initialize the client when Protect.js is initialized.
 
 Environment variables will take precedence over configuration files and it's recommented to use them for sensitive values.
 
-## Jump to a section
+## Table of contents
 
 - [cipherstash.toml](#cipherstashtoml)
+  - [Specification](#specification)
+    - [`[encrypt]` section](#encrypt-section)
+    - [`[auth]` section](#auth-section)
 - [cipherstash.secret.toml](#cipherstashsecrettoml)
 - [Environment variables](#environment-variables)
 - [Deploying to production](#deploying-to-production)
+  - [Region configuration](#region-configuration)
+  - [File system write permissions](#file-system-write-permissions)
 
 ## cipherstash.toml
 
@@ -97,15 +102,21 @@ The following environment variables are supported:
 > [!TIP]
 > There are some configuration details you should take note of when deploying `@cipherstash/protect` in your production apps.
 
-**Region configuration**
+### Region configuration
 
 If you've created a Workspace in a region other than `ap-southeast-2`, you will need to set the `CS_ZEROKMS_HOST` environment variable to the appropriate region. 
 
 For example, if you are using ZeroKMS in the `eu-central-1` region, you need to set the `CS_ZEROKMS_HOST` variable to `https://eu-central-1.aws.viturhosted.net`. 
 This is a known usability issue that will be addressed.
 
-**File system write permissions**
+### File system write permissions
 
 In most hosting environments, the `CS_CONFIG_PATH` environment variable will need to be set to a path that the user running the application has permission to write to.
 
 Setting `CS_CONFIG_PATH` to `/tmp/.cipherstash` will work in most cases, and has been tested on [Vercel](https://vercel.com/), and [AWS Lambda](https://aws.amazon.com/lambda/).
+
+---
+
+### Didn't find what you wanted?
+
+[Click here to let us know what was missing from our docs.](https://github.com/cipherstash/protectjs/issues/new?template=docs-feedback.yml&title=[Docs:]%20Feedback%20on%configuration.md)
