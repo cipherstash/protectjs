@@ -1,4 +1,4 @@
-## Getting started
+# Getting started guide
 
 This getting started guide steps you through:
 
@@ -12,7 +12,18 @@ This getting started guide steps you through:
 > - [TypeScript](https://www.typescriptlang.org/)
 > - [PostgreSQL](https://www.postgresql.org/) — see PostgreSQL's [documentation for installing](https://www.postgresql.org/download/)
 
-### Step 0: Basic file structure
+## Table of contents
+
+- [Step 0: Basic file structure](#step-0-basic-file-structure)
+- [Step 1: Install Protect.js](#step-1-install-protectjs)
+- [Step 2: Set up credentials](#step-2-set-up-credentials)
+- [Step 3: Define your schema](#step-3-define-your-schema)
+- [Step 4: Initialize the Protect client](#step-4-initialize-the-protect-client)
+- [Step 5: Encrypt data](#step-5-encrypt-data)
+- [Step 6: Decrypt data](#step-6-decrypt-data)
+- [Step 7: Store encrypted data in a database](#step-7-store-encrypted-data-in-a-database)
+
+## Step 0: Basic file structure
 
 The following is the basic file structure of the standalone project for this getting started guide.
 In the `src/protect/` directory, we have the table definition in `schema.ts` and the Protect.js client in `index.ts`.
@@ -78,7 +89,7 @@ Lastly, install the CipherStash CLI:
 >
 > Read more about [building and bundling with Protect.js](#builds-and-bundling).
 
-### Step 2: Set up credentials
+## Step 2: Set up credentials
 
 > [!IMPORTANT]
 > Make sure you have [installed the CipherStash CLI](#step-1-install-protectjs) before following these steps.
@@ -102,7 +113,7 @@ At the end of `stash setup`, you will have two files in your project:
 
 Read more about [configuration via TOML file or environment variables](./docs/reference/configuration.md).
 
-### Step 3: Define your schema
+## Step 3: Define your schema
 
 Protect.js uses a schema to define the tables and columns that you want to encrypt and decrypt.
 
@@ -138,7 +149,7 @@ export const orders = csTable("orders", {
 
 Read more about [defining your schema](./docs/reference/schema.md).
 
-### Step 4: Initialize the Protect client
+## Step 4: Initialize the Protect client
 
 To import the `protect` function and initialize a client with your defined schema, add the following to `src/protect/index.ts`:
 
@@ -152,7 +163,7 @@ export const protectClient = await protect(users, orders);
 
 The `protect` function requires at least one `csTable` to be provided.
 
-### Step 5: Encrypt data
+## Step 5: Encrypt data
 
 Protect.js provides the `encrypt` function on `protectClient` to encrypt data.
 `encrypt` takes a plaintext string, and an object with the table and column as parameters.
@@ -210,7 +221,7 @@ The `encryptResult` will return one of the following:
 > [!TIP]
 > Working with large payloads? Check out the [model operations with bulk cryptography functions](./reference/model-operations.md) docs.
 
-### Step 6: Decrypt data
+## Step 6: Decrypt data
 
 Use the `decrypt` function to decrypt data.
 `decrypt` takes an encrypted data object as a parameter.
@@ -248,7 +259,7 @@ The `decryptResult` will return one of the following:
 > [!TIP]
 > Working with large payloads? Check out the [model operations with bulk cryptography functions](./reference/model-operations.md) docs.
 
-### Step 7: Store encrypted data in a database
+## Step 7: Store encrypted data in a database
 
 Encrypted data can be stored in any database that supports JSONB.
 
@@ -260,3 +271,9 @@ CREATE TABLE users (
   email jsonb NOT NULL,
 );
 ```
+
+---
+
+### Didn't find what you wanted?
+
+[Click here to let us know what was missing from our docs.](https://github.com/cipherstash/protectjs/issues/new?template=docs-feedback.yml&title=[Docs:]%20Feedback%20on%20getting-started.md)
