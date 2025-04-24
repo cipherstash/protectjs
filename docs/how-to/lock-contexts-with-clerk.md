@@ -1,7 +1,7 @@
 
 # Locking context with Next.js and Clerk
 
-This how-to guide shows you how to lock context if you're using [Clerk](https://clerk.com/) with Next.js.
+This how-to guide shows you how to use lock context if you're using [Clerk](https://clerk.com/) with Next.js.
 
 ## Table of contents
 
