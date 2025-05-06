@@ -35,9 +35,9 @@
     "test": "turbo test --filter './packages/*'"
   },
   "devDependencies": {
-    "@biomejs/biome": "^1.9.3",
-    "@changesets/cli": "^2.28.1",
-    "@types/node": "^22.10.2",
+    "@biomejs/biome": "^1.9.4",
+    "@changesets/cli": "^2.29.3",
+    "@types/node": "^22.15.12",
     "rimraf": "6.0.1",
     "turbo": "2.1.1"
   },
@@ -46,7 +46,7 @@
     "node": ">=22"
   },
   "pnpm": {
-   "overrides": {
+    "overrides": {
       "@babel/runtime": "7.26.10"
     }
   }
