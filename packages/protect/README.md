@@ -94,7 +94,8 @@ yarn add @cipherstash/protect
 pnpm add @cipherstash/protect
 ```
 
-> [!TIP] > [Bun](https://bun.sh/) is not currently supported due to a lack of [Node-API compatibility](https://github.com/oven-sh/bun/issues/158). Under the hood, Protect.js uses [CipherStash Client](#cipherstash-client) which is written in Rust and embedded using [Neon](https://github.com/neon-bindings/neon).
+> [!TIP]
+> [Bun](https://bun.sh/) is not currently supported due to a lack of [Node-API compatibility](https://github.com/oven-sh/bun/issues/158). Under the hood, Protect.js uses [CipherStash Client](#cipherstash-client) which is written in Rust and embedded using [Neon](https://github.com/neon-bindings/neon).
 
 Lastly, install the CipherStash CLI:
 
@@ -110,7 +111,8 @@ Lastly, install the CipherStash CLI:
 
 ### Opt-out of bundling
 
-> [!IMPORTANT] > **You need to opt-out of bundling when using Protect.js.**
+> [!IMPORTANT]
+> **You need to opt-out of bundling when using Protect.js.**
 
 Protect.js uses Node.js specific features and requires the use of the [native Node.js `require`](https://nodejs.org/api/modules.html#requireid).
 
@@ -721,7 +723,8 @@ Read more about [searching encrypted data](./docs/concepts/searchable-encryption
 
 ## Logging
 
-> [!IMPORTANT] > `@cipherstash/protect` will NEVER log plaintext data.
+> [!IMPORTANT] 
+> `@cipherstash/protect` will NEVER log plaintext data.
 > This is by design to prevent sensitive data from leaking into logs.
 
 `@cipherstash/protect` and `@cipherstash/nextjs` will log to the console with a log level of `info` by default.
