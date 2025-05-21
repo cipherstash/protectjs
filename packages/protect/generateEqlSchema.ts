@@ -3,7 +3,7 @@ import { execa } from 'execa'
 
 async function main() {
   const url =
-    'https://raw.githubusercontent.com/cipherstash/encrypt-query-language/main/sql/schemas/cs_encrypted_storage_v1.schema.json'
+    'https://raw.githubusercontent.com/cipherstash/encrypt-query-language/main/sql/schemas/cs_encrypted_storage_v2.schema.json'
 
   const response = await fetch(url)
 

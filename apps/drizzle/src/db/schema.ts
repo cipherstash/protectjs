@@ -9,10 +9,10 @@ import {
 
 // Custom types will be implemented in the future - this is an example for now
 // ---
-// const cs_encrypted_v1 = <TData>(name: string) =>
+// const cs_encrypted_v2 = <TData>(name: string) =>
 //   customType<{ data: TData; driverData: string }>({
 //     dataType() {
-//       return 'cs_encrypted_v1'
+//       return 'cs_encrypted_v2'
 //     },
 //     toDriver(value: TData): string {
 //       return JSON.stringify(value)

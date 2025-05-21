@@ -67,7 +67,9 @@ export class EncryptOperation
         }
 
         if (this.plaintext === null) {
-          return null
+          return {
+            data: null,
+          }
         }
 
         const val = await ffiEncrypt(
@@ -77,7 +79,7 @@ export class EncryptOperation
           this.table.tableName,
         )
 
-        return JSON.parse(val)
+        return { data: JSON.parse(val) } as EncryptedPayload
       },
       (error) => ({
         type: ProtectErrorTypes.EncryptionError,
@@ -143,7 +145,9 @@ export class EncryptOperationWithLockContext
         }
 
         if (plaintext === null) {
-          return null
+          return {
+            data: null,
+          }
         }
 
         const context = await this.lockContext.getLockContext()
@@ -161,7 +165,7 @@ export class EncryptOperationWithLockContext
           context.data.ctsToken,
         )
 
-        return JSON.parse(val)
+        return { data: JSON.parse(val) } as EncryptedPayload
       },
       (error) => ({
         type: ProtectErrorTypes.EncryptionError,
