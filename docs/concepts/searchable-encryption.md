@@ -82,7 +82,7 @@ if (encryptedParam.failure) {
 const equalitySQL = `
   SELECT email
   FROM users
-  WHERE cs_unique_v1($1) = cs_unique_v1($2)
+  WHERE cs_unique_v2($1) = cs_unique_v2($2)
 `
 
 // 3) Execute the query, passing in the Postgres column name
@@ -96,7 +96,7 @@ Using the above approach, Protect.js is generating the EQL payloads and which me
 So does this solve the original problem of searching on encrypted data?
 
 ```sql
-# SELECT * FROM users WHERE WHERE cs_unique_v1(email) = cs_unique_v1(eql_payload_created_by_protect);
+# SELECT * FROM users WHERE WHERE cs_unique_v2(email) = cs_unique_v2(eql_payload_created_by_protect);
  id |      name      |           email
 ----+----------------+----------------------------
   1 | Alice Johnson  | mBbKmsMMkbKBSN...

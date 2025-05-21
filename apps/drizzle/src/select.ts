@@ -44,19 +44,19 @@ const fnForOp: (op: string) => BinaryOperator = (op) => {
 }
 
 const csEq: BinaryOperator = (left: SQLWrapper, right: unknown): SQL => {
-  return sql`cs_unique_v1(${left}) = cs_unique_v1(${bindIfParam(right, left)})`
+  return sql`cs_unique_v2(${left}) = cs_unique_v2(${bindIfParam(right, left)})`
 }
 
 const csGt: BinaryOperator = (left: SQLWrapper, right: unknown): SQL => {
-  return sql`cs_ore_64_8_v1(${left}) > cs_ore_64_8_v1(${bindIfParam(right, left)})`
+  return sql`cs_ore_64_8_v2(${left}) > cs_ore_64_8_v2(${bindIfParam(right, left)})`
 }
 
 const csLt: BinaryOperator = (left: SQLWrapper, right: unknown): SQL => {
-  return sql`cs_ore_64_8_v1(${left}) < cs_ore_64_8_v1(${bindIfParam(right, left)})`
+  return sql`cs_ore_64_8_v2(${left}) < cs_ore_64_8_v2(${bindIfParam(right, left)})`
 }
 
 const csMatch: BinaryOperator = (left: SQLWrapper, right: unknown): SQL => {
-  return sql`cs_match_v1(${left}) @> cs_match_v1(${bindIfParam(right, left)})`
+  return sql`cs_match_v2(${left}) @> cs_match_v2(${bindIfParam(right, left)})`
 }
 
 const filterInput = await protectClient.encrypt(filter, {
@@ -76,7 +76,7 @@ const query = db
   })
   .from(users)
   .where(filterFn(users.email_encrypted, filterInput.data))
-  .orderBy(sql`cs_ore_64_8_v1(users.email_encrypted)`)
+  .orderBy(sql`cs_ore_64_8_v2(users.email_encrypted)`)
 
 const sqlResult = query.toSQL()
 console.log('[INFO] SQL statement:', sqlResult)

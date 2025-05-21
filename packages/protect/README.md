@@ -565,12 +565,12 @@ To enable searchable encryption in PostgreSQL, [install the EQL custom types and
    psql -f cipherstash-encrypt-supabase.sql
    ```
 
-EQL is now installed in your database and you can enable searchable encryption by adding the `eql_v1_encrypted` type to a column.
+EQL is now installed in your database and you can enable searchable encryption by adding the `eql_v2_encrypted` type to a column.
 
 ```sql
 CREATE TABLE users (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    email eql_v1_encrypted
+    email eql_v2_encrypted
 );
 ```
 
