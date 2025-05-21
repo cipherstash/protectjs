@@ -229,7 +229,7 @@ export function buildEncryptConfig(
   ...protectTables: Array<ProtectTable<ProtectTableColumn>>
 ): EncryptConfig {
   const config: EncryptConfig = {
-    v: 1,
+    v: 2,
     tables: {},
   }
 

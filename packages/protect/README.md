@@ -94,8 +94,7 @@ yarn add @cipherstash/protect
 pnpm add @cipherstash/protect
 ```
 
-> [!TIP] 
-> [Bun](https://bun.sh/) is not currently supported due to a lack of [Node-API compatibility](https://github.com/oven-sh/bun/issues/158). Under the hood, Protect.js uses [CipherStash Client](#cipherstash-client) which is written in Rust and embedded using [Neon](https://github.com/neon-bindings/neon).
+> [!TIP] > [Bun](https://bun.sh/) is not currently supported due to a lack of [Node-API compatibility](https://github.com/oven-sh/bun/issues/158). Under the hood, Protect.js uses [CipherStash Client](#cipherstash-client) which is written in Rust and embedded using [Neon](https://github.com/neon-bindings/neon).
 
 Lastly, install the CipherStash CLI:
 
@@ -111,8 +110,7 @@ Lastly, install the CipherStash CLI:
 
 ### Opt-out of bundling
 
-> [!IMPORTANT] 
-> **You need to opt-out of bundling when using Protect.js.**
+> [!IMPORTANT] > **You need to opt-out of bundling when using Protect.js.**
 
 Protect.js uses Node.js specific features and requires the use of the [native Node.js `require`](https://nodejs.org/api/modules.html#requireid).
 
@@ -122,9 +120,8 @@ Read more about [building and bundling with Protect.js](#builds-and-bundling).
 
 ## Getting started
 
-🆕 **Existing app?** Skip to [the next step](#configuration).
-
-🌱 **Clean slate?** Check out the [getting started tutorial](./docs/getting-started.md).
+- 🆕 **Existing app?** Skip to [the next step](#configuration).
+- 🌱 **Clean slate?** Check out the [getting started tutorial](./docs/getting-started.md).
 
 ### Configuration
 
@@ -244,8 +241,7 @@ if (encryptResult.failure) {
   );
 }
 
-const ciphertext = encryptResult.data;
-console.log("ciphertext:", ciphertext);
+console.log("EQL Payload containing ciphertexts:", encryptResult.data);
 ```
 
 The `encrypt` function will return a `Result` object with either a `data` key, or a `failure` key.
@@ -254,9 +250,7 @@ The `encryptResult` will return one of the following:
 ```typescript
 // Success
 {
-  data: {
-    c: 'mBbKmsMMkbKBSN}s1THy_NfQN892!dercyd0s...'
-  }
+  data: EncryptedPayload
 }
 
 // Failure
@@ -278,7 +272,8 @@ To start decrypting data, add the following to `src/index.ts`:
 ```typescript
 import { protectClient } from "./protect";
 
-const decryptResult = await protectClient.decrypt(ciphertext);
+// encryptResult is the EQL payload from the previous step
+const decryptResult = await protectClient.decrypt(encryptResult.data);
 
 if (decryptResult.failure) {
   // Handle the failure
@@ -313,7 +308,7 @@ The `decryptResult` will return one of the following:
 
 ### Working with models and objects
 
-Protect.js provides model-level encryption methods that make it easy to encrypt and decrypt entire objects. 
+Protect.js provides model-level encryption methods that make it easy to encrypt and decrypt entire objects.
 These methods automatically handle the encryption of fields defined in your schema.
 
 If you are working with a large data set, the model operations are significantly faster than encrypting and decrypting individual objects as they are able to perform bulk operations.
@@ -354,12 +349,12 @@ const encryptedUser = encryptedResult.data;
 console.log("encrypted user:", encryptedUser);
 ```
 
-The `encryptModel` function will only encrypt fields that are defined in your schema. 
+The `encryptModel` function will only encrypt fields that are defined in your schema.
 Other fields (like `id` and `createdAt` in the example above) will remain unchanged.
 
 #### Type safety with models
 
-Protect.js provides strong TypeScript support for model operations. 
+Protect.js provides strong TypeScript support for model operations.
 You can specify your model's type to ensure end-to-end type safety:
 
 ```typescript
@@ -523,7 +518,7 @@ if (decryptedResult.failure) {
 const decryptedUsers = decryptedResult.data;
 ```
 
-The model encryption methods provide a higher-level interface that's particularly useful when working with ORMs or when you need to encrypt multiple fields in an object. 
+The model encryption methods provide a higher-level interface that's particularly useful when working with ORMs or when you need to encrypt multiple fields in an object.
 They automatically handle the mapping between your model's structure and the encrypted fields defined in your schema.
 
 ### Store encrypted data in a database
@@ -549,20 +544,35 @@ To enable searchable encryption in PostgreSQL, [install the EQL custom types and
    curl -sLo cipherstash-encrypt.sql https://github.com/cipherstash/encrypt-query-language/releases/latest/download/cipherstash-encrypt.sql
    ```
 
+   Using [Supabase](https://supabase.com/)? We ship an EQL release specifically for Supabase.
+   Download the latest EQL install script:
+
+   ```sh
+   curl -sLo cipherstash-encrypt-supabase.sql https://github.com/cipherstash/encrypt-query-language/releases/latest/download/cipherstash-encrypt-supabase.sql
+   ```
+
 2. Run this command to install the custom types and functions:
 
    ```sh
    psql -f cipherstash-encrypt.sql
    ```
 
-EQL is now installed in your database and you can enable searchable encryption by adding the `cs_encrypted_v1` type to a column.
+   or with Supabase:
+
+   ```sh
+   psql -f cipherstash-encrypt-supabase.sql
+   ```
+
+EQL is now installed in your database and you can enable searchable encryption by adding the `eql_v1_encrypted` type to a column.
 
 ```sql
 CREATE TABLE users (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    email cs_encrypted_v1
+    email eql_v1_encrypted
 );
 ```
+
+Read more about [how to search encrypted data](./docs/how-to/searchable-encryption.md) in the docs.
 
 ## Identity-aware encryption
 
@@ -631,7 +641,7 @@ if (encryptResult.failure) {
   // Handle the failure
 }
 
-const ciphertext = encryptResult.data;
+console.log("EQL Payload containing ciphertexts:", encryptResult.data);
 ```
 
 ### Decrypting data with a lock context
@@ -642,7 +652,7 @@ To decrypt data with a lock context, call the optional `withLockContext` method 
 import { protectClient } from "./protect";
 
 const decryptResult = await protectClient
-  .decrypt(ciphertext)
+  .decrypt(encryptResult.data)
   .withLockContext(lockContext);
 
 if (decryptResult.failure) {
@@ -711,8 +721,7 @@ Read more about [searching encrypted data](./docs/concepts/searchable-encryption
 
 ## Logging
 
-> [!IMPORTANT] 
-> `@cipherstash/protect` will NEVER log plaintext data.
+> [!IMPORTANT] > `@cipherstash/protect` will NEVER log plaintext data.
 > This is by design to prevent sensitive data from leaking into logs.
 
 `@cipherstash/protect` and `@cipherstash/nextjs` will log to the console with a log level of `info` by default.

@@ -45,7 +45,14 @@ export function isEncryptedPayload(value: unknown): value is EncryptedPayload {
 
   if (typeof value === 'object') {
     const obj = value as Record<string, unknown>
-    return 'v' in obj && 'k' in obj && 'i' in obj
+    return (
+      'data' in obj &&
+      obj.data !== null &&
+      typeof obj.data === 'object' &&
+      'v' in obj.data &&
+      'k' in obj.data &&
+      'i' in obj.data
+    )
   }
 
   return false
@@ -183,7 +190,7 @@ export async function decryptModelFields<T extends Record<string, unknown>>(
   const bulkDecryptPayload = Object.entries(operationFields).map(
     ([key, value]) => ({
       id: key,
-      ciphertext: (value as EncryptedPayload).c as string,
+      ciphertext: (value as EncryptedPayload).data?.c as string,
     }),
   )
 
@@ -224,7 +231,7 @@ export async function encryptModelFields<T extends Record<string, unknown>>(
     bulkEncryptPayload,
     (items) =>
       encryptBulk(client, items).then((results) =>
-        results.map((item) => JSON.parse(item) as EncryptedPayload),
+        results.map((item) => ({ data: JSON.parse(item) }) as EncryptedPayload),
       ),
     keyMap,
   )
@@ -256,7 +263,7 @@ export async function decryptModelFieldsWithLockContext<
   const bulkDecryptPayload = Object.entries(operationFields).map(
     ([key, value]) => ({
       id: key,
-      ciphertext: (value as EncryptedPayload).c as string,
+      ciphertext: (value as EncryptedPayload).data?.c as string,
       lockContext: lockContext.context,
     }),
   )
@@ -306,7 +313,7 @@ export async function encryptModelFieldsWithLockContext<
     bulkEncryptPayload,
     (items) =>
       encryptBulk(client, items, lockContext.ctsToken).then((results) =>
-        results.map((item) => JSON.parse(item) as EncryptedPayload),
+        results.map((item) => ({ data: JSON.parse(item) }) as EncryptedPayload),
       ),
     keyMap,
   )
@@ -398,7 +405,7 @@ export async function bulkEncryptModels<T extends Record<string, unknown>>(
     bulkEncryptPayload,
     (items) =>
       encryptBulk(client, items).then((results) =>
-        results.map((item) => JSON.parse(item) as EncryptedPayload),
+        results.map((item) => ({ data: JSON.parse(item) }) as EncryptedPayload),
       ),
     keyMap,
   )
@@ -443,7 +450,7 @@ export async function bulkDecryptModels<T extends Record<string, unknown>>(
   const bulkDecryptPayload = operationFields.flatMap((fields, modelIndex) =>
     Object.entries(fields).map(([key, value]) => ({
       id: `${modelIndex}-${key}`,
-      ciphertext: (value as EncryptedPayload).c as string,
+      ciphertext: (value as EncryptedPayload).data?.c as string,
     })),
   )
 
@@ -496,7 +503,7 @@ export async function bulkDecryptModelsWithLockContext<
   const bulkDecryptPayload = operationFields.flatMap((fields, modelIndex) =>
     Object.entries(fields).map(([key, value]) => ({
       id: `${modelIndex}-${key}`,
-      ciphertext: (value as EncryptedPayload).c as string,
+      ciphertext: (value as EncryptedPayload).data?.c as string,
       lockContext: lockContext.context,
     })),
   )
@@ -561,7 +568,7 @@ export async function bulkEncryptModelsWithLockContext<
     bulkEncryptPayload,
     (items) =>
       encryptBulk(client, items, lockContext.ctsToken).then((results) =>
-        results.map((item) => JSON.parse(item) as EncryptedPayload),
+        results.map((item) => ({ data: JSON.parse(item) }) as EncryptedPayload),
       ),
     keyMap,
   )

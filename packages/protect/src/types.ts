@@ -12,7 +12,9 @@ export type Client = Awaited<ReturnType<typeof newClient>> | undefined
 /**
  * Represents an encrypted payload in the database
  */
-export type EncryptedPayload = EqlSchema
+export type EncryptedPayload = {
+  data: EqlSchema | null
+}
 
 /**
  * Represents a payload to be encrypted using the `encrypt` function

@@ -467,8 +467,8 @@ describe('performance', () => {
 
 // ------------------------
 // TODO get LockContext working in CI.
-// These tests pass locally, given you provide a valid JWT.
 // To manually test locally, uncomment the following lines and provide a valid JWT in the userJwt variable.
+// Last successful local test was 2025-05-20 by cj@cipherstash.com
 // ------------------------
 // const userJwt = ''
 // describe('encryption and decryption with lock context', () => {
