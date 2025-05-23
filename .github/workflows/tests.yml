@@ -34,7 +34,7 @@ jobs:
       - name: Create .env file in ./packages/protect/
         run: |
           touch ./packages/protect/.env
-          echo "CS_WORKSPACE_ID=${{ secrets.CS_WORKSPACE_ID }}" >> ./packages/protect/.env
+          echo "CS_WORKSPACE_CRN=${{ secrets.CS_WORKSPACE_CRN }}" >> ./packages/protect/.env
           echo "CS_CLIENT_ID=${{ secrets.CS_CLIENT_ID }}" >> ./packages/protect/.env
           echo "CS_CLIENT_KEY=${{ secrets.CS_CLIENT_KEY }}" >> ./packages/protect/.env
           echo "CS_CLIENT_ACCESS_KEY=${{ secrets.CS_CLIENT_ACCESS_KEY }}" >> ./packages/protect/.env
