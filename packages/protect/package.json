@@ -35,18 +35,17 @@
 	"scripts": {
 		"build": "tsup",
 		"dev": "tsup --watch",
-		"eql:update": "tsx ./generateEqlSchema.ts",
-		"eql:generate": "json2ts ./eql.schema.json --output ./src/eql.schema.ts",
 		"test": "vitest run",
 		"release": "tsup"
 	},
 	"devDependencies": {
+		"@supabase/supabase-js": "^2.47.10",
 		"dotenv": "^16.4.7",
 		"execa": "^9.5.2",
 		"json-schema-to-typescript": "^15.0.2",
 		"tsup": "catalog:repo",
-		"typescript": "catalog:repo",
 		"tsx": "catalog:repo",
+		"typescript": "catalog:repo",
 		"vitest": "catalog:repo"
 	},
 	"publishConfig": {
@@ -54,7 +53,7 @@
 	},
 	"dependencies": {
 		"@byteslice/result": "^0.2.0",
-		"@cipherstash/protect-ffi": "0.12.0",
+		"@cipherstash/protect-ffi": "0.14.0",
 		"zod": "^3.24.2"
 	},
 	"optionalDependencies": {

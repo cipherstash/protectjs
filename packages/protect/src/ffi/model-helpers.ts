@@ -1,7 +1,12 @@
-import { decryptBulk, encryptBulk } from '@cipherstash/protect-ffi'
+import {
+  decryptBulk,
+  encryptBulk,
+  type Encrypted,
+} from '@cipherstash/protect-ffi'
 import type { EncryptedPayload, Decrypted, Client } from '../types'
 import type { ProtectTable, ProtectTableColumn } from '../schema'
 import type { GetLockContextResponse } from '../identify'
+import { isEncryptedPayload } from '../helpers'
 
 /**
  * Helper function to extract encrypted fields from a model
@@ -35,27 +40,6 @@ export function extractOtherFields<T extends Record<string, unknown>>(
   }
 
   return result
-}
-
-/**
- * Helper function to check if a value is an encrypted payload
- */
-export function isEncryptedPayload(value: unknown): value is EncryptedPayload {
-  if (value === null) return false
-
-  if (typeof value === 'object') {
-    const obj = value as Record<string, unknown>
-    return (
-      'data' in obj &&
-      obj.data !== null &&
-      typeof obj.data === 'object' &&
-      'v' in obj.data &&
-      'k' in obj.data &&
-      'i' in obj.data
-    )
-  }
-
-  return false
 }
 
 /**
@@ -190,7 +174,7 @@ export async function decryptModelFields<T extends Record<string, unknown>>(
   const bulkDecryptPayload = Object.entries(operationFields).map(
     ([key, value]) => ({
       id: key,
-      ciphertext: (value as EncryptedPayload).data?.c as string,
+      ciphertext: (value as EncryptedPayload)?.c ?? '',
     }),
   )
 
@@ -229,10 +213,7 @@ export async function encryptModelFields<T extends Record<string, unknown>>(
 
   const encryptedData = await handleSingleModelBulkOperation(
     bulkEncryptPayload,
-    (items) =>
-      encryptBulk(client, items).then((results) =>
-        results.map((item) => ({ data: JSON.parse(item) }) as EncryptedPayload),
-      ),
+    (items) => encryptBulk(client, items),
     keyMap,
   )
 
@@ -263,7 +244,7 @@ export async function decryptModelFieldsWithLockContext<
   const bulkDecryptPayload = Object.entries(operationFields).map(
     ([key, value]) => ({
       id: key,
-      ciphertext: (value as EncryptedPayload).data?.c as string,
+      ciphertext: (value as EncryptedPayload)?.c ?? '',
       lockContext: lockContext.context,
     }),
   )
@@ -311,10 +292,7 @@ export async function encryptModelFieldsWithLockContext<
 
   const encryptedData = await handleSingleModelBulkOperation(
     bulkEncryptPayload,
-    (items) =>
-      encryptBulk(client, items, lockContext.ctsToken).then((results) =>
-        results.map((item) => ({ data: JSON.parse(item) }) as EncryptedPayload),
-      ),
+    (items) => encryptBulk(client, items, lockContext.ctsToken),
     keyMap,
   )
 
@@ -403,10 +381,7 @@ export async function bulkEncryptModels<T extends Record<string, unknown>>(
   // Make a single FFI call for all fields
   const encryptedData = await handleMultiModelBulkOperation(
     bulkEncryptPayload,
-    (items) =>
-      encryptBulk(client, items).then((results) =>
-        results.map((item) => ({ data: JSON.parse(item) }) as EncryptedPayload),
-      ),
+    (items) => encryptBulk(client, items),
     keyMap,
   )
 
@@ -450,7 +425,7 @@ export async function bulkDecryptModels<T extends Record<string, unknown>>(
   const bulkDecryptPayload = operationFields.flatMap((fields, modelIndex) =>
     Object.entries(fields).map(([key, value]) => ({
       id: `${modelIndex}-${key}`,
-      ciphertext: (value as EncryptedPayload).data?.c as string,
+      ciphertext: (value as EncryptedPayload)?.c ?? '',
     })),
   )
 
@@ -503,7 +478,7 @@ export async function bulkDecryptModelsWithLockContext<
   const bulkDecryptPayload = operationFields.flatMap((fields, modelIndex) =>
     Object.entries(fields).map(([key, value]) => ({
       id: `${modelIndex}-${key}`,
-      ciphertext: (value as EncryptedPayload).data?.c as string,
+      ciphertext: (value as EncryptedPayload)?.c ?? '',
       lockContext: lockContext.context,
     })),
   )
@@ -566,10 +541,7 @@ export async function bulkEncryptModelsWithLockContext<
 
   const encryptedData = await handleMultiModelBulkOperation(
     bulkEncryptPayload,
-    (items) =>
-      encryptBulk(client, items, lockContext.ctsToken).then((results) =>
-        results.map((item) => ({ data: JSON.parse(item) }) as EncryptedPayload),
-      ),
+    (items) => encryptBulk(client, items, lockContext.ctsToken),
     keyMap,
   )
 

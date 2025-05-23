@@ -3,76 +3,87 @@ import path from 'node:path'
 
 /**
  * A lightweight function that parses a TOML-like string
- * and returns the `workspace_id` value found under `[auth]`.
+ * and returns the `workspace_crn` value found under `[auth]`.
  *
  * @param tomlString The contents of the TOML file as a string.
- * @returns The workspace_id if found, otherwise undefined.
+ * @returns The workspace_crn if found, otherwise undefined.
  */
-function getWorkspaceId(tomlString: string): string | undefined {
+function getWorkspaceCrn(tomlString: string): string | undefined {
   let currentSection = ''
-  let workspaceId: string | undefined
+  let workspaceCrn: string | undefined
 
-  // Split the file contents into individual lines
   const lines = tomlString.split(/\r?\n/)
 
   for (const line of lines) {
     const trimmedLine = line.trim()
 
-    // Skip empty or comment lines
     if (!trimmedLine || trimmedLine.startsWith('#')) {
       continue
     }
 
-    // Check if the line defines a section: e.g. [auth]
     const sectionMatch = trimmedLine.match(/^\[([^\]]+)\]$/)
     if (sectionMatch) {
       currentSection = sectionMatch[1]
       continue
     }
 
-    // Check if the line defines a key-value pair: e.g. workspace_id = "ABC123"
     const kvMatch = trimmedLine.match(/^(\w+)\s*=\s*"([^"]+)"$/)
     if (kvMatch) {
       const [_, key, value] = kvMatch
 
-      // We only care about `workspace_id` under `[auth]`
-      if (currentSection === 'auth' && key === 'workspace_id') {
-        workspaceId = value
-        // We can stop searching once we find it
+      if (currentSection === 'auth' && key === 'workspace_crn') {
+        workspaceCrn = value
         break
       }
     }
   }
 
-  return workspaceId
+  return workspaceCrn
+}
+
+/**
+ * Extracts the workspace ID from a CRN string.
+ * CRN format: crn:region.aws:ID
+ *
+ * @param crn The CRN string to extract from
+ * @returns The workspace ID portion of the CRN
+ */
+function extractWorkspaceIdFromCrn(crn: string): string {
+  const match = crn.match(/crn:[^:]+:([^:]+)$/)
+  if (!match) {
+    throw new Error('Invalid CRN format')
+  }
+  return match[1]
 }
 
 export function loadWorkSpaceId(): string {
   const configPath = path.join(process.cwd(), 'cipherstash.toml')
 
-  if (!fs.existsSync(configPath) && !process.env.CS_WORKSPACE_ID) {
+  if (!fs.existsSync(configPath) && !process.env.CS_WORKSPACE_CRN) {
     throw new Error(
-      'You have not defined a workspace ID in your config file, or the CS_WORKSPACE_ID environment variable.',
+      'You have not defined a workspace CRN in your config file, or the CS_WORKSPACE_CRN environment variable.',
     )
   }
 
   // Environment variables take precedence over config files
-  if (process.env.CS_WORKSPACE_ID) return process.env.CS_WORKSPACE_ID
+  if (process.env.CS_WORKSPACE_CRN) {
+    return extractWorkspaceIdFromCrn(process.env.CS_WORKSPACE_CRN)
+  }
 
   if (!fs.existsSync(configPath)) {
     throw new Error(
-      'You have not defined a workspace ID in your config file, or the CS_WORKSPACE_ID environment variable.',
+      'You have not defined a workspace CRN in your config file, or the CS_WORKSPACE_CRN environment variable.',
     )
   }
 
   const tomlString = fs.readFileSync(configPath, 'utf8')
-  const workspaceId = getWorkspaceId(tomlString)
+  const workspaceCrn = getWorkspaceCrn(tomlString)
 
-  if (!workspaceId) {
+  if (!workspaceCrn) {
     throw new Error(
-      'You have not defined a workspace ID in your config file, or the CS_WORKSPACE_ID environment variable.',
+      'You have not defined a workspace CRN in your config file, or the CS_WORKSPACE_CRN environment variable.',
     )
   }
 
-  return workspaceId
+  return extractWorkspaceIdFromCrn(workspaceCrn)
 }
