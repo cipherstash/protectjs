@@ -1,6 +1,6 @@
 ---
 "@cipherstash/nextjs": major
-"@cipherstash/protect": minors
+"@cipherstash/protect": minor
 ---
 
 Implemented CipherStash CRN in favor of workspace ID.
