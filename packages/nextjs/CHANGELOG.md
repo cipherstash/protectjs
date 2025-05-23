@@ -1,5 +1,14 @@
 # @cipherstash/nextjs
 
+## 4.0.0
+
+### Major Changes
+
+- 95c891d: Implemented CipherStash CRN in favor of workspace ID.
+
+  - Replaces the environment variable `CS_WORKSPACE_ID` with `CS_WORKSPACE_CRN`
+  - Replaces `workspace_id` with `workspace_crn` in the `cipherstash.toml` file
+
 ## 3.2.0
 
 ### Minor Changes

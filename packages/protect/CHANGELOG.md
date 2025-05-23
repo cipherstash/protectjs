@@ -1,5 +1,16 @@
 # @cipherstash/jseql
 
+## 8.1.0
+
+### Minor Changes
+
+- 95c891d: Implemented CipherStash CRN in favor of workspace ID.
+
+  - Replaces the environment variable `CS_WORKSPACE_ID` with `CS_WORKSPACE_CRN`
+  - Replaces `workspace_id` with `workspace_crn` in the `cipherstash.toml` file
+
+- 18d3653: Fixed handling composite types for EQL v2.
+
 ## 8.0.0
 
 ### Major Changes
