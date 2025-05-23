@@ -1,5 +1,13 @@
 # @cipherstash/basic-example
 
+## 1.0.9
+
+### Patch Changes
+
+- Updated dependencies [95c891d]
+- Updated dependencies [18d3653]
+  - @cipherstash/protect@8.1.0
+
 ## 1.0.8
 
 ### Patch Changes
