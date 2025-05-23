@@ -1,5 +1,4 @@
 import type { newClient, Encrypted } from '@cipherstash/protect-ffi'
-import type { EqlSchema } from './eql.schema'
 import type { ProtectTableColumn } from './schema'
 import type { ProtectTable } from './schema'
 import type { ProtectColumn } from './schema'
