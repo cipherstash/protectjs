@@ -42,23 +42,12 @@ export class DecryptOperation
           throw noClientError()
         }
 
-        if (this.encryptedData?.data === null) {
-          return null
-        }
-
-        if (this.encryptedData.data.k !== 'ct') {
-          throw new Error(
-            'The encrypted data is not compliant with the EQL schema',
-          )
-        }
-
-        // If ciphertext is empty, it represents a null value
-        if (this.encryptedData.data.c === '') {
+        if (this.encryptedData === null) {
           return null
         }
 
         logger.debug('Decrypting data WITHOUT a lock context')
-        return await ffiDecrypt(this.client, this.encryptedData.data.c)
+        return await ffiDecrypt(this.client, this.encryptedData.c)
       },
       (error) => ({
         type: ProtectErrorTypes.DecryptionError,
@@ -110,7 +99,7 @@ export class DecryptOperationWithLockContext
           throw noClientError()
         }
 
-        if (encryptedData.data === null) {
+        if (encryptedData === null) {
           return null
         }
 
@@ -122,20 +111,9 @@ export class DecryptOperationWithLockContext
           throw new Error(`[protect]: ${context.failure.message}`)
         }
 
-        if (encryptedData.data.k !== 'ct') {
-          throw new Error(
-            'The encrypted data is not compliant with the EQL schema',
-          )
-        }
-
-        // If ciphertext is empty, it represents a null value
-        if (encryptedData.data.c === '') {
-          return null
-        }
-
         return await ffiDecrypt(
           client,
-          encryptedData.data.c,
+          encryptedData.c,
           context.data.context,
           context.data.ctsToken,
         )

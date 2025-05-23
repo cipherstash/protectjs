@@ -67,19 +67,14 @@ export class EncryptOperation
         }
 
         if (this.plaintext === null) {
-          return {
-            data: null,
-          }
+          return null
         }
 
-        const val = await ffiEncrypt(
-          this.client,
-          this.plaintext,
-          this.column.getName(),
-          this.table.tableName,
-        )
-
-        return { data: JSON.parse(val) } as EncryptedPayload
+        return await ffiEncrypt(this.client, {
+          plaintext: this.plaintext,
+          column: this.column.getName(),
+          table: this.table.tableName,
+        })
       },
       (error) => ({
         type: ProtectErrorTypes.EncryptionError,
@@ -145,9 +140,7 @@ export class EncryptOperationWithLockContext
         }
 
         if (plaintext === null) {
-          return {
-            data: null,
-          }
+          return null
         }
 
         const context = await this.lockContext.getLockContext()
@@ -156,16 +149,16 @@ export class EncryptOperationWithLockContext
           throw new Error(`[protect]: ${context.failure.message}`)
         }
 
-        const val = await ffiEncrypt(
+        return await ffiEncrypt(
           client,
-          plaintext,
-          column.getName(),
-          table.tableName,
-          context.data.context,
+          {
+            plaintext,
+            column: column.getName(),
+            table: table.tableName,
+            lockContext: context.data.context,
+          },
           context.data.ctsToken,
         )
-
-        return { data: JSON.parse(val) } as EncryptedPayload
       },
       (error) => ({
         type: ProtectErrorTypes.EncryptionError,

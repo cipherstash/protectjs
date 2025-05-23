@@ -38,6 +38,8 @@ jobs:
           echo "CS_CLIENT_ID=${{ secrets.CS_CLIENT_ID }}" >> ./packages/protect/.env
           echo "CS_CLIENT_KEY=${{ secrets.CS_CLIENT_KEY }}" >> ./packages/protect/.env
           echo "CS_CLIENT_ACCESS_KEY=${{ secrets.CS_CLIENT_ACCESS_KEY }}" >> ./packages/protect/.env
+          echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> ./packages/protect/.env
+          echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> ./packages/protect/.env
 
       # Run TurboRepo tests
       - name: Run tests

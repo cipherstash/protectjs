@@ -43,31 +43,20 @@ export class ProtectClient {
   ): Promise<Result<ProtectClient, ProtectError>> {
     return await withResult(
       async () => {
-        let c: Client
+        const validated: EncryptConfig =
+          encryptConfigSchema.parse(encryptConifg)
 
-        if (encryptConifg) {
-          const validated: EncryptConfig =
-            encryptConfigSchema.parse(encryptConifg)
+        logger.debug(
+          'Initializing the Protect.js client with the following encrypt config:',
+          {
+            encryptConfig: validated,
+          },
+        )
 
-          logger.debug(
-            'Initializing the Protect.js client with the following encrypt config:',
-            {
-              encryptConfig: validated,
-            },
-          )
-
-          c = await newClient(JSON.stringify(validated))
-          this.encryptConfig = validated
-        } else {
-          logger.debug(
-            'Initializing the Protect.js client with default encrypt config.',
-          )
-
-          c = await newClient()
-        }
+        this.client = await newClient(JSON.stringify(validated))
+        this.encryptConfig = validated
 
         logger.info('Successfully initialized the Protect.js client.')
-        this.client = c
         return this
       },
       (error) => ({
