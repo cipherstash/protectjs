@@ -1,5 +1,11 @@
 # @cipherstash/jseql
 
+## 8.3.0
+
+### Minor Changes
+
+- 628acdc: Implemented createSearchTerms for a streamlined way of working with encrypted search terms.
+
 ## 8.2.0
 
 ### Minor Changes
