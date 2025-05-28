@@ -1,0 +1,24 @@
+{
+  "name": "@cipherstash/dynamo-example",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "setup": "tsx src/setup.ts",
+    "insert": "tsx src/insert.ts",
+    "get": "tsx src/get.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.817.0",
+    "@aws-sdk/util-dynamodb": "^3.817.0",
+    "@cipherstash/protect": "workspace:*"
+  },
+  "devDependencies": {
+    "tsx": "catalog:repo",
+    "typescript": "catalog:repo"
+  }
+}
