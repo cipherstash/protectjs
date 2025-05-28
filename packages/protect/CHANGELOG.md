@@ -1,5 +1,11 @@
 # @cipherstash/jseql
 
+## 8.2.0
+
+### Minor Changes
+
+- 0883e16: Fix cipherstash.toml and cipherstash.secret.toml file loading by bumping to @cipherstash/protect-ffi v0.14.2
+
 ## 8.1.0
 
 ### Minor Changes
