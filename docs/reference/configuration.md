@@ -100,7 +100,7 @@ The following environment variables are supported:
 ## Deploying to production
 
 > [!TIP]
-> There are some configuration details you should take note of when deploying `@cipherstash/protect` in your production apps.
+> There are some configuration details you should take note of when deploying `@cipherstash/protect` in your production examples.
 
 ### Region configuration
 

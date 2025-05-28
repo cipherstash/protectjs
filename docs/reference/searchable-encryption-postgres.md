@@ -22,7 +22,7 @@ export const protectedUsers = csTable('users', {
 ```
 
 > [!TIP]
-> To see an example using the [Drizzle ORM](https://github.com/drizzle-team/drizzle-orm) see the example [here](../../apps/drizzle/src/select.ts).
+> To see an example using the [Drizzle ORM](https://github.com/drizzle-team/drizzle-orm) see the example [here](../../examples/drizzle/src/select.ts).
 
 ## Query examples
 

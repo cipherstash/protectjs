@@ -16,7 +16,7 @@ Thank you for your interest in contributing to **@cipherstash/protect**! This do
 
 ```
 .
-├── apps/
+├── examples/
 │   ├── example-app-1/
 │   └── example-app-2/
 │
@@ -32,15 +32,15 @@ Thank you for your interest in contributing to **@cipherstash/protect**! This do
 
 ### Turborepo
 
-This repo uses [Turborepo](https://turbo.build/) to manage multiple packages and apps in a monorepo structure. Turborepo orchestrates tasks (build, test, lint, etc.) across the different packages in a consistent and efficient manner.
+This repo uses [Turborepo](https://turbo.build/) to manage multiple packages and examples in a monorepo structure. Turborepo orchestrates tasks (build, test, lint, etc.) across the different packages in a consistent and efficient manner.
 
 ### `packages/protect`
 
 The **@cipherstash/protect** package is the core library that is published to npm under the `@cipherstash/protect` namespace. This is likely where you’ll spend most of your time if you’re contributing new features or bug fixes related to JSEQL’s core functionality.
 
-### `apps/` Directory
+### `examples/` Directory
 
-Within the `apps/` directory, you’ll find example applications that demonstrate how to use **@cipherstash/protect**. These example apps reference the local `@cipherstash/protect` package, allowing you to test and verify your changes to **@cipherstash/protect** in a real-world application scenario.
+Within the `examples/` directory, you’ll find example applications that demonstrate how to use **@cipherstash/protect**. These examples reference the local `@cipherstash/protect` package, allowing you to test and verify your changes to **@cipherstash/protect** in a real-world application scenario.
 
 ## Setup Instructions
 
@@ -59,23 +59,23 @@ pnpm install
 
 ### 4. Build the Main Package
 
-Before you can run any example apps, you need to build the `@cipherstash/protect` package:
+Before you can run any example, you need to build the `@cipherstash/protect` package:
 
 ```bash
 pnpm run build
 ```
 
-This command triggers Turborepo’s build pipeline, compiling the **@cipherstash/protect** package in `packages/protect` and linking it locally so the example apps can reference it.
+This command triggers Turborepo’s build pipeline, compiling the **@cipherstash/protect** package in `packages/protect` and linking it locally so the example can reference it.
 
 ### 5. Run an Example App
 
-Start the dev script which will watch for changes to the packages which are picked up by the example apps.
+Start the dev script which will watch for changes to the packages which are picked up by the example app.
 
 ```bash
 pnpm run dev
 ```
 
-Navigate to one of the example apps in `apps/` and follow the instructions for the corresponding examples.
+Navigate to one of the examples in `examples/` and follow the instructions for the corresponding example.
 
 Now, you can view the running application (if it’s a web or server app) or otherwise test the example’s output. This will help confirm your local build of **@cipherstash/protect** is working correctly.
 
