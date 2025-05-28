@@ -53,7 +53,7 @@ This project demonstrates how to encrypt data using [@cipherstash/protect](https
 
 ```bash
 git clone https://github.com/cipherstash/jsprotect.git
-cd jsprotect/apps/hono-supabase
+cd jsprotect/examples/hono-supabase
 ```
 
 ### 2. Install dependencies

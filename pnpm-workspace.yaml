@@ -1,6 +1,6 @@
 packages:
   - "packages/*"
-  - "apps/*"
+  - "examples/*"
 
 catalogs:
   # Can be referened as catalog:repo

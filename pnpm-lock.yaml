@@ -43,7 +43,7 @@ importers:
         specifier: 2.1.1
         version: 2.1.1
 
-  apps/basic:
+  examples/basic:
     dependencies:
       '@cipherstash/protect':
         specifier: workspace:*
@@ -59,7 +59,7 @@ importers:
         specifier: catalog:repo
         version: 5.6.3
 
-  apps/drizzle:
+  examples/drizzle:
     dependencies:
       '@cipherstash/protect':
         specifier: workspace:*
@@ -93,7 +93,7 @@ importers:
         specifier: catalog:repo
         version: 5.6.3
 
-  apps/hono-supabase:
+  examples/hono-supabase:
     dependencies:
       '@cipherstash/protect':
         specifier: workspace:*
@@ -121,7 +121,7 @@ importers:
         specifier: catalog:repo
         version: 5.6.3
 
-  apps/nextjs-clerk:
+  examples/nextjs-clerk:
     dependencies:
       '@cipherstash/nextjs':
         specifier: workspace:*
