@@ -14,18 +14,31 @@ Upvote this [issue](https://github.com/cipherstash/protectjs/issues/135) and fol
 When searching encrypted data, you need to convert the encrypted payload into a format that PostgreSQL and the Supabase SDK can understand. The encrypted payload needs to be converted to a raw composite type format by double stringifying the JSON:
 
 ```typescript
-const searchResult = await protectClient.encrypt('billy@example.com', {
-  column: users.email,
-  table: users,
-})
+const searchTerms = await protectClient.createSearchTerms([
+  {
+    value: 'billy@example.com',
+    column: users.email,
+    table: users,
+    returnType: 'composite-literal'
+  }
+])
 
-const searchTerm = `(${JSON.stringify(JSON.stringify(searchResult.data))})`
+const searchTerm = searchTerms.data[0]
 ```
 
-For certain queries, when including the encrypted search term with an operator that uses the string logic syntax, your need to triple stringify the payload.
+For certain queries, when including the encrypted search term with an operator that uses the string logic syntax, you need to use the 'escaped-composite-literal' return type:
 
 ```typescript
-const searchTerm = `${JSON.stringify(`(${JSON.stringify(JSON.stringify(searchResult.data))})`)}`
+const searchTerms = await protectClient.createSearchTerms([
+  {
+    value: 'billy@example.com',
+    column: users.email,
+    table: users,
+    returnType: 'escaped-composite-literal'
+  }
+])
+
+const searchTerm = searchTerms.data[0]
 ```
 
 ## Query Examples
@@ -35,33 +48,37 @@ Here are examples of different ways to search encrypted data using the Supabase 
 ### Equality Search
 
 ```typescript
-const searchResult = await protectClient.encrypt('billy@example.com', {
-  column: users.email,
-  table: users,
-})
-
-const searchTerm = `(${JSON.stringify(JSON.stringify(searchResult.data))})`
+const searchTerms = await protectClient.createSearchTerms([
+  {
+    value: 'billy@example.com',
+    column: users.email,
+    table: users,
+    returnType: 'composite-literal'
+  }
+])
 
 const { data, error } = await supabase
   .from('users')
   .select('id, email::jsonb, name::jsonb')
-  .eq('email', searchTerm)
+  .eq('email', searchTerms.data[0])
 ```
 
 ### Pattern Matching Search
 
 ```typescript
-const searchResult = await protectClient.encrypt('example.com', {
-  column: users.email,
-  table: users,
-})
-
-const searchTerm = `(${JSON.stringify(JSON.stringify(searchResult.data))})`
+const searchTerms = await protectClient.createSearchTerms([
+  {
+    value: 'example.com',
+    column: users.email,
+    table: users,
+    returnType: 'composite-literal'
+  }
+])
 
 const { data, error } = await supabase
   .from('users')
   .select('id, email::jsonb, name::jsonb')
-  .like('email', searchTerm)
+  .like('email', searchTerms.data[0])
 ```
 
 ### IN Operator Search
@@ -70,25 +87,26 @@ When you need to search for multiple encrypted values, you can use the IN operat
 
 ```typescript
 // Encrypt multiple search terms
-const searchResult1 = await protectClient.encrypt('value1', {
-  column: users.name,
-  table: users,
-})
-
-const searchResult2 = await protectClient.encrypt('value2', {
-  column: users.name,
-  table: users,
-})
-
-// Format each search term
-const searchTerm = `${JSON.stringify(`(${JSON.stringify(JSON.stringify(searchResult.data))})`)}`
-const searchTerm2 = `${JSON.stringify(`(${JSON.stringify(JSON.stringify(searchResult2.data))})`)}`
+const searchTerms = await protectClient.createSearchTerms([
+  {
+    value: 'value1',
+    column: users.name,
+    table: users,
+    returnType: 'escaped-composite-literal'
+  },
+  {
+    value: 'value2',
+    column: users.name,
+    table: users,
+    returnType: 'escaped-composite-literal'
+  }
+])
 
 // Combine terms for IN operator
 const { data, error } = await supabase
   .from('users')
   .select('id, email::jsonb, name::jsonb')
-  .filter('name', 'in', `(${searchTerm1},${searchTerm2})`)
+  .filter('name', 'in', `(${searchTerms.data[0]},${searchTerms.data[1]})`)
 ```
 
 ### OR Condition Search
@@ -97,27 +115,32 @@ You can combine multiple encrypted search conditions using the `.or()` syntax. T
 
 ```typescript
 // Encrypt search terms for different columns
-const emailSearch = await protectClient.encrypt('user@example.com', {
-  column: users.email,
-  table: users,
-})
-
-const nameSearch = await protectClient.encrypt('John', {
-  column: users.name,
-  table: users,
-})
-
-// Format each search term
-const emailTerm = `${JSON.stringify(`(${JSON.stringify(JSON.stringify(emailSearch.data))})`)}`
-const nameTerm = `${JSON.stringify(`(${JSON.stringify(JSON.stringify(nameSearch.data))})`)}`
+const searchTerms = await protectClient.createSearchTerms([
+  {
+    value: 'user@example.com',
+    column: users.email,
+    table: users,
+    returnType: 'escaped-composite-literal'
+  },
+  {
+    value: 'John',
+    column: users.name,
+    table: users,
+    returnType: 'escaped-composite-literal'
+  }
+])
 
 // Combine conditions with OR
 const { data, error } = await supabase
   .from('users')
   .select('id, email::jsonb, name::jsonb')
-  .or(`email.ilike.${emailTerm}, name.ilike.${nameTerm}`)
+  .or(`email.ilike.${searchTerms.data[0]}, name.ilike.${searchTerms.data[1]}`)
 ```
 
 ## Conclusion
 
-The key is in the string formatting of the encrypted payload: `(${JSON.stringify(JSON.stringify(searchTerm))})`. This ensures the encrypted data is properly formatted for comparison in the database using the EQL custom type. You can use this pattern with any of Supabase's query methods like `.eq()`, `.like()`, `.ilike()`, etc.
+The key is in using the appropriate return type for your search terms:
+- Use `composite-literal` for simple equality and pattern matching queries
+- Use `escaped-composite-literal` when you need to include the search term in string-based operators like IN or OR conditions
+
+You can use these patterns with any of Supabase's query methods like `.eq()`, `.like()`, `.ilike()`, etc.
