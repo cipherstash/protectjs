@@ -43,7 +43,7 @@ importers:
         specifier: 2.1.1
         version: 2.1.1
 
-  apps/basic:
+  examples/basic:
     dependencies:
       '@cipherstash/protect':
         specifier: workspace:*
@@ -59,7 +59,7 @@ importers:
         specifier: catalog:repo
         version: 5.6.3
 
-  apps/drizzle:
+  examples/drizzle:
     dependencies:
       '@cipherstash/protect':
         specifier: workspace:*
@@ -93,7 +93,7 @@ importers:
         specifier: catalog:repo
         version: 5.6.3
 
-  apps/dynamo:
+  examples/dynamo:
     dependencies:
       '@aws-sdk/client-dynamodb':
         specifier: ^3.817.0
@@ -112,7 +112,7 @@ importers:
         specifier: catalog:repo
         version: 5.6.3
 
-  apps/hono-supabase:
+  examples/hono-supabase:
     dependencies:
       '@cipherstash/protect':
         specifier: workspace:*
@@ -140,7 +140,7 @@ importers:
         specifier: catalog:repo
         version: 5.6.3
 
-  apps/nextjs-clerk:
+  examples/nextjs-clerk:
     dependencies:
       '@cipherstash/nextjs':
         specifier: workspace:*
@@ -2496,14 +2496,6 @@ packages:
       picomatch:
         optional: true
 
-  fdir@6.4.3:
-    resolution: {integrity: sha512-PMXmW2y1hDDfTSRc9gaXIuCCRpuoz3Kaz8cUelp3smouvfT632ozg2vrT6lJsHKKOF59YLbOGfAWGUcKEfRMQw==}
-    peerDependencies:
-      picomatch: ^3 || ^4
-    peerDependenciesMeta:
-      picomatch:
-        optional: true
-
   fdir@6.4.4:
     resolution: {integrity: sha512-1NZP+GK4GfuAv3PqKvxQRDMjdSRZjnkq7KfhlNrCNNlZ0ygQFpebfrnfnq/W7fpUnAv9aGWmY1zKx7FYL3gwhg==}
     peerDependencies:
@@ -3378,10 +3370,6 @@ packages:
 
   tinyglobby@0.2.10:
     resolution: {integrity: sha512-Zc+8eJlFMvgatPZTl6A9L/yht8QqdmUNtURHaKZLmKBE12hNPSrqNkUp2cs3M/UKmNVVAMFQYSjYIVHDjW5zew==}
-    engines: {node: '>=12.0.0'}
-
-  tinyglobby@0.2.12:
-    resolution: {integrity: sha512-qkf4trmKSIiMTs/E63cxH+ojC2unam7rJ0WrauAzpT3ECNTxGRMlaXxVbfxMUC/w0LaYk6jQ4y/nGR9uBO3tww==}
     engines: {node: '>=12.0.0'}
 
   tinyglobby@0.2.13:
@@ -5920,10 +5908,6 @@ snapshots:
     optionalDependencies:
       picomatch: 4.0.2
 
-  fdir@6.4.3(picomatch@4.0.2):
-    optionalDependencies:
-      picomatch: 4.0.2
-
   fdir@6.4.4(picomatch@4.0.2):
     optionalDependencies:
       picomatch: 4.0.2
@@ -6749,11 +6733,6 @@ snapshots:
       fdir: 6.4.2(picomatch@4.0.2)
       picomatch: 4.0.2
 
-  tinyglobby@0.2.12:
-    dependencies:
-      fdir: 6.4.3(picomatch@4.0.2)
-      picomatch: 4.0.2
-
   tinyglobby@0.2.13:
     dependencies:
       fdir: 6.4.4(picomatch@4.0.2)
@@ -6822,7 +6801,7 @@ snapshots:
       source-map: 0.8.0-beta.0
       sucrase: 3.35.0
       tinyexec: 0.3.2
-      tinyglobby: 0.2.12
+      tinyglobby: 0.2.13
       tree-kill: 1.2.2
     optionalDependencies:
       postcss: 8.5.3

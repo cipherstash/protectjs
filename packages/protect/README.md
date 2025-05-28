@@ -750,11 +750,11 @@ Read more about configuring the CipherStash Client in the [configuration docs](.
 ## Example applications
 
 Looking for examples of how to use Protect.js?
-Check out the [example applications](./apps):
+Check out the [example applications](./examples):
 
-- [Basic example](/apps/basic) demonstrates how to perform encryption operations
-- [Drizzle example](/apps/drizzle) demonstrates how to use Protect.js with an ORM
-- [Next.js and lock contexts example using Clerk](/apps/nextjs-clerk) demonstrates how to protect data with identity-aware encryption
+- [Basic example](/examples/basic) demonstrates how to perform encryption operations
+- [Drizzle example](/examples/drizzle) demonstrates how to use Protect.js with an ORM
+- [Next.js and lock contexts example using Clerk](/examples/nextjs-clerk) demonstrates how to protect data with identity-aware encryption
 
 `@cipherstash/protect` can be used with most ORMs.
 If you're interested in using `@cipherstash/protect` with a specific ORM, please [create an issue](https://github.com/cipherstash/protectjs/issues/new).
