@@ -25,7 +25,7 @@ async function main() {
 
   const params = {
     Key: {
-      Email__hm: {
+      email__hm: {
         S: ciphertext.hm,
       },
     },
@@ -42,7 +42,7 @@ async function main() {
     const item = unmarshall(data.Item)
 
     const decryptResult = await protectClient.decrypt({
-      c: item.Email__c as string,
+      c: item.email__c as string,
       bf: null,
       hm: null,
       i: { c: 'email', t: 'users' },
