@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "setup": "tsx src/setup.ts",
-    "insert": "tsx src/insert.ts",
+    "put": "tsx src/put.ts",
     "get": "tsx src/get.ts"
   },
   "keywords": [],
