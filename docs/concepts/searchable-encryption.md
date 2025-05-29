@@ -1,6 +1,6 @@
 # Searchable encryption
 
-Protect.js supports searching encrypted data, which enabled trusted data access so that you can:
+Protect.js supports searching encrypted data, which enables trusted data access so that you can:
 
 1. Prove to your customers that you can track exactly what data is being accessed in your application.
 2. Provide evidence for compliance requirements, such as [SOC 2](https://cipherstash.com/compliance/soc2) and [BDSG](https://cipherstash.com/compliance/bdsg).
@@ -69,20 +69,21 @@ CipherStash uses [EQL](https://github.com/cipherstash/encrypt-query-language) to
 // 1) Encrypt the search term
 const searchTerm = 'alice.johnson@example.com'
 
-const encryptedParam = await protectClient.encrypt(searchTerm, {
+const encryptedParam = await protectClient.createSearchTerms([{
+  value: searchTerm,
+  table: protectedUsers,        // Reference to the Protect table schema
   column: protectedUsers.email, // Your Protect column definition
-  table: protectedUsers,        // Reference to the table schema
-})
+}])
 
 if (encryptedParam.failure) {
   // Handle the failure
 }
 
-// 2) Build an equality query using EQL
+// 2) Build an equality query noting that EQL must be installed in order for the operation to work successfully
 const equalitySQL = `
   SELECT email
   FROM users
-  WHERE cs_unique_v2($1) = cs_unique_v2($2)
+  WHERE email = $1
 `
 
 // 3) Execute the query, passing in the Postgres column name
