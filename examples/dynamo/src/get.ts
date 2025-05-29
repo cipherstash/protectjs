@@ -4,6 +4,7 @@ import { dynamoClient } from './common/dynamo-client'
 import { protectClient, users } from './common/protect'
 
 async function main() {
+  // TODO: maybe extract `searchTermEq('term', attrSchema)`? Or `searchKey`.
   const encryptResult = await protectClient.encrypt('abc@example.com', {
     column: users.email,
     table: users,
@@ -33,6 +34,7 @@ async function main() {
   }
 
   try {
+    // TODO: use higher level API? Check example code and match that.
     const data = await dynamoClient.send(new GetItemCommand(params))
 
     if (!data.Item) {
@@ -41,6 +43,7 @@ async function main() {
 
     const item = unmarshall(data.Item)
 
+    // TODO: prob use ffi-decrypt here since we don't want the full payload
     const decryptResult = await protectClient.decrypt({
       c: item.email__c as string,
       bf: null,

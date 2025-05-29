@@ -6,7 +6,8 @@
   "scripts": {
     "setup": "tsx src/setup.ts",
     "put": "tsx src/put.ts",
-    "get": "tsx src/get.ts"
+    "get": "tsx src/get.ts",
+    "simple": "tsx src/simple.ts"
   },
   "keywords": [],
   "author": "",
