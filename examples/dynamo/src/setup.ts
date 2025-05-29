@@ -9,13 +9,13 @@ const main = async () => {
     // https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Programming.LowLevelAPI.html#Programming.LowLevelAPI.DataTypeDescriptors
     AttributeDefinitions: [
       {
-        AttributeName: 'Email__hm',
+        AttributeName: 'email__hm',
         AttributeType: 'S',
       },
     ],
     KeySchema: [
       {
-        AttributeName: 'Email__hm',
+        AttributeName: 'email__hm',
         KeyType: 'HASH',
       },
     ],
