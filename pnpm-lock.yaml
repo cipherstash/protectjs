@@ -107,7 +107,13 @@ importers:
       '@cipherstash/protect':
         specifier: workspace:*
         version: link:../../packages/protect
+      pg:
+        specifier: ^8.13.1
+        version: 8.13.1
     devDependencies:
+      '@types/pg':
+        specifier: ^8.11.10
+        version: 8.11.10
       tsx:
         specifier: catalog:repo
         version: 4.19.3
