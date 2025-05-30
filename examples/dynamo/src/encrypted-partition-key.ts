@@ -1,12 +1,16 @@
-import { dynamoClient, docClient, createTable } from './common/dynamo'
-import { log } from './common/log'
-import { users, encryptModel, decryptModel } from './common/protect'
 import { GetCommand, PutCommand } from '@aws-sdk/lib-dynamodb'
+import { createTable, docClient } from './common/dynamo'
+import {
+  decryptModel,
+  encryptModel,
+  makeSearchTerm,
+  users,
+} from './common/protect'
+import { log } from './common/log'
 
-const tableName = 'UsersSimple'
+const tableName = 'UsersEncryptedPartitionKey'
 
 type User = {
-  pk: string
   email: string
 }
 
@@ -15,23 +19,23 @@ const main = async () => {
     TableName: tableName,
     AttributeDefinitions: [
       {
-        AttributeName: 'pk',
+        AttributeName: 'email__hm',
         AttributeType: 'S',
       },
     ],
     KeySchema: [
       {
-        AttributeName: 'pk',
+        AttributeName: 'email__hm',
         KeyType: 'HASH',
       },
     ],
   })
 
   const user = {
-    // `pk` won't be encrypted because it's not included in the `users` protected table schema.
-    pk: 'user#1',
     // `email` will be encrypted because it's included in the `users` protected table schema.
     email: 'abc@example.com',
+    // `somePlaintextAttr` won't be encrypted because it's not in the protected table schema.
+    somePlaintextAttr: 'abc',
   }
 
   const encryptResult = await encryptModel(user, users)
@@ -43,11 +47,13 @@ const main = async () => {
     Item: encryptResult,
   })
 
-  await dynamoClient.send(putCommand)
+  await docClient.send(putCommand)
+
+  const searchTerm = await makeSearchTerm('abc@example.com', users.email, users)
 
   const getCommand = new GetCommand({
     TableName: tableName,
-    Key: { pk: 'user#1' },
+    Key: { email__hm: searchTerm },
   })
 
   const getResult = await docClient.send(getCommand)

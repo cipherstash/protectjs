@@ -4,10 +4,8 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "setup": "tsx src/setup.ts",
-    "put": "tsx src/put.ts",
-    "get": "tsx src/get.ts",
-    "simple": "tsx src/simple.ts"
+    "simple": "tsx src/simple.ts",
+    "encrypted-partition-key": "tsx src/encrypted-partition-key.ts"
   },
   "keywords": [],
   "author": "",

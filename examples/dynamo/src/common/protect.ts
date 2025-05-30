@@ -15,11 +15,11 @@ export const protectClient = await protect(users)
 export async function encryptModel(
   item: Record<string, unknown>,
   protectTable: ProtectTable<ProtectTableColumn>,
-): Promise<ReturnType<ProtectClient['encryptModel']>> {
+): Promise<Record<string, unknown>> {
   const encryptResult = await protectClient.encryptModel(item, protectTable)
 
   if (encryptResult.failure) {
-    return encryptResult
+    throw new Error(`encryption error: ${encryptResult.failure.message}`)
   }
 
   const data = encryptResult.data
@@ -42,7 +42,7 @@ export async function encryptModel(
     {} as Record<string, unknown>,
   )
 
-  return { data: encryptedItem }
+  return encryptedItem
 }
 
 export async function makeSearchTerm(
