@@ -1,70 +1,24 @@
-import { GetItemCommand } from '@aws-sdk/client-dynamodb'
-import { unmarshall } from '@aws-sdk/util-dynamodb'
-import { dynamoClient } from './common/dynamo-client'
-import { protectClient, users } from './common/protect'
+import { docClient } from './common/dynamo'
+import { users, decryptModel, makeSearchTerm } from './common/protect'
+import { GetCommand } from '@aws-sdk/lib-dynamodb'
+
+type User = {
+  email: string
+}
 
 async function main() {
-  // TODO: maybe extract `searchTermEq('term', attrSchema)`? Or `searchKey`.
-  const encryptResult = await protectClient.encrypt('abc@example.com', {
-    column: users.email,
-    table: users,
+  const searchTerm = await makeSearchTerm('abc@example.com', users.email, users)
+
+  const getCommand = new GetCommand({
+    TableName: 'Users',
+    Key: { email__hm: searchTerm },
   })
 
-  if (encryptResult.failure) {
-    throw new Error(`[protect]: ${encryptResult.failure.message}`)
-  }
+  const getResult = await docClient.send(getCommand)
 
-  const ciphertext = encryptResult.data
+  const decryptedItem = await decryptModel<User>(getResult.Item!, users)
 
-  if (!ciphertext) {
-    throw new Error('expected ciphertext to be truthy')
-  }
-
-  if (!ciphertext.hm) {
-    throw new Error('expected ciphertext.hm to be truthy')
-  }
-
-  const params = {
-    Key: {
-      email__hm: {
-        S: ciphertext.hm,
-      },
-    },
-    TableName: 'Users',
-  }
-
-  try {
-    // TODO: use higher level API? Check example code and match that.
-    const data = await dynamoClient.send(new GetItemCommand(params))
-
-    if (!data.Item) {
-      throw new Error('expected data.Item to be truthy')
-    }
-
-    const item = unmarshall(data.Item)
-
-    // TODO: prob use ffi-decrypt here since we don't want the full payload
-    const decryptResult = await protectClient.decrypt({
-      c: item.email__c as string,
-      bf: null,
-      hm: null,
-      i: { c: 'email', t: 'users' },
-      k: 'kind',
-      ob: null,
-      v: 2,
-    })
-
-    if (decryptResult.failure) {
-      throw new Error(`[protect]: ${decryptResult.failure.message}`)
-    }
-
-    const plaintext = decryptResult.data
-
-    console.log('Decrypting the ciphertext...')
-    console.log('The plaintext is:', plaintext)
-  } catch (error) {
-    console.error('Error:', error)
-  }
+  console.log(`\ndecrypted item:\n${JSON.stringify(decryptedItem, null, 2)}`)
 }
 
 main()

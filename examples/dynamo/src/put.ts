@@ -1,4 +1,4 @@
-import { dynamoClient } from './common/dynamo-client'
+import { dynamoClient } from './common/dynamo'
 import { users, encryptModel } from './common/protect'
 import { PutCommand } from '@aws-sdk/lib-dynamodb'
 

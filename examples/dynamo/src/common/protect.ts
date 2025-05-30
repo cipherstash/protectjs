@@ -27,17 +27,17 @@ export async function encryptModel(
   const encryptedAttrs = Object.keys(protectTable.build().columns)
 
   const encryptedItem = Object.entries(data).reduce(
-    (put_items, [attr_name, attr_value]) => {
-      if (encryptedAttrs.includes(attr_name)) {
-        const encryptPayload = attr_value as EncryptedPayload
+    (putItem, [attrName, attrValue]) => {
+      if (encryptedAttrs.includes(attrName)) {
+        const encryptPayload = attrValue as EncryptedPayload
 
-        put_items[`${attr_name}__hm`] = encryptPayload!.hm!
-        put_items[`${attr_name}__c`] = encryptPayload!.c!
+        putItem[`${attrName}__hm`] = encryptPayload!.hm!
+        putItem[`${attrName}__c`] = encryptPayload!.c!
       } else {
-        put_items[attr_name] = attr_value
+        putItem[attrName] = attrValue
       }
 
-      return put_items
+      return putItem
     },
     {} as Record<string, unknown>,
   )
@@ -70,4 +70,52 @@ export async function makeSearchTerm(
   }
 
   return ciphertext.hm
+}
+
+export async function decryptModel<T extends Record<string, unknown>>(
+  item: Record<string, unknown>,
+  protectTable: ProtectTable<ProtectTableColumn>,
+): Promise<T> {
+  const encryptedAttrs = Object.keys(protectTable.build().columns)
+  const ciphertextAttrSuffix = '__c'
+  const searchTermAttrSuffix = '__hm'
+
+  // TODO: add a decrypt function that doesn't require the full EQL payload in PG's format.
+  const withEqlPayloads = Object.entries(item).reduce(
+    (formattedItem, [attrName, attrValue]) => {
+      if (
+        attrName.endsWith(ciphertextAttrSuffix) &&
+        encryptedAttrs.includes(attrName.slice(0, -ciphertextAttrSuffix.length))
+      ) {
+        formattedItem[attrName.slice(0, -ciphertextAttrSuffix.length)] = {
+          c: attrValue,
+          bf: null,
+          hm: null,
+          i: { c: 'notUsed', t: 'notUsed' },
+          k: 'notUsed',
+          ob: null,
+          v: 2,
+        }
+      } else if (attrName.endsWith(searchTermAttrSuffix)) {
+        // skip HMAC attrs since we don't need those for decryption
+      } else {
+        formattedItem[attrName] = attrValue
+      }
+
+      return formattedItem
+    },
+    {} as Record<string, unknown>,
+  )
+
+  // TODO: `withEqlPayloads` shouldn't need to be `T` here because it doesn't actually match
+  // the return type (encrypted fields are EQL payloads).
+  const decryptResult = await protectClient.decryptModel<T>(
+    withEqlPayloads as T,
+  )
+
+  if (decryptResult.failure) {
+    throw new Error(`[protect]: ${decryptResult.failure.message}`)
+  }
+
+  return decryptResult.data!
 }

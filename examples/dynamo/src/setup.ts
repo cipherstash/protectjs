@@ -1,5 +1,5 @@
 import { CreateTableCommand } from '@aws-sdk/client-dynamodb'
-import { dynamoClient } from './common/dynamo-client'
+import { dynamoClient } from './common/dynamo'
 
 const main = async () => {
   const command = new CreateTableCommand({

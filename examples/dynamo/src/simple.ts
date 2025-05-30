@@ -1,12 +1,16 @@
-import { CreateTableCommand } from '@aws-sdk/client-dynamodb'
-import { dynamoClient } from './common/dynamo-client'
-import { users, encryptModel, makeSearchTerm } from './common/protect'
+import { dynamoClient, docClient, createTable } from './common/dynamo'
+import { users, encryptModel, decryptModel } from './common/protect'
 import { GetCommand, PutCommand } from '@aws-sdk/lib-dynamodb'
 
 const tableName = 'UsersSimple'
 
+type User = {
+  pk: string
+  email: string
+}
+
 const main = async () => {
-  const command = new CreateTableCommand({
+  await createTable({
     TableName: tableName,
     AttributeDefinitions: [
       {
@@ -20,19 +24,7 @@ const main = async () => {
         KeyType: 'HASH',
       },
     ],
-    ProvisionedThroughput: {
-      ReadCapacityUnits: 5,
-      WriteCapacityUnits: 5,
-    },
   })
-
-  try {
-    const response = await dynamoClient.send(command)
-  } catch (err) {
-    if (err?.name! !== 'ResourceInUseException') {
-      throw err
-    }
-  }
 
   const user = {
     // `pk` won't be encrypted because it's not included in the `users` protected table schema.
@@ -47,7 +39,9 @@ const main = async () => {
     throw new Error(`encryption error: ${encryptResult.failure}`)
   }
 
-  console.log(encryptResult.data)
+  console.log(
+    `\nencrypted item:\n${JSON.stringify(encryptResult.data, null, 2)}`,
+  )
 
   const putCommand = new PutCommand({
     TableName: tableName,
@@ -56,18 +50,16 @@ const main = async () => {
 
   await dynamoClient.send(putCommand)
 
-  const searchTerm = await makeSearchTerm('abc@example.com', users.email, users)
-
   const getCommand = new GetCommand({
     TableName: tableName,
     Key: { pk: 'user#1' },
   })
 
-  const getResult = await dynamoClient.send(getCommand)
+  const getResult = await docClient.send(getCommand)
 
-  console.log(JSON.stringify(getResult.Item))
+  const decryptedItem = await decryptModel<User>(getResult.Item!, users)
 
-  // TODO: decrypt
+  console.log(`\ndecrypted item:\n${JSON.stringify(decryptedItem, null, 2)}`)
 }
 
 main()
