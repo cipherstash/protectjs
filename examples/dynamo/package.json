@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "simple": "tsx src/simple.ts",
-    "encrypted-partition-key": "tsx src/encrypted-partition-key.ts"
+    "encrypted-partition-key": "tsx src/encrypted-partition-key.ts",
+    "encrypted-sort-key": "tsx src/encrypted-sort-key.ts"
   },
   "keywords": [],
   "author": "",
