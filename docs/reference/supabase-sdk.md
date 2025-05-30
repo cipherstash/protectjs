@@ -9,6 +9,23 @@ Upvote this [issue](https://github.com/cipherstash/protectjs/issues/135) and fol
 > The following assumes you have installed the [latest version of the EQL v2 extension](https://github.com/cipherstash/encrypt-query-language/releases).
 > You can also install the extension using the [dbdev](https://database.dev/cipherstash/eql) tool.
 
+## Exposing EQL schema
+
+These instructions are referenced from the [Supabase docs](https://supabase.com/docs/guides/api/using-custom-schemas) and are used to expose the EQL schema to the Supabase SDK.
+
+1. Go to [API settings](https://supabase.com/dashboard/project/_/settings/api) and add `eql_v2` to "Exposed schemas".
+2. Then run the following in the Supabase project as raw SQL:
+
+```sql
+GRANT USAGE ON SCHEMA eql_v2 TO anon, authenticated, service_role;Add commentMore actions
+GRANT ALL ON ALL TABLES IN SCHEMA eql_v2 TO anon, authenticated, service_role;
+GRANT ALL ON ALL ROUTINES IN SCHEMA eql_v2 TO anon, authenticated, service_role;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA eql_v2 TO anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA eql_v2 GRANT ALL ON TABLES TO anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA eql_v2 GRANT ALL ON ROUTINES TO anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA eql_v2 GRANT ALL ON SEQUENCES TO anon, authenticated, service_role;
+```
+
 ## Converting Encrypted Search Terms
 
 When searching encrypted data, you need to convert the encrypted payload into a format that PostgreSQL and the Supabase SDK can understand. The encrypted payload needs to be converted to a raw composite type format by double stringifying the JSON:
