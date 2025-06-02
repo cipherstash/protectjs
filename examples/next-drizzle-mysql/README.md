@@ -25,7 +25,7 @@ This example demonstrates how to build a modern web application using:
 
 1. Clone the repository and install dependencies:
    ```bash
-   npm install
+   pnpm install
    ```
 
 2. Set up your environment variables:
@@ -37,18 +37,18 @@ This example demonstrates how to build a modern web application using:
 
 3. Start the MySQL database using Docker:
    ```bash
-   docker-compose up -d
+   docker compose up -d
    ```
 
 4. Run database migrations:
    ```bash
-   npm run db:generate
-   npm run db:migrate
+   pnpm run db:generate
+   pnpm run db:migrate
    ```
 
 5. Start the development server:
    ```bash
-   npm run dev
+   pnpm run dev
    ```
 
 The application will be available at `http://localhost:3000`.
