@@ -128,11 +128,11 @@ function prepareFieldsForOperation<T extends Record<string, unknown>>(
   otherFields: Record<string, unknown>
   operationFields: Record<string, unknown>
   keyMap: Record<string, string>
-  nullFields: Record<string, null>
+  nullFields: Record<string, null | undefined>
 } {
   const otherFields = extractOtherFields(model)
   const operationFields: Record<string, unknown> = {}
-  const nullFields: Record<string, null> = {}
+  const nullFields: Record<string, null | undefined> = {}
   const keyMap: Record<string, string> = {}
   let index = 0
 
@@ -143,8 +143,8 @@ function prepareFieldsForOperation<T extends Record<string, unknown>>(
     : Object.entries(extractEncryptedFields(model))
 
   for (const [key, value] of fieldsToProcess) {
-    if (value === null) {
-      nullFields[key] = null
+    if (value === null || value === undefined) {
+      nullFields[key] = value === undefined ? undefined : null
       continue
     }
 
@@ -309,11 +309,11 @@ function prepareBulkModelsForOperation<T extends Record<string, unknown>>(
   otherFields: Record<string, unknown>[]
   operationFields: Record<string, unknown>[]
   keyMap: Record<string, { modelIndex: number; fieldKey: string }>
-  nullFields: Record<string, null>[]
+  nullFields: Record<string, null | undefined>[]
 } {
   const otherFields: Record<string, unknown>[] = []
   const operationFields: Record<string, unknown>[] = []
-  const nullFields: Record<string, null>[] = []
+  const nullFields: Record<string, null | undefined>[] = []
   const keyMap: Record<string, { modelIndex: number; fieldKey: string }> = {}
   let index = 0
 
@@ -321,7 +321,7 @@ function prepareBulkModelsForOperation<T extends Record<string, unknown>>(
     const model = models[modelIndex]
     const modelOtherFields = extractOtherFields(model)
     const modelOperationFields: Record<string, unknown> = {}
-    const modelNullFields: Record<string, null> = {}
+    const modelNullFields: Record<string, null | undefined> = {}
 
     const fieldsToProcess = table
       ? Object.entries(model).filter(([key]) =>
@@ -330,8 +330,8 @@ function prepareBulkModelsForOperation<T extends Record<string, unknown>>(
       : Object.entries(extractEncryptedFields(model))
 
     for (const [key, value] of fieldsToProcess) {
-      if (value === null) {
-        modelNullFields[key] = null
+      if (value === null || value === undefined) {
+        modelNullFields[key] = value === undefined ? undefined : null
         continue
       }
 
