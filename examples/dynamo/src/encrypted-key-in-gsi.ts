@@ -25,7 +25,7 @@ const main = async () => {
         AttributeType: 'S',
       },
       {
-        AttributeName: 'email__hm',
+        AttributeName: 'email__hmac',
         AttributeType: 'S',
       },
     ],
@@ -38,10 +38,10 @@ const main = async () => {
     GlobalSecondaryIndexes: [
       {
         IndexName: indexName,
-        KeySchema: [{ AttributeName: 'email__hm', KeyType: 'HASH' }],
+        KeySchema: [{ AttributeName: 'email__hmac', KeyType: 'HASH' }],
         Projection: {
           ProjectionType: 'INCLUDE',
-          NonKeyAttributes: ['email__c'],
+          NonKeyAttributes: ['email__source'],
         },
         ProvisionedThroughput: { ReadCapacityUnits: 5, WriteCapacityUnits: 5 },
       },
@@ -71,7 +71,7 @@ const main = async () => {
   const queryCommand = new QueryCommand({
     TableName: tableName,
     IndexName: indexName,
-    KeyConditionExpression: 'email__hm = :e',
+    KeyConditionExpression: 'email__hmac = :e',
     ExpressionAttributeValues: {
       ':e': searchTerm,
     },

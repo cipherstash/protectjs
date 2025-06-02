@@ -24,7 +24,7 @@ const main = async () => {
         AttributeType: 'S',
       },
       {
-        AttributeName: 'email__hm',
+        AttributeName: 'email__hmac',
         AttributeType: 'S',
       },
     ],
@@ -34,7 +34,7 @@ const main = async () => {
         KeyType: 'HASH',
       },
       {
-        AttributeName: 'email__hm',
+        AttributeName: 'email__hmac',
         KeyType: 'RANGE',
       },
     ],
@@ -62,7 +62,7 @@ const main = async () => {
 
   const getCommand = new GetCommand({
     TableName: tableName,
-    Key: { pk: 'user#1', email__hm: searchTerm },
+    Key: { pk: 'user#1', email__hmac: searchTerm },
   })
 
   const getResult = await docClient.send(getCommand)

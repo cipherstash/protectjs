@@ -54,7 +54,7 @@ Each example runs against local DynamoDB in Docker.
 - `encrypted-key-in-gsi`
   - `pnpm run encrypted-key-in-gsi`
   - Uses an encrypted attribute as the partition key in a global secondary index.
-    The source ciphertext is projected into the index for decryption after queries against the index.
+    The source ciphertext is projected into the index for decryption after querying the index.
 - `export-to-pg`
   - `pnpm run export-to-pg`
   - Encrypts an item, puts it in Dynamo, exports it to Postgres, and decrypts a result from Postgres.

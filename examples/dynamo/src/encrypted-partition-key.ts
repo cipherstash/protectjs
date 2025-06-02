@@ -19,13 +19,13 @@ const main = async () => {
     TableName: tableName,
     AttributeDefinitions: [
       {
-        AttributeName: 'email__hm',
+        AttributeName: 'email__hmac',
         AttributeType: 'S',
       },
     ],
     KeySchema: [
       {
-        AttributeName: 'email__hm',
+        AttributeName: 'email__hmac',
         KeyType: 'HASH',
       },
     ],
@@ -53,7 +53,7 @@ const main = async () => {
 
   const getCommand = new GetCommand({
     TableName: tableName,
-    Key: { email__hm: searchTerm },
+    Key: { email__hmac: searchTerm },
   })
 
   const getResult = await docClient.send(getCommand)

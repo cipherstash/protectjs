@@ -31,8 +31,8 @@ export async function encryptModel(
       if (encryptedAttrs.includes(attrName)) {
         const encryptPayload = attrValue as EncryptedPayload
 
-        putItem[`${attrName}__hm`] = encryptPayload!.hm!
-        putItem[`${attrName}__c`] = encryptPayload!.c!
+        putItem[`${attrName}__hmac`] = encryptPayload!.hm!
+        putItem[`${attrName}__source`] = encryptPayload!.c!
       } else {
         putItem[attrName] = attrValue
       }
@@ -77,8 +77,8 @@ export async function decryptModel<T extends Record<string, unknown>>(
   protectTable: ProtectTable<ProtectTableColumn>,
 ): Promise<T> {
   const encryptedAttrs = Object.keys(protectTable.build().columns)
-  const ciphertextAttrSuffix = '__c'
-  const searchTermAttrSuffix = '__hm'
+  const ciphertextAttrSuffix = '__source'
+  const searchTermAttrSuffix = '__hmac'
 
   // TODO: add a decrypt function that doesn't require the full EQL payload in PG's format.
   const withEqlPayloads = Object.entries(item).reduce(

@@ -91,14 +91,15 @@ const main = async () => {
     }
   }
 
+  // TODO: this logic belongs in Protect (or in common/protect.ts for the prototype)
   const formattedForPgInsert = scanResult.Items!.reduce(
     (recordsToInsert, currentItem) => {
       const idAsText = currentItem.pk.slice('user#'.length)
 
       const emailAsText = JSON.stringify({
-        c: currentItem.email__c,
+        c: currentItem.email__source,
         bf: null,
-        hm: currentItem.email__hm,
+        hm: currentItem.email__hmac,
         i: { c: 'email', t: 'users' },
         k: 'ct',
         ob: null,
