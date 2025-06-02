@@ -141,6 +141,48 @@ describe('encryption and decryption', () => {
       address: null,
     })
   }, 30000)
+
+  it('should handle undefined values in a model', async () => {
+    const protectClient = await protect(users)
+
+    // Create a model with undefined values
+    const decryptedModel = {
+      id: '1',
+      email: undefined,
+      createdAt: new Date('2021-01-01'),
+      updatedAt: new Date('2021-01-01'),
+      number: 1,
+      address: null,
+    }
+
+    // Encrypt the model
+    const encryptedModel = await protectClient.encryptModel<User>(
+      decryptedModel,
+      users,
+    )
+
+    if (encryptedModel.failure) {
+      throw new Error(`[protect]: ${encryptedModel.failure.message}`)
+    }
+
+    // Decrypt the model
+    const decryptedResult = await protectClient.decryptModel<User>(
+      encryptedModel.data,
+    )
+
+    if (decryptedResult.failure) {
+      throw new Error(`[protect]: ${decryptedResult.failure.message}`)
+    }
+
+    expect(decryptedResult.data).toEqual({
+      id: '1',
+      email: undefined,
+      createdAt: new Date('2021-01-01'),
+      updatedAt: new Date('2021-01-01'),
+      number: 1,
+      address: null,
+    })
+  }, 30000)
 })
 
 describe('bulk encryption', () => {
@@ -244,6 +286,57 @@ describe('bulk encryption edge cases', () => {
         id: '1',
         email: 'test1',
         address: null,
+        createdAt: new Date('2021-01-01'),
+        updatedAt: new Date('2021-01-01'),
+        number: 1,
+      },
+      {
+        id: '2',
+        email: null,
+        address: '123 Main St',
+        createdAt: new Date('2021-01-01'),
+        updatedAt: new Date('2021-01-01'),
+        number: 2,
+      },
+      {
+        id: '3',
+        email: 'test3',
+        address: '456 Oak St',
+        createdAt: new Date('2021-01-01'),
+        updatedAt: new Date('2021-01-01'),
+        number: 3,
+      },
+    ]
+
+    // Encrypt the models
+    const encryptedModels = await protectClient.bulkEncryptModels<User>(
+      decryptedModels,
+      users,
+    )
+
+    if (encryptedModels.failure) {
+      throw new Error(`[protect]: ${encryptedModels.failure.message}`)
+    }
+
+    // Decrypt the models
+    const decryptedResult = await protectClient.bulkDecryptModels<User>(
+      encryptedModels.data,
+    )
+
+    if (decryptedResult.failure) {
+      throw new Error(`[protect]: ${decryptedResult.failure.message}`)
+    }
+
+    expect(decryptedResult.data).toEqual(decryptedModels)
+  }, 30000)
+
+  it('should handle mixed undefined and non-undefined values in bulk operations', async () => {
+    const protectClient = await protect(users)
+    const decryptedModels = [
+      {
+        id: '1',
+        email: 'test1',
+        address: undefined,
         createdAt: new Date('2021-01-01'),
         updatedAt: new Date('2021-01-01'),
         number: 1,
