@@ -15,6 +15,10 @@ The documentation for Protect.js is organized into the following sections:
 - [Protect.js schemas](./reference/schema.md)
 - [Model operations with bulk crypto functions](./reference/model-operations.md)
 
+### ORMs and frameworks
+
+- [Supabase SDK](./reference/supabase-sdk.md)
+
 ## How-to guides
 
 - [Lock contexts with Clerk and Next.js](./how-to/lock-contexts-with-clerk.md)

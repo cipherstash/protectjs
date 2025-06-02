@@ -1,13 +1,136 @@
-# Searching Encrypted Data with Supabase SDK
+# Using CipherStash Protect.js with Supabase SDK
 
-When working with encrypted data in Supabase, you can use the standard Supabase SDK methods by properly formatting the encrypted payload as a string.
-The Supabase JS SDK uses [PostREST](https://docs.postgrest.org/en/v13/) under the hood, and working with composite types is not well supported, so we plan to support a proper `@cipherstash/supabase` package that will provide a more robust interface for working with encrypted data in Supabase.
-
-Upvote this [issue](https://github.com/cipherstash/protectjs/issues/135) and follow along for updates.
+You can encrypt data [in-use](../concepts/searchable-encryption.md) with Protect.js and store it in your Supabase project all while maintaining the ability to search the data without decryption.
+This reference guide will show you how to do this with the Supabase SDK.
 
 > [!NOTE]
-> The following assumes you have installed the [latest version of the EQL v2 extension](https://github.com/cipherstash/encrypt-query-language/releases).
-> You can also install the extension using the [dbdev](https://database.dev/cipherstash/eql) tool.
+> The following assumes you have installed the [latest version of the EQL v2 extension](https://github.com/cipherstash/encrypt-query-language/releases) which has a specific release for Supabase, and gone through the [Protect.js setup guide](https://github.com/cipherstash/protectjs).
+
+## Defining your column types
+
+You need to define your column types as `eql_v2_encrypted` in your Supabase project, which is available after you [install the EQL v2 extension](https://github.com/cipherstash/encrypt-query-language/releases).
+
+```sql
+CREATE TABLE users (
+  id SERIAL PRIMARY KEY,
+  name eql_v2_encrypted,
+  email eql_v2_encrypted
+);
+```
+
+Under the hood, the EQL payload is a JSON object that is stored as a composite type in the database.
+
+## Inserting data
+
+You can insert encrypted data into the table using Protect.js and the Supabase SDK. Since the `eql_v2_encrypted` column is a composite type, you'll need to use the `encryptedToPgComposite` helper to properly format the data:
+
+```typescript
+import { protect, csTable, csColumn, encryptedToPgComposite } from '@cipherstash/protect'
+
+const users = csTable('users', {
+  name: csColumn('name').freeTextSearch().equality(),
+  email: csColumn('email').freeTextSearch().equality()
+})
+
+const protectClient = await protect(users)
+
+const encryptedResult = await protectClient.encryptModel(
+  {
+    name: 'John Doe',
+    email: 'john.doe@example.com'
+  },
+  users
+)
+
+if (encryptedResult.failure) {
+  // Handle the failure
+}
+
+const { data, error } = await supabase
+  .from('users')
+  .insert([encryptedToPgComposite(encryptedResult.data)])
+```
+
+## Selecting data
+
+When selecting encrypted data from the table using the Supabase SDK, it's important to cast the encrypted columns to `jsonb` to get the raw encrypted payload. This is necessary because the `eql_v2_encrypted` type is stored as a composite type in PostgreSQL:
+
+```typescript
+const { data, error } = await supabase
+  .from('users')
+  .select('id, email::jsonb, name::jsonb')
+```
+
+Without the `::jsonb` cast, the encrypted payload would be wrapped in an object with a `data` key, which would require additional handling before decryption. The cast ensures you get the raw encrypted payload that can be directly used with Protect.js for decryption:
+
+```typescript
+const decryptedResult = await protectClient.decryptModel(data[0])
+
+if (decryptedResult.failure) {
+  // Handle the failure
+}
+
+console.log('Decrypted user:', decryptedResult.data)
+```
+
+## Working with models
+
+When working with models that contain multiple encrypted fields, you can use the `modelToEncryptedPgComposites` helper to handle the conversion to PostgreSQL composite types:
+
+```typescript
+import { protect, csTable, csColumn, modelToEncryptedPgComposites } from '@cipherstash/protect'
+
+const users = csTable('users', {
+  name: csColumn('name').freeTextSearch().equality(),
+  email: csColumn('email').freeTextSearch().equality()
+})
+
+const protectClient = await protect(users)
+
+const model = {
+  name: 'John Doe',
+  email: 'john.doe@example.com',
+  otherField: 'not encrypted'
+}
+
+const encryptedModel = await protectClient.encryptModel(model, users)
+
+const { data, error } = await supabase
+  .from('users')
+  .insert([modelToEncryptedPgComposites(encryptedModel.data)])
+```
+
+For bulk operations with multiple models, you can use `bulkEncryptModels` and `bulkModelsToEncryptedPgComposites`:
+
+```typescript
+const models = [
+  {
+    name: 'John Doe',
+    email: 'john.doe@example.com',
+    otherField: 'not encrypted 1'
+  },
+  {
+    name: 'Jane Smith',
+    email: 'jane.smith@example.com',
+    otherField: 'not encrypted 2'
+  }
+]
+
+const encryptedModels = await protectClient.bulkEncryptModels(models, users)
+
+const { data, error } = await supabase
+  .from('users')
+  .insert(bulkModelsToEncryptedPgComposites(encryptedModels.data))
+  .select('id')
+
+// When selecting multiple records, remember to use ::jsonb
+const { data: selectedData, error: selectError } = await supabase
+  .from('users')
+  .select('id, name::jsonb, email::jsonb, otherField')
+
+// Decrypt all models at once
+const decryptedModels = await protectClient.bulkDecryptModels(selectedData)
+```
 
 ## Exposing EQL schema
 
@@ -154,7 +277,7 @@ const { data, error } = await supabase
   .or(`email.ilike.${searchTerms.data[0]}, name.ilike.${searchTerms.data[1]}`)
 ```
 
-## Conclusion
+## Important notes
 
 The key is in using the appropriate return type for your search terms:
 - Use `composite-literal` for simple equality and pattern matching queries
