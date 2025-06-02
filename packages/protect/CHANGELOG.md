@@ -1,5 +1,11 @@
 # @cipherstash/jseql
 
+## 8.4.0
+
+### Minor Changes
+
+- a471821: Fixed a bug in the model interface to correctly handle undefined and null values.
+
 ## 8.3.0
 
 ### Minor Changes
