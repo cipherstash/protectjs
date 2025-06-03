@@ -5,7 +5,7 @@
 "@cipherstash/basic-example": minor
 ---
 
-Implement a more configurable pattern for the Protect client.
+Implemented a more configurable pattern for the Protect client.
 
 This release introduces a new `ProtectClientConfig` type that can be used to configure the Protect client.
 This is useful if you want to configure the Protect client specific to your application, and will future proof any additional configuration options that are added in the future.
