@@ -42,7 +42,7 @@ export class ProtectClient {
   }
 
   async init(config: {
-    encryptConifg: EncryptConfig
+    encryptConfig: EncryptConfig
     workspaceCrn?: string
     accessKey?: string
     clientId?: string
@@ -51,7 +51,7 @@ export class ProtectClient {
     return await withResult(
       async () => {
         const validated: EncryptConfig = encryptConfigSchema.parse(
-          config.encryptConifg,
+          config.encryptConfig,
         )
 
         logger.debug(

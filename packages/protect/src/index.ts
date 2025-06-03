@@ -47,7 +47,7 @@ export const protect = async (
   const encryptConfig = buildEncryptConfig(...schemas)
 
   const result = await client.init({
-    encryptConifg: encryptConfig,
+    encryptConfig,
     ...clientConfig,
   })
 
