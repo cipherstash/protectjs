@@ -98,13 +98,22 @@ importers:
       '@aws-sdk/client-dynamodb':
         specifier: ^3.817.0
         version: 3.817.0
+      '@aws-sdk/lib-dynamodb':
+        specifier: ^3.817.0
+        version: 3.817.0(@aws-sdk/client-dynamodb@3.817.0)
       '@aws-sdk/util-dynamodb':
         specifier: ^3.817.0
         version: 3.817.0(@aws-sdk/client-dynamodb@3.817.0)
       '@cipherstash/protect':
         specifier: workspace:*
         version: link:../../packages/protect
+      pg:
+        specifier: ^8.13.1
+        version: 8.13.1
     devDependencies:
+      '@types/pg':
+        specifier: ^8.11.10
+        version: 8.11.10
       tsx:
         specifier: catalog:repo
         version: 4.19.3
@@ -423,6 +432,12 @@ packages:
   '@aws-sdk/endpoint-cache@3.804.0':
     resolution: {integrity: sha512-TQVDkA/lV6ua75ELZaichMzlp6x7tDa1bqdy/+0ZftmODPtKXuOOEcJxmdN7Ui/YRo1gkRz2D9txYy7IlNg1Og==}
     engines: {node: '>=18.0.0'}
+
+  '@aws-sdk/lib-dynamodb@3.817.0':
+    resolution: {integrity: sha512-BHMhLm0OCgplwqxj2j7nGUehMDvTV6i6EE5IZe8FE2XcnCSoh/Pp2xQfVxM2yz33EQLKi5S3m5m2Q7PJvx7cHA==}
+    engines: {node: '>=18.0.0'}
+    peerDependencies:
+      '@aws-sdk/client-dynamodb': ^3.817.0
 
   '@aws-sdk/middleware-endpoint-discovery@3.808.0':
     resolution: {integrity: sha512-h8LAIO6tuA0JAahrg+oSIVZpb6rhJOFVDDqYNQVp6ZdawlIzpZcc1sa+XVZvarBnThNKqvLTSGK7boSRmaLAwg==}
@@ -4534,6 +4549,16 @@ snapshots:
   '@aws-sdk/endpoint-cache@3.804.0':
     dependencies:
       mnemonist: 0.38.3
+      tslib: 2.8.1
+
+  '@aws-sdk/lib-dynamodb@3.817.0(@aws-sdk/client-dynamodb@3.817.0)':
+    dependencies:
+      '@aws-sdk/client-dynamodb': 3.817.0
+      '@aws-sdk/core': 3.816.0
+      '@aws-sdk/util-dynamodb': 3.817.0(@aws-sdk/client-dynamodb@3.817.0)
+      '@smithy/core': 3.4.0
+      '@smithy/smithy-client': 4.3.0
+      '@smithy/types': 4.3.0
       tslib: 2.8.1
 
   '@aws-sdk/middleware-endpoint-discovery@3.808.0':

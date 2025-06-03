@@ -16,3 +16,26 @@ services:
       - 8001:8001
     environment:
       DYNAMO_ENDPOINT: http://dynamodb-local:8000
+
+  # used by export-to-pg example
+  postgres:
+    image: postgres:latest
+    environment:
+      PGPORT: 5432
+      POSTGRES_DB: "cipherstash"
+      POSTGRES_USER: "cipherstash"
+      PGUSER: "cipherstash"
+      POSTGRES_PASSWORD: password
+    ports:
+      - 5433:5432
+    deploy:
+      resources:
+        limits:
+          cpus: "${CPU_LIMIT:-2}"
+          memory: 2048mb
+    restart: always
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready" ]
+      interval: 1s
+      timeout: 5s
+      retries: 10
