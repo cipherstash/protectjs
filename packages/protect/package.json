@@ -30,6 +30,11 @@
 			"types": "./dist/identify/index.d.ts",
 			"import": "./dist/identify/index.js",
 			"require": "./dist/identify/index.cjs"
+		},
+		"./dynamodb": {
+			"types": "./dist/dynamodb/index.d.ts",
+			"import": "./dist/dynamodb/index.js",
+			"require": "./dist/dynamodb/index.cjs"
 		}
 	},
 	"scripts": {
