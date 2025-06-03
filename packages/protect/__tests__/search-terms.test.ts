@@ -10,7 +10,7 @@ const users = csTable('users', {
 
 describe('create search terms', () => {
   it('should create search terms with default return type', async () => {
-    const protectClient = await protect(users)
+    const protectClient = await protect({ schemas: [users] })
 
     const searchTerms = [
       {
@@ -41,7 +41,7 @@ describe('create search terms', () => {
   }, 30000)
 
   it('should create search terms with composite-literal return type', async () => {
-    const protectClient = await protect(users)
+    const protectClient = await protect({ schemas: [users] })
 
     const searchTerms = [
       {
@@ -64,7 +64,7 @@ describe('create search terms', () => {
   }, 30000)
 
   it('should create search terms with escaped-composite-literal return type', async () => {
-    const protectClient = await protect(users)
+    const protectClient = await protect({ schemas: [users] })
 
     const searchTerms = [
       {

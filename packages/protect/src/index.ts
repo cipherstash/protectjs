@@ -16,19 +16,40 @@ export interface ProtectError {
 }
 
 type AtLeastOneCsTable<T> = [T, ...T[]]
+
+export type ProtectClientConfig = {
+  schemas: AtLeastOneCsTable<ProtectTable<ProtectTableColumn>>
+  workspaceCrn?: string
+  accessKey?: string
+  clientId?: string
+  clientKey?: string
+}
+
 export const protect = async (
-  ...tables: AtLeastOneCsTable<ProtectTable<ProtectTableColumn>>
+  config: ProtectClientConfig,
 ): Promise<ProtectClient> => {
-  if (!tables.length) {
+  const { schemas } = config
+
+  if (!schemas.length) {
     throw new Error(
       '[protect]: At least one csTable must be provided to initialize the protect client',
     )
   }
 
-  const client = new ProtectClient()
-  const encryptConfig = buildEncryptConfig(...tables)
+  const clientConfig = {
+    workspaceCrn: config.workspaceCrn,
+    accessKey: config.accessKey,
+    clientId: config.clientId,
+    clientKey: config.clientKey,
+  }
 
-  const result = await client.init(encryptConfig)
+  const client = new ProtectClient(clientConfig.workspaceCrn)
+  const encryptConfig = buildEncryptConfig(...schemas)
+
+  const result = await client.init({
+    encryptConifg: encryptConfig,
+    ...clientConfig,
+  })
 
   if (result.failure) {
     throw new Error(`[protect]: ${result.failure.message}`)

@@ -1,4 +1,8 @@
-import { protect } from '@cipherstash/protect'
+import { protect, type ProtectClientConfig } from '@cipherstash/protect'
 import { users } from './schema'
 
-export const protectClient = await protect(users)
+const config: ProtectClientConfig = {
+  schemas: [users],
+}
+
+export const protectClient = await protect(config)

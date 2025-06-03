@@ -36,18 +36,23 @@ export class ProtectClient {
   private encryptConfig: EncryptConfig | undefined
   private workspaceId: string | undefined
 
-  constructor() {
-    const workspaceId = loadWorkSpaceId()
+  constructor(workspaceCrn?: string) {
+    const workspaceId = loadWorkSpaceId(workspaceCrn)
     this.workspaceId = workspaceId
   }
 
-  async init(
-    encryptConifg?: EncryptConfig,
-  ): Promise<Result<ProtectClient, ProtectError>> {
+  async init(config: {
+    encryptConifg: EncryptConfig
+    workspaceCrn?: string
+    accessKey?: string
+    clientId?: string
+    clientKey?: string
+  }): Promise<Result<ProtectClient, ProtectError>> {
     return await withResult(
       async () => {
-        const validated: EncryptConfig =
-          encryptConfigSchema.parse(encryptConifg)
+        const validated: EncryptConfig = encryptConfigSchema.parse(
+          config.encryptConifg,
+        )
 
         logger.debug(
           'Initializing the Protect.js client with the following encrypt config:',
@@ -56,7 +61,17 @@ export class ProtectClient {
           },
         )
 
-        this.client = await newClient(JSON.stringify(validated))
+        const newClientConfig = JSON.stringify({
+          workspace_crn: config.workspaceCrn,
+          access_key: config.accessKey,
+          client_id: config.clientId,
+          client_key: config.clientKey,
+        })
+
+        this.client = await newClient(
+          JSON.stringify(validated),
+          newClientConfig,
+        )
         this.encryptConfig = validated
 
         logger.info('Successfully initialized the Protect.js client.')

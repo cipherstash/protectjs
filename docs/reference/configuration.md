@@ -12,6 +12,7 @@ Environment variables will take precedence over configuration files and it's rec
     - [`[auth]` section](#auth-section)
 - [cipherstash.secret.toml](#cipherstashsecrettoml)
 - [Environment variables](#environment-variables)
+- [Configuring the Protect client directly](#configuring-the-protect-client-directly)
 - [Deploying to production](#deploying-to-production)
   - [Region configuration](#region-configuration)
   - [File system write permissions](#file-system-write-permissions)
@@ -38,7 +39,7 @@ The minimal `cipherstash.toml` file:
 client_id = "your-client-id"
 
 [auth]
-workspace_id = "your-workspace-id"
+workspace_crn = "your-workspace-crn"
 ```
 
 #### `[encrypt]` section
@@ -50,7 +51,7 @@ The client key must be stored in `cipherstash.secret.toml` or in an environment 
 
 #### `[auth]` section
 
-- `workspace_id` (**required**): A base-32 encoded 10-byte unique identifier.
+- `workspace_crn` (**required**): The workspace CRN for your CipherStash account.
 - `access_key` (**not allowed**): This is explicitly disallowed and will be rejected at runtime.
 The access key must be stored in `cipherstash.secret.toml` or in an environment variable `CS_CLIENT_ACCESS_KEY`.
 
@@ -92,22 +93,34 @@ The following environment variables are supported:
 |:----------------------:|:---------------------------------------------------------------:|:--------:|:--------------------------------------------:|
 | `CS_CLIENT_ID`         | The client ID for your CipherStash account.                     | Yes      |                                              |
 | `CS_CLIENT_KEY`        | The client key for your CipherStash account.                    | Yes      |                                              |
-| `CS_WORKSPACE_ID`      | The workspace ID for your CipherStash account.                  | Yes      |                                              |
+| `CS_WORKSPACE_CRN`     | The workspace CRN for your CipherStash account.                 | Yes      |                                              |
 | `CS_CLIENT_ACCESS_KEY` | The access key for your CipherStash account.                    | Yes      |                                              |
-| `CS_ZEROKMS_HOST`      | The host for the ZeroKMS server.                                | No       | `https://ap-southeast-2.aws.viturhosted.net` |
 | `CS_CONFIG_PATH`       | A temporary path to store the CipherStash client configuration. | No       | `/home/{username}/.cipherstash`              |
+
+## Configuring the Protect client directly
+
+You can also configure the Protect client directly by passing a `ProtectClientConfig` object to the `protect` function during initialization.
+This is useful if you want to configure the Protect client specific to your application.
+An exmaple of this might be if you want to use a secret manager to store your client key and access key rather than relying on environment variables or configuration files.
+
+```ts
+import { protect, type ProtectClientConfig } from "@cipherstash/protect";
+
+const config: ProtectClientConfig = {
+  schemas: [users, orders],
+  workspaceCrn: "your-workspace-crn",
+  accessKey: "your-access-key",
+  clientId: "your-client-id",
+  clientKey: "your-client-key",
+}
+
+const protectClient = await protect(config);
+```
 
 ## Deploying to production
 
 > [!TIP]
 > There are some configuration details you should take note of when deploying `@cipherstash/protect` in your production examples.
-
-### Region configuration
-
-If you've created a Workspace in a region other than `ap-southeast-2`, you will need to set the `CS_ZEROKMS_HOST` environment variable to the appropriate region. 
-
-For example, if you are using ZeroKMS in the `eu-central-1` region, you need to set the `CS_ZEROKMS_HOST` variable to `https://eu-central-1.aws.viturhosted.net`. 
-This is a known usability issue that will be addressed.
 
 ### File system write permissions
 
