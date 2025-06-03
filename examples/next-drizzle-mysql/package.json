@@ -1,0 +1,33 @@
+{
+  "name": "next-drizzle-mysql",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build",
+    "start": "next start",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate"
+  },
+  "dependencies": {
+    "@cipherstash/protect": "^8.3.0",
+    "@hookform/resolvers": "^5.0.1",
+    "drizzle-orm": "^0.44.0",
+    "mysql2": "^3.14.1",
+    "next": "15.3.2",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-hook-form": "^7.56.4",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "dotenv": "^16.4.7",
+    "drizzle-kit": "^0.30.5",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}

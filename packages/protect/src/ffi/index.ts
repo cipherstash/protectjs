@@ -7,8 +7,10 @@ import type {
   Client,
   Decrypted,
   EncryptedPayload,
+  EncryptedSearchTerm,
   EncryptOptions,
   EncryptPayload,
+  SearchTerm,
 } from '../types'
 import { EncryptModelOperation } from './operations/encrypt-model'
 import { DecryptModelOperation } from './operations/decrypt-model'
@@ -16,6 +18,7 @@ import { BulkEncryptModelsOperation } from './operations/bulk-encrypt-models'
 import { BulkDecryptModelsOperation } from './operations/bulk-decrypt-models'
 import { EncryptOperation } from './operations/encrypt'
 import { DecryptOperation } from './operations/decrypt'
+import { SearchTermsOperation } from './operations/search-terms'
 import {
   type EncryptConfig,
   encryptConfigSchema,
@@ -134,6 +137,18 @@ export class ProtectClient {
     input: Array<T>,
   ): BulkDecryptModelsOperation<T> {
     return new BulkDecryptModelsOperation(this.client, input)
+  }
+
+  /**
+   * Create search terms to use in a query searching encrypted data
+   * Usage:
+   *    await eqlClient.createSearchTerms(searchTerms)
+   *    await eqlClient.createSearchTerms(searchTerms).withLockContext(lockContext)
+   */
+  createSearchTerms(
+    terms: SearchTerm[],
+  ): Promise<Result<EncryptedSearchTerm[], ProtectError>> {
+    return new SearchTermsOperation(this.client, terms).execute()
   }
 
   /** e.g., debugging or environment info */

@@ -14,6 +14,24 @@ export type Client = Awaited<ReturnType<typeof newClient>> | undefined
 export type EncryptedPayload = Encrypted | null
 
 /**
+ * Represents a value that will be encrypted and used in a search
+ */
+export type SearchTerm = {
+  value: string
+  column: ProtectColumn
+  table: ProtectTable<ProtectTableColumn>
+  returnType?: 'eql' | 'composite-literal' | 'escaped-composite-literal'
+}
+
+/**
+ * The return type of the search term based on the return type specified in the `SearchTerm` type
+ * If the return type is `eql`, the return type is `EncryptedPayload`
+ * If the return type is `composite-literal`, the return type is `string` where the value is a composite literal
+ * If the return type is `escaped-composite-literal`, the return type is `string` where the value is an escaped composite literal
+ */
+export type EncryptedSearchTerm = EncryptedPayload | string
+
+/**
  * Represents a payload to be encrypted using the `encrypt` function
  * We currently only support the encryption of strings
  */
