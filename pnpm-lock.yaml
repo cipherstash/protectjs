@@ -107,6 +107,9 @@ importers:
       '@cipherstash/protect':
         specifier: workspace:*
         version: link:../../packages/protect
+      '@cipherstash/protect-dynamodb':
+        specifier: workspace:*
+        version: link:../../packages/protect-dynamodb
       pg:
         specifier: ^8.13.1
         version: 8.13.1
@@ -368,12 +371,18 @@ importers:
         specifier: ^0.2.0
         version: 0.2.0
       '@cipherstash/protect':
-        specifier: 9.0.0
-        version: 9.0.0
+        specifier: workspace:*
+        version: link:../protect
       zod:
         specifier: ^3.24.2
         version: 3.24.2
     devDependencies:
+      '@aws-sdk/client-dynamodb':
+        specifier: ^3.817.0
+        version: 3.817.0
+      '@aws-sdk/lib-dynamodb':
+        specifier: ^3.817.0
+        version: 3.817.0(@aws-sdk/client-dynamodb@3.817.0)
       dotenv:
         specifier: ^16.4.7
         version: 16.4.7
@@ -671,9 +680,6 @@ packages:
 
   '@cipherstash/protect-ffi@0.15.0':
     resolution: {integrity: sha512-FJuK0GyZ90eCpnNn+uOyy/4ptCMEucEZnMKlzgzTXOb/z7n5deuqOsbxz90N4QLoHwqPUUcec3h9sTboxqFHXw==}
-
-  '@cipherstash/protect@9.0.0':
-    resolution: {integrity: sha512-FF3omknkb1ylxiH9Mp9OlpLlFl0/hRCY0L2GI7oO4tKoe1tPcL3T+NcaNjjX1Yi/6jfc5Rjnc/4LwdPCvW7jJg==}
 
   '@clerk/backend@1.24.0':
     resolution: {integrity: sha512-DlOZ9pnCY77ngHKFZzC7ZImHBVjMf2whPLvnnBt4YXjkvuQ3m1v1tQHUXb8qqlwilptHU4/WzkOlXytez+iJ+A==}
@@ -4935,14 +4941,6 @@ snapshots:
       '@cipherstash/protect-ffi-linux-arm64-gnu': 0.15.0
       '@cipherstash/protect-ffi-linux-x64-gnu': 0.15.0
       '@cipherstash/protect-ffi-win32-x64-msvc': 0.15.0
-
-  '@cipherstash/protect@9.0.0':
-    dependencies:
-      '@byteslice/result': 0.2.0
-      '@cipherstash/protect-ffi': 0.15.0
-      zod: 3.24.2
-    optionalDependencies:
-      '@rollup/rollup-linux-x64-gnu': 4.24.0
 
   '@clerk/backend@1.24.0(react-dom@19.0.0(react@19.0.0))(react@19.0.0)':
     dependencies:

@@ -1,13 +1,9 @@
 // Insert data in dynamo, scan it back out, insert/copy into PG, query from PG.
 import { dynamoClient, docClient, createTable } from './common/dynamo'
 import { log } from './common/log'
-import {
-  users,
-  encryptModel,
-  decryptModel,
-  protectClient,
-} from './common/protect'
+import { users, protectClient } from './common/protect'
 import { PutCommand, ScanCommand } from '@aws-sdk/lib-dynamodb'
+import { protectDynamoDB } from '@cipherstash/protect-dynamodb'
 import pg from 'pg'
 const PgClient = pg.Client
 
@@ -35,6 +31,12 @@ const main = async () => {
     ],
   })
 
+  const protectDynamo = protectDynamoDB({
+    protectClient,
+    dynamoClient,
+    docClient,
+  })
+
   const user = {
     // `pk` won't be encrypted because it's not included in the `users` protected table schema.
     pk: 'user#1',
@@ -42,7 +44,7 @@ const main = async () => {
     email: 'abc@example.com',
   }
 
-  const encryptResult = await encryptModel(user, users)
+  const encryptResult = await protectDynamo.encryptModel(user, users)
 
   const putCommand = new PutCommand({
     TableName: tableName,
@@ -89,8 +91,12 @@ const main = async () => {
     }
   }
 
+  if (!scanResult.Items) {
+    throw new Error('No items found in scan result')
+  }
+
   // TODO: this logic belongs in Protect (or in common/protect.ts for the prototype)
-  const formattedForPgInsert = scanResult.Items?.reduce(
+  const formattedForPgInsert = scanResult.Items.reduce(
     (recordsToInsert, currentItem) => {
       const idAsText = currentItem.pk.slice('user#'.length)
 

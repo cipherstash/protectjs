@@ -1,7 +1,8 @@
 import { dynamoClient, docClient, createTable } from './common/dynamo'
 import { log } from './common/log'
-import { users, bulkEncryptModels, bulkDecryptModels } from './common/protect'
+import { users, protectClient } from './common/protect'
 import { BatchGetCommand, BatchWriteCommand } from '@aws-sdk/lib-dynamodb'
+import { protectDynamoDB } from '@cipherstash/protect-dynamodb'
 
 const tableName = 'UsersBulkOperations'
 
@@ -27,6 +28,12 @@ const main = async () => {
     ],
   })
 
+  const protectDynamo = protectDynamoDB({
+    protectClient,
+    dynamoClient,
+    docClient,
+  })
+
   const items = [
     {
       // `pk` won't be encrypted because it's not included in the `users` protected table schema.
@@ -40,7 +47,7 @@ const main = async () => {
     },
   ]
 
-  const encryptResult = await bulkEncryptModels(items, users)
+  const encryptResult = await protectDynamo.bulkEncryptModels(items, users)
 
   const putRequests = encryptResult.map((item: Record<string, unknown>) => ({
     PutRequest: {
@@ -68,7 +75,7 @@ const main = async () => {
 
   const getResult = await docClient.send(batchGetCommand)
 
-  const decryptedItems = await bulkDecryptModels<User>(
+  const decryptedItems = await protectDynamo.bulkDecryptModels<User>(
     getResult.Responses?.[tableName],
     users,
   )

@@ -1,12 +1,8 @@
 import { dynamoClient, docClient, createTable } from './common/dynamo'
 import { log } from './common/log'
-import {
-  users,
-  encryptModel,
-  decryptModel,
-  makeSearchTerm,
-} from './common/protect'
+import { users, protectClient } from './common/protect'
 import { PutCommand, QueryCommand } from '@aws-sdk/lib-dynamodb'
+import { protectDynamoDB } from '@cipherstash/protect-dynamodb'
 
 const tableName = 'UsersEncryptedKeyInGSI'
 const indexName = 'EmailIndex'
@@ -48,6 +44,12 @@ const main = async () => {
     ],
   })
 
+  const protectDynamo = protectDynamoDB({
+    protectClient,
+    dynamoClient,
+    docClient,
+  })
+
   const user = {
     // `pk` won't be encrypted because it's not included in the `users` protected table schema.
     pk: 'user#1',
@@ -55,7 +57,7 @@ const main = async () => {
     email: 'abc@example.com',
   }
 
-  const encryptResult = await encryptModel(user, users)
+  const encryptResult = await protectDynamo.encryptModel(user, users)
 
   log('encrypted item', encryptResult)
 
@@ -66,7 +68,11 @@ const main = async () => {
 
   await dynamoClient.send(putCommand)
 
-  const searchTerm = await makeSearchTerm('abc@example.com', users.email, users)
+  const searchTerm = await protectDynamo.makeSearchTerm(
+    'abc@example.com',
+    users.email,
+    users,
+  )
 
   const queryCommand = new QueryCommand({
     TableName: tableName,
@@ -80,7 +86,14 @@ const main = async () => {
 
   const queryResult = await docClient.send(queryCommand)
 
-  const decryptedItem = await decryptModel<User>(queryResult.Items?.[0], users)
+  if (!queryResult.Items?.[0]) {
+    throw new Error('Item not found')
+  }
+
+  const decryptedItem = await protectDynamo.decryptModel<User>(
+    queryResult.Items[0],
+    users,
+  )
 
   log('decrypted item', decryptedItem)
 }
