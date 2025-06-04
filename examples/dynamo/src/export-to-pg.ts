@@ -1,6 +1,4 @@
 // Insert data in dynamo, scan it back out, insert/copy into PG, query from PG.
-
-import { protect } from '@cipherstash/protect'
 import { dynamoClient, docClient, createTable } from './common/dynamo'
 import { log } from './common/log'
 import {
@@ -92,7 +90,7 @@ const main = async () => {
   }
 
   // TODO: this logic belongs in Protect (or in common/protect.ts for the prototype)
-  const formattedForPgInsert = scanResult.Items!.reduce(
+  const formattedForPgInsert = scanResult.Items?.reduce(
     (recordsToInsert, currentItem) => {
       const idAsText = currentItem.pk.slice('user#'.length)
 

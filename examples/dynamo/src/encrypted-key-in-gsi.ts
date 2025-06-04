@@ -80,7 +80,7 @@ const main = async () => {
 
   const queryResult = await docClient.send(queryCommand)
 
-  const decryptedItem = await decryptModel<User>(queryResult.Items![0], users)
+  const decryptedItem = await decryptModel<User>(queryResult.Items?.[0], users)
 
   log('decrypted item', decryptedItem)
 }

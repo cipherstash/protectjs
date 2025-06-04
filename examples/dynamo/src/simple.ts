@@ -52,7 +52,7 @@ const main = async () => {
 
   const getResult = await docClient.send(getCommand)
 
-  const decryptedItem = await decryptModel<User>(getResult.Item!, users)
+  const decryptedItem = await decryptModel<User>(getResult.Item, users)
 
   log('decrypted item', decryptedItem)
 }

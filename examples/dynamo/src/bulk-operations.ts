@@ -69,7 +69,7 @@ const main = async () => {
   const getResult = await docClient.send(batchGetCommand)
 
   const decryptedItems = await bulkDecryptModels<User>(
-    getResult.Responses?.[tableName]!,
+    getResult.Responses?.[tableName],
     users,
   )
 

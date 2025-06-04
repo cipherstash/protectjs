@@ -1,9 +1,5 @@
 import { protect, csColumn, csTable } from '@cipherstash/protect'
-import type {
-  Decrypted,
-  EncryptedPayload,
-  ProtectClient,
-} from '@cipherstash/protect'
+import type { Decrypted, EncryptedPayload } from '@cipherstash/protect'
 import type {
   ProtectColumn,
   ProtectTable,
@@ -14,7 +10,9 @@ export const users = csTable('users', {
   email: csColumn('email').equality(),
 })
 
-export const protectClient = await protect(users)
+export const protectClient = await protect({
+  schemas: [users],
+})
 
 const ciphertextAttrSuffix = '__source'
 const searchTermAttrSuffix = '__hmac'
@@ -88,7 +86,7 @@ export async function makeSearchTerm(
 export async function decryptModel<T extends Record<string, unknown>>(
   item: Record<string, unknown>,
   protectTable: ProtectTable<ProtectTableColumn>,
-): Promise<T> {
+): Promise<Decrypted<T>> {
   const encryptedAttrs = Object.keys(protectTable.build().columns)
 
   const withEqlPayloads = toItemWithEqlPayloads(item, encryptedAttrs)
@@ -103,7 +101,7 @@ export async function decryptModel<T extends Record<string, unknown>>(
     throw new Error(`[protect]: ${decryptResult.failure.message}`)
   }
 
-  return decryptResult.data!
+  return decryptResult.data
 }
 
 export async function bulkDecryptModels<T extends Record<string, unknown>>(
@@ -126,7 +124,7 @@ export async function bulkDecryptModels<T extends Record<string, unknown>>(
     throw new Error(`[protect]: ${decryptResult.failure.message}`)
   }
 
-  return decryptResult.data!
+  return decryptResult.data
 }
 
 function toEncryptedDynamoItem(
