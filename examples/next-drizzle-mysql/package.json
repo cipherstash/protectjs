@@ -1,6 +1,6 @@
 {
   "name": "next-drizzle-mysql",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
@@ -10,7 +10,7 @@
     "db:migrate": "drizzle-kit migrate"
   },
   "dependencies": {
-    "@cipherstash/protect": "^8.3.0",
+    "@cipherstash/protect": "workspace:*",
     "@hookform/resolvers": "^5.0.1",
     "drizzle-orm": "^0.44.0",
     "mysql2": "^3.14.1",

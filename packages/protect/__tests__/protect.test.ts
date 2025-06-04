@@ -19,7 +19,7 @@ type User = {
 
 describe('encryption and decryption', () => {
   it('should encrypt and decrypt a payload', async () => {
-    const protectClient = await protect(users)
+    const protectClient = await protect({ schemas: [users] })
 
     const email = 'hello@example.com'
 
@@ -40,7 +40,7 @@ describe('encryption and decryption', () => {
   }, 30000)
 
   it('should return null if plaintext is null', async () => {
-    const protectClient = await protect(users)
+    const protectClient = await protect({ schemas: [users] })
 
     const ciphertext = await protectClient.encrypt(null, {
       column: users.email,
@@ -59,7 +59,7 @@ describe('encryption and decryption', () => {
   }, 30000)
 
   it('should encrypt and decrypt a model', async () => {
-    const protectClient = await protect(users)
+    const protectClient = await protect({ schemas: [users] })
 
     // Create a model with decrypted values
     const decryptedModel = {
@@ -101,7 +101,7 @@ describe('encryption and decryption', () => {
   }, 30000)
 
   it('should handle null values in a model', async () => {
-    const protectClient = await protect(users)
+    const protectClient = await protect({ schemas: [users] })
 
     // Create a model with null values
     const decryptedModel = {
@@ -143,7 +143,7 @@ describe('encryption and decryption', () => {
   }, 30000)
 
   it('should handle undefined values in a model', async () => {
-    const protectClient = await protect(users)
+    const protectClient = await protect({ schemas: [users] })
 
     // Create a model with undefined values
     const decryptedModel = {
@@ -187,7 +187,7 @@ describe('encryption and decryption', () => {
 
 describe('bulk encryption', () => {
   it('should bulk encrypt and decrypt models', async () => {
-    const protectClient = await protect(users)
+    const protectClient = await protect({ schemas: [users] })
 
     // Create models with decrypted values
     const decryptedModels = [
@@ -249,7 +249,7 @@ describe('bulk encryption', () => {
   }, 30000)
 
   it('should return empty array if models is empty', async () => {
-    const protectClient = await protect(users)
+    const protectClient = await protect({ schemas: [users] })
 
     // Encrypt empty array of models
     const encryptedModels = await protectClient.bulkEncryptModels<User>(
@@ -265,7 +265,7 @@ describe('bulk encryption', () => {
   }, 30000)
 
   it('should return empty array if decrypting empty array of models', async () => {
-    const protectClient = await protect(users)
+    const protectClient = await protect({ schemas: [users] })
 
     // Decrypt empty array of models
     const decryptedResult = await protectClient.bulkDecryptModels<User>([])
@@ -280,7 +280,7 @@ describe('bulk encryption', () => {
 
 describe('bulk encryption edge cases', () => {
   it('should handle mixed null and non-null values in bulk operations', async () => {
-    const protectClient = await protect(users)
+    const protectClient = await protect({ schemas: [users] })
     const decryptedModels = [
       {
         id: '1',
@@ -331,7 +331,7 @@ describe('bulk encryption edge cases', () => {
   }, 30000)
 
   it('should handle mixed undefined and non-undefined values in bulk operations', async () => {
-    const protectClient = await protect(users)
+    const protectClient = await protect({ schemas: [users] })
     const decryptedModels = [
       {
         id: '1',
@@ -382,7 +382,7 @@ describe('bulk encryption edge cases', () => {
   }, 30000)
 
   it('should handle empty models in bulk operations', async () => {
-    const protectClient = await protect(users)
+    const protectClient = await protect({ schemas: [users] })
     const decryptedModels = [
       {
         id: '1',
@@ -430,7 +430,7 @@ describe('bulk encryption edge cases', () => {
 
 describe('error handling', () => {
   it('should handle invalid encrypted payloads', async () => {
-    const protectClient = await protect(users)
+    const protectClient = await protect({ schemas: [users] })
     const validModel = {
       id: '1',
       email: 'test@example.com',
@@ -464,7 +464,7 @@ describe('error handling', () => {
   }, 30000)
 
   it('should handle missing required fields', async () => {
-    const protectClient = await protect(users)
+    const protectClient = await protect({ schemas: [users] })
     const model = {
       id: '1',
       email: null,
@@ -485,7 +485,7 @@ describe('error handling', () => {
 
 describe('type safety', () => {
   it('should maintain type safety with complex nested objects', async () => {
-    const protectClient = await protect(users)
+    const protectClient = await protect({ schemas: [users] })
     const model = {
       id: '1',
       email: 'test@example.com',
@@ -523,7 +523,7 @@ describe('type safety', () => {
 
 describe('performance', () => {
   it('should handle large numbers of models efficiently', async () => {
-    const protectClient = await protect(users)
+    const protectClient = await protect({ schemas: [users] })
     const largeModels = Array(10)
       .fill(null)
       .map((_, i) => ({
@@ -566,7 +566,7 @@ describe('performance', () => {
 // const userJwt = ''
 // describe('encryption and decryption with lock context', () => {
 //   it('should encrypt and decrypt a payload with lock context', async () => {
-//     const protectClient = await protect(users)
+//     const protectClient = await protect({ schemas: [users] })
 
 //     const lc = new LockContext()
 //     const lockContext = await lc.identify(userJwt)
@@ -598,7 +598,7 @@ describe('performance', () => {
 //   }, 30000)
 
 //   it('should encrypt and decrypt a model with lock context', async () => {
-//     const protectClient = await protect(users)
+//     const protectClient = await protect({ schemas: [users] })
 
 //     const lc = new LockContext()
 //     const lockContext = await lc.identify(userJwt)
@@ -638,7 +638,7 @@ describe('performance', () => {
 //   }, 30000)
 
 //   it('should encrypt with context and be unable to decrypt without context', async () => {
-//     const protectClient = await protect(users)
+//     const protectClient = await protect({ schemas: [users] })
 
 //     const lc = new LockContext()
 //     const lockContext = await lc.identify(userJwt)
@@ -671,7 +671,7 @@ describe('performance', () => {
 //   }, 30000)
 
 //   it('should bulk encrypt and decrypt models with lock context', async () => {
-//     const protectClient = await protect(users)
+//     const protectClient = await protect({ schemas: [users] })
 
 //     const lc = new LockContext()
 //     const lockContext = await lc.identify(userJwt)

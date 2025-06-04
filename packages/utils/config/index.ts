@@ -56,8 +56,12 @@ function extractWorkspaceIdFromCrn(crn: string): string {
   return match[1]
 }
 
-export function loadWorkSpaceId(): string {
+export function loadWorkSpaceId(suppliedCrn?: string): string {
   const configPath = path.join(process.cwd(), 'cipherstash.toml')
+
+  if (suppliedCrn) {
+    return extractWorkspaceIdFromCrn(suppliedCrn)
+  }
 
   if (!fs.existsSync(configPath) && !process.env.CS_WORKSPACE_CRN) {
     throw new Error(

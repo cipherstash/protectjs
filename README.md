@@ -147,7 +147,8 @@ At the end of `stash setup`, you will have two files in your project:
 > Don't commit `cipherstash.secret.toml` to git; it contains sensitive credentials.
 > The `stash setup` command will attempt to append to your `.gitignore` file with the `cipherstash.secret.toml` file.
 
-Read more about [configuration via TOML file or environment variables](./docs/reference/configuration.md).
+Read more about [configuration via TOML file, environment variables, or the Protect client config object](./docs/reference/configuration.md) to meet your needs.
+The method you choose will depend on your use case.
 
 ### Basic file structure
 
@@ -209,14 +210,18 @@ Read more about [defining your schema](./docs/reference/schema.md).
 To import the `protect` function and initialize a client with your defined schema, add the following to `src/protect/index.ts`:
 
 ```ts
-import { protect } from "@cipherstash/protect";
+import { protect, type ProtectClientConfig } from "@cipherstash/protect";
 import { users, orders } from "./schema";
 
+const config: ProtectClientConfig = {
+  schemas: [users, orders],
+}
+
 // Pass all your tables to the protect function to initialize the client
-export const protectClient = await protect(users, orders);
+export const protectClient = await protect(config);
 ```
 
-The `protect` function requires at least one `csTable` be provided.
+The `protect` function requires at least one `csTable` be provided in the `schemas` array.
 
 ### Encrypt data
 

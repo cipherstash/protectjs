@@ -32,7 +32,7 @@ const table = csTable('protect-ci', {
 
 describe('supabase', () => {
   it('should insert and select encrypted data', async () => {
-    const protectClient = await protect(table)
+    const protectClient = await protect({ schemas: [table] })
 
     const e = 'hello world'
 
@@ -74,7 +74,7 @@ describe('supabase', () => {
   }, 30000)
 
   it('should insert and select encrypted model data', async () => {
-    const protectClient = await protect(table)
+    const protectClient = await protect({ schemas: [table] })
 
     const model = {
       encrypted: 'hello world',
@@ -124,7 +124,7 @@ describe('supabase', () => {
   }, 30000)
 
   it('should insert and select bulk encrypted model data', async () => {
-    const protectClient = await protect(table)
+    const protectClient = await protect({ schemas: [table] })
 
     const models = [
       {

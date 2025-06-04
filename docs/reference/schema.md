@@ -93,14 +93,15 @@ You will use your defined schemas to initialize the EQL client.
 Simply import your schemas and pass them to the `protect` function.
 
 ```ts
-import { protect } from "@cipherstash/protect";
+import { protect, type ProtectClientConfig } from "@cipherstash/protect";
 import { protectedUsers } from "./schemas/users";
 
-const protectClient = await protect(protectedUsers, ...);
+const config: ProtectClientConfig = {
+  schemas: [protectedUsers], // At least one csTable is required
+}
+
+const protectClient = await protect(config);
 ```
-
-The `protect` function requires at least one `csTable` to be passed in.
-
 ---
 
 ### Didn't find what you wanted?
