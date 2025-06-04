@@ -1,5 +1,9 @@
 import { protect, csColumn, csTable } from '@cipherstash/protect'
-import type { EncryptedPayload, ProtectClient } from '@cipherstash/protect'
+import type {
+  Decrypted,
+  EncryptedPayload,
+  ProtectClient,
+} from '@cipherstash/protect'
 import type {
   ProtectColumn,
   ProtectTable,
@@ -11,6 +15,9 @@ export const users = csTable('users', {
 })
 
 export const protectClient = await protect(users)
+
+const ciphertextAttrSuffix = '__source'
+const searchTermAttrSuffix = '__hmac'
 
 export async function encryptModel(
   item: Record<string, unknown>,
@@ -26,23 +33,29 @@ export async function encryptModel(
 
   const encryptedAttrs = Object.keys(protectTable.build().columns)
 
-  const encryptedItem = Object.entries(data).reduce(
-    (putItem, [attrName, attrValue]) => {
-      if (encryptedAttrs.includes(attrName)) {
-        const encryptPayload = attrValue as EncryptedPayload
+  return toEncryptedDynamoItem(data, encryptedAttrs)
+}
 
-        putItem[`${attrName}__hmac`] = encryptPayload!.hm!
-        putItem[`${attrName}__source`] = encryptPayload!.c!
-      } else {
-        putItem[attrName] = attrValue
-      }
-
-      return putItem
-    },
-    {} as Record<string, unknown>,
+export async function bulkEncryptModels(
+  items: Record<string, unknown>[],
+  protectTable: ProtectTable<ProtectTableColumn>,
+): Promise<Record<string, unknown>[]> {
+  const encryptResult = await protectClient.bulkEncryptModels(
+    items,
+    protectTable,
   )
 
-  return encryptedItem
+  if (encryptResult.failure) {
+    throw new Error(`encryption error: ${encryptResult.failure.message}`)
+  }
+
+  const data = encryptResult.data
+
+  const encryptedAttrs = Object.keys(protectTable.build().columns)
+
+  return data.map((encrypted) =>
+    toEncryptedDynamoItem(encrypted, encryptedAttrs),
+  )
 }
 
 export async function makeSearchTerm(
@@ -77,11 +90,72 @@ export async function decryptModel<T extends Record<string, unknown>>(
   protectTable: ProtectTable<ProtectTableColumn>,
 ): Promise<T> {
   const encryptedAttrs = Object.keys(protectTable.build().columns)
-  const ciphertextAttrSuffix = '__source'
-  const searchTermAttrSuffix = '__hmac'
 
+  const withEqlPayloads = toItemWithEqlPayloads(item, encryptedAttrs)
+
+  // TODO: `withEqlPayloads` shouldn't need to be `T` here because it doesn't actually match
+  // the return type (encrypted fields are EQL payloads).
+  const decryptResult = await protectClient.decryptModel<T>(
+    withEqlPayloads as T,
+  )
+
+  if (decryptResult.failure) {
+    throw new Error(`[protect]: ${decryptResult.failure.message}`)
+  }
+
+  return decryptResult.data!
+}
+
+export async function bulkDecryptModels<T extends Record<string, unknown>>(
+  items: Record<string, unknown>[],
+  protectTable: ProtectTable<ProtectTableColumn>,
+): Promise<Decrypted<T>[]> {
+  const encryptedAttrs = Object.keys(protectTable.build().columns)
+
+  const itemsWithEqlPayloads = items.map((item) =>
+    toItemWithEqlPayloads(item, encryptedAttrs),
+  )
+
+  // TODO: `withEqlPayloads` shouldn't need to be `T[]` here because it doesn't actually match
+  // the return type (encrypted fields are EQL payloads).
+  const decryptResult = await protectClient.bulkDecryptModels<T>(
+    itemsWithEqlPayloads as T[],
+  )
+
+  if (decryptResult.failure) {
+    throw new Error(`[protect]: ${decryptResult.failure.message}`)
+  }
+
+  return decryptResult.data!
+}
+
+function toEncryptedDynamoItem(
+  encrypted: Record<string, unknown>,
+  encryptedAttrs: string[],
+): Record<string, unknown> {
+  return Object.entries(encrypted).reduce(
+    (putItem, [attrName, attrValue]) => {
+      if (encryptedAttrs.includes(attrName)) {
+        const encryptPayload = attrValue as EncryptedPayload
+
+        putItem[`${attrName}__hmac`] = encryptPayload!.hm!
+        putItem[`${attrName}__source`] = encryptPayload!.c!
+      } else {
+        putItem[attrName] = attrValue
+      }
+
+      return putItem
+    },
+    {} as Record<string, unknown>,
+  )
+}
+
+function toItemWithEqlPayloads(
+  decrypted: Record<string, unknown>,
+  encryptedAttrs: string[],
+): Record<string, unknown> {
   // TODO: add a decrypt function that doesn't require the full EQL payload in PG's format.
-  const withEqlPayloads = Object.entries(item).reduce(
+  return Object.entries(decrypted).reduce(
     (formattedItem, [attrName, attrValue]) => {
       if (
         attrName.endsWith(ciphertextAttrSuffix) &&
@@ -106,16 +180,4 @@ export async function decryptModel<T extends Record<string, unknown>>(
     },
     {} as Record<string, unknown>,
   )
-
-  // TODO: `withEqlPayloads` shouldn't need to be `T` here because it doesn't actually match
-  // the return type (encrypted fields are EQL payloads).
-  const decryptResult = await protectClient.decryptModel<T>(
-    withEqlPayloads as T,
-  )
-
-  if (decryptResult.failure) {
-    throw new Error(`[protect]: ${decryptResult.failure.message}`)
-  }
-
-  return decryptResult.data!
 }
