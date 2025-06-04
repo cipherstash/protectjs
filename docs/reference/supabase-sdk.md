@@ -25,14 +25,24 @@ Under the hood, the EQL payload is a JSON object that is stored as a composite t
 You can insert encrypted data into the table using Protect.js and the Supabase SDK. Since the `eql_v2_encrypted` column is a composite type, you'll need to use the `encryptedToPgComposite` helper to properly format the data:
 
 ```typescript
-import { protect, csTable, csColumn, encryptedToPgComposite } from '@cipherstash/protect'
+import { 
+  protect, 
+  csTable, 
+  csColumn, 
+  encryptedToPgComposite, 
+  type ProtectClientConfig 
+} from '@cipherstash/protect'
 
 const users = csTable('users', {
   name: csColumn('name').freeTextSearch().equality(),
   email: csColumn('email').freeTextSearch().equality()
 })
 
-const protectClient = await protect(users)
+const config: ProtectClientConfig = {
+  schemas: [users],
+}
+
+const protectClient = await protect(config)
 
 const encryptedResult = await protectClient.encryptModel(
   {
@@ -78,14 +88,24 @@ console.log('Decrypted user:', decryptedResult.data)
 When working with models that contain multiple encrypted fields, you can use the `modelToEncryptedPgComposites` helper to handle the conversion to PostgreSQL composite types:
 
 ```typescript
-import { protect, csTable, csColumn, modelToEncryptedPgComposites } from '@cipherstash/protect'
+import { 
+  protect, 
+  csTable, 
+  csColumn, 
+  modelToEncryptedPgComposites, 
+  type ProtectClientConfig 
+} from '@cipherstash/protect'
 
 const users = csTable('users', {
   name: csColumn('name').freeTextSearch().equality(),
   email: csColumn('email').freeTextSearch().equality()
 })
 
-const protectClient = await protect(users)
+const config: ProtectClientConfig = {
+  schemas: [users],
+}
+
+const protectClient = await protect(config)
 
 const model = {
   name: 'John Doe',

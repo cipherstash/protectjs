@@ -5,13 +5,18 @@ import {
   type CtsToken,
   csColumn,
   csTable,
+  type ProtectClientConfig,
 } from '@cipherstash/protect'
 
 export const users = csTable('users', {
   email: csColumn('email'),
 })
 
-export const protectClient = await protect(users)
+const config: ProtectClientConfig = {
+  schemas: [users],
+}
+
+export const protectClient = await protect(config)
 
 export const getLockContext = (cts_token?: CtsToken) => {
   if (!cts_token) {

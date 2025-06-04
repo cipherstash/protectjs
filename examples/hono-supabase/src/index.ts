@@ -4,13 +4,22 @@ import { createClient } from '@supabase/supabase-js'
 import { Hono } from 'hono'
 
 // Consolidated protect and it's schemas into a single file
-import { protect, csColumn, csTable } from '@cipherstash/protect'
+import {
+  protect,
+  csColumn,
+  csTable,
+  type ProtectClientConfig,
+} from '@cipherstash/protect'
 
 export const users = csTable('users', {
   email: csColumn('email'),
 })
 
-export const protectClient = await protect(users)
+const config: ProtectClientConfig = {
+  schemas: [users],
+}
+
+export const protectClient = await protect(config)
 
 // Create a single supabase client for interacting with the database
 const supabaseUrl = process.env.SUPABASE_URL

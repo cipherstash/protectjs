@@ -154,14 +154,15 @@ Read more about [defining your schema](./docs/reference/schema.md).
 To import the `protect` function and initialize a client with your defined schema, add the following to `src/protect/index.ts`:
 
 ```ts
-import { protect } from "@cipherstash/protect";
+import { protect, type ProtectClientConfig } from "@cipherstash/protect";
 import { users, orders } from "./schema";
 
-// Pass all your tables to the protect function to initialize the client
-export const protectClient = await protect(users, orders);
-```
+const config: ProtectClientConfig = {
+  schemas: [users, orders],
+}
 
-The `protect` function requires at least one `csTable` to be provided.
+export const protectClient = await protect(config);
+```
 
 ## Step 5: Encrypt data
 
