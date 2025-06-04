@@ -1,14 +1,14 @@
 {
-	"name": "@cipherstash/protect",
-	"version": "9.0.0",
-	"description": "CipherStash Protect for JavaScript",
+	"name": "@cipherstash/protect-dynamodb",
+	"version": "0.0.1",
+	"description": "Protect.js DynamoDB Helpers",
 	"keywords": [
-		"encrypted",
-		"query",
-		"language",
-		"typescript",
-		"ts",
-		"protect"
+		"dynamodb",
+		"cipherstash",
+		"protect",
+		"encrypt",
+		"decrypt",
+		"security"
 	],
 	"bugs": {
 		"url": "https://github.com/cipherstash/protectjs/issues"
@@ -25,11 +25,6 @@
 			"types": "./dist/index.d.ts",
 			"import": "./dist/index.js",
 			"require": "./dist/index.cjs"
-		},
-		"./identify": {
-			"types": "./dist/identify/index.d.ts",
-			"import": "./dist/identify/index.js",
-			"require": "./dist/identify/index.cjs"
 		}
 	},
 	"scripts": {
@@ -39,24 +34,20 @@
 		"release": "tsup"
 	},
 	"devDependencies": {
-		"@supabase/supabase-js": "^2.47.10",
 		"dotenv": "^16.4.7",
-		"execa": "^9.5.2",
-		"json-schema-to-typescript": "^15.0.2",
 		"tsup": "catalog:repo",
 		"tsx": "catalog:repo",
 		"typescript": "catalog:repo",
 		"vitest": "catalog:repo"
+	},
+	"peerDependencies": {
+		"@cipherstash/protect": "9.0.0"
 	},
 	"publishConfig": {
 		"access": "public"
 	},
 	"dependencies": {
 		"@byteslice/result": "^0.2.0",
-		"@cipherstash/protect-ffi": "0.15.0",
 		"zod": "^3.24.2"
-	},
-	"optionalDependencies": {
-		"@rollup/rollup-linux-x64-gnu": "4.24.0"
 	}
 }

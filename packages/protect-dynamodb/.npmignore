@@ -1,0 +1,5 @@
+.env
+.turbo
+node_modules
+cipherstash.secret.toml
+cipherstash.toml
