@@ -24,6 +24,7 @@ pnpm add @cipherstash/protect-dynamodb
 ```typescript
 import { protectDynamoDB } from '@cipherstash/protect-dynamodb'
 import { protect, csColumn, csTable } from '@cipherstash/protect'
+import { PutCommand, GetCommand } from '@aws-sdk/lib-dynamodb'
 
 // Define your protected table schema
 const users = csTable('users', {
@@ -45,12 +46,15 @@ const user = {
   email: 'user@example.com',
 }
 
-const encryptedUser = await protectDynamo.encryptModel(user, users)
+const encryptResult = await protectDynamo.encryptModel(user, users)
+if (encryptResult.failure) {
+  throw new Error(`Failed to encrypt user: ${encryptResult.failure.message}`)
+}
 
 // Store in DynamoDB
 await docClient.send(new PutCommand({
   TableName: 'Users',
-  Item: encryptedUser,
+  Item: encryptResult.data,
 }))
 
 // Create search terms for querying
@@ -62,6 +66,10 @@ const searchTermsResult = await protectDynamo.createSearchTerms([
   },
 ])
 
+if (searchTermsResult.failure) {
+  throw new Error(`Failed to create search terms: ${searchTermsResult.failure.message}`)
+}
+
 // Query using the search term
 const [emailHmac] = searchTermsResult.data
 const result = await docClient.send(new GetCommand({
@@ -69,11 +77,21 @@ const result = await docClient.send(new GetCommand({
   Key: { email__hmac: emailHmac },
 }))
 
+if (!result.Item) {
+  throw new Error('Item not found')
+}
+
 // Decrypt the result
-const decryptedUser = await protectDynamo.decryptModel<User>(
+const decryptResult = await protectDynamo.decryptModel<User>(
   result.Item,
   users,
 )
+
+if (decryptResult.failure) {
+  throw new Error(`Failed to decrypt user: ${decryptResult.failure.message}`)
+}
+
+const decryptedUser = decryptResult.data
 ```
 
 ## Features
@@ -87,11 +105,40 @@ The package provides methods to encrypt and decrypt data for DynamoDB:
 - `decryptModel`: Decrypts a single model
 - `bulkDecryptModels`: Decrypts multiple models in bulk
 
+All methods return a `Result` type that must be checked for failures:
+
+```typescript
+const result = await protectDynamo.encryptModel(user, users)
+if (result.failure) {
+  // Handle error
+  console.error(result.failure.message)
+} else {
+  // Use encrypted data
+  const encryptedData = result.data
+}
+```
+
 ### Search Terms
 
 Create search terms for querying encrypted data:
 
 - `createSearchTerms`: Creates search terms for one or more columns
+
+```typescript
+const searchTermsResult = await protectDynamo.createSearchTerms([
+  {
+    value: 'user@example.com',
+    column: users.email,
+    table: users,
+  },
+])
+
+if (searchTermsResult.failure) {
+  throw new Error(`Failed to create search terms: ${searchTermsResult.failure.message}`)
+}
+
+const [emailHmac] = searchTermsResult.data
+```
 
 ### DynamoDB Integration
 
@@ -111,19 +158,27 @@ const users = csTable('users', {
 })
 
 // Encrypt and store
-const encryptedUser = await protectDynamo.encryptModel({
+const encryptResult = await protectDynamo.encryptModel({
   pk: 'user#1',
   email: 'user@example.com',
 }, users)
 
+if (encryptResult.failure) {
+  throw new Error(`Failed to encrypt user: ${encryptResult.failure.message}`)
+}
+
 // Query using search terms
-const searchTerms = await protectDynamo.createSearchTerms([
+const searchTermsResult = await protectDynamo.createSearchTerms([
   {
     value: 'user@example.com',
     column: users.email,
     table: users,
   },
 ])
+
+if (searchTermsResult.failure) {
+  throw new Error(`Failed to create search terms: ${searchTermsResult.failure.message}`)
+}
 ```
 
 ### Encrypted Partition Key
@@ -145,6 +200,21 @@ const table = {
     },
   ],
 }
+
+// Create search terms for querying
+const searchTermsResult = await protectDynamo.createSearchTerms([
+  {
+    value: 'user@example.com',
+    column: users.email,
+    table: users,
+  },
+])
+
+if (searchTermsResult.failure) {
+  throw new Error(`Failed to create search terms: ${searchTermsResult.failure.message}`)
+}
+
+const [emailHmac] = searchTermsResult.data
 ```
 
 ### Encrypted Sort Key
@@ -174,6 +244,21 @@ const table = {
     },
   ],
 }
+
+// Create search terms for querying
+const searchTermsResult = await protectDynamo.createSearchTerms([
+  {
+    value: 'user@example.com',
+    column: users.email,
+    table: users,
+  },
+])
+
+if (searchTermsResult.failure) {
+  throw new Error(`Failed to create search terms: ${searchTermsResult.failure.message}`)
+}
+
+const [emailHmac] = searchTermsResult.data
 ```
 
 ### Global Secondary Index with Encrypted Key
@@ -214,11 +299,26 @@ const table = {
     },
   ],
 }
+
+// Create search terms for querying
+const searchTermsResult = await protectDynamo.createSearchTerms([
+  {
+    value: 'user@example.com',
+    column: users.email,
+    table: users,
+  },
+])
+
+if (searchTermsResult.failure) {
+  throw new Error(`Failed to create search terms: ${searchTermsResult.failure.message}`)
+}
+
+const [emailHmac] = searchTermsResult.data
 ```
 
 ## Error Handling
 
-All methods return a `Result` type from `@byteslice/result`:
+All methods return a `Result` type from `@byteslice/result` that must be checked for failures:
 
 ```typescript
 const result = await protectDynamo.encryptModel(user, users)
@@ -243,8 +343,16 @@ type User = {
 }
 
 // Type-safe encryption
-const encryptedUser = await protectDynamo.encryptModel<User>(user, users)
+const encryptResult = await protectDynamo.encryptModel<User>(user, users)
+if (encryptResult.failure) {
+  throw new Error(`Failed to encrypt user: ${encryptResult.failure.message}`)
+}
+const encryptedUser = encryptResult.data
 
 // Type-safe decryption
-const decryptedUser = await protectDynamo.decryptModel<User>(item, users)
+const decryptResult = await protectDynamo.decryptModel<User>(item, users)
+if (decryptResult.failure) {
+  throw new Error(`Failed to decrypt user: ${decryptResult.failure.message}`)
+}
+const decryptedUser = decryptResult.data
 ```
