@@ -1,5 +1,12 @@
 # next-drizzle-mysql
 
+## 0.2.1
+
+### Patch Changes
+
+- Updated dependencies [c8468ee]
+  - @cipherstash/protect@9.1.0
+
 ## 0.2.0
 
 ### Minor Changes
