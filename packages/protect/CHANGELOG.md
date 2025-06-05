@@ -1,4 +1,4 @@
-# @cipherstash/jseql
+# @cipherstash/protect
 
 ## 9.0.0
 

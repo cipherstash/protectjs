@@ -1,0 +1,33 @@
+{
+  "name": "@cipherstash/dynamo-example",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "simple": "tsx src/simple.ts",
+    "bulk-operations": "tsx src/bulk-operations.ts",
+    "encrypted-partition-key": "tsx src/encrypted-partition-key.ts",
+    "encrypted-sort-key": "tsx src/encrypted-sort-key.ts",
+    "encrypted-key-in-gsi": "tsx src/encrypted-key-in-gsi.ts",
+    "export-to-pg": "tsx src/export-to-pg.ts",
+    "eql:download": "curl -sLo sql/cipherstash-encrypt.sql https://github.com/cipherstash/encrypt-query-language/releases/download/eql-2.0.2/cipherstash-encrypt.sql",
+    "eql:install": "cat sql/cipherstash-encrypt.sql | docker exec -i dynamo-postgres-1 psql postgresql://cipherstash:password@postgres:5432/cipherstash -f-"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.817.0",
+    "@aws-sdk/lib-dynamodb": "^3.817.0",
+    "@aws-sdk/util-dynamodb": "^3.817.0",
+    "@cipherstash/protect": "workspace:*",
+    "@cipherstash/protect-dynamodb": "workspace:*",
+    "pg": "^8.13.1"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.11.10",
+    "tsx": "catalog:repo",
+    "typescript": "catalog:repo"
+  }
+}
