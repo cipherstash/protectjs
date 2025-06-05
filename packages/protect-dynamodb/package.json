@@ -34,22 +34,17 @@
 		"release": "tsup"
 	},
 	"devDependencies": {
-		"@aws-sdk/client-dynamodb": "^3.817.0",
-		"@aws-sdk/lib-dynamodb": "^3.817.0",
+		"@cipherstash/protect": "workspace:*",
 		"dotenv": "^16.4.7",
 		"tsup": "catalog:repo",
 		"tsx": "catalog:repo",
 		"typescript": "catalog:repo",
 		"vitest": "catalog:repo"
 	},
-	"peerDependencies": {
-		"@cipherstash/protect": "workspace:*"
-	},
 	"publishConfig": {
 		"access": "public"
 	},
 	"dependencies": {
-		"@byteslice/result": "^0.2.0",
-		"zod": "^3.24.2"
+		"@byteslice/result": "^0.2.0"
 	}
 }
