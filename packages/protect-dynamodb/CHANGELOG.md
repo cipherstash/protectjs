@@ -1,5 +1,11 @@
 # @cipherstash/protect-dynamodb
 
+## 0.2.0
+
+### Minor Changes
+
+- 5fc0150: Fix build and publish.
+
 ## 1.0.0
 
 ### Minor Changes
