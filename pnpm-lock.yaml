@@ -370,19 +370,10 @@ importers:
       '@byteslice/result':
         specifier: ^0.2.0
         version: 0.2.0
+    devDependencies:
       '@cipherstash/protect':
         specifier: workspace:*
         version: link:../protect
-      zod:
-        specifier: ^3.24.2
-        version: 3.24.2
-    devDependencies:
-      '@aws-sdk/client-dynamodb':
-        specifier: ^3.817.0
-        version: 3.817.0
-      '@aws-sdk/lib-dynamodb':
-        specifier: ^3.817.0
-        version: 3.817.0(@aws-sdk/client-dynamodb@3.817.0)
       dotenv:
         specifier: ^16.4.7
         version: 16.4.7
