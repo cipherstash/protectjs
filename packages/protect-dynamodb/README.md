@@ -1,6 +1,6 @@
 # Protect.js DynamoDB Helpers
 
-Helpers for using CipherStash [Protect.js](https://github.com/cipherstash/protectjs) with DynamoDB
+Helpers for using CipherStash [Protect.js](https://github.com/cipherstash/protectjs) with DynamoDB.
 
 [![Built by CipherStash](https://raw.githubusercontent.com/cipherstash/meta/refs/heads/main/csbadge.svg)](https://cipherstash.com)
 [![NPM version](https://img.shields.io/npm/v/@cipherstash/protect-dynamodb.svg?style=for-the-badge&labelColor=000000)](https://www.npmjs.com/package/@cipherstash/protect-dynamodb)

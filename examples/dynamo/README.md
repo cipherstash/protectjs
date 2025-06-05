@@ -19,12 +19,12 @@ pnpm install
 pnpm run build
 ```
 
-Switch back to the Dynamo examples
+Switch back to the DynamoDB examples
 ```
 cd examples/dynamo
 ```
 
-Start Docker services used by the Dynamo examples:
+Start Docker services used by the DynamoDB examples:
 ```
 docker compose up --detach
 ```
@@ -44,7 +44,7 @@ Each example runs against local DynamoDB in Docker.
 
 - `simple`
   - `pnpm run simple`
-  - Round trip encryption/decryption through Dynamo (no search on encrypted attributes).
+  - Round trip encryption/decryption through DynamoDB (no search on encrypted attributes).
 - `encrypted-partition-key`
   - `pnpm run encrypted-partition-key`
   - Uses an encrypted attribute as a partition key.
