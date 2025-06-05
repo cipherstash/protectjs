@@ -30,8 +30,6 @@ const main = async () => {
 
   const protectDynamo = protectDynamoDB({
     protectClient,
-    dynamoClient,
-    docClient,
   })
 
   const items = [
@@ -49,11 +47,17 @@ const main = async () => {
 
   const encryptResult = await protectDynamo.bulkEncryptModels(items, users)
 
-  const putRequests = encryptResult.map((item: Record<string, unknown>) => ({
-    PutRequest: {
-      Item: item,
-    },
-  }))
+  if (encryptResult.failure) {
+    throw new Error(`Failed to encrypt items: ${encryptResult.failure.message}`)
+  }
+
+  const putRequests = encryptResult.data.map(
+    (item: Record<string, unknown>) => ({
+      PutRequest: {
+        Item: item,
+      },
+    }),
+  )
 
   log('encrypted items', encryptResult)
 

@@ -1,5 +1,5 @@
 import { GetCommand, PutCommand } from '@aws-sdk/lib-dynamodb'
-import { createTable, docClient, dynamoClient } from './common/dynamo'
+import { createTable, docClient } from './common/dynamo'
 import { users, protectClient } from './common/protect'
 import { log } from './common/log'
 import { protectDynamoDB } from '@cipherstash/protect-dynamodb'
@@ -29,8 +29,6 @@ const main = async () => {
 
   const protectDynamo = protectDynamoDB({
     protectClient,
-    dynamoClient,
-    docClient,
   })
 
   const user = {
@@ -51,15 +49,25 @@ const main = async () => {
 
   await docClient.send(putCommand)
 
-  const searchTerm = await protectDynamo.makeSearchTerm(
-    'abc@example.com',
-    users.email,
-    users,
-  )
+  const searchTermsResult = await protectDynamo.createSearchTerms([
+    {
+      value: 'abc@example.com',
+      column: users.email,
+      table: users,
+    },
+  ])
+
+  if (searchTermsResult.failure) {
+    throw new Error(
+      `Failed to create search terms: ${searchTermsResult.failure.message}`,
+    )
+  }
+
+  const [emailHmac] = searchTermsResult.data
 
   const getCommand = new GetCommand({
     TableName: tableName,
-    Key: { email__hmac: searchTerm },
+    Key: { email__hmac: emailHmac },
   })
 
   const getResult = await docClient.send(getCommand)

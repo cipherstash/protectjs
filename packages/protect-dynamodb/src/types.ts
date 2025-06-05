@@ -1,43 +1,50 @@
 import type {
   ProtectClient,
   Decrypted,
-  ProtectColumn,
   ProtectTable,
   ProtectTableColumn,
+  EncryptedPayload,
+  SearchTerm,
 } from '@cipherstash/protect'
-import type { DynamoDBClient } from '@aws-sdk/client-dynamodb'
-import type { DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb'
+import type { Result } from '@byteslice/result'
 
 export interface ProtectDynamoDBConfig {
   protectClient: ProtectClient
-  dynamoClient: DynamoDBClient
-  docClient: DynamoDBDocumentClient
+  options?: {
+    logger?: {
+      error: (message: string, error: Error) => void
+    }
+    errorHandler?: (error: ProtectDynamoDBError) => void
+  }
+}
+
+export interface ProtectDynamoDBError extends Error {
+  code: string
+  details?: Record<string, unknown>
 }
 
 export interface ProtectDynamoDBInstance {
-  encryptModel: <T extends Record<string, unknown>>(
+  encryptModel<T extends Record<string, unknown>>(
     item: T,
     protectTable: ProtectTable<ProtectTableColumn>,
-  ) => Promise<Record<string, unknown>>
+  ): Promise<Result<Record<string, unknown>, ProtectDynamoDBError>>
 
-  bulkEncryptModels: <T extends Record<string, unknown>>(
+  bulkEncryptModels<T extends Record<string, unknown>>(
     items: T[],
     protectTable: ProtectTable<ProtectTableColumn>,
-  ) => Promise<Record<string, unknown>[]>
+  ): Promise<Result<Record<string, unknown>[], ProtectDynamoDBError>>
 
-  decryptModel: <T extends Record<string, unknown>>(
-    item: Record<string, unknown>,
+  decryptModel<T extends Record<string, unknown>>(
+    item: Record<string, EncryptedPayload | unknown>,
     protectTable: ProtectTable<ProtectTableColumn>,
-  ) => Promise<Decrypted<T>>
+  ): Promise<Result<Decrypted<T>, ProtectDynamoDBError>>
 
-  bulkDecryptModels: <T extends Record<string, unknown>>(
-    items: Record<string, unknown>[],
+  bulkDecryptModels<T extends Record<string, unknown>>(
+    items: Record<string, EncryptedPayload | unknown>[],
     protectTable: ProtectTable<ProtectTableColumn>,
-  ) => Promise<Decrypted<T>[]>
+  ): Promise<Result<Decrypted<T>[], ProtectDynamoDBError>>
 
-  makeSearchTerm: (
-    plaintext: string,
-    protectColumn: ProtectColumn,
-    protectTable: ProtectTable<ProtectTableColumn>,
-  ) => Promise<string>
+  createSearchTerms(
+    terms: SearchTerm[],
+  ): Promise<Result<string[], ProtectDynamoDBError>>
 }

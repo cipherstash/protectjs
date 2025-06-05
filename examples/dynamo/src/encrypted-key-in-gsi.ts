@@ -46,8 +46,6 @@ const main = async () => {
 
   const protectDynamo = protectDynamoDB({
     protectClient,
-    dynamoClient,
-    docClient,
   })
 
   const user = {
@@ -68,18 +66,28 @@ const main = async () => {
 
   await dynamoClient.send(putCommand)
 
-  const searchTerm = await protectDynamo.makeSearchTerm(
-    'abc@example.com',
-    users.email,
-    users,
-  )
+  const searchTermsResult = await protectDynamo.createSearchTerms([
+    {
+      value: 'abc@example.com',
+      column: users.email,
+      table: users,
+    },
+  ])
+
+  if (searchTermsResult.failure) {
+    throw new Error(
+      `Failed to create search terms: ${searchTermsResult.failure.message}`,
+    )
+  }
+
+  const [emailHmac] = searchTermsResult.data
 
   const queryCommand = new QueryCommand({
     TableName: tableName,
     IndexName: indexName,
     KeyConditionExpression: 'email__hmac = :e',
     ExpressionAttributeValues: {
-      ':e': searchTerm,
+      ':e': emailHmac,
     },
     Limit: 1,
   })

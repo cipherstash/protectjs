@@ -1,13 +1,25 @@
-import type { ProtectDynamoDBConfig, ProtectDynamoDBInstance } from './types'
-import type { Decrypted, EncryptedPayload } from '@cipherstash/protect'
 import type {
-  ProtectColumn,
-  ProtectTable,
-  ProtectTableColumn,
-} from '@cipherstash/protect'
+  ProtectDynamoDBConfig,
+  ProtectDynamoDBInstance,
+  ProtectDynamoDBError,
+} from './types'
+import type { EncryptedPayload, SearchTerm } from '@cipherstash/protect'
+import type { ProtectTable, ProtectTableColumn } from '@cipherstash/protect'
+import { withResult } from '@byteslice/result'
 
 const ciphertextAttrSuffix = '__source'
 const searchTermAttrSuffix = '__hmac'
+
+class ProtectDynamoDBErrorImpl extends Error implements ProtectDynamoDBError {
+  constructor(
+    message: string,
+    public code: string,
+    public details?: Record<string, unknown>,
+  ) {
+    super(message)
+    this.name = 'ProtectDynamoDBError'
+  }
+}
 
 function toEncryptedDynamoItem(
   encrypted: Record<string, unknown>,
@@ -31,7 +43,7 @@ function toEncryptedDynamoItem(
 }
 
 function toItemWithEqlPayloads(
-  decrypted: Record<string, unknown>,
+  decrypted: Record<string, EncryptedPayload | unknown>,
   encryptedAttrs: string[],
 ): Record<string, unknown> {
   return Object.entries(decrypted).reduce(
@@ -63,109 +75,155 @@ function toItemWithEqlPayloads(
 export function protectDynamoDB(
   config: ProtectDynamoDBConfig,
 ): ProtectDynamoDBInstance {
-  const { protectClient } = config
+  const { protectClient, options } = config
+  const logger = options?.logger
+
+  const handleError = (error: Error, context: string): ProtectDynamoDBError => {
+    const protectError = new ProtectDynamoDBErrorImpl(
+      error.message,
+      'PROTECT_DYNAMODB_ERROR',
+      { context },
+    )
+
+    if (options?.errorHandler) {
+      options.errorHandler(protectError)
+    }
+
+    if (logger) {
+      logger.error(`Error in ${context}`, protectError)
+    }
+
+    return protectError
+  }
 
   return {
     async encryptModel<T extends Record<string, unknown>>(
       item: T,
       protectTable: ProtectTable<ProtectTableColumn>,
-    ): Promise<Record<string, unknown>> {
-      const encryptResult = await protectClient.encryptModel(item, protectTable)
+    ) {
+      return await withResult(
+        async () => {
+          const encryptResult = await protectClient.encryptModel(
+            item,
+            protectTable,
+          )
 
-      if (encryptResult.failure) {
-        throw new Error(`encryption error: ${encryptResult.failure.message}`)
-      }
+          if (encryptResult.failure) {
+            throw new Error(
+              `encryption error: ${encryptResult.failure.message}`,
+            )
+          }
 
-      const data = encryptResult.data
-      const encryptedAttrs = Object.keys(protectTable.build().columns)
+          const data = encryptResult.data
+          const encryptedAttrs = Object.keys(protectTable.build().columns)
 
-      return toEncryptedDynamoItem(data, encryptedAttrs)
+          return toEncryptedDynamoItem(data, encryptedAttrs)
+        },
+        (error) => handleError(error, 'encryptModel'),
+      )
     },
 
     async bulkEncryptModels<T extends Record<string, unknown>>(
       items: T[],
       protectTable: ProtectTable<ProtectTableColumn>,
-    ): Promise<Record<string, unknown>[]> {
-      const encryptResult = await protectClient.bulkEncryptModels(
-        items,
-        protectTable,
-      )
+    ) {
+      return await withResult(
+        async () => {
+          const encryptResult = await protectClient.bulkEncryptModels(
+            items,
+            protectTable,
+          )
 
-      if (encryptResult.failure) {
-        throw new Error(`encryption error: ${encryptResult.failure.message}`)
-      }
+          if (encryptResult.failure) {
+            throw new Error(
+              `encryption error: ${encryptResult.failure.message}`,
+            )
+          }
 
-      const data = encryptResult.data
-      const encryptedAttrs = Object.keys(protectTable.build().columns)
+          const data = encryptResult.data
+          const encryptedAttrs = Object.keys(protectTable.build().columns)
 
-      return data.map((encrypted) =>
-        toEncryptedDynamoItem(encrypted, encryptedAttrs),
+          return data.map((encrypted) =>
+            toEncryptedDynamoItem(encrypted, encryptedAttrs),
+          )
+        },
+        (error) => handleError(error, 'bulkEncryptModels'),
       )
     },
 
     async decryptModel<T extends Record<string, unknown>>(
-      item: Record<string, unknown>,
+      item: Record<string, EncryptedPayload | unknown>,
       protectTable: ProtectTable<ProtectTableColumn>,
-    ): Promise<Decrypted<T>> {
-      const encryptedAttrs = Object.keys(protectTable.build().columns)
-      const withEqlPayloads = toItemWithEqlPayloads(item, encryptedAttrs)
+    ) {
+      return await withResult(
+        async () => {
+          const encryptedAttrs = Object.keys(protectTable.build().columns)
+          const withEqlPayloads = toItemWithEqlPayloads(item, encryptedAttrs)
 
-      const decryptResult = await protectClient.decryptModel<T>(
-        withEqlPayloads as T,
+          const decryptResult = await protectClient.decryptModel<T>(
+            withEqlPayloads as T,
+          )
+
+          if (decryptResult.failure) {
+            throw new Error(`[protect]: ${decryptResult.failure.message}`)
+          }
+
+          return decryptResult.data
+        },
+        (error) => handleError(error, 'decryptModel'),
       )
-
-      if (decryptResult.failure) {
-        throw new Error(`[protect]: ${decryptResult.failure.message}`)
-      }
-
-      return decryptResult.data
     },
 
     async bulkDecryptModels<T extends Record<string, unknown>>(
-      items: Record<string, unknown>[],
+      items: Record<string, EncryptedPayload | unknown>[],
       protectTable: ProtectTable<ProtectTableColumn>,
-    ): Promise<Decrypted<T>[]> {
-      const encryptedAttrs = Object.keys(protectTable.build().columns)
-      const itemsWithEqlPayloads = items.map((item) =>
-        toItemWithEqlPayloads(item, encryptedAttrs),
+    ) {
+      return await withResult(
+        async () => {
+          const encryptedAttrs = Object.keys(protectTable.build().columns)
+          const itemsWithEqlPayloads = items.map((item) =>
+            toItemWithEqlPayloads(item, encryptedAttrs),
+          )
+
+          const decryptResult = await protectClient.bulkDecryptModels<T>(
+            itemsWithEqlPayloads as T[],
+          )
+
+          if (decryptResult.failure) {
+            throw new Error(`[protect]: ${decryptResult.failure.message}`)
+          }
+
+          return decryptResult.data
+        },
+        (error) => handleError(error, 'bulkDecryptModels'),
       )
-
-      const decryptResult = await protectClient.bulkDecryptModels<T>(
-        itemsWithEqlPayloads as T[],
-      )
-
-      if (decryptResult.failure) {
-        throw new Error(`[protect]: ${decryptResult.failure.message}`)
-      }
-
-      return decryptResult.data
     },
 
-    async makeSearchTerm(
-      plaintext: string,
-      protectColumn: ProtectColumn,
-      protectTable: ProtectTable<ProtectTableColumn>,
-    ): Promise<string> {
-      const encryptResult = await protectClient.encrypt(plaintext, {
-        column: protectColumn,
-        table: protectTable,
-      })
+    async createSearchTerms(terms: SearchTerm[]) {
+      return await withResult(
+        async () => {
+          const searchTermsResult = await protectClient.createSearchTerms(terms)
 
-      if (encryptResult.failure) {
-        throw new Error(`[protect]: ${encryptResult.failure.message}`)
-      }
+          if (searchTermsResult.failure) {
+            throw new Error(`[protect]: ${searchTermsResult.failure.message}`)
+          }
 
-      const ciphertext = encryptResult.data
+          return searchTermsResult.data.map((term) => {
+            if (typeof term === 'string') {
+              throw new Error(
+                'expected encrypted search term to be an EncryptedPayload',
+              )
+            }
 
-      if (!ciphertext) {
-        throw new Error('expected ciphertext to be truthy')
-      }
+            if (!term?.hm) {
+              throw new Error('expected encrypted search term to have an HMAC')
+            }
 
-      if (!ciphertext.hm) {
-        throw new Error('expected ciphertext.hm to be truthy')
-      }
-
-      return ciphertext.hm
+            return term.hm
+          })
+        },
+        (error) => handleError(error, 'createSearchTerms'),
+      )
     },
   }
 }

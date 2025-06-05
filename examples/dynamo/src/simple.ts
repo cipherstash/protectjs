@@ -30,8 +30,6 @@ const main = async () => {
 
   const protectDynamo = protectDynamoDB({
     protectClient,
-    dynamoClient,
-    docClient,
   })
 
   const user = {
