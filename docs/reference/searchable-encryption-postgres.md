@@ -257,77 +257,9 @@ For Supabase users, we provide a specific implementation guide. [Read more about
    - Handle encryption errors aggressively
    - Handle decryption errors gracefully
 
-## Common use cases
+## Performance optimization
 
-### Combining multiple search conditions
-
-```typescript
-// Search for users with specific email domain and age range
-const terms = await protectClient.createSearchTerms([
-  {
-    value: 'example.com',
-    column: schema.email,
-    table: schema,
-    returnType: 'composite-literal'
-  },
-  {
-    value: '18',
-    column: schema.age,
-    table: schema,
-    returnType: 'composite-literal'
-  }
-])
-
-if (terms.failure) {
-  // Handle the error
-}
-
-const result = await client.query(
-  'SELECT * FROM users WHERE email_encrypted LIKE $1 AND eql_v2.ore_block_u64_8_256(age_encrypted) > $2',
-  [terms.data[0], terms.data[1]]
-)
-```
-
-### Performance optimization
-
-1. **Use appropriate indexes**
-   ```sql
-   CREATE INDEX idx_users_email ON users USING btree (email_encrypted);
-   CREATE INDEX idx_users_age ON users USING btree (eql_v2.ore_block_u64_8_256(age_encrypted));
-   ```
-
-2. **Cache frequently accessed data**
-   ```typescript
-   // Example using Redis
-   const cacheKey = `user:${userId}`
-   let user = await redis.get(cacheKey)
-   
-   if (!user) {
-     const result = await client.query('SELECT * FROM users WHERE id = $1', [userId])
-     user = result.rows[0]
-     await redis.set(cacheKey, JSON.stringify(user), 'EX', 3600)
-   }
-   ```
-
-### Common pitfalls to avoid
-
-1. **Don't mix encrypted and unencrypted data when data is encrypted**
-   ```sql
-   -- ❌ Wrong
-   SELECT * FROM users WHERE email = 'user@example.com'
-   
-   -- ✅ Correct
-   SELECT * FROM users WHERE email_encrypted = $1
-   ```
-
-2. **Don't use ORDER BY directly on encrypted columns**
-   ```sql
-   -- ❌ Wrong
-   SELECT * FROM users ORDER BY email_encrypted
-   
-   -- ✅ Correct
-   SELECT * FROM users ORDER BY eql_v2.ore_block_u64_8_256(age_encrypted)
-   ```
+TODO: make docs for creating Postgres Indexes on columns that require searches. At the moment EQL v2 doesn't support creating indexes while also using the out-of-the-box operator and operator families. The solution is to create an index using the EQL functions and then using the EQL functions directly in your SQL statments, which isn't the best experience.
 
 ### Didn't find what you wanted?
 
