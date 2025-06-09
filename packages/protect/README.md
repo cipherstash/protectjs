@@ -583,7 +583,7 @@ CREATE TABLE users (
 > The `eql_v2_encrypted` type is a [composite type](https://www.postgresql.org/docs/current/rowtypes.html) and each ORM/client has a different way of handling inserts and selects.
 > We've documented how to handle inserts and selects for the different ORMs/clients in the [docs](./docs/reference/working-with-composite-types.md).
 
-Read more about [how to search encrypted data](./docs/how-to/searchable-encryption.md) in the docs.
+Read more about [how to search encrypted data](./docs/reference/searchable-encryption.md) in the docs.
 
 ## Identity-aware encryption
 
