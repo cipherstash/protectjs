@@ -54,8 +54,6 @@ describe('encrypt models with nested fields', () => {
       throw new Error(`[protect]: ${encryptedModel.failure.message}`)
     }
 
-    console.log('data that is encrypted', encryptedModel.data.example.field)
-
     const decryptedResult = await protectClient.decryptModel<User>(
       encryptedModel.data,
     )
@@ -162,8 +160,6 @@ describe('encrypt models with nested fields', () => {
       throw new Error(`[protect]: ${encryptedModel.failure.message}`)
     }
 
-    console.log('data that is encrypted', encryptedModel.data)
-
     const decryptedResult = await protectClient.decryptModel<User>(
       encryptedModel.data,
     )
@@ -171,8 +167,6 @@ describe('encrypt models with nested fields', () => {
     if (decryptedResult.failure) {
       throw new Error(`[protect]: ${decryptedResult.failure.message}`)
     }
-
-    console.log('data that is decrypted', decryptedResult.data)
 
     expect(decryptedResult.data).toEqual(decryptedModel)
   }, 30000)
@@ -239,4 +233,166 @@ describe('encrypt models with nested fields', () => {
 
     expect(decryptedResult.data).toEqual(decryptedModel)
   }, 30000)
+
+  describe('bulk operations with nested fields', () => {
+    it('should handle bulk encryption and decryption of models with nested fields', async () => {
+      const protectClient = await protect({ schemas: [users] })
+
+      const decryptedModels: User[] = [
+        {
+          id: '1',
+          email: 'test1@example.com',
+          example: {
+            field: 'test1',
+            nested: {
+              deeper: 'value1',
+            },
+          },
+        },
+        {
+          id: '2',
+          email: 'test2@example.com',
+          example: {
+            field: 'test2',
+            nested: {
+              deeper: 'value2',
+            },
+          },
+        },
+      ]
+
+      const encryptedModels = await protectClient.bulkEncryptModels<User>(
+        decryptedModels,
+        users,
+      )
+
+      if (encryptedModels.failure) {
+        throw new Error(`[protect]: ${encryptedModels.failure.message}`)
+      }
+
+      const decryptedResults = await protectClient.bulkDecryptModels<User>(
+        encryptedModels.data,
+      )
+
+      if (decryptedResults.failure) {
+        throw new Error(`[protect]: ${decryptedResults.failure.message}`)
+      }
+
+      expect(decryptedResults.data).toEqual(decryptedModels)
+    }, 30000)
+
+    it('should handle bulk operations with null and undefined values in nested fields', async () => {
+      const protectClient = await protect({ schemas: [users] })
+
+      const decryptedModels: User[] = [
+        {
+          id: '1',
+          email: null,
+          example: {
+            field: null,
+            nested: {
+              deeper: undefined,
+            },
+          },
+        },
+        {
+          id: '2',
+          email: undefined,
+          example: {
+            field: undefined,
+            nested: {
+              deeper: null,
+            },
+          },
+        },
+      ]
+
+      const encryptedModels = await protectClient.bulkEncryptModels<User>(
+        decryptedModels,
+        users,
+      )
+
+      if (encryptedModels.failure) {
+        throw new Error(`[protect]: ${encryptedModels.failure.message}`)
+      }
+
+      const decryptedResults = await protectClient.bulkDecryptModels<User>(
+        encryptedModels.data,
+      )
+
+      if (decryptedResults.failure) {
+        throw new Error(`[protect]: ${decryptedResults.failure.message}`)
+      }
+
+      expect(decryptedResults.data).toEqual(decryptedModels)
+    }, 30000)
+
+    it('should handle bulk operations with missing optional nested fields', async () => {
+      const protectClient = await protect({ schemas: [users] })
+
+      const decryptedModels: User[] = [
+        {
+          id: '1',
+          email: 'test1@example.com',
+          example: {
+            field: 'test1',
+          },
+        },
+        {
+          id: '2',
+          email: 'test2@example.com',
+          example: {
+            field: 'test2',
+            nested: {
+              deeper: 'value2',
+            },
+          },
+        },
+      ]
+
+      const encryptedModels = await protectClient.bulkEncryptModels<User>(
+        decryptedModels,
+        users,
+      )
+
+      if (encryptedModels.failure) {
+        throw new Error(`[protect]: ${encryptedModels.failure.message}`)
+      }
+
+      const decryptedResults = await protectClient.bulkDecryptModels<User>(
+        encryptedModels.data,
+      )
+
+      if (decryptedResults.failure) {
+        throw new Error(`[protect]: ${decryptedResults.failure.message}`)
+      }
+
+      expect(decryptedResults.data).toEqual(decryptedModels)
+    }, 30000)
+
+    it('should handle empty array in bulk operations', async () => {
+      const protectClient = await protect({ schemas: [users] })
+
+      const decryptedModels: User[] = []
+
+      const encryptedModels = await protectClient.bulkEncryptModels<User>(
+        decryptedModels,
+        users,
+      )
+
+      if (encryptedModels.failure) {
+        throw new Error(`[protect]: ${encryptedModels.failure.message}`)
+      }
+
+      const decryptedResults = await protectClient.bulkDecryptModels<User>(
+        encryptedModels.data,
+      )
+
+      if (decryptedResults.failure) {
+        throw new Error(`[protect]: ${decryptedResults.failure.message}`)
+      }
+
+      expect(decryptedResults.data).toEqual([])
+    }, 30000)
+  })
 })
