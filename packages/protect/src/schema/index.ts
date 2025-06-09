@@ -88,7 +88,21 @@ type UniqueIndexOpts = z.infer<typeof uniqueIndexOptsSchema>
 type OreIndexOpts = z.infer<typeof oreIndexOptsSchema>
 type ColumnSchema = z.infer<typeof columnSchema>
 
-export type ProtectTableColumn = Record<string, ProtectColumn>
+export type ProtectTableColumn = {
+  [key: string]:
+    | ProtectColumn
+    | {
+        [key: string]:
+          | ProtectColumn
+          | {
+              [key: string]:
+                | ProtectColumn
+                | {
+                    [key: string]: ProtectColumn
+                  }
+            }
+      }
+}
 export type EncryptConfig = z.infer<typeof encryptConfigSchema>
 
 // ------------------------
@@ -190,8 +204,33 @@ export class ProtectTable<T extends ProtectTableColumn> {
    */
   build(): TableDefinition {
     const builtColumns: Record<string, ColumnSchema> = {}
+
+    const processColumn = (
+      builder:
+        | ProtectColumn
+        | Record<
+            string,
+            | ProtectColumn
+            | Record<
+                string,
+                | ProtectColumn
+                | Record<string, ProtectColumn | Record<string, ProtectColumn>>
+              >
+          >,
+      prefix = '',
+    ) => {
+      if (builder instanceof ProtectColumn) {
+        builtColumns[prefix] = builder.build()
+      } else {
+        for (const [key, value] of Object.entries(builder)) {
+          const newPrefix = prefix ? `${prefix}.${key}` : key
+          processColumn(value, newPrefix)
+        }
+      }
+    }
+
     for (const [colName, builder] of Object.entries(this.columnBuilders)) {
-      builtColumns[colName] = builder.build()
+      processColumn(builder, colName)
     }
 
     return {

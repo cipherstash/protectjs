@@ -136,22 +136,51 @@ function prepareFieldsForOperation<T extends Record<string, unknown>>(
   const keyMap: Record<string, string> = {}
   let index = 0
 
-  const fieldsToProcess = table
-    ? Object.entries(model).filter(([key]) =>
-        Object.keys(table.build().columns).includes(key),
-      )
-    : Object.entries(extractEncryptedFields(model))
+  const processNestedFields = (
+    obj: Record<string, unknown>,
+    prefix = '',
+    isEncrypted = false,
+  ) => {
+    for (const [key, value] of Object.entries(obj)) {
+      const fullKey = prefix ? `${prefix}.${key}` : key
 
-  for (const [key, value] of fieldsToProcess) {
-    if (value === null || value === undefined) {
-      nullFields[key] = value === undefined ? undefined : null
-      continue
+      if (value === null || value === undefined) {
+        nullFields[fullKey] = value
+        continue
+      }
+
+      if (typeof value === 'object' && !isEncryptedPayload(value)) {
+        // Recursively process nested objects
+        processNestedFields(
+          value as Record<string, unknown>,
+          fullKey,
+          isEncrypted,
+        )
+      } else if (isEncrypted || isEncryptedPayload(value)) {
+        // This is an encrypted field or we're in an encrypted object
+        const id = index.toString()
+        keyMap[id] = fullKey
+        operationFields[fullKey] = value
+        index++
+      }
     }
+  }
 
-    const id = index.toString()
-    keyMap[id] = key
-    operationFields[key] = value
-    index++
+  if (table) {
+    // Get all column paths from the table schema
+    const columnPaths = Object.keys(table.build().columns)
+
+    // Process only fields that match the column paths
+    for (const [key, value] of Object.entries(model)) {
+      if (
+        columnPaths.some((path) => path === key || path.startsWith(`${key}.`))
+      ) {
+        processNestedFields({ [key]: value }, '', true)
+      }
+    }
+  } else {
+    // Process all encrypted fields
+    processNestedFields(model)
   }
 
   return { otherFields, operationFields, keyMap, nullFields }
@@ -184,7 +213,39 @@ export async function decryptModelFields<T extends Record<string, unknown>>(
     keyMap,
   )
 
-  return { ...otherFields, ...nullFields, ...decryptedFields } as Decrypted<T>
+  // Helper function to set a nested value
+  const setNestedValue = (
+    obj: Record<string, unknown>,
+    path: string[],
+    value: unknown,
+  ) => {
+    let current = obj
+    for (let i = 0; i < path.length - 1; i++) {
+      const part = path[i]
+      if (!(part in current)) {
+        current[part] = {}
+      }
+      current = current[part] as Record<string, unknown>
+    }
+    current[path[path.length - 1]] = value
+  }
+
+  // Reconstruct the object with proper nesting
+  const result: Record<string, unknown> = { ...otherFields }
+
+  // First, reconstruct the null/undefined fields
+  for (const [key, value] of Object.entries(nullFields)) {
+    const parts = key.split('.')
+    setNestedValue(result, parts, value)
+  }
+
+  // Then, reconstruct the decrypted fields
+  for (const [key, value] of Object.entries(decryptedFields)) {
+    const parts = key.split('.')
+    setNestedValue(result, parts, value)
+  }
+
+  return result as Decrypted<T>
 }
 
 /**
@@ -217,7 +278,39 @@ export async function encryptModelFields<T extends Record<string, unknown>>(
     keyMap,
   )
 
-  return { ...otherFields, ...nullFields, ...encryptedData } as T
+  // Helper function to set a nested value
+  const setNestedValue = (
+    obj: Record<string, unknown>,
+    path: string[],
+    value: unknown,
+  ) => {
+    let current = obj
+    for (let i = 0; i < path.length - 1; i++) {
+      const part = path[i]
+      if (!(part in current)) {
+        current[part] = {}
+      }
+      current = current[part] as Record<string, unknown>
+    }
+    current[path[path.length - 1]] = value
+  }
+
+  // Reconstruct the object with proper nesting
+  const result: Record<string, unknown> = { ...otherFields }
+
+  // First, reconstruct the null/undefined fields
+  for (const [key, value] of Object.entries(nullFields)) {
+    const parts = key.split('.')
+    setNestedValue(result, parts, value)
+  }
+
+  // Then, reconstruct the encrypted fields
+  for (const [key, value] of Object.entries(encryptedData)) {
+    const parts = key.split('.')
+    setNestedValue(result, parts, value)
+  }
+
+  return result as T
 }
 
 /**
@@ -323,22 +416,51 @@ function prepareBulkModelsForOperation<T extends Record<string, unknown>>(
     const modelOperationFields: Record<string, unknown> = {}
     const modelNullFields: Record<string, null | undefined> = {}
 
-    const fieldsToProcess = table
-      ? Object.entries(model).filter(([key]) =>
-          Object.keys(table.build().columns).includes(key),
-        )
-      : Object.entries(extractEncryptedFields(model))
+    const processNestedFields = (
+      obj: Record<string, unknown>,
+      prefix = '',
+      isEncrypted = false,
+    ) => {
+      for (const [key, value] of Object.entries(obj)) {
+        const fullKey = prefix ? `${prefix}.${key}` : key
 
-    for (const [key, value] of fieldsToProcess) {
-      if (value === null || value === undefined) {
-        modelNullFields[key] = value === undefined ? undefined : null
-        continue
+        if (value === null || value === undefined) {
+          modelNullFields[fullKey] = value === undefined ? undefined : null
+          continue
+        }
+
+        if (typeof value === 'object' && !isEncryptedPayload(value)) {
+          // Recursively process nested objects
+          processNestedFields(
+            value as Record<string, unknown>,
+            fullKey,
+            isEncrypted,
+          )
+        } else if (isEncrypted || isEncryptedPayload(value)) {
+          // This is an encrypted field or we're in an encrypted object
+          const id = index.toString()
+          keyMap[id] = { modelIndex, fieldKey: fullKey }
+          modelOperationFields[fullKey] = value
+          index++
+        }
       }
+    }
 
-      const id = index.toString()
-      keyMap[id] = { modelIndex, fieldKey: key }
-      modelOperationFields[key] = value
-      index++
+    if (table) {
+      // Get all column paths from the table schema
+      const columnPaths = Object.keys(table.build().columns)
+
+      // Process only fields that match the column paths
+      for (const [key, value] of Object.entries(model)) {
+        if (
+          columnPaths.some((path) => path === key || path.startsWith(`${key}.`))
+        ) {
+          processNestedFields({ [key]: value }, '', true)
+        }
+      }
+    } else {
+      // Process all encrypted fields
+      processNestedFields(model)
     }
 
     otherFields.push(modelOtherFields)
@@ -368,7 +490,6 @@ export async function bulkEncryptModels<T extends Record<string, unknown>>(
   const { otherFields, operationFields, keyMap, nullFields } =
     prepareBulkModelsForOperation(models, table)
 
-  // Collect all fields that need to be encrypted into a single array
   const bulkEncryptPayload = operationFields.flatMap((fields, modelIndex) =>
     Object.entries(fields).map(([key, value]) => ({
       id: `${modelIndex}-${key}`,
@@ -378,18 +499,40 @@ export async function bulkEncryptModels<T extends Record<string, unknown>>(
     })),
   )
 
-  // Make a single FFI call for all fields
   const encryptedData = await handleMultiModelBulkOperation(
     bulkEncryptPayload,
     (items) => encryptBulk(client, items),
     keyMap,
   )
 
-  // Reconstruct models
-  return models.map((_, modelIndex) => ({
-    ...otherFields[modelIndex],
-    ...nullFields[modelIndex],
-    ...Object.fromEntries(
+  // Helper function to set a nested value
+  const setNestedValue = (
+    obj: Record<string, unknown>,
+    path: string[],
+    value: unknown,
+  ) => {
+    let current = obj
+    for (let i = 0; i < path.length - 1; i++) {
+      const part = path[i]
+      if (!(part in current)) {
+        current[part] = {}
+      }
+      current = current[part] as Record<string, unknown>
+    }
+    current[path[path.length - 1]] = value
+  }
+
+  return models.map((_, modelIndex) => {
+    const result: Record<string, unknown> = { ...otherFields[modelIndex] }
+
+    // First, reconstruct the null/undefined fields
+    for (const [key, value] of Object.entries(nullFields[modelIndex])) {
+      const parts = key.split('.')
+      setNestedValue(result, parts, value)
+    }
+
+    // Then, reconstruct the encrypted fields
+    const modelData = Object.fromEntries(
       Object.entries(encryptedData)
         .filter(([key]) => {
           const [idx] = key.split('-')
@@ -399,8 +542,15 @@ export async function bulkEncryptModels<T extends Record<string, unknown>>(
           const [_, fieldKey] = key.split('-')
           return [fieldKey, value]
         }),
-    ),
-  })) as T[]
+    )
+
+    for (const [key, value] of Object.entries(modelData)) {
+      const parts = key.split('.')
+      setNestedValue(result, parts, value)
+    }
+
+    return result as T
+  })
 }
 
 /**
@@ -421,7 +571,6 @@ export async function bulkDecryptModels<T extends Record<string, unknown>>(
   const { otherFields, operationFields, keyMap, nullFields } =
     prepareBulkModelsForOperation(models)
 
-  // Collect all fields that need to be decrypted into a single array
   const bulkDecryptPayload = operationFields.flatMap((fields, modelIndex) =>
     Object.entries(fields).map(([key, value]) => ({
       id: `${modelIndex}-${key}`,
@@ -429,18 +578,40 @@ export async function bulkDecryptModels<T extends Record<string, unknown>>(
     })),
   )
 
-  // Make a single FFI call for all fields
   const decryptedFields = await handleMultiModelBulkOperation(
     bulkDecryptPayload,
     (items) => decryptBulk(client, items),
     keyMap,
   )
 
-  // Reconstruct models
-  return models.map((_, modelIndex) => ({
-    ...otherFields[modelIndex],
-    ...nullFields[modelIndex],
-    ...Object.fromEntries(
+  // Helper function to set a nested value
+  const setNestedValue = (
+    obj: Record<string, unknown>,
+    path: string[],
+    value: unknown,
+  ) => {
+    let current = obj
+    for (let i = 0; i < path.length - 1; i++) {
+      const part = path[i]
+      if (!(part in current)) {
+        current[part] = {}
+      }
+      current = current[part] as Record<string, unknown>
+    }
+    current[path[path.length - 1]] = value
+  }
+
+  return models.map((_, modelIndex) => {
+    const result: Record<string, unknown> = { ...otherFields[modelIndex] }
+
+    // First, reconstruct the null/undefined fields
+    for (const [key, value] of Object.entries(nullFields[modelIndex])) {
+      const parts = key.split('.')
+      setNestedValue(result, parts, value)
+    }
+
+    // Then, reconstruct the decrypted fields
+    const modelData = Object.fromEntries(
       Object.entries(decryptedFields)
         .filter(([key]) => {
           const [idx] = key.split('-')
@@ -450,8 +621,15 @@ export async function bulkDecryptModels<T extends Record<string, unknown>>(
           const [_, fieldKey] = key.split('-')
           return [fieldKey, value]
         }),
-    ),
-  })) as Decrypted<T>[]
+    )
+
+    for (const [key, value] of Object.entries(modelData)) {
+      const parts = key.split('.')
+      setNestedValue(result, parts, value)
+    }
+
+    return result as Decrypted<T>
+  })
 }
 
 /**

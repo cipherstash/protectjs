@@ -8,6 +8,7 @@ Protect.js lets you define a schema in TypeScript with properties that map to yo
 - [Understanding schema files](#understanding-schema-files)
 - [Defining your schema](#defining-your-schema)
   - [Searchable encryption](#searchable-encryption)
+  - [Nested objects](#nested-objects)
 - [Available index options](#available-index-options)
 - [Initializing the Protect client](#initializing-the-protect-client)
 
@@ -74,6 +75,34 @@ export const protectedUsers = csTable("users", {
   email: csColumn("email").freeTextSearch().equality().orderAndRange(),
 });
 ```
+
+### Nested objects
+
+Protect.js supports nested objects in your schema, allowing you to encrypt and search on nested properties. You can define nested objects up to 3 levels deep.
+
+```ts
+import { csTable, csColumn } from "@cipherstash/protect";
+
+export const protectedUsers = csTable("users", {
+  email: csColumn("email").freeTextSearch().equality().orderAndRange(),
+  profile: {
+    name: csColumn("name").freeTextSearch(),
+    address: {
+      street: csColumn("street").freeTextSearch(),
+      location: {
+        coordinates: csColumn("coordinates").equality(),
+      },
+    },
+  },
+});
+```
+
+When working with nested objects:
+- Each level can have its own encrypted fields
+- Index options can be applied to any level of nesting
+- The maximum nesting depth is 3 levels
+- Null and undefined values are supported at any level
+- Optional nested objects are supported
 
 ## Available index options
 
