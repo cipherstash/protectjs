@@ -1,5 +1,5 @@
 import type { newClient, Encrypted } from '@cipherstash/protect-ffi'
-import type { ProtectTableColumn } from './schema'
+import type { ProtectTableColumn, ProtectValue } from './schema'
 import type { ProtectTable } from './schema'
 import type { ProtectColumn } from './schema'
 
@@ -41,7 +41,7 @@ export type EncryptPayload = string | null
  * Represents the options for encrypting a payload using the `encrypt` function
  */
 export type EncryptOptions = {
-  column: ProtectColumn
+  column: ProtectColumn | ProtectValue
   table: ProtectTable<ProtectTableColumn>
 }
 

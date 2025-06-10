@@ -60,8 +60,13 @@ export const protect = async (
 
 export type { Result } from '@byteslice/result'
 export type { ProtectClient } from './ffi'
-export { csTable, csColumn } from './schema'
-export type { ProtectColumn, ProtectTable, ProtectTableColumn } from './schema'
+export { csTable, csColumn, csValue } from './schema'
+export type {
+  ProtectColumn,
+  ProtectTable,
+  ProtectTableColumn,
+  ProtectValue,
+} from './schema'
 export * from './helpers'
 export * from './identify'
 export * from './types'

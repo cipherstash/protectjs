@@ -1,15 +1,16 @@
 import 'dotenv/config'
 import { describe, expect, it, vi } from 'vitest'
 
-import { LockContext, protect, csTable, csColumn } from '../src'
+import { LockContext, protect, csTable, csColumn, csValue } from '../src'
 
 const users = csTable('users', {
   email: csColumn('email').freeTextSearch().equality().orderAndRange(),
   address: csColumn('address').freeTextSearch(),
+  name: csColumn('name').freeTextSearch(),
   example: {
-    field: csColumn('field').freeTextSearch(),
+    field: csValue('example.field'),
     nested: {
-      deeper: csColumn('deeper').freeTextSearch(),
+      deeper: csValue('example.nested.deeper'),
     },
   },
 })
@@ -30,6 +31,29 @@ type User = {
 }
 
 describe('encrypt models with nested fields', () => {
+  it('should encrypt and decrypt a single value from a nested schema', async () => {
+    const protectClient = await protect({ schemas: [users] })
+
+    const encryptResponse = await protectClient.encrypt('hello world', {
+      column: users.example.field,
+      table: users,
+    })
+
+    if (encryptResponse.failure) {
+      throw new Error(`[protect]: ${encryptResponse.failure.message}`)
+    }
+
+    const decryptResponse = await protectClient.decrypt(encryptResponse.data)
+
+    if (decryptResponse.failure) {
+      throw new Error(`[protect]: ${decryptResponse.failure.message}`)
+    }
+
+    expect(decryptResponse).toEqual({
+      data: 'hello world',
+    })
+  })
+
   it('should encrypt and decrypt a model with nested fields', async () => {
     const protectClient = await protect({ schemas: [users] })
 

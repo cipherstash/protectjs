@@ -1,4 +1,4 @@
-import { csColumn, csTable, buildEncryptConfig } from '../src/schema'
+import { csColumn, csTable, buildEncryptConfig, csValue } from '../src/schema'
 import { describe, it, expect } from 'vitest'
 
 describe('Schema with nested columns', () => {
@@ -7,9 +7,9 @@ describe('Schema with nested columns', () => {
       email: csColumn('email').freeTextSearch().equality().orderAndRange(),
       address: csColumn('address').freeTextSearch(),
       example: {
-        field: csColumn('field').freeTextSearch(),
+        field: csValue('example.field'),
         nested: {
-          deep: csColumn('deep').equality(),
+          deep: csValue('example.nested.deep'),
         },
       },
     } as const)
@@ -54,17 +54,13 @@ describe('Schema with nested columns', () => {
     // Verify nested field configuration
     expect(columns['example.field']).toEqual({
       cast_as: 'text',
-      indexes: {
-        match: expect.any(Object),
-      },
+      indexes: {},
     })
 
     // Verify deeply nested field configuration
     expect(columns['example.nested.deep']).toEqual({
       cast_as: 'text',
-      indexes: {
-        unique: expect.any(Object),
-      },
+      indexes: {},
     })
   })
 
@@ -72,14 +68,14 @@ describe('Schema with nested columns', () => {
     const users = csTable('users', {
       email: csColumn('email').equality(),
       profile: {
-        name: csColumn('name').freeTextSearch(),
+        name: csValue('profile.name'),
       },
     } as const)
 
     const posts = csTable('posts', {
       title: csColumn('title').freeTextSearch(),
       metadata: {
-        tags: csColumn('tags').equality(),
+        tags: csValue('metadata.tags'),
       },
     } as const)
 
@@ -91,25 +87,21 @@ describe('Schema with nested columns', () => {
     // Verify users table columns
     expect(Object.keys(config.tables.users)).toEqual(['email', 'profile.name'])
     expect(config.tables.users.email.indexes).toHaveProperty('unique')
-    expect(config.tables.users['profile.name'].indexes).toHaveProperty('match')
 
     // Verify posts table columns
     expect(Object.keys(config.tables.posts)).toEqual(['title', 'metadata.tags'])
     expect(config.tables.posts.title.indexes).toHaveProperty('match')
-    expect(config.tables.posts['metadata.tags'].indexes).toHaveProperty(
-      'unique',
-    )
   })
 
   it('should handle complex nested structures with multiple index types', () => {
     const complex = csTable('complex', {
       id: csColumn('id').equality(),
       content: {
-        text: csColumn('text').freeTextSearch().orderAndRange(),
+        text: csValue('content.text'),
         metadata: {
-          tags: csColumn('tags').equality().freeTextSearch(),
+          tags: csValue('content.metadata.tags'),
           stats: {
-            views: csColumn('views').orderAndRange(),
+            views: csValue('content.metadata.stats.views'),
           },
         },
       },
@@ -128,18 +120,13 @@ describe('Schema with nested columns', () => {
     // Verify complex nested column with multiple indexes
     expect(config.tables.complex['content.metadata.tags']).toEqual({
       cast_as: 'text',
-      indexes: {
-        unique: expect.any(Object),
-        match: expect.any(Object),
-      },
+      indexes: {},
     })
 
     // Verify deeply nested column with order and range
     expect(config.tables.complex['content.metadata.stats.views']).toEqual({
       cast_as: 'text',
-      indexes: {
-        ore: {},
-      },
+      indexes: {},
     })
   })
 })

@@ -78,19 +78,26 @@ export const protectedUsers = csTable("users", {
 
 ### Nested objects
 
-Protect.js supports nested objects in your schema, allowing you to encrypt and search on nested properties. You can define nested objects up to 3 levels deep.
+Protect.js supports nested objects in your schema, allowing you to encrypt **but not search on** nested properties. You can define nested objects up to 3 levels deep.
+This is useful for data stores that have less structured data, like NoSQL databases.
+
+You can define nested objects by using the `csValue` function to define a value in a nested object. The value naming convention of the `csValue` function is a dot-separated string of the nested object path, e.g. `profile.name` or `profile.address.street`.
+
+> [!NOTE]
+> Using nested objects is not recommended for SQL databases, as it will not be searchable.
+> You should either use a JSON data type and encrypt the entire object, or use a separate column for each nested property.
 
 ```ts
-import { csTable, csColumn } from "@cipherstash/protect";
+import { csTable, csColumn, csValue } from "@cipherstash/protect";
 
 export const protectedUsers = csTable("users", {
   email: csColumn("email").freeTextSearch().equality().orderAndRange(),
   profile: {
-    name: csColumn("name").freeTextSearch(),
+    name: csValue("profile.name"),
     address: {
-      street: csColumn("street").freeTextSearch(),
+      street: csValue("profile.address.street"),
       location: {
-        coordinates: csColumn("coordinates").equality(),
+        coordinates: csValue("profile.address.location.coordinates"),
       },
     },
   },
@@ -98,11 +105,15 @@ export const protectedUsers = csTable("users", {
 ```
 
 When working with nested objects:
+- Searchable encryption is not supported on nested objects
 - Each level can have its own encrypted fields
-- Index options can be applied to any level of nesting
 - The maximum nesting depth is 3 levels
 - Null and undefined values are supported at any level
 - Optional nested objects are supported
+
+> [!WARNING]
+> TODO: The schema builder does not validate the values you supply to the `csValue` or `csColumn` functions.
+> These values are meant to be unique, and and cause unexpected behavior if they are not defined correctly.
 
 ## Available index options
 
