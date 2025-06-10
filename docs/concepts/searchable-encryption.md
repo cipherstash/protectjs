@@ -1,8 +1,5 @@
 # Searchable encryption
 
-> [!NOTE]
-> If you are looking for a reference guide on how to search encrypted data with Protect.js, [click here](../reference/searchable-encryption.md).
-
 Protect.js supports searching encrypted data, which enables trusted data access so that you can:
 
 1. Prove to your customers that you can track exactly what data is being accessed in your application.
