@@ -1,5 +1,11 @@
 # @cipherstash/protect
 
+## 9.2.0
+
+### Minor Changes
+
+- 587f222: Added support for deeply nested protect schemas to support more complex model objects.
+
 ## 9.1.0
 
 ### Minor Changes
