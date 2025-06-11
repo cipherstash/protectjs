@@ -88,12 +88,55 @@ type UniqueIndexOpts = z.infer<typeof uniqueIndexOptsSchema>
 type OreIndexOpts = z.infer<typeof oreIndexOptsSchema>
 type ColumnSchema = z.infer<typeof columnSchema>
 
-export type ProtectTableColumn = Record<string, ProtectColumn>
+export type ProtectTableColumn = {
+  [key: string]:
+    | ProtectColumn
+    | {
+        [key: string]:
+          | ProtectValue
+          | {
+              [key: string]:
+                | ProtectValue
+                | {
+                    [key: string]: ProtectValue
+                  }
+            }
+      }
+}
 export type EncryptConfig = z.infer<typeof encryptConfigSchema>
 
 // ------------------------
 // Interface definitions
 // ------------------------
+export class ProtectValue {
+  private valueName: string
+  private castAsValue: CastAs
+
+  constructor(valueName: string) {
+    this.valueName = valueName
+    this.castAsValue = 'text'
+  }
+
+  /**
+   * Set or override the cast_as value.
+   */
+  dataType(castAs: CastAs) {
+    this.castAsValue = castAs
+    return this
+  }
+
+  build() {
+    return {
+      cast_as: this.castAsValue,
+      indexes: {},
+    }
+  }
+
+  getName() {
+    return this.valueName
+  }
+}
+
 export class ProtectColumn {
   private columnName: string
   private castAsValue: CastAs
@@ -190,8 +233,36 @@ export class ProtectTable<T extends ProtectTableColumn> {
    */
   build(): TableDefinition {
     const builtColumns: Record<string, ColumnSchema> = {}
+
+    const processColumn = (
+      builder:
+        | ProtectColumn
+        | Record<
+            string,
+            | ProtectValue
+            | Record<
+                string,
+                | ProtectValue
+                | Record<string, ProtectValue | Record<string, ProtectValue>>
+              >
+          >,
+      colName: string,
+    ) => {
+      if (builder instanceof ProtectColumn) {
+        builtColumns[colName] = builder.build()
+      } else {
+        for (const [key, value] of Object.entries(builder)) {
+          if (value instanceof ProtectValue) {
+            builtColumns[value.getName()] = value.build()
+          } else {
+            processColumn(value, key)
+          }
+        }
+      }
+    }
+
     for (const [colName, builder] of Object.entries(this.columnBuilders)) {
-      builtColumns[colName] = builder.build()
+      processColumn(builder, colName)
     }
 
     return {
@@ -220,6 +291,10 @@ export function csTable<T extends ProtectTableColumn>(
 
 export function csColumn(columnName: string) {
   return new ProtectColumn(columnName)
+}
+
+export function csValue(valueName: string) {
+  return new ProtectValue(valueName)
 }
 
 // ------------------------

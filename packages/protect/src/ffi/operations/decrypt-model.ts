@@ -8,12 +8,14 @@ import {
   decryptModelFields,
   decryptModelFieldsWithLockContext,
 } from '../model-helpers'
+import type { ProtectTable, ProtectTableColumn } from '../../schema'
 
 export class DecryptModelOperation<T extends Record<string, unknown>>
   implements PromiseLike<Result<Decrypted<T>, ProtectError>>
 {
   private client: Client
   private model: T
+  private table?: ProtectTable<ProtectTableColumn>
 
   constructor(client: Client, model: T) {
     this.client = client
@@ -59,6 +61,7 @@ export class DecryptModelOperation<T extends Record<string, unknown>>
   public getOperation(): {
     client: Client
     model: T
+    table?: ProtectTable<ProtectTableColumn>
   } {
     return {
       client: this.client,

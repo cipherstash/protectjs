@@ -12,6 +12,7 @@ import type {
 } from '../../types'
 import type {
   ProtectColumn,
+  ProtectValue,
   ProtectTable,
   ProtectTableColumn,
 } from '../../schema'
@@ -21,7 +22,7 @@ export class EncryptOperation
 {
   private client: Client
   private plaintext: EncryptPayload
-  private column: ProtectColumn
+  private column: ProtectColumn | ProtectValue
   private table: ProtectTable<ProtectTableColumn>
 
   constructor(client: Client, plaintext: EncryptPayload, opts: EncryptOptions) {
@@ -86,7 +87,7 @@ export class EncryptOperation
   public getOperation(): {
     client: Client
     plaintext: EncryptPayload
-    column: ProtectColumn
+    column: ProtectColumn | ProtectValue
     table: ProtectTable<ProtectTableColumn>
   } {
     return {
