@@ -17,14 +17,9 @@ export class DecryptModelOperation<T extends Record<string, unknown>>
   private model: T
   private table?: ProtectTable<ProtectTableColumn>
 
-  constructor(
-    client: Client,
-    model: T,
-    table?: ProtectTable<ProtectTableColumn>,
-  ) {
+  constructor(client: Client, model: T) {
     this.client = client
     this.model = model
-    this.table = table
   }
 
   public withLockContext(
@@ -54,7 +49,7 @@ export class DecryptModelOperation<T extends Record<string, unknown>>
           throw noClientError()
         }
 
-        return await decryptModelFields<T>(this.model, this.client, this.table)
+        return await decryptModelFields<T>(this.model, this.client)
       },
       (error) => ({
         type: ProtectErrorTypes.DecryptionError,
@@ -71,7 +66,6 @@ export class DecryptModelOperation<T extends Record<string, unknown>>
     return {
       client: this.client,
       model: this.model,
-      table: this.table,
     }
   }
 }
@@ -103,7 +97,7 @@ export class DecryptModelOperationWithLockContext<
   private async execute(): Promise<Result<Decrypted<T>, ProtectError>> {
     return await withResult(
       async () => {
-        const { client, model, table } = this.operation.getOperation()
+        const { client, model } = this.operation.getOperation()
 
         logger.debug('Decrypting model WITH a lock context')
 
@@ -121,7 +115,6 @@ export class DecryptModelOperationWithLockContext<
           model,
           client,
           context.data,
-          table,
         )
       },
       (error) => ({
