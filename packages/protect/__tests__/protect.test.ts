@@ -32,6 +32,9 @@ describe('encryption and decryption', () => {
       throw new Error(`[protect]: ${ciphertext.failure.message}`)
     }
 
+    // Verify encrypted field
+    expect(ciphertext.data).toHaveProperty('c')
+
     const plaintext = await protectClient.decrypt(ciphertext.data)
 
     expect(plaintext).toEqual({
@@ -50,6 +53,9 @@ describe('encryption and decryption', () => {
     if (ciphertext.failure) {
       throw new Error(`[protect]: ${ciphertext.failure.message}`)
     }
+
+    // Verify null is preserved
+    expect(ciphertext.data).toBeNull()
 
     const plaintext = await protectClient.decrypt(ciphertext.data)
 
@@ -80,6 +86,16 @@ describe('encryption and decryption', () => {
     if (encryptedModel.failure) {
       throw new Error(`[protect]: ${encryptedModel.failure.message}`)
     }
+
+    // Verify encrypted fields
+    expect(encryptedModel.data.email).toHaveProperty('c')
+    expect(encryptedModel.data.address).toHaveProperty('c')
+
+    // Verify non-encrypted fields remain unchanged
+    expect(encryptedModel.data.id).toBe('1')
+    expect(encryptedModel.data.createdAt).toEqual(new Date('2021-01-01'))
+    expect(encryptedModel.data.updatedAt).toEqual(new Date('2021-01-01'))
+    expect(encryptedModel.data.number).toBe(1)
 
     // Decrypt the model
     const decryptedResult = await protectClient.decryptModel<User>(
@@ -123,6 +139,16 @@ describe('encryption and decryption', () => {
       throw new Error(`[protect]: ${encryptedModel.failure.message}`)
     }
 
+    // Verify null fields are preserved
+    expect(encryptedModel.data.email).toBeNull()
+    expect(encryptedModel.data.address).toBeNull()
+
+    // Verify non-encrypted fields remain unchanged
+    expect(encryptedModel.data.id).toBe('1')
+    expect(encryptedModel.data.createdAt).toEqual(new Date('2021-01-01'))
+    expect(encryptedModel.data.updatedAt).toEqual(new Date('2021-01-01'))
+    expect(encryptedModel.data.number).toBe(1)
+
     // Decrypt the model
     const decryptedResult = await protectClient.decryptModel<User>(
       encryptedModel.data,
@@ -164,6 +190,16 @@ describe('encryption and decryption', () => {
     if (encryptedModel.failure) {
       throw new Error(`[protect]: ${encryptedModel.failure.message}`)
     }
+
+    // Verify undefined fields are preserved
+    expect(encryptedModel.data.email).toBeUndefined()
+    expect(encryptedModel.data.address).toBeNull()
+
+    // Verify non-encrypted fields remain unchanged
+    expect(encryptedModel.data.id).toBe('1')
+    expect(encryptedModel.data.createdAt).toEqual(new Date('2021-01-01'))
+    expect(encryptedModel.data.updatedAt).toEqual(new Date('2021-01-01'))
+    expect(encryptedModel.data.number).toBe(1)
 
     // Decrypt the model
     const decryptedResult = await protectClient.decryptModel<User>(
@@ -218,6 +254,22 @@ describe('bulk encryption', () => {
     if (encryptedModels.failure) {
       throw new Error(`[protect]: ${encryptedModels.failure.message}`)
     }
+
+    // Verify encrypted fields for each model
+    expect(encryptedModels.data[0].email).toHaveProperty('c')
+    expect(encryptedModels.data[0].address).toHaveProperty('c')
+    expect(encryptedModels.data[1].email).toHaveProperty('c')
+    expect(encryptedModels.data[1].address).toBeNull()
+
+    // Verify non-encrypted fields remain unchanged
+    expect(encryptedModels.data[0].id).toBe('1')
+    expect(encryptedModels.data[0].createdAt).toEqual(new Date('2021-01-01'))
+    expect(encryptedModels.data[0].updatedAt).toEqual(new Date('2021-01-01'))
+    expect(encryptedModels.data[0].number).toBe(1)
+    expect(encryptedModels.data[1].id).toBe('2')
+    expect(encryptedModels.data[1].createdAt).toEqual(new Date('2021-01-01'))
+    expect(encryptedModels.data[1].updatedAt).toEqual(new Date('2021-01-01'))
+    expect(encryptedModels.data[1].number).toBe(2)
 
     // Decrypt the models
     const decryptedResult = await protectClient.bulkDecryptModels<User>(
@@ -318,6 +370,28 @@ describe('bulk encryption edge cases', () => {
       throw new Error(`[protect]: ${encryptedModels.failure.message}`)
     }
 
+    // Verify encrypted fields for each model
+    expect(encryptedModels.data[0].email).toHaveProperty('c')
+    expect(encryptedModels.data[0].address).toBeNull()
+    expect(encryptedModels.data[1].email).toBeNull()
+    expect(encryptedModels.data[1].address).toHaveProperty('c')
+    expect(encryptedModels.data[2].email).toHaveProperty('c')
+    expect(encryptedModels.data[2].address).toHaveProperty('c')
+
+    // Verify non-encrypted fields remain unchanged
+    expect(encryptedModels.data[0].id).toBe('1')
+    expect(encryptedModels.data[0].createdAt).toEqual(new Date('2021-01-01'))
+    expect(encryptedModels.data[0].updatedAt).toEqual(new Date('2021-01-01'))
+    expect(encryptedModels.data[0].number).toBe(1)
+    expect(encryptedModels.data[1].id).toBe('2')
+    expect(encryptedModels.data[1].createdAt).toEqual(new Date('2021-01-01'))
+    expect(encryptedModels.data[1].updatedAt).toEqual(new Date('2021-01-01'))
+    expect(encryptedModels.data[1].number).toBe(2)
+    expect(encryptedModels.data[2].id).toBe('3')
+    expect(encryptedModels.data[2].createdAt).toEqual(new Date('2021-01-01'))
+    expect(encryptedModels.data[2].updatedAt).toEqual(new Date('2021-01-01'))
+    expect(encryptedModels.data[2].number).toBe(3)
+
     // Decrypt the models
     const decryptedResult = await protectClient.bulkDecryptModels<User>(
       encryptedModels.data,
@@ -369,6 +443,28 @@ describe('bulk encryption edge cases', () => {
       throw new Error(`[protect]: ${encryptedModels.failure.message}`)
     }
 
+    // Verify encrypted fields for each model
+    expect(encryptedModels.data[0].email).toHaveProperty('c')
+    expect(encryptedModels.data[0].address).toBeUndefined()
+    expect(encryptedModels.data[1].email).toBeNull()
+    expect(encryptedModels.data[1].address).toHaveProperty('c')
+    expect(encryptedModels.data[2].email).toHaveProperty('c')
+    expect(encryptedModels.data[2].address).toHaveProperty('c')
+
+    // Verify non-encrypted fields remain unchanged
+    expect(encryptedModels.data[0].id).toBe('1')
+    expect(encryptedModels.data[0].createdAt).toEqual(new Date('2021-01-01'))
+    expect(encryptedModels.data[0].updatedAt).toEqual(new Date('2021-01-01'))
+    expect(encryptedModels.data[0].number).toBe(1)
+    expect(encryptedModels.data[1].id).toBe('2')
+    expect(encryptedModels.data[1].createdAt).toEqual(new Date('2021-01-01'))
+    expect(encryptedModels.data[1].updatedAt).toEqual(new Date('2021-01-01'))
+    expect(encryptedModels.data[1].number).toBe(2)
+    expect(encryptedModels.data[2].id).toBe('3')
+    expect(encryptedModels.data[2].createdAt).toEqual(new Date('2021-01-01'))
+    expect(encryptedModels.data[2].updatedAt).toEqual(new Date('2021-01-01'))
+    expect(encryptedModels.data[2].number).toBe(3)
+
     // Decrypt the models
     const decryptedResult = await protectClient.bulkDecryptModels<User>(
       encryptedModels.data,
@@ -414,6 +510,28 @@ describe('bulk encryption edge cases', () => {
     if (encryptedModels.failure) {
       throw new Error(`[protect]: ${encryptedModels.failure.message}`)
     }
+
+    // Verify encrypted fields for each model
+    expect(encryptedModels.data[0].email).toBeUndefined()
+    expect(encryptedModels.data[0].address).toBeUndefined()
+    expect(encryptedModels.data[1].email).toHaveProperty('c')
+    expect(encryptedModels.data[1].address).toBeUndefined()
+    expect(encryptedModels.data[2].email).toBeUndefined()
+    expect(encryptedModels.data[2].address).toBeUndefined()
+
+    // Verify non-encrypted fields remain unchanged
+    expect(encryptedModels.data[0].id).toBe('1')
+    expect(encryptedModels.data[0].createdAt).toEqual(new Date('2021-01-01'))
+    expect(encryptedModels.data[0].updatedAt).toEqual(new Date('2021-01-01'))
+    expect(encryptedModels.data[0].number).toBe(1)
+    expect(encryptedModels.data[1].id).toBe('2')
+    expect(encryptedModels.data[1].createdAt).toEqual(new Date('2021-01-01'))
+    expect(encryptedModels.data[1].updatedAt).toEqual(new Date('2021-01-01'))
+    expect(encryptedModels.data[1].number).toBe(2)
+    expect(encryptedModels.data[2].id).toBe('3')
+    expect(encryptedModels.data[2].createdAt).toEqual(new Date('2021-01-01'))
+    expect(encryptedModels.data[2].updatedAt).toEqual(new Date('2021-01-01'))
+    expect(encryptedModels.data[2].number).toBe(3)
 
     // Decrypt the models
     const decryptedResult = await protectClient.bulkDecryptModels<User>(

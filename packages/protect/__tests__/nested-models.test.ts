@@ -56,6 +56,9 @@ describe('encrypt models with nested fields', () => {
       throw new Error(`[protect]: ${encryptResponse.failure.message}`)
     }
 
+    // Verify encrypted field
+    expect(encryptResponse.data).toHaveProperty('c')
+
     const decryptResponse = await protectClient.decrypt(encryptResponse.data)
 
     if (decryptResponse.failure) {
@@ -90,6 +93,17 @@ describe('encrypt models with nested fields', () => {
     if (encryptedModel.failure) {
       throw new Error(`[protect]: ${encryptedModel.failure.message}`)
     }
+
+    // Verify encrypted fields
+    expect(encryptedModel.data.email).toHaveProperty('c')
+    expect(encryptedModel.data.address).toHaveProperty('c')
+    expect(encryptedModel.data.example.field).toHaveProperty('c')
+
+    // Verify non-encrypted fields remain unchanged
+    expect(encryptedModel.data.id).toBe('1')
+    expect(encryptedModel.data.notEncrypted).toBe('not encrypted')
+    expect(encryptedModel.data.createdAt).toEqual(new Date('2021-01-01'))
+    expect(encryptedModel.data.updatedAt).toEqual(new Date('2021-01-01'))
 
     const decryptedResult = await protectClient.decryptModel<User>(
       encryptedModel.data,
@@ -126,6 +140,12 @@ describe('encrypt models with nested fields', () => {
       throw new Error(`[protect]: ${encryptedModel.failure.message}`)
     }
 
+    // Verify null fields are preserved
+    expect(encryptedModel.data.email).toBeNull()
+    expect(encryptedModel.data.address).toBeNull()
+    expect(encryptedModel.data.example.field).toBeNull()
+    expect(encryptedModel.data.example.nested?.deeper).toBeNull()
+
     const decryptedResult = await protectClient.decryptModel<User>(
       encryptedModel.data,
     )
@@ -158,6 +178,11 @@ describe('encrypt models with nested fields', () => {
     if (encryptedModel.failure) {
       throw new Error(`[protect]: ${encryptedModel.failure.message}`)
     }
+
+    // Verify undefined fields are preserved
+    expect(encryptedModel.data.email).toBeUndefined()
+    expect(encryptedModel.data.example.field).toBeUndefined()
+    expect(encryptedModel.data.example.nested?.deeper).toBeUndefined()
 
     const decryptedResult = await protectClient.decryptModel<User>(
       encryptedModel.data,
@@ -197,6 +222,20 @@ describe('encrypt models with nested fields', () => {
       throw new Error(`[protect]: ${encryptedModel.failure.message}`)
     }
 
+    // Verify encrypted fields
+    expect(encryptedModel.data.email).toHaveProperty('c')
+
+    // Verify null/undefined fields are preserved
+    expect(encryptedModel.data.address).toBeUndefined()
+    expect(encryptedModel.data.example.field).toBeNull()
+    expect(encryptedModel.data.example.nested?.deeper).toBeUndefined()
+
+    // Verify non-encrypted fields remain unchanged
+    expect(encryptedModel.data.id).toBe('4')
+    expect(encryptedModel.data.notEncrypted).toBe('not encrypted')
+    expect(encryptedModel.data.createdAt).toEqual(new Date('2021-01-01'))
+    expect(encryptedModel.data.updatedAt).toEqual(new Date('2021-01-01'))
+
     const decryptedResult = await protectClient.decryptModel<User>(
       encryptedModel.data,
     )
@@ -230,6 +269,13 @@ describe('encrypt models with nested fields', () => {
       throw new Error(`[protect]: ${encryptedModel.failure.message}`)
     }
 
+    // Verify encrypted fields
+    expect(encryptedModel.data.example.field).toHaveProperty('c')
+    expect(encryptedModel.data.example.nested?.deeper).toHaveProperty('c')
+
+    // Verify non-encrypted fields remain unchanged
+    expect(encryptedModel.data.id).toBe('3')
+
     const decryptedResult = await protectClient.decryptModel<User>(
       encryptedModel.data,
     )
@@ -259,6 +305,13 @@ describe('encrypt models with nested fields', () => {
     if (encryptedModel.failure) {
       throw new Error(`[protect]: ${encryptedModel.failure.message}`)
     }
+
+    // Verify encrypted fields
+    expect(encryptedModel.data.example.field).toHaveProperty('c')
+
+    // Verify non-encrypted fields remain unchanged
+    expect(encryptedModel.data.id).toBe('5')
+    expect(encryptedModel.data.example.nested).toBeUndefined()
 
     const decryptedResult = await protectClient.decryptModel<User>(
       encryptedModel.data,
@@ -307,6 +360,18 @@ describe('encrypt models with nested fields', () => {
         throw new Error(`[protect]: ${encryptedModels.failure.message}`)
       }
 
+      // Verify encrypted fields for each model
+      expect(encryptedModels.data[0].email).toHaveProperty('c')
+      expect(encryptedModels.data[0].example.field).toHaveProperty('c')
+      expect(encryptedModels.data[0].example.nested?.deeper).toHaveProperty('c')
+      expect(encryptedModels.data[1].email).toHaveProperty('c')
+      expect(encryptedModels.data[1].example.field).toHaveProperty('c')
+      expect(encryptedModels.data[1].example.nested?.deeper).toHaveProperty('c')
+
+      // Verify non-encrypted fields remain unchanged
+      expect(encryptedModels.data[0].id).toBe('1')
+      expect(encryptedModels.data[1].id).toBe('2')
+
       const decryptedResults = await protectClient.bulkDecryptModels<User>(
         encryptedModels.data,
       )
@@ -353,6 +418,18 @@ describe('encrypt models with nested fields', () => {
         throw new Error(`[protect]: ${encryptedModels.failure.message}`)
       }
 
+      // Verify null/undefined fields are preserved
+      expect(encryptedModels.data[0].email).toBeNull()
+      expect(encryptedModels.data[0].example.field).toBeNull()
+      expect(encryptedModels.data[0].example.nested?.deeper).toBeUndefined()
+      expect(encryptedModels.data[1].email).toBeUndefined()
+      expect(encryptedModels.data[1].example.field).toBeUndefined()
+      expect(encryptedModels.data[1].example.nested?.deeper).toBeNull()
+
+      // Verify non-encrypted fields remain unchanged
+      expect(encryptedModels.data[0].id).toBe('1')
+      expect(encryptedModels.data[1].id).toBe('2')
+
       const decryptedResults = await protectClient.bulkDecryptModels<User>(
         encryptedModels.data,
       )
@@ -396,6 +473,18 @@ describe('encrypt models with nested fields', () => {
         throw new Error(`[protect]: ${encryptedModels.failure.message}`)
       }
 
+      // Verify encrypted fields for each model
+      expect(encryptedModels.data[0].email).toHaveProperty('c')
+      expect(encryptedModels.data[0].example.field).toHaveProperty('c')
+      expect(encryptedModels.data[1].email).toHaveProperty('c')
+      expect(encryptedModels.data[1].example.field).toHaveProperty('c')
+      expect(encryptedModels.data[1].example.nested?.deeper).toHaveProperty('c')
+
+      // Verify non-encrypted fields remain unchanged
+      expect(encryptedModels.data[0].id).toBe('1')
+      expect(encryptedModels.data[0].example.nested).toBeUndefined()
+      expect(encryptedModels.data[1].id).toBe('2')
+
       const decryptedResults = await protectClient.bulkDecryptModels<User>(
         encryptedModels.data,
       )
@@ -420,6 +509,8 @@ describe('encrypt models with nested fields', () => {
       if (encryptedModels.failure) {
         throw new Error(`[protect]: ${encryptedModels.failure.message}`)
       }
+
+      expect(encryptedModels.data).toEqual([])
 
       const decryptedResults = await protectClient.bulkDecryptModels<User>(
         encryptedModels.data,
