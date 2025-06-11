@@ -8,16 +8,23 @@ import {
   decryptModelFields,
   decryptModelFieldsWithLockContext,
 } from '../model-helpers'
+import type { ProtectTable, ProtectTableColumn } from '../../schema'
 
 export class DecryptModelOperation<T extends Record<string, unknown>>
   implements PromiseLike<Result<Decrypted<T>, ProtectError>>
 {
   private client: Client
   private model: T
+  private table?: ProtectTable<ProtectTableColumn>
 
-  constructor(client: Client, model: T) {
+  constructor(
+    client: Client,
+    model: T,
+    table?: ProtectTable<ProtectTableColumn>,
+  ) {
     this.client = client
     this.model = model
+    this.table = table
   }
 
   public withLockContext(
@@ -47,7 +54,7 @@ export class DecryptModelOperation<T extends Record<string, unknown>>
           throw noClientError()
         }
 
-        return await decryptModelFields<T>(this.model, this.client)
+        return await decryptModelFields<T>(this.model, this.client, this.table)
       },
       (error) => ({
         type: ProtectErrorTypes.DecryptionError,
@@ -59,10 +66,12 @@ export class DecryptModelOperation<T extends Record<string, unknown>>
   public getOperation(): {
     client: Client
     model: T
+    table?: ProtectTable<ProtectTableColumn>
   } {
     return {
       client: this.client,
       model: this.model,
+      table: this.table,
     }
   }
 }
@@ -94,7 +103,7 @@ export class DecryptModelOperationWithLockContext<
   private async execute(): Promise<Result<Decrypted<T>, ProtectError>> {
     return await withResult(
       async () => {
-        const { client, model } = this.operation.getOperation()
+        const { client, model, table } = this.operation.getOperation()
 
         logger.debug('Decrypting model WITH a lock context')
 
@@ -112,6 +121,7 @@ export class DecryptModelOperationWithLockContext<
           model,
           client,
           context.data,
+          table,
         )
       },
       (error) => ({

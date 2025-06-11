@@ -68,8 +68,6 @@ export class ProtectClient {
           client_key: config.clientKey,
         })
 
-        console.log('config', validated)
-
         this.client = await newClient(
           JSON.stringify(validated),
           newClientConfig,
