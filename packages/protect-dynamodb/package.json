@@ -34,12 +34,14 @@
 		"release": "tsup"
 	},
 	"devDependencies": {
-		"@cipherstash/protect": "workspace:*",
 		"dotenv": "^16.4.7",
 		"tsup": "catalog:repo",
 		"tsx": "catalog:repo",
 		"typescript": "catalog:repo",
 		"vitest": "catalog:repo"
+	},
+	"peerDependencies": {
+		"@cipherstash/protect": "workspace:*"
 	},
 	"publishConfig": {
 		"access": "public"

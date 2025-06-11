@@ -28,10 +28,16 @@ function toEncryptedDynamoItem(
   return Object.entries(encrypted).reduce(
     (putItem, [attrName, attrValue]) => {
       if (encryptedAttrs.includes(attrName)) {
-        const encryptPayload = attrValue as EncryptedPayload
-        if (encryptPayload?.hm && encryptPayload?.c) {
-          putItem[`${attrName}${searchTermAttrSuffix}`] = encryptPayload.hm
-          putItem[`${attrName}${ciphertextAttrSuffix}`] = encryptPayload.c
+        if (attrValue === null || attrValue === undefined) {
+          putItem[attrName] = attrValue
+        } else {
+          const encryptPayload = attrValue as EncryptedPayload
+          if (encryptPayload?.c) {
+            if (encryptPayload.hm) {
+              putItem[`${attrName}${searchTermAttrSuffix}`] = encryptPayload.hm
+            }
+            putItem[`${attrName}${ciphertextAttrSuffix}`] = encryptPayload.c
+          }
         }
       } else {
         putItem[attrName] = attrValue
