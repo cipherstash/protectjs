@@ -27,20 +27,20 @@ export interface ProtectDynamoDBInstance {
   encryptModel<T extends Record<string, unknown>>(
     item: T,
     protectTable: ProtectTable<ProtectTableColumn>,
-  ): Promise<Result<Record<string, unknown>, ProtectDynamoDBError>>
+  ): Promise<Result<T, ProtectDynamoDBError>>
 
   bulkEncryptModels<T extends Record<string, unknown>>(
     items: T[],
     protectTable: ProtectTable<ProtectTableColumn>,
-  ): Promise<Result<Record<string, unknown>[], ProtectDynamoDBError>>
+  ): Promise<Result<T[], ProtectDynamoDBError>>
 
   decryptModel<T extends Record<string, unknown>>(
-    item: Record<string, EncryptedPayload | unknown>,
+    item: T,
     protectTable: ProtectTable<ProtectTableColumn>,
   ): Promise<Result<Decrypted<T>, ProtectDynamoDBError>>
 
   bulkDecryptModels<T extends Record<string, unknown>>(
-    items: Record<string, EncryptedPayload | unknown>[],
+    items: T[],
     protectTable: ProtectTable<ProtectTableColumn>,
   ): Promise<Result<Decrypted<T>[], ProtectDynamoDBError>>
 

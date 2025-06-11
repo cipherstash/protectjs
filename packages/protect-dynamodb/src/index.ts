@@ -21,28 +21,78 @@ class ProtectDynamoDBErrorImpl extends Error implements ProtectDynamoDBError {
   }
 }
 
+function deepClone<T>(obj: T): T {
+  if (obj === null || typeof obj !== 'object') {
+    return obj
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.map((item) => deepClone(item)) as unknown as T
+  }
+
+  return Object.entries(obj as Record<string, unknown>).reduce(
+    (acc, [key, value]) => ({
+      // biome-ignore lint/performance/noAccumulatingSpread: TODO later
+      ...acc,
+      [key]: deepClone(value),
+    }),
+    {} as T,
+  )
+}
+
 function toEncryptedDynamoItem(
   encrypted: Record<string, unknown>,
   encryptedAttrs: string[],
 ): Record<string, unknown> {
+  function processValue(
+    attrName: string,
+    attrValue: unknown,
+    isNested: boolean,
+  ): Record<string, unknown> {
+    if (attrValue === null || attrValue === undefined) {
+      return { [attrName]: attrValue }
+    }
+
+    // Handle encrypted payload
+    if (
+      encryptedAttrs.includes(attrName) ||
+      (isNested &&
+        typeof attrValue === 'object' &&
+        'c' in (attrValue as object))
+    ) {
+      const encryptPayload = attrValue as EncryptedPayload
+      if (encryptPayload?.c) {
+        const result: Record<string, unknown> = {}
+        if (encryptPayload.hm) {
+          result[`${attrName}${searchTermAttrSuffix}`] = encryptPayload.hm
+        }
+        result[`${attrName}${ciphertextAttrSuffix}`] = encryptPayload.c
+        return result
+      }
+    }
+
+    // Handle nested objects recursively
+    if (typeof attrValue === 'object' && !Array.isArray(attrValue)) {
+      const nestedResult = Object.entries(
+        attrValue as Record<string, unknown>,
+      ).reduce(
+        (acc, [key, val]) => {
+          const processed = processValue(key, val, true)
+          return Object.assign({}, acc, processed)
+        },
+        {} as Record<string, unknown>,
+      )
+      return { [attrName]: nestedResult }
+    }
+
+    // Handle non-encrypted values
+    return { [attrName]: attrValue }
+  }
+
   return Object.entries(encrypted).reduce(
     (putItem, [attrName, attrValue]) => {
-      if (encryptedAttrs.includes(attrName)) {
-        if (attrValue === null || attrValue === undefined) {
-          putItem[attrName] = attrValue
-        } else {
-          const encryptPayload = attrValue as EncryptedPayload
-          if (encryptPayload?.c) {
-            if (encryptPayload.hm) {
-              putItem[`${attrName}${searchTermAttrSuffix}`] = encryptPayload.hm
-            }
-            putItem[`${attrName}${ciphertextAttrSuffix}`] = encryptPayload.c
-          }
-        }
-      } else {
-        putItem[attrName] = attrValue
-      }
-      return putItem
+      const processed = processValue(attrName, attrValue, false)
+      return Object.assign({}, putItem, processed)
     },
     {} as Record<string, unknown>,
   )
@@ -52,13 +102,31 @@ function toItemWithEqlPayloads(
   decrypted: Record<string, EncryptedPayload | unknown>,
   encryptedAttrs: string[],
 ): Record<string, unknown> {
-  return Object.entries(decrypted).reduce(
-    (formattedItem, [attrName, attrValue]) => {
-      if (
-        attrName.endsWith(ciphertextAttrSuffix) &&
-        encryptedAttrs.includes(attrName.slice(0, -ciphertextAttrSuffix.length))
-      ) {
-        formattedItem[attrName.slice(0, -ciphertextAttrSuffix.length)] = {
+  function processValue(
+    attrName: string,
+    attrValue: unknown,
+    isNested: boolean,
+  ): Record<string, unknown> {
+    if (attrValue === null || attrValue === undefined) {
+      return { [attrName]: attrValue }
+    }
+
+    // Skip HMAC fields
+    if (attrName.endsWith(searchTermAttrSuffix)) {
+      return {}
+    }
+
+    // Handle encrypted payload
+    if (
+      attrName.endsWith(ciphertextAttrSuffix) &&
+      (encryptedAttrs.includes(
+        attrName.slice(0, -ciphertextAttrSuffix.length),
+      ) ||
+        isNested)
+    ) {
+      const baseName = attrName.slice(0, -ciphertextAttrSuffix.length)
+      return {
+        [baseName]: {
           c: attrValue,
           bf: null,
           hm: null,
@@ -66,13 +134,32 @@ function toItemWithEqlPayloads(
           k: 'notUsed',
           ob: null,
           v: 2,
-        }
-      } else if (attrName.endsWith(searchTermAttrSuffix)) {
-        // skip HMAC attrs since we don't need those for decryption
-      } else {
-        formattedItem[attrName] = attrValue
+        },
       }
-      return formattedItem
+    }
+
+    // Handle nested objects recursively
+    if (typeof attrValue === 'object' && !Array.isArray(attrValue)) {
+      const nestedResult = Object.entries(
+        attrValue as Record<string, unknown>,
+      ).reduce(
+        (acc, [key, val]) => {
+          const processed = processValue(key, val, true)
+          return Object.assign({}, acc, processed)
+        },
+        {} as Record<string, unknown>,
+      )
+      return { [attrName]: nestedResult }
+    }
+
+    // Handle non-encrypted values
+    return { [attrName]: attrValue }
+  }
+
+  return Object.entries(decrypted).reduce(
+    (formattedItem, [attrName, attrValue]) => {
+      const processed = processValue(attrName, attrValue, false)
+      return Object.assign({}, formattedItem, processed)
     },
     {} as Record<string, unknown>,
   )
@@ -110,7 +197,7 @@ export function protectDynamoDB(
       return await withResult(
         async () => {
           const encryptResult = await protectClient.encryptModel(
-            item,
+            deepClone(item),
             protectTable,
           )
 
@@ -120,10 +207,10 @@ export function protectDynamoDB(
             )
           }
 
-          const data = encryptResult.data
+          const data = deepClone(encryptResult.data)
           const encryptedAttrs = Object.keys(protectTable.build().columns)
 
-          return toEncryptedDynamoItem(data, encryptedAttrs)
+          return toEncryptedDynamoItem(data, encryptedAttrs) as T
         },
         (error) => handleError(error, 'encryptModel'),
       )
@@ -136,7 +223,7 @@ export function protectDynamoDB(
       return await withResult(
         async () => {
           const encryptResult = await protectClient.bulkEncryptModels(
-            items,
+            items.map((item) => deepClone(item)),
             protectTable,
           )
 
@@ -146,11 +233,12 @@ export function protectDynamoDB(
             )
           }
 
-          const data = encryptResult.data
+          const data = encryptResult.data.map((item) => deepClone(item))
           const encryptedAttrs = Object.keys(protectTable.build().columns)
 
-          return data.map((encrypted) =>
-            toEncryptedDynamoItem(encrypted, encryptedAttrs),
+          return data.map(
+            (encrypted) =>
+              toEncryptedDynamoItem(encrypted, encryptedAttrs) as T,
           )
         },
         (error) => handleError(error, 'bulkEncryptModels'),

@@ -1,13 +1,19 @@
 import 'dotenv/config'
 import { describe, expect, it, beforeAll } from 'vitest'
 import { protectDynamoDB } from '../src'
-import { protect, csColumn, csTable } from '@cipherstash/protect'
+import { protect, csColumn, csTable, csValue } from '@cipherstash/protect'
 
 const schema = csTable('dynamo_cipherstash_test', {
   email: csColumn('email').equality(),
   firstName: csColumn('firstName').equality(),
   lastName: csColumn('lastName').equality(),
   phoneNumber: csColumn('phoneNumber'),
+  example: {
+    protected: csValue('example.protected'),
+    deep: {
+      protected: csValue('example.deep.protected'),
+    },
+  },
 })
 
 describe('protect dynamodb helpers', () => {
@@ -36,6 +42,14 @@ describe('protect dynamodb helpers', () => {
       companyName: 'Acme Corp',
       batteryBrands: ['Brand1', 'Brand2'],
       metadata: { role: 'admin' },
+      example: {
+        protected: 'hello world',
+        notProtected: 'I am not protected',
+        deep: {
+          protected: 'deep protected',
+          notProtected: 'deep not protected',
+        },
+      },
     }
 
     const result = await protectDynamo.encryptModel(testData, schema)
@@ -53,6 +67,9 @@ describe('protect dynamodb helpers', () => {
     expect(encryptedData).toHaveProperty('lastName__source')
     expect(encryptedData).toHaveProperty('lastName__hmac')
     expect(encryptedData).toHaveProperty('phoneNumber__source')
+    expect(encryptedData).not.toHaveProperty('phoneNumber__hmac')
+    expect(encryptedData.example).toHaveProperty('protected__source')
+    expect(encryptedData.example.deep).toHaveProperty('protected__source')
 
     // Verify other fields remain unchanged
     expect(encryptedData.id).toBe('01ABCDEFGHIJKLMNOPQRSTUVWX')
@@ -60,6 +77,8 @@ describe('protect dynamodb helpers', () => {
     expect(encryptedData.createdAt).toBe('2024-08-15T22:14:49.948Z')
     expect(encryptedData.companyName).toBe('Acme Corp')
     expect(encryptedData.batteryBrands).toEqual(['Brand1', 'Brand2'])
+    expect(encryptedData.example.notProtected).toBe('I am not protected')
+    expect(encryptedData.example.deep.notProtected).toBe('deep not protected')
     expect(encryptedData.metadata).toEqual({ role: 'admin' })
   })
 
@@ -71,6 +90,14 @@ describe('protect dynamodb helpers', () => {
       lastName: 'Smith',
       phoneNumber: null,
       metadata: { role: null },
+      example: {
+        protected: null,
+        notProtected: 'I am not protected',
+        deep: {
+          protected: undefined,
+          notProtected: 'deep not protected',
+        },
+      },
     }
 
     const result = await protectDynamo.encryptModel(testData, schema)
@@ -90,6 +117,9 @@ describe('protect dynamodb helpers', () => {
     expect(encryptedData.email).toBeNull()
     expect(encryptedData.firstName).toBeUndefined()
     expect(encryptedData.metadata).toEqual({ role: null })
+    expect(encryptedData.example.protected).toBeNull()
+    expect(encryptedData.example.deep.protected).toBeUndefined()
+    expect(encryptedData.example.deep.notProtected).toBe('deep not protected')
   })
 
   it('should handle empty strings and special characters', async () => {
@@ -117,6 +147,7 @@ describe('protect dynamodb helpers', () => {
     expect(encryptedData).toHaveProperty('lastName__source')
     expect(encryptedData).toHaveProperty('lastName__hmac')
     expect(encryptedData).toHaveProperty('phoneNumber__source')
+    expect(encryptedData).not.toHaveProperty('phoneNumber__hmac')
 
     // Verify other fields remain unchanged
     expect(encryptedData.id).toBe('01ABCDEFGHIJKLMNOPQRSTUVWX')
@@ -177,10 +208,19 @@ describe('protect dynamodb helpers', () => {
       firstName: 'John',
       lastName: 'Smith',
       phoneNumber: '555-555-5555',
+      example: {
+        protected: 'hello world',
+        notProtected: 'I am not protected',
+        deep: {
+          protected: 'deep protected',
+          notProtected: 'deep not protected',
+        },
+      },
     }
 
     // First encrypt
     const encryptResult = await protectDynamo.encryptModel(originalData, schema)
+
     if (encryptResult.failure) {
       throw new Error(`Encryption failed: ${encryptResult.failure.message}`)
     }
@@ -215,6 +255,14 @@ describe('protect dynamodb helpers', () => {
         firstName: 'Jane',
         lastName: 'Doe',
         phoneNumber: '555-555-5556',
+        example: {
+          protected: 'hello world',
+          notProtected: 'I am not protected',
+          deep: {
+            protected: 'deep protected',
+            notProtected: 'deep not protected',
+          },
+        },
       },
     ]
 
