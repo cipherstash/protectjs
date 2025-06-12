@@ -5,14 +5,17 @@ import { type ProtectError, ProtectErrorTypes } from '../..'
 import { logger } from '../../../../utils/logger'
 import type { LockContext } from '../../identify'
 import type { Client, EncryptedPayload } from '../../types'
+import { BaseOperation } from './base-operation'
 
 export class DecryptOperation
+  extends BaseOperation<Result<string | null, ProtectError>>
   implements PromiseLike<Result<string | null, ProtectError>>
 {
   private client: Client
   private encryptedData: EncryptedPayload
 
   constructor(client: Client, encryptedData: EncryptedPayload) {
+    super()
     this.client = client
     this.encryptedData = encryptedData
   }
@@ -20,7 +23,11 @@ export class DecryptOperation
   public withLockContext(
     lockContext: LockContext,
   ): DecryptOperationWithLockContext {
-    return new DecryptOperationWithLockContext(this, lockContext)
+    const opWithLock = new DecryptOperationWithLockContext(this, lockContext)
+    if (this.getAuditMetadata()) {
+      opWithLock.audit(this.getAuditMetadata() ?? {})
+    }
+    return opWithLock
   }
 
   public then<TResult1 = Result<string | null, ProtectError>, TResult2 = never>(
@@ -46,7 +53,9 @@ export class DecryptOperation
           return null
         }
 
-        logger.debug('Decrypting data WITHOUT a lock context')
+        logger.debug('Decrypting data WITHOUT a lock context', {
+          auditMetadata: this.getAuditMetadata(),
+        })
         return await ffiDecrypt(this.client, this.encryptedData.c)
       },
       (error) => ({
@@ -59,23 +68,30 @@ export class DecryptOperation
   public getOperation(): {
     client: Client
     encryptedData: EncryptedPayload
+    auditMetadata?: Record<string, unknown>
   } {
     return {
       client: this.client,
       encryptedData: this.encryptedData,
+      auditMetadata: this.getAuditMetadata(),
     }
   }
 }
 
 export class DecryptOperationWithLockContext
+  extends BaseOperation<Result<string | null, ProtectError>>
   implements PromiseLike<Result<string | null, ProtectError>>
 {
   private operation: DecryptOperation
   private lockContext: LockContext
 
   constructor(operation: DecryptOperation, lockContext: LockContext) {
+    super()
     this.operation = operation
     this.lockContext = lockContext
+    if (operation.getAuditMetadata()) {
+      this.audit(operation.getAuditMetadata() ?? {})
+    }
   }
 
   public then<TResult1 = Result<string | null, ProtectError>, TResult2 = never>(
@@ -103,7 +119,9 @@ export class DecryptOperationWithLockContext
           return null
         }
 
-        logger.debug('Decrypting data WITH a lock context')
+        logger.debug('Decrypting data WITH a lock context', {
+          auditMetadata: this.getAuditMetadata(),
+        })
 
         const context = await this.lockContext.getLockContext()
 
