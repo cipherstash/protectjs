@@ -1,5 +1,12 @@
 # @cipherstash/protect-dynamodb
 
+## 0.3.0
+
+### Minor Changes
+
+- 2b63ee1: Support nested protect schema in dynamodb helper functions.
+- e33fbaf: Fixed bug when handling schema definitions without an equality flag.
+
 ## 0.2.0
 
 ### Minor Changes
