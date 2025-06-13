@@ -7,7 +7,6 @@ import type {
   Client,
   Decrypted,
   EncryptedPayload,
-  EncryptedSearchTerm,
   EncryptOptions,
   EncryptPayload,
   SearchTerm,
@@ -160,10 +159,8 @@ export class ProtectClient {
    *    await eqlClient.createSearchTerms(searchTerms)
    *    await eqlClient.createSearchTerms(searchTerms).withLockContext(lockContext)
    */
-  createSearchTerms(
-    terms: SearchTerm[],
-  ): Promise<Result<EncryptedSearchTerm[], ProtectError>> {
-    return new SearchTermsOperation(this.client, terms).execute()
+  createSearchTerms(terms: SearchTerm[]): SearchTermsOperation {
+    return new SearchTermsOperation(this.client, terms)
   }
 
   /** e.g., debugging or environment info */

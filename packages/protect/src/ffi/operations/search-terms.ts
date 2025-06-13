@@ -1,15 +1,19 @@
-import { encryptBulk } from '@cipherstash/protect-ffi'
 import { withResult, type Result } from '@byteslice/result'
 import { noClientError } from '../index'
 import { type ProtectError, ProtectErrorTypes } from '../..'
 import { logger } from '../../../../utils/logger'
-import type { Client, EncryptedSearchTerm, SearchTerm } from '../../types'
+import type { Client, SearchTerm, EncryptedSearchTerm } from '../../types'
+import { encryptBulk } from '@cipherstash/protect-ffi'
+import { ProtectOperation } from './base-operation'
 
-export class SearchTermsOperation {
+export class SearchTermsOperation extends ProtectOperation<
+  EncryptedSearchTerm[]
+> {
   private client: Client
   private terms: SearchTerm[]
 
   constructor(client: Client, terms: SearchTerm[]) {
+    super()
     this.client = client
     this.terms = terms
   }

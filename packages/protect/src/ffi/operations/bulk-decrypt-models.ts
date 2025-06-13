@@ -8,14 +8,16 @@ import {
   bulkDecryptModels,
   bulkDecryptModelsWithLockContext,
 } from '../model-helpers'
+import { ProtectOperation } from './base-operation'
 
-export class BulkDecryptModelsOperation<T extends Record<string, unknown>>
-  implements PromiseLike<Result<Array<Decrypted<T>>, ProtectError>>
-{
+export class BulkDecryptModelsOperation<
+  T extends Record<string, unknown>,
+> extends ProtectOperation<Decrypted<T>[]> {
   private client: Client
-  private models: Array<T>
+  private models: T[]
 
-  constructor(client: Client, models: Array<T>) {
+  constructor(client: Client, models: T[]) {
+    super()
     this.client = client
     this.models = models
   }
@@ -26,32 +28,13 @@ export class BulkDecryptModelsOperation<T extends Record<string, unknown>>
     return new BulkDecryptModelsOperationWithLockContext(this, lockContext)
   }
 
-  public then<
-    TResult1 = Result<Array<Decrypted<T>>, ProtectError>,
-    TResult2 = never,
-  >(
-    onfulfilled?:
-      | ((
-          value: Result<Array<Decrypted<T>>, ProtectError>,
-        ) => TResult1 | PromiseLike<TResult1>)
-      | null,
-    // biome-ignore lint/suspicious/noExplicitAny: Rejections require an any type
-    onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null,
-  ): Promise<TResult1 | TResult2> {
-    return this.execute().then(onfulfilled, onrejected)
-  }
-
-  private async execute(): Promise<Result<Array<Decrypted<T>>, ProtectError>> {
+  public async execute(): Promise<Result<Decrypted<T>[], ProtectError>> {
     logger.debug('Bulk decrypting models WITHOUT a lock context')
 
     return await withResult(
       async () => {
         if (!this.client) {
           throw noClientError()
-        }
-
-        if (!this.models || this.models.length === 0) {
-          return []
         }
 
         return await bulkDecryptModels<T>(this.models, this.client)
@@ -65,7 +48,7 @@ export class BulkDecryptModelsOperation<T extends Record<string, unknown>>
 
   public getOperation(): {
     client: Client
-    models: Array<T>
+    models: T[]
   } {
     return {
       client: this.client,
@@ -76,8 +59,7 @@ export class BulkDecryptModelsOperation<T extends Record<string, unknown>>
 
 export class BulkDecryptModelsOperationWithLockContext<
   T extends Record<string, unknown>,
-> implements PromiseLike<Result<Array<Decrypted<T>>, ProtectError>>
-{
+> extends ProtectOperation<Decrypted<T>[]> {
   private operation: BulkDecryptModelsOperation<T>
   private lockContext: LockContext
 
@@ -85,26 +67,12 @@ export class BulkDecryptModelsOperationWithLockContext<
     operation: BulkDecryptModelsOperation<T>,
     lockContext: LockContext,
   ) {
+    super()
     this.operation = operation
     this.lockContext = lockContext
   }
 
-  public then<
-    TResult1 = Result<Array<Decrypted<T>>, ProtectError>,
-    TResult2 = never,
-  >(
-    onfulfilled?:
-      | ((
-          value: Result<Array<Decrypted<T>>, ProtectError>,
-        ) => TResult1 | PromiseLike<TResult1>)
-      | null,
-    // biome-ignore lint/suspicious/noExplicitAny: Rejections require an any type
-    onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null,
-  ): Promise<TResult1 | TResult2> {
-    return this.execute().then(onfulfilled, onrejected)
-  }
-
-  private async execute(): Promise<Result<Array<Decrypted<T>>, ProtectError>> {
+  public async execute(): Promise<Result<Decrypted<T>[], ProtectError>> {
     return await withResult(
       async () => {
         const { client, models } = this.operation.getOperation()
@@ -113,10 +81,6 @@ export class BulkDecryptModelsOperationWithLockContext<
 
         if (!client) {
           throw noClientError()
-        }
-
-        if (!models || models.length === 0) {
-          return []
         }
 
         const context = await this.lockContext.getLockContext()

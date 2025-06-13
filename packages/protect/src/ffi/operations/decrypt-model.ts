@@ -8,16 +8,16 @@ import {
   decryptModelFields,
   decryptModelFieldsWithLockContext,
 } from '../model-helpers'
-import type { ProtectTable, ProtectTableColumn } from '../../schema'
+import { ProtectOperation } from './base-operation'
 
-export class DecryptModelOperation<T extends Record<string, unknown>>
-  implements PromiseLike<Result<Decrypted<T>, ProtectError>>
-{
+export class DecryptModelOperation<
+  T extends Record<string, unknown>,
+> extends ProtectOperation<Decrypted<T>> {
   private client: Client
   private model: T
-  private table?: ProtectTable<ProtectTableColumn>
 
   constructor(client: Client, model: T) {
+    super()
     this.client = client
     this.model = model
   }
@@ -28,19 +28,7 @@ export class DecryptModelOperation<T extends Record<string, unknown>>
     return new DecryptModelOperationWithLockContext(this, lockContext)
   }
 
-  public then<TResult1 = Result<Decrypted<T>, ProtectError>, TResult2 = never>(
-    onfulfilled?:
-      | ((
-          value: Result<Decrypted<T>, ProtectError>,
-        ) => TResult1 | PromiseLike<TResult1>)
-      | null,
-    // biome-ignore lint/suspicious/noExplicitAny: Rejections require an any type
-    onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null,
-  ): Promise<TResult1 | TResult2> {
-    return this.execute().then(onfulfilled, onrejected)
-  }
-
-  private async execute(): Promise<Result<Decrypted<T>, ProtectError>> {
+  public async execute(): Promise<Result<Decrypted<T>, ProtectError>> {
     logger.debug('Decrypting model WITHOUT a lock context')
 
     return await withResult(
@@ -61,7 +49,6 @@ export class DecryptModelOperation<T extends Record<string, unknown>>
   public getOperation(): {
     client: Client
     model: T
-    table?: ProtectTable<ProtectTableColumn>
   } {
     return {
       client: this.client,
@@ -72,29 +59,17 @@ export class DecryptModelOperation<T extends Record<string, unknown>>
 
 export class DecryptModelOperationWithLockContext<
   T extends Record<string, unknown>,
-> implements PromiseLike<Result<Decrypted<T>, ProtectError>>
-{
+> extends ProtectOperation<Decrypted<T>> {
   private operation: DecryptModelOperation<T>
   private lockContext: LockContext
 
   constructor(operation: DecryptModelOperation<T>, lockContext: LockContext) {
+    super()
     this.operation = operation
     this.lockContext = lockContext
   }
 
-  public then<TResult1 = Result<Decrypted<T>, ProtectError>, TResult2 = never>(
-    onfulfilled?:
-      | ((
-          value: Result<Decrypted<T>, ProtectError>,
-        ) => TResult1 | PromiseLike<TResult1>)
-      | null,
-    // biome-ignore lint/suspicious/noExplicitAny: Rejections require an any type
-    onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null,
-  ): Promise<TResult1 | TResult2> {
-    return this.execute().then(onfulfilled, onrejected)
-  }
-
-  private async execute(): Promise<Result<Decrypted<T>, ProtectError>> {
+  public async execute(): Promise<Result<Decrypted<T>, ProtectError>> {
     return await withResult(
       async () => {
         const { client, model } = this.operation.getOperation()
