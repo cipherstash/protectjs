@@ -5,12 +5,9 @@ import { type ProtectError, ProtectErrorTypes } from '../..'
 import { logger } from '../../../../utils/logger'
 import type { LockContext } from '../../identify'
 import type { Client, EncryptedPayload } from '../../types'
-import { BaseOperation } from './base-operation'
+import { ProtectOperation } from './base-operation'
 
-export class DecryptOperation
-  extends BaseOperation<Result<string | null, ProtectError>>
-  implements PromiseLike<Result<string | null, ProtectError>>
-{
+export class DecryptOperation extends ProtectOperation<string | null> {
   private client: Client
   private encryptedData: EncryptedPayload
 
@@ -24,25 +21,14 @@ export class DecryptOperation
     lockContext: LockContext,
   ): DecryptOperationWithLockContext {
     const opWithLock = new DecryptOperationWithLockContext(this, lockContext)
-    if (this.getAuditMetadata()) {
-      opWithLock.audit(this.getAuditMetadata() ?? {})
+    const auditMetadata = this.getAuditMetadata()
+    if (auditMetadata) {
+      opWithLock.audit(auditMetadata)
     }
     return opWithLock
   }
 
-  public then<TResult1 = Result<string | null, ProtectError>, TResult2 = never>(
-    onfulfilled?:
-      | ((
-          value: Result<string | null, ProtectError>,
-        ) => TResult1 | PromiseLike<TResult1>)
-      | null,
-    // biome-ignore lint/suspicious/noExplicitAny: Rejections require an any type
-    onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null,
-  ): Promise<TResult1 | TResult2> {
-    return this.execute().then(onfulfilled, onrejected)
-  }
-
-  private async execute(): Promise<Result<string | null, ProtectError>> {
+  public async execute(): Promise<Result<string | null, ProtectError>> {
     return await withResult(
       async () => {
         if (!this.client) {
@@ -78,10 +64,9 @@ export class DecryptOperation
   }
 }
 
-export class DecryptOperationWithLockContext
-  extends BaseOperation<Result<string | null, ProtectError>>
-  implements PromiseLike<Result<string | null, ProtectError>>
-{
+export class DecryptOperationWithLockContext extends ProtectOperation<
+  string | null
+> {
   private operation: DecryptOperation
   private lockContext: LockContext
 
@@ -89,24 +74,13 @@ export class DecryptOperationWithLockContext
     super()
     this.operation = operation
     this.lockContext = lockContext
-    if (operation.getAuditMetadata()) {
-      this.audit(operation.getAuditMetadata() ?? {})
+    const auditMetadata = operation.getAuditMetadata()
+    if (auditMetadata) {
+      this.audit(auditMetadata)
     }
   }
 
-  public then<TResult1 = Result<string | null, ProtectError>, TResult2 = never>(
-    onfulfilled?:
-      | ((
-          value: Result<string | null, ProtectError>,
-        ) => TResult1 | PromiseLike<TResult1>)
-      | null,
-    // biome-ignore lint/suspicious/noExplicitAny: Rejections require an any type
-    onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null,
-  ): Promise<TResult1 | TResult2> {
-    return this.execute().then(onfulfilled, onrejected)
-  }
-
-  private async execute(): Promise<Result<string | null, ProtectError>> {
+  public async execute(): Promise<Result<string | null, ProtectError>> {
     return await withResult(
       async () => {
         const { client, encryptedData } = this.operation.getOperation()

@@ -7,6 +7,11 @@ import type {
   SearchTerm,
 } from '@cipherstash/protect'
 import type { Result } from '@byteslice/result'
+import type { EncryptModelOperation } from './operations/encrypt-model'
+import type { BulkEncryptModelsOperation } from './operations/bulk-encrypt-models'
+import type { DecryptModelOperation } from './operations/decrypt-model'
+import type { BulkDecryptModelsOperation } from './operations/bulk-decrypt-models'
+import type { SearchTermsOperation } from './operations/search-terms'
 
 export interface ProtectDynamoDBConfig {
   protectClient: ProtectClient
@@ -27,24 +32,22 @@ export interface ProtectDynamoDBInstance {
   encryptModel<T extends Record<string, unknown>>(
     item: T,
     protectTable: ProtectTable<ProtectTableColumn>,
-  ): Promise<Result<T, ProtectDynamoDBError>>
+  ): EncryptModelOperation<T>
 
   bulkEncryptModels<T extends Record<string, unknown>>(
     items: T[],
     protectTable: ProtectTable<ProtectTableColumn>,
-  ): Promise<Result<T[], ProtectDynamoDBError>>
+  ): BulkEncryptModelsOperation<T>
 
   decryptModel<T extends Record<string, unknown>>(
-    item: T,
+    item: Record<string, EncryptedPayload | unknown>,
     protectTable: ProtectTable<ProtectTableColumn>,
-  ): Promise<Result<Decrypted<T>, ProtectDynamoDBError>>
+  ): DecryptModelOperation<T>
 
   bulkDecryptModels<T extends Record<string, unknown>>(
-    items: T[],
+    items: Record<string, EncryptedPayload | unknown>[],
     protectTable: ProtectTable<ProtectTableColumn>,
-  ): Promise<Result<Decrypted<T>[], ProtectDynamoDBError>>
+  ): BulkDecryptModelsOperation<T>
 
-  createSearchTerms(
-    terms: SearchTerm[],
-  ): Promise<Result<string[], ProtectDynamoDBError>>
+  createSearchTerms(terms: SearchTerm[]): SearchTermsOperation
 }
