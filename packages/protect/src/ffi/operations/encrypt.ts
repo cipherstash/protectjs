@@ -16,16 +16,16 @@ import type {
   ProtectTable,
   ProtectTableColumn,
 } from '../../schema'
+import { ProtectOperation } from './base-operation'
 
-export class EncryptOperation
-  implements PromiseLike<Result<EncryptedPayload, ProtectError>>
-{
+export class EncryptOperation extends ProtectOperation<EncryptedPayload> {
   private client: Client
   private plaintext: EncryptPayload
   private column: ProtectColumn | ProtectValue
   private table: ProtectTable<ProtectTableColumn>
 
   constructor(client: Client, plaintext: EncryptPayload, opts: EncryptOptions) {
+    super()
     this.client = client
     this.plaintext = plaintext
     this.column = opts.column
@@ -38,24 +38,7 @@ export class EncryptOperation
     return new EncryptOperationWithLockContext(this, lockContext)
   }
 
-  /** Implement the PromiseLike interface so `await` works. */
-  public then<
-    TResult1 = Result<EncryptedPayload, ProtectError>,
-    TResult2 = never,
-  >(
-    onfulfilled?:
-      | ((
-          value: Result<EncryptedPayload, ProtectError>,
-        ) => TResult1 | PromiseLike<TResult1>)
-      | null,
-    // biome-ignore lint/suspicious/noExplicitAny: Rejections require an any type
-    onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null,
-  ): Promise<TResult1 | TResult2> {
-    return this.execute().then(onfulfilled, onrejected)
-  }
-
-  /** Actual encryption logic, deferred until `then()` is called. */
-  private async execute(): Promise<Result<EncryptedPayload, ProtectError>> {
+  public async execute(): Promise<Result<EncryptedPayload, ProtectError>> {
     logger.debug('Encrypting data WITHOUT a lock context', {
       column: this.column.getName(),
       table: this.table.tableName,
@@ -99,33 +82,17 @@ export class EncryptOperation
   }
 }
 
-export class EncryptOperationWithLockContext
-  implements PromiseLike<Result<EncryptedPayload, ProtectError>>
-{
+export class EncryptOperationWithLockContext extends ProtectOperation<EncryptedPayload> {
   private operation: EncryptOperation
   private lockContext: LockContext
 
   constructor(operation: EncryptOperation, lockContext: LockContext) {
+    super()
     this.operation = operation
     this.lockContext = lockContext
   }
 
-  public then<
-    TResult1 = Result<EncryptedPayload, ProtectError>,
-    TResult2 = never,
-  >(
-    onfulfilled?:
-      | ((
-          value: Result<EncryptedPayload, ProtectError>,
-        ) => TResult1 | PromiseLike<TResult1>)
-      | null,
-    // biome-ignore lint/suspicious/noExplicitAny: Rejections require an any type
-    onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null,
-  ): Promise<TResult1 | TResult2> {
-    return this.execute().then(onfulfilled, onrejected)
-  }
-
-  private async execute(): Promise<Result<EncryptedPayload, ProtectError>> {
+  public async execute(): Promise<Result<EncryptedPayload, ProtectError>> {
     return await withResult(
       async () => {
         const { client, plaintext, column, table } =
