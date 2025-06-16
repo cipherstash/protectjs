@@ -1,5 +1,16 @@
 # @cipherstash/protect-dynamodb
 
+## 1.0.0
+
+### Minor Changes
+
+- 01fed9e: Added audit support for all protect and protect-dynamodb interfaces.
+
+### Patch Changes
+
+- Updated dependencies [01fed9e]
+  - @cipherstash/protect@9.3.0
+
 ## 0.3.0
 
 ### Minor Changes
