@@ -665,6 +665,96 @@ describe('performance', () => {
   }, 60000)
 })
 
+describe('bulk encryption operations', () => {
+  it('should bulk encrypt payloads with IDs', async () => {
+    const plaintexts = [
+      { id: '1', plaintext: 'hello@example.com' },
+      { id: '2', plaintext: 'world@example.com' },
+      { id: '3', plaintext: null },
+    ]
+
+    const encryptedData = await protectClient.bulkEncrypt(plaintexts, {
+      column: users.email,
+      table: users,
+    })
+
+    if (encryptedData.failure) {
+      throw new Error(`[protect]: ${encryptedData.failure.message}`)
+    }
+
+    // Verify encrypted data structure
+    expect(encryptedData.data).toHaveLength(3)
+    expect(encryptedData.data[0]).toHaveProperty('id', '1')
+    expect(encryptedData.data[0]).toHaveProperty('c')
+    expect(encryptedData.data[1]).toHaveProperty('id', '2')
+    expect(encryptedData.data[1]).toHaveProperty('c')
+    expect(encryptedData.data[2]).toHaveProperty('id', '3')
+    expect(encryptedData.data[2]).toHaveProperty('c', null)
+
+    // Verify encrypted values are different from plaintext
+    expect(encryptedData.data[0].c).not.toBe('hello@example.com')
+    expect(encryptedData.data[1].c).not.toBe('world@example.com')
+  }, 30000)
+
+  it('should bulk encrypt simple arrays', async () => {
+    const plaintexts = ['hello@example.com', 'world@example.com', null]
+
+    const encryptedData = await protectClient.bulkEncrypt(plaintexts, {
+      column: users.email,
+      table: users,
+    })
+
+    if (encryptedData.failure) {
+      throw new Error(`[protect]: ${encryptedData.failure.message}`)
+    }
+
+    // Verify encrypted data structure
+    expect(encryptedData.data).toHaveLength(3)
+    expect(encryptedData.data[0]).toHaveProperty('c')
+    expect(encryptedData.data[1]).toHaveProperty('c')
+    expect(encryptedData.data[2]).toBeNull()
+
+    // Verify encrypted values are different from plaintext
+    expect(encryptedData.data[0]).not.toBe('hello@example.com')
+    expect(encryptedData.data[1]).not.toBe('world@example.com')
+  }, 30000)
+
+  it('should return empty array if plaintexts is empty', async () => {
+    const encryptedData = await protectClient.bulkEncrypt([], {
+      column: users.email,
+      table: users,
+    })
+
+    if (encryptedData.failure) {
+      throw new Error(`[protect]: ${encryptedData.failure.message}`)
+    }
+
+    expect(encryptedData.data).toEqual([])
+  }, 30000)
+
+  it('should handle mixed null and non-null values', async () => {
+    const plaintexts = [
+      { id: '1', plaintext: 'test1' },
+      { id: '2', plaintext: null },
+      { id: '3', plaintext: 'test3' },
+    ]
+
+    const encryptedData = await protectClient.bulkEncrypt(plaintexts, {
+      column: users.email,
+      table: users,
+    })
+
+    if (encryptedData.failure) {
+      throw new Error(`[protect]: ${encryptedData.failure.message}`)
+    }
+
+    expect(encryptedData.data).toHaveLength(3)
+    expect(encryptedData.data[0].c).not.toBeNull()
+    expect(encryptedData.data[1].c).toBeNull()
+    expect(encryptedData.data[2].c).not.toBeNull()
+  }, 30000)
+})
+
 // ------------------------
 // TODO get LockContext working in CI.
 // To manually test locally, uncomment the following lines and provide a valid JWT in the userJwt variable.

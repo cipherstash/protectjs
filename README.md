@@ -528,6 +528,46 @@ const decryptedUsers = decryptedResult.data;
 The model encryption methods provide a higher-level interface that's particularly useful when working with ORMs or when you need to encrypt multiple fields in an object.
 They automatically handle the mapping between your model's structure and the encrypted fields defined in your schema.
 
+#### Bulk encryption operations
+
+For encrypting multiple individual values (rather than entire models), use the `bulkEncrypt` method:
+
+```typescript
+import { protectClient } from "./protect";
+import { users } from "./protect/schema";
+
+// Array of payloads with IDs and plaintext values
+const plaintexts = [
+  { id: "1", plaintext: "user1@example.com" },
+  { id: "2", plaintext: "user2@example.com" },
+  { id: "3", plaintext: null },
+];
+
+// Encrypt multiple values at once
+const encryptedResult = await protectClient.bulkEncrypt(plaintexts, {
+  column: users.email,
+  table: users,
+});
+
+if (encryptedResult.failure) {
+  // Handle the failure
+}
+
+const encryptedData = encryptedResult.data;
+// Returns: [
+//   { id: "1", c: "encrypted_value_1" },
+//   { id: "2", c: "encrypted_value_2" },
+//   { id: "3", c: null }
+// ]
+
+// You can then decrypt individual values using the decrypt method
+const decryptedResult = await protectClient.decrypt(encryptedData[0].c);
+```
+
+The `bulkEncrypt` method is useful when you need to encrypt multiple values for the same column and table, but don't want to encrypt entire model objects. Each encrypted value maintains its own unique key while benefiting from ZeroKMS's bulk operation performance.
+
+The model encryption methods provide a higher-level interface that's particularly useful when working with ORMs or when you need to encrypt multiple fields in an object.
+
 ### Store encrypted data in a database
 
 Encrypted data can be stored in any database that supports JSONB, noting that searchable encryption is only supported in PostgreSQL at the moment.
@@ -716,6 +756,40 @@ const bulkEncryptedResult = await protectClient
 
 const bulkDecryptedResult = await protectClient
   .bulkDecryptModels(bulkEncryptedResult.data)
+  .withLockContext(lockContext);
+```
+
+### Bulk encryption operations with lock context
+
+Bulk encryption operations also support lock contexts for identity-aware encryption:
+
+```typescript
+import { protectClient } from "./protect";
+import { users } from "./protect/schema";
+
+const plaintexts = [
+  { id: "1", plaintext: "user1@example.com" },
+  { id: "2", plaintext: "user2@example.com" },
+  { id: "3", plaintext: null },
+];
+
+// Bulk encrypt with lock context
+const encryptedResult = await protectClient
+  .bulkEncrypt(plaintexts, {
+    column: users.email,
+    table: users,
+  })
+  .withLockContext(lockContext);
+
+if (encryptedResult.failure) {
+  // Handle the failure
+}
+
+const encryptedData = encryptedResult.data;
+
+// Decrypt individual values with lock context
+const decryptedResult = await protectClient
+  .decrypt(encryptedData[0].c)
   .withLockContext(lockContext);
 ```
 

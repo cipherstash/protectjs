@@ -70,3 +70,7 @@ export type {
 export * from './helpers'
 export * from './identify'
 export * from './types'
+export type {
+  BulkEncryptPayload,
+  BulkEncryptedData,
+} from './ffi/operations/bulk-encrypt'

@@ -19,6 +19,10 @@ import { EncryptOperation } from './operations/encrypt'
 import { DecryptOperation } from './operations/decrypt'
 import { SearchTermsOperation } from './operations/search-terms'
 import {
+  BulkEncryptOperation,
+  type BulkEncryptPayload,
+} from './operations/bulk-encrypt'
+import {
   type EncryptConfig,
   encryptConfigSchema,
   type ProtectTable,
@@ -76,9 +80,9 @@ export class ProtectClient {
         logger.info('Successfully initialized the Protect.js client.')
         return this
       },
-      (error) => ({
+      (error: unknown) => ({
         type: ProtectErrorTypes.ClientInitError,
-        message: error.message,
+        message: (error as Error).message,
       }),
     )
   }
@@ -151,6 +155,19 @@ export class ProtectClient {
     input: Array<T>,
   ): BulkDecryptModelsOperation<T> {
     return new BulkDecryptModelsOperation(this.client, input)
+  }
+
+  /**
+   * Bulk encryption - returns a thenable object.
+   * Usage:
+   *    await eqlClient.bulkEncrypt(plaintexts, { column, table })
+   *    await eqlClient.bulkEncrypt(plaintexts, { column, table }).withLockContext(lockContext)
+   */
+  bulkEncrypt(
+    plaintexts: BulkEncryptPayload,
+    opts: EncryptOptions,
+  ): BulkEncryptOperation {
+    return new BulkEncryptOperation(this.client, plaintexts, opts)
   }
 
   /**
