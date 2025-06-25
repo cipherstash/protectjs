@@ -104,6 +104,8 @@ class EncryptOperation implements PromiseLike<EncryptedPayload> {
       table: this.table,
     })
 
+    logger.debug('SHOULD NEVER BE LOGGED: Plaintext for encryption')
+
     const val = await ffiEncrypt(this.client, this.plaintext, this.column)
     return { c: val }
   }
@@ -161,6 +163,12 @@ class EncryptOperationWithLockContext implements PromiseLike<EncryptedPayload> {
       throw new Error(`[jseql]: ${context?.error}`)
     }
 
+    logger.debug('SENSITIVE TO BE DELETED: Lock context for encryption', {
+      context: context.context,
+      ctsToken: context.ctsToken,
+      accessToken: context.ctsToken?.accessToken,
+    })
+
     const val = await ffiEncrypt(
       client,
       plaintext,
@@ -210,6 +218,9 @@ class DecryptOperation implements PromiseLike<string | null> {
     }
 
     logger.debug('Decrypting data WITHOUT a lock context')
+
+    logger.debug('SHOULD NEVER BE LOGGED: Encrypted payload for decryption')
+
     return await ffiDecrypt(this.client, this.encryptedPayload.c)
   }
 
@@ -261,6 +272,12 @@ class DecryptOperationWithLockContext implements PromiseLike<string | null> {
     if (!context?.success) {
       throw new Error(`[jseql]: ${context?.error}`)
     }
+
+    logger.debug('SENSITIVE TO BE DELETED: Lock context for decryption', {
+      context: context.context,
+      ctsToken: context.ctsToken,
+      accessToken: context.ctsToken?.accessToken,
+    })
 
     return await ffiDecrypt(
       client,
@@ -325,6 +342,8 @@ class BulkEncryptOperation implements PromiseLike<BulkEncryptedData> {
       column: this.column,
       table: this.table,
     })
+
+    logger.debug('SHOULD NEVER BE LOGGED: Plaintexts for bulk encryption')
 
     const encryptedData = await ffiEncryptBulk(this.client, encryptPayloads)
     return encryptedData.map((enc, index) => ({
@@ -397,6 +416,12 @@ class BulkEncryptOperationWithLockContext
       throw new Error(`[jseql]: ${context?.error}`)
     }
 
+    logger.debug('SENSITIVE TO BE DELETED: Lock context for bulk encryption', {
+      context: context.context,
+      ctsToken: context.ctsToken,
+      accessToken: context.ctsToken?.accessToken,
+    })
+
     const encryptedData = await ffiEncryptBulk(
       client,
       encryptPayloads,
@@ -454,6 +479,10 @@ class BulkDecryptOperation implements PromiseLike<BulkDecryptedData> {
     }
 
     logger.debug('Bulk decrypting data WITHOUT a lock context')
+
+    logger.debug(
+      'SHOULD NEVER BE LOGGED: Encrypted payloads for bulk decryption',
+    )
 
     const decryptedData = await ffiDecryptBulk(this.client, decryptPayloads)
     return decryptedData.map((dec, index) => {
@@ -524,6 +553,12 @@ class BulkDecryptOperationWithLockContext
     if (!context.success) {
       throw new Error(`[jseql]: ${context?.error}`)
     }
+
+    logger.debug('SENSITIVE TO BE DELETED: Lock context for bulk decryption', {
+      context: context.context,
+      ctsToken: context.ctsToken,
+      accessToken: context.ctsToken?.accessToken,
+    })
 
     const decryptedData = await ffiDecryptBulk(
       client,

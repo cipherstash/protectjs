@@ -1,6 +1,6 @@
 {
 	"name": "@cipherstash/jseql",
-	"version": "4.0.0",
+	"version": "4.0.0-debug.0",
 	"description": "Encrypted Query Language JavaScript Library",
 	"keywords": [
 		"encrypted",
