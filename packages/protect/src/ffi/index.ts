@@ -10,6 +10,8 @@ import type {
   EncryptOptions,
   EncryptPayload,
   SearchTerm,
+  BulkEncryptPayload,
+  BulkDecryptPayload,
 } from '../types'
 import { EncryptModelOperation } from './operations/encrypt-model'
 import { DecryptModelOperation } from './operations/decrypt-model'
@@ -18,10 +20,8 @@ import { BulkDecryptModelsOperation } from './operations/bulk-decrypt-models'
 import { EncryptOperation } from './operations/encrypt'
 import { DecryptOperation } from './operations/decrypt'
 import { SearchTermsOperation } from './operations/search-terms'
-import {
-  BulkEncryptOperation,
-  type BulkEncryptPayload,
-} from './operations/bulk-encrypt'
+import { BulkEncryptOperation } from './operations/bulk-encrypt'
+import { BulkDecryptOperation } from './operations/bulk-decrypt'
 import {
   type EncryptConfig,
   encryptConfigSchema,
@@ -168,6 +168,16 @@ export class ProtectClient {
     opts: EncryptOptions,
   ): BulkEncryptOperation {
     return new BulkEncryptOperation(this.client, plaintexts, opts)
+  }
+
+  /**
+   * Bulk decryption - returns a thenable object.
+   * Usage:
+   *    await eqlClient.bulkDecrypt(encryptedPayloads)
+   *    await eqlClient.bulkDecrypt(encryptedPayloads).withLockContext(lockContext)
+   */
+  bulkDecrypt(encryptedPayloads: BulkDecryptPayload): BulkDecryptOperation {
+    return new BulkDecryptOperation(this.client, encryptedPayloads)
   }
 
   /**

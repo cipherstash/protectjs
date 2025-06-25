@@ -3,8 +3,14 @@ import { withResult, type Result } from '@byteslice/result'
 import { noClientError } from '../index'
 import { type ProtectError, ProtectErrorTypes } from '../..'
 import { logger } from '../../../../utils/logger'
-import type { LockContext } from '../../identify'
-import type { Client, EncryptOptions, EncryptedPayload } from '../../types'
+import type { LockContext, Context } from '../../identify'
+import type {
+  Client,
+  EncryptOptions,
+  EncryptedPayload,
+  BulkEncryptPayload,
+  BulkEncryptedData,
+} from '../../types'
 import type {
   ProtectColumn,
   ProtectValue,
@@ -13,13 +19,53 @@ import type {
 } from '../../schema'
 import { ProtectOperation } from './base-operation'
 
-// Types for bulk encryption
-export type BulkEncryptPayload =
-  | Array<{ id?: string; plaintext: string | null }>
-  | Array<string | null>
-export type BulkEncryptedData =
-  | Array<{ id?: string; c: EncryptedPayload }>
-  | Array<EncryptedPayload>
+// Helper functions for better composability
+const createEncryptPayloads = (
+  plaintexts: BulkEncryptPayload,
+  column: ProtectColumn | ProtectValue,
+  table: ProtectTable<ProtectTableColumn>,
+  lockContext?: Context,
+) => {
+  return plaintexts
+    .map((item, index) => ({ ...item, originalIndex: index }))
+    .filter(({ plaintext }) => plaintext !== null)
+    .map(({ id, plaintext, originalIndex }) => ({
+      id,
+      plaintext: plaintext as string,
+      column: column.getName(),
+      table: table.tableName,
+      originalIndex,
+      ...(lockContext && { lockContext }),
+    }))
+}
+
+const createNullResult = (
+  plaintexts: BulkEncryptPayload,
+): BulkEncryptedData => {
+  return plaintexts.map(({ id }) => ({ id, data: null }))
+}
+
+const mapEncryptedDataToResult = (
+  plaintexts: BulkEncryptPayload,
+  encryptedData: EncryptedPayload[],
+): BulkEncryptedData => {
+  const result: BulkEncryptedData = new Array(plaintexts.length)
+  let encryptedIndex = 0
+
+  for (let i = 0; i < plaintexts.length; i++) {
+    if (plaintexts[i].plaintext === null) {
+      result[i] = { id: plaintexts[i].id, data: null }
+    } else {
+      result[i] = {
+        id: plaintexts[i].id,
+        data: encryptedData[encryptedIndex],
+      }
+      encryptedIndex++
+    }
+  }
+
+  return result
+}
 
 export class BulkEncryptOperation extends ProtectOperation<BulkEncryptedData> {
   private client: Client
@@ -56,79 +102,22 @@ export class BulkEncryptOperation extends ProtectOperation<BulkEncryptedData> {
         if (!this.client) {
           throw noClientError()
         }
-
         if (!this.plaintexts || this.plaintexts.length === 0) {
           return []
         }
 
-        // If input is array of strings/nulls
-        const isSimpleArray =
-          typeof this.plaintexts[0] === 'string' || this.plaintexts[0] === null
-        if (isSimpleArray) {
-          const simplePlaintexts = this.plaintexts as Array<string | null>
-          const nonNullPayloads = simplePlaintexts
-            .map((plaintext, index) => ({ plaintext, index }))
-            .filter(({ plaintext }) => plaintext !== null)
-            .map(({ plaintext, index }) => ({
-              plaintext: plaintext as string,
-              column: this.column.getName(),
-              table: this.table.tableName,
-              originalIndex: index,
-            }))
-          if (nonNullPayloads.length === 0) {
-            return simplePlaintexts.map(() => null)
-          }
-          const encryptedData = await encryptBulk(this.client, nonNullPayloads)
-          const result: Array<EncryptedPayload> = new Array(
-            simplePlaintexts.length,
-          )
-          let encryptedIndex = 0
-          for (let i = 0; i < simplePlaintexts.length; i++) {
-            if (simplePlaintexts[i] === null) {
-              result[i] = null
-            } else {
-              result[i] = encryptedData[encryptedIndex]
-              encryptedIndex++
-            }
-          }
-          return result
+        const nonNullPayloads = createEncryptPayloads(
+          this.plaintexts,
+          this.column,
+          this.table,
+        )
+
+        if (nonNullPayloads.length === 0) {
+          return createNullResult(this.plaintexts)
         }
 
-        // If input is array of objects (with or without id)
-        const objPlaintexts = this.plaintexts as Array<{
-          id?: string
-          plaintext: string | null
-        }>
-        const nonNullPayloads = objPlaintexts
-          .map((item, index) => ({ ...item, originalIndex: index }))
-          .filter(({ plaintext }) => plaintext !== null)
-          .map(({ id, plaintext, originalIndex }) => ({
-            id,
-            plaintext: plaintext as string,
-            column: this.column.getName(),
-            table: this.table.tableName,
-            originalIndex,
-          }))
-        if (nonNullPayloads.length === 0) {
-          return objPlaintexts.map(({ id }) => ({ id, c: null }))
-        }
         const encryptedData = await encryptBulk(this.client, nonNullPayloads)
-        const result: Array<{ id?: string; c: EncryptedPayload }> = new Array(
-          objPlaintexts.length,
-        )
-        let encryptedIndex = 0
-        for (let i = 0; i < objPlaintexts.length; i++) {
-          if (objPlaintexts[i].plaintext === null) {
-            result[i] = { id: objPlaintexts[i].id, c: null }
-          } else {
-            result[i] = {
-              id: objPlaintexts[i].id,
-              c: encryptedData[encryptedIndex],
-            }
-            encryptedIndex++
-          }
-        }
-        return result
+        return mapEncryptedDataToResult(this.plaintexts, encryptedData)
       },
       (error: unknown) => ({
         type: ProtectErrorTypes.EncryptionError,
@@ -167,95 +156,42 @@ export class BulkEncryptOperationWithLockContext extends ProtectOperation<BulkEn
       async () => {
         const { client, plaintexts, column, table } =
           this.operation.getOperation()
+
         logger.debug('Bulk encrypting data WITH a lock context', {
           column: column.getName(),
           table: table.tableName,
         })
+
         if (!client) {
           throw noClientError()
         }
         if (!plaintexts || plaintexts.length === 0) {
           return []
         }
+
         const context = await this.lockContext.getLockContext()
         if (context.failure) {
           throw new Error(`[protect]: ${context.failure.message}`)
         }
-        const isSimpleArray =
-          typeof plaintexts[0] === 'string' || plaintexts[0] === null
-        if (isSimpleArray) {
-          const simplePlaintexts = plaintexts as Array<string | null>
-          const nonNullPayloads = simplePlaintexts
-            .map((plaintext, index) => ({ plaintext, index }))
-            .filter(({ plaintext }) => plaintext !== null)
-            .map(({ plaintext, index }) => ({
-              plaintext: plaintext as string,
-              column: column.getName(),
-              table: table.tableName,
-              lockContext: context.data.context,
-              originalIndex: index,
-            }))
-          if (nonNullPayloads.length === 0) {
-            return simplePlaintexts.map(() => null)
-          }
-          const encryptedData = await encryptBulk(
-            client,
-            nonNullPayloads,
-            context.data.ctsToken,
-          )
-          const result: Array<EncryptedPayload> = new Array(
-            simplePlaintexts.length,
-          )
-          let encryptedIndex = 0
-          for (let i = 0; i < simplePlaintexts.length; i++) {
-            if (simplePlaintexts[i] === null) {
-              result[i] = null
-            } else {
-              result[i] = encryptedData[encryptedIndex]
-              encryptedIndex++
-            }
-          }
-          return result
-        }
-        const objPlaintexts = plaintexts as Array<{
-          id?: string
-          plaintext: string | null
-        }>
-        const nonNullPayloads = objPlaintexts
-          .map((item, index) => ({ ...item, originalIndex: index }))
-          .filter(({ plaintext }) => plaintext !== null)
-          .map(({ id, plaintext, originalIndex }) => ({
-            id,
-            plaintext: plaintext as string,
-            column: column.getName(),
-            table: table.tableName,
-            lockContext: context.data.context,
-            originalIndex,
-          }))
+
+        const nonNullPayloads = createEncryptPayloads(
+          plaintexts,
+          column,
+          table,
+          context.data.context,
+        )
+
         if (nonNullPayloads.length === 0) {
-          return objPlaintexts.map(({ id }) => ({ id, c: null }))
+          return createNullResult(plaintexts)
         }
+
         const encryptedData = await encryptBulk(
           client,
           nonNullPayloads,
           context.data.ctsToken,
         )
-        const result: Array<{ id?: string; c: EncryptedPayload }> = new Array(
-          objPlaintexts.length,
-        )
-        let encryptedIndex = 0
-        for (let i = 0; i < objPlaintexts.length; i++) {
-          if (objPlaintexts[i].plaintext === null) {
-            result[i] = { id: objPlaintexts[i].id, c: null }
-          } else {
-            result[i] = {
-              id: objPlaintexts[i].id,
-              c: encryptedData[encryptedIndex],
-            }
-            encryptedIndex++
-          }
-        }
-        return result
+
+        return mapEncryptedDataToResult(plaintexts, encryptedData)
       },
       (error: unknown) => ({
         type: ProtectErrorTypes.EncryptionError,

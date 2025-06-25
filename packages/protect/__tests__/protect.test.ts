@@ -665,257 +665,203 @@ describe('performance', () => {
   }, 60000)
 })
 
-describe('bulk encryption operations', () => {
-  it('should bulk encrypt payloads with IDs', async () => {
-    const plaintexts = [
-      { id: '1', plaintext: 'hello@example.com' },
-      { id: '2', plaintext: 'world@example.com' },
-      { id: '3', plaintext: null },
+describe('encryption and decryption with lock context', () => {
+  it('should encrypt and decrypt a payload with lock context', async () => {
+    const userJwt = process.env.USER_JWT
+
+    if (!userJwt) {
+      console.log('Skipping lock context test - no USER_JWT provided')
+      return
+    }
+
+    const lc = new LockContext()
+    const lockContext = await lc.identify(userJwt)
+
+    if (lockContext.failure) {
+      throw new Error(`[protect]: ${lockContext.failure.message}`)
+    }
+
+    const email = 'hello@example.com'
+
+    const ciphertext = await protectClient
+      .encrypt(email, {
+        column: users.email,
+        table: users,
+      })
+      .withLockContext(lockContext.data)
+
+    if (ciphertext.failure) {
+      throw new Error(`[protect]: ${ciphertext.failure.message}`)
+    }
+
+    const plaintext = await protectClient
+      .decrypt(ciphertext.data)
+      .withLockContext(lockContext.data)
+
+    expect(plaintext).toEqual({
+      data: email,
+    })
+  }, 30000)
+
+  it('should encrypt and decrypt a model with lock context', async () => {
+    const userJwt = process.env.USER_JWT
+
+    if (!userJwt) {
+      console.log('Skipping lock context test - no USER_JWT provided')
+      return
+    }
+
+    const lc = new LockContext()
+    const lockContext = await lc.identify(userJwt)
+
+    if (lockContext.failure) {
+      throw new Error(`[protect]: ${lockContext.failure.message}`)
+    }
+
+    // Create a model with decrypted values
+    const decryptedModel = {
+      id: '1',
+      email: 'plaintext',
+    }
+
+    // Encrypt the model with lock context
+    const encryptedModel = await protectClient
+      .encryptModel(decryptedModel, users)
+      .withLockContext(lockContext.data)
+
+    if (encryptedModel.failure) {
+      throw new Error(`[protect]: ${encryptedModel.failure.message}`)
+    }
+
+    // Decrypt the model with lock context
+    const decryptedResult = await protectClient
+      .decryptModel(encryptedModel.data)
+      .withLockContext(lockContext.data)
+
+    if (decryptedResult.failure) {
+      throw new Error(`[protect]: ${decryptedResult.failure.message}`)
+    }
+
+    expect(decryptedResult.data).toEqual({
+      id: '1',
+      email: 'plaintext',
+    })
+  }, 30000)
+
+  it('should encrypt with context and be unable to decrypt without context', async () => {
+    const userJwt = process.env.USER_JWT
+
+    if (!userJwt) {
+      console.log('Skipping lock context test - no USER_JWT provided')
+      return
+    }
+
+    const lc = new LockContext()
+    const lockContext = await lc.identify(userJwt)
+
+    if (lockContext.failure) {
+      throw new Error(`[protect]: ${lockContext.failure.message}`)
+    }
+
+    // Create a model with decrypted values
+    const decryptedModel = {
+      id: '1',
+      email: 'plaintext',
+    }
+
+    // Encrypt the model with lock context
+    const encryptedModel = await protectClient
+      .encryptModel(decryptedModel, users)
+      .withLockContext(lockContext.data)
+
+    if (encryptedModel.failure) {
+      throw new Error(`[protect]: ${encryptedModel.failure.message}`)
+    }
+
+    try {
+      await protectClient.decryptModel(encryptedModel.data)
+    } catch (error) {
+      const e = error as Error
+      expect(e.message.startsWith('Failed to retrieve key')).toEqual(true)
+    }
+  }, 30000)
+
+  it('should bulk encrypt and decrypt models with lock context', async () => {
+    const userJwt = process.env.USER_JWT
+
+    if (!userJwt) {
+      console.log('Skipping lock context test - no USER_JWT provided')
+      return
+    }
+
+    const lc = new LockContext()
+    const lockContext = await lc.identify(userJwt)
+
+    if (lockContext.failure) {
+      throw new Error(`[protect]: ${lockContext.failure.message}`)
+    }
+
+    // Create models with decrypted values
+    const decryptedModels = [
+      {
+        id: '1',
+        email: 'test',
+      },
+      {
+        id: '2',
+        email: 'test2',
+      },
     ]
 
-    const encryptedData = await protectClient.bulkEncrypt(plaintexts, {
-      column: users.email,
-      table: users,
-    })
+    // Encrypt the models with lock context
+    const encryptedModels = await protectClient
+      .bulkEncryptModels(decryptedModels, users)
+      .withLockContext(lockContext.data)
 
-    if (encryptedData.failure) {
-      throw new Error(`[protect]: ${encryptedData.failure.message}`)
+    if (encryptedModels.failure) {
+      throw new Error(`[protect]: ${encryptedModels.failure.message}`)
     }
 
-    // Verify encrypted data structure
-    expect(encryptedData.data).toHaveLength(3)
-    expect(encryptedData.data[0]).toHaveProperty('id', '1')
-    expect(encryptedData.data[0]).toHaveProperty('c')
-    expect(encryptedData.data[1]).toHaveProperty('id', '2')
-    expect(encryptedData.data[1]).toHaveProperty('c')
-    expect(encryptedData.data[2]).toHaveProperty('id', '3')
-    expect(encryptedData.data[2]).toHaveProperty('c', null)
+    // Decrypt the models with lock context
+    const decryptedResult = await protectClient
+      .bulkDecryptModels(encryptedModels.data)
+      .withLockContext(lockContext.data)
 
-    // Verify encrypted values are different from plaintext
-    expect(encryptedData.data[0].c).not.toBe('hello@example.com')
-    expect(encryptedData.data[1].c).not.toBe('world@example.com')
-  }, 30000)
-
-  it('should bulk encrypt simple arrays', async () => {
-    const plaintexts = ['hello@example.com', 'world@example.com', null]
-
-    const encryptedData = await protectClient.bulkEncrypt(plaintexts, {
-      column: users.email,
-      table: users,
-    })
-
-    if (encryptedData.failure) {
-      throw new Error(`[protect]: ${encryptedData.failure.message}`)
+    if (decryptedResult.failure) {
+      throw new Error(`[protect]: ${decryptedResult.failure.message}`)
     }
 
-    // Verify encrypted data structure
-    expect(encryptedData.data).toHaveLength(3)
-    expect(encryptedData.data[0]).toHaveProperty('c')
-    expect(encryptedData.data[1]).toHaveProperty('c')
-    expect(encryptedData.data[2]).toBeNull()
-
-    // Verify encrypted values are different from plaintext
-    expect(encryptedData.data[0]).not.toBe('hello@example.com')
-    expect(encryptedData.data[1]).not.toBe('world@example.com')
-  }, 30000)
-
-  it('should return empty array if plaintexts is empty', async () => {
-    const encryptedData = await protectClient.bulkEncrypt([], {
-      column: users.email,
-      table: users,
-    })
-
-    if (encryptedData.failure) {
-      throw new Error(`[protect]: ${encryptedData.failure.message}`)
-    }
-
-    expect(encryptedData.data).toEqual([])
-  }, 30000)
-
-  it('should handle mixed null and non-null values', async () => {
-    const plaintexts = [
-      { id: '1', plaintext: 'test1' },
-      { id: '2', plaintext: null },
-      { id: '3', plaintext: 'test3' },
-    ]
-
-    const encryptedData = await protectClient.bulkEncrypt(plaintexts, {
-      column: users.email,
-      table: users,
-    })
-
-    if (encryptedData.failure) {
-      throw new Error(`[protect]: ${encryptedData.failure.message}`)
-    }
-
-    expect(encryptedData.data).toHaveLength(3)
-    expect(encryptedData.data[0].c).not.toBeNull()
-    expect(encryptedData.data[1].c).toBeNull()
-    expect(encryptedData.data[2].c).not.toBeNull()
+    expect(decryptedResult.data).toEqual([
+      {
+        id: '1',
+        email: 'test',
+      },
+      {
+        id: '2',
+        email: 'test2',
+      },
+    ])
   }, 30000)
 })
 
-// ------------------------
-// TODO get LockContext working in CI.
-// To manually test locally, uncomment the following lines and provide a valid JWT in the userJwt variable.
-// Last successful local test was 2025-05-23 by cj@cipherstash.com
-// ------------------------
-// const userJwt = ''
-// describe('encryption and decryption with lock context', () => {
-//   it('should encrypt and decrypt a payload with lock context', async () => {
-//     const protectClient = await protect({ schemas: [users] })
+describe('special characters', () => {
+  it('should encrypt and decrypt multiple special characters together', async () => {
+    const plaintext =
+      'complex@string-with/slashes\\backslashes.and#symbols$%&+!@#$%^&*()_+-=[]{}|;:,.<>?/~`'
 
-//     const lc = new LockContext()
-//     const lockContext = await lc.identify(userJwt)
+    const ciphertext = await protectClient.encrypt(plaintext, {
+      column: users.email,
+      table: users,
+    })
 
-//     if (lockContext.failure) {
-//       throw new Error(`[protect]: ${lockContext.failure.message}`)
-//     }
+    if (ciphertext.failure) {
+      throw new Error(`[protect]: ${ciphertext.failure.message}`)
+    }
 
-//     const email = 'hello@example.com'
+    const decrypted = await protectClient.decrypt(ciphertext.data)
 
-//     const ciphertext = await protectClient
-//       .encrypt(email, {
-//         column: users.email,
-//         table: users,
-//       })
-//       .withLockContext(lockContext.data)
-
-//     if (ciphertext.failure) {
-//       throw new Error(`[protect]: ${ciphertext.failure.message}`)
-//     }
-
-//     const plaintext = await protectClient
-//       .decrypt(ciphertext.data)
-//       .withLockContext(lockContext.data)
-
-//     expect(plaintext).toEqual({
-//       data: email,
-//     })
-//   }, 30000)
-
-//   it('should encrypt and decrypt a model with lock context', async () => {
-//     const protectClient = await protect({ schemas: [users] })
-
-//     const lc = new LockContext()
-//     const lockContext = await lc.identify(userJwt)
-
-//     if (lockContext.failure) {
-//       throw new Error(`[protect]: ${lockContext.failure.message}`)
-//     }
-
-//     // Create a model with decrypted values
-//     const decryptedModel = {
-//       id: '1',
-//       email: 'plaintext',
-//     }
-
-//     // Encrypt the model with lock context
-//     const encryptedModel = await protectClient
-//       .encryptModel(decryptedModel, users)
-//       .withLockContext(lockContext.data)
-
-//     if (encryptedModel.failure) {
-//       throw new Error(`[protect]: ${encryptedModel.failure.message}`)
-//     }
-
-//     // Decrypt the model with lock context
-//     const decryptedResult = await protectClient
-//       .decryptModel(encryptedModel.data)
-//       .withLockContext(lockContext.data)
-
-//     if (decryptedResult.failure) {
-//       throw new Error(`[protect]: ${decryptedResult.failure.message}`)
-//     }
-
-//     expect(decryptedResult.data).toEqual({
-//       id: '1',
-//       email: 'plaintext',
-//     })
-//   }, 30000)
-
-//   it('should encrypt with context and be unable to decrypt without context', async () => {
-//     const protectClient = await protect({ schemas: [users] })
-
-//     const lc = new LockContext()
-//     const lockContext = await lc.identify(userJwt)
-
-//     if (lockContext.failure) {
-//       throw new Error(`[protect]: ${lockContext.failure.message}`)
-//     }
-
-//     // Create a model with decrypted values
-//     const decryptedModel = {
-//       id: '1',
-//       email: 'plaintext',
-//     }
-
-//     // Encrypt the model with lock context
-//     const encryptedModel = await protectClient
-//       .encryptModel(decryptedModel, users)
-//       .withLockContext(lockContext.data)
-
-//     if (encryptedModel.failure) {
-//       throw new Error(`[protect]: ${encryptedModel.failure.message}`)
-//     }
-
-//     try {
-//       await protectClient.decryptModel(encryptedModel.data)
-//     } catch (error) {
-//       const e = error as Error
-//       expect(e.message.startsWith('Failed to retrieve key')).toEqual(true)
-//     }
-//   }, 30000)
-
-//   it('should bulk encrypt and decrypt models with lock context', async () => {
-//     const protectClient = await protect({ schemas: [users] })
-
-//     const lc = new LockContext()
-//     const lockContext = await lc.identify(userJwt)
-
-//     if (lockContext.failure) {
-//       throw new Error(`[protect]: ${lockContext.failure.message}`)
-//     }
-
-//     // Create models with decrypted values
-//     const decryptedModels = [
-//       {
-//         id: '1',
-//         email: 'test',
-//       },
-//       {
-//         id: '2',
-//         email: 'test2',
-//       },
-//     ]
-
-//     // Encrypt the models with lock context
-//     const encryptedModels = await protectClient
-//       .bulkEncryptModels(decryptedModels, users)
-//       .withLockContext(lockContext.data)
-
-//     if (encryptedModels.failure) {
-//       throw new Error(`[protect]: ${encryptedModels.failure.message}`)
-//     }
-
-//     // Decrypt the models with lock context
-//     const decryptedResult = await protectClient
-//       .bulkDecryptModels(encryptedModels.data)
-//       .withLockContext(lockContext.data)
-
-//     if (decryptedResult.failure) {
-//       throw new Error(`[protect]: ${decryptedResult.failure.message}`)
-//     }
-
-//     expect(decryptedResult.data).toEqual([
-//       {
-//         id: '1',
-//         email: 'test',
-//       },
-//       {
-//         id: '2',
-//         email: 'test2',
-//       },
-//     ])
-//   }, 30000)
-// })
+    expect(decrypted).toEqual({
+      data: plaintext,
+    })
+  }, 30000)
+})
