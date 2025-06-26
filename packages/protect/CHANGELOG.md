@@ -1,5 +1,12 @@
 # @cipherstash/protect
 
+## 9.4.1
+
+### Patch Changes
+
+- Updated dependencies [d0b02ea]
+  - @cipherstash/schema@0.1.0
+
 ## 9.4.0
 
 ### Minor Changes
