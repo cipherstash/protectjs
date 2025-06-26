@@ -530,7 +530,8 @@ They automatically handle the mapping between your model's structure and the enc
 
 ### Bulk operations
 
-Protect.js provides direct access to ZeroKMS bulk operations through the `bulkEncrypt` and `bulkDecrypt` methods. These methods are ideal when you need maximum performance and want to handle the correlation between encrypted/decrypted values and your application data manually.
+Protect.js provides direct access to ZeroKMS bulk operations through the `bulkEncrypt` and `bulkDecrypt` methods.
+These methods are ideal when you need maximum performance and want to handle the correlation between encrypted/decrypted values and your application data manually.
 
 > [!TIP]
 > The bulk operations provide the most direct interface to ZeroKMS's blazing fast bulk encryption and decryption capabilities. Each value gets a unique key while maintaining optimal performance through a single call to ZeroKMS.
@@ -628,7 +629,8 @@ The `bulkDecrypt` method returns an array of objects with the following structur
 
 #### Response structure
 
-The `bulkDecrypt` method returns a `Result` object that represents the overall operation status. When successful from an HTTP and execution perspective, the `data` field contains an array where each item can have one of two outcomes:
+The `bulkDecrypt` method returns a `Result` object that represents the overall operation status.
+When successful from an HTTP and execution perspective, the `data` field contains an array where each item can have one of two outcomes:
 
 - **Success**: The item has a `data` field containing the decrypted plaintext
 - **Failure**: The item has an `error` field containing a specific error message explaining why that particular decryption failed
