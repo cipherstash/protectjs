@@ -501,6 +501,83 @@ describe('bulk encryption and decryption', () => {
       expect(decryptedData.data[1]).toHaveProperty('data')
       expect(decryptedData.data[1].data).toBeNull()
     }, 30000)
+
+    it('should decrypt mixed lock context payloads with specific lock context', async () => {
+      const userJwt = process.env.USER_JWT
+      const user2Jwt = process.env.USER_2_JWT
+
+      if (!userJwt || !user2Jwt) {
+        console.log(
+          'Skipping mixed lock context test - missing USER_JWT or USER_2_JWT',
+        )
+        return
+      }
+
+      const lc = new LockContext()
+      const lc2 = new LockContext()
+      const lockContext1 = await lc.identify(userJwt)
+      const lockContext2 = await lc2.identify(user2Jwt)
+
+      if (lockContext1.failure) {
+        throw new Error(`[protect]: ${lockContext1.failure.message}`)
+      }
+
+      if (lockContext2.failure) {
+        throw new Error(`[protect]: ${lockContext2.failure.message}`)
+      }
+
+      // Encrypt first value with USER_JWT lock context
+      const encryptedData1 = await protectClient
+        .bulkEncrypt([{ id: 'user1', plaintext: 'alice@example.com' }], {
+          column: users.email,
+          table: users,
+        })
+        .withLockContext(lockContext1.data)
+
+      if (encryptedData1.failure) {
+        throw new Error(`[protect]: ${encryptedData1.failure.message}`)
+      }
+
+      // Encrypt second value with USER_2_JWT lock context
+      const encryptedData2 = await protectClient
+        .bulkEncrypt([{ id: 'user2', plaintext: 'bob@example.com' }], {
+          column: users.email,
+          table: users,
+        })
+        .withLockContext(lockContext2.data)
+
+      if (encryptedData2.failure) {
+        throw new Error(`[protect]: ${encryptedData2.failure.message}`)
+      }
+
+      // Combine both encrypted payloads
+      const combinedEncryptedData = [
+        ...encryptedData1.data,
+        ...encryptedData2.data,
+      ]
+
+      // Decrypt with USER_2_JWT lock context
+      const decryptedData = await protectClient
+        .bulkDecrypt(combinedEncryptedData)
+        .withLockContext(lockContext2.data)
+
+      if (decryptedData.failure) {
+        throw new Error(`[protect]: ${decryptedData.failure.message}`)
+      }
+
+      // Verify both payloads are returned
+      expect(decryptedData.data).toHaveLength(2)
+
+      // First payload should fail to decrypt since it was encrypted with different lock context
+      expect(decryptedData.data[0]).toHaveProperty('id', 'user1')
+      expect(decryptedData.data[0]).toHaveProperty('error')
+      expect(decryptedData.data[0]).not.toHaveProperty('data')
+
+      // Second payload should be decrypted since it was encrypted with the same lock context
+      expect(decryptedData.data[1]).toHaveProperty('id', 'user2')
+      expect(decryptedData.data[1]).toHaveProperty('data', 'bob@example.com')
+      expect(decryptedData.data[1]).not.toHaveProperty('error')
+    }, 30000)
   })
 
   describe('bulk operations round-trip', () => {
