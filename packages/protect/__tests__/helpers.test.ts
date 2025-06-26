@@ -1,10 +1,10 @@
+import { describe, expect, it } from 'vitest'
 import {
   encryptedToPgComposite,
   modelToEncryptedPgComposites,
   bulkModelsToEncryptedPgComposites,
   isEncryptedPayload,
 } from '../src/helpers'
-import { describe, expect, it } from 'vitest'
 
 describe('helpers', () => {
   describe('encryptedToPgComposite', () => {

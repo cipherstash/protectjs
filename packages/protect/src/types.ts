@@ -1,7 +1,10 @@
 import type { newClient, Encrypted } from '@cipherstash/protect-ffi'
-import type { ProtectTableColumn, ProtectValue } from './schema'
-import type { ProtectTable } from './schema'
-import type { ProtectColumn } from './schema'
+import type {
+  ProtectTableColumn,
+  ProtectValue,
+  ProtectTable,
+  ProtectColumn,
+} from '@cipherstash/schema'
 
 /**
  * Type to represent the client object

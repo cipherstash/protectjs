@@ -15,7 +15,7 @@ import type {
   ProtectValue,
   ProtectTable,
   ProtectTableColumn,
-} from '../../schema'
+} from '@cipherstash/schema'
 import { ProtectOperation } from './base-operation'
 
 export class EncryptOperation extends ProtectOperation<EncryptedPayload> {
