@@ -10,6 +10,8 @@ import type {
   EncryptOptions,
   EncryptPayload,
   SearchTerm,
+  BulkEncryptPayload,
+  BulkDecryptPayload,
 } from '../types'
 import { EncryptModelOperation } from './operations/encrypt-model'
 import { DecryptModelOperation } from './operations/decrypt-model'
@@ -18,6 +20,8 @@ import { BulkDecryptModelsOperation } from './operations/bulk-decrypt-models'
 import { EncryptOperation } from './operations/encrypt'
 import { DecryptOperation } from './operations/decrypt'
 import { SearchTermsOperation } from './operations/search-terms'
+import { BulkEncryptOperation } from './operations/bulk-encrypt'
+import { BulkDecryptOperation } from './operations/bulk-decrypt'
 import {
   type EncryptConfig,
   encryptConfigSchema,
@@ -76,9 +80,9 @@ export class ProtectClient {
         logger.info('Successfully initialized the Protect.js client.')
         return this
       },
-      (error) => ({
+      (error: unknown) => ({
         type: ProtectErrorTypes.ClientInitError,
-        message: error.message,
+        message: (error as Error).message,
       }),
     )
   }
@@ -151,6 +155,29 @@ export class ProtectClient {
     input: Array<T>,
   ): BulkDecryptModelsOperation<T> {
     return new BulkDecryptModelsOperation(this.client, input)
+  }
+
+  /**
+   * Bulk encryption - returns a thenable object.
+   * Usage:
+   *    await eqlClient.bulkEncrypt(plaintexts, { column, table })
+   *    await eqlClient.bulkEncrypt(plaintexts, { column, table }).withLockContext(lockContext)
+   */
+  bulkEncrypt(
+    plaintexts: BulkEncryptPayload,
+    opts: EncryptOptions,
+  ): BulkEncryptOperation {
+    return new BulkEncryptOperation(this.client, plaintexts, opts)
+  }
+
+  /**
+   * Bulk decryption - returns a thenable object.
+   * Usage:
+   *    await eqlClient.bulkDecrypt(encryptedPayloads)
+   *    await eqlClient.bulkDecrypt(encryptedPayloads).withLockContext(lockContext)
+   */
+  bulkDecrypt(encryptedPayloads: BulkDecryptPayload): BulkDecryptOperation {
+    return new BulkDecryptOperation(this.client, encryptedPayloads)
   }
 
   /**

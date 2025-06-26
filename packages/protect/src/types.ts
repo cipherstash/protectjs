@@ -70,3 +70,29 @@ export type DecryptedFields<T> = {
  * Represents a model with plaintext (decrypted) values instead of the EQL/JSONB types
  */
 export type Decrypted<T> = OtherFields<T> & DecryptedFields<T>
+
+/**
+ * Types for bulk encryption and decryption operations.
+ */
+export type BulkEncryptPayload = Array<{
+  id?: string
+  plaintext: string | null
+}>
+
+export type BulkEncryptedData = Array<{ id?: string; data: EncryptedPayload }>
+export type BulkDecryptPayload = Array<{ id?: string; data: EncryptedPayload }>
+export type BulkDecryptedData = Array<DecryptionResult<string | null>>
+
+type DecryptionSuccess<T> = {
+  error?: never
+  data: T
+  id?: string
+}
+
+type DecryptionError<T> = {
+  error: T
+  id?: string
+  data?: never
+}
+
+export type DecryptionResult<T> = DecryptionSuccess<T> | DecryptionError<T>

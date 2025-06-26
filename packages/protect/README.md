@@ -528,6 +528,231 @@ const decryptedUsers = decryptedResult.data;
 The model encryption methods provide a higher-level interface that's particularly useful when working with ORMs or when you need to encrypt multiple fields in an object.
 They automatically handle the mapping between your model's structure and the encrypted fields defined in your schema.
 
+### Bulk operations
+
+Protect.js provides direct access to ZeroKMS bulk operations through the `bulkEncrypt` and `bulkDecrypt` methods.
+These methods are ideal when you need maximum performance and want to handle the correlation between encrypted/decrypted values and your application data manually.
+
+> [!TIP]
+> The bulk operations provide the most direct interface to ZeroKMS's blazing fast bulk encryption and decryption capabilities. Each value gets a unique key while maintaining optimal performance through a single call to ZeroKMS.
+
+#### Bulk encryption
+
+Use the `bulkEncrypt` method to encrypt multiple plaintext values at once:
+
+```typescript
+import { protectClient } from "./protect";
+import { users } from "./protect/schema";
+
+// Array of plaintext values with optional IDs for correlation
+const plaintexts = [
+  { id: "user1", plaintext: "alice@example.com" },
+  { id: "user2", plaintext: "bob@example.com" },
+  { id: "user3", plaintext: "charlie@example.com" },
+];
+
+const encryptedResult = await protectClient.bulkEncrypt(plaintexts, {
+  column: users.email,
+  table: users,
+});
+
+if (encryptedResult.failure) {
+  // Handle the failure
+  console.log(
+    "error when bulk encrypting:",
+    encryptedResult.failure.type,
+    encryptedResult.failure.message
+  );
+}
+
+const encryptedData = encryptedResult.data;
+console.log("encrypted data:", encryptedData);
+```
+
+The `bulkEncrypt` method returns an array of objects with the following structure:
+
+```typescript
+[
+  { id: "user1", data: EncryptedPayload },
+  { id: "user2", data: EncryptedPayload },
+  { id: "user3", data: EncryptedPayload },
+]
+```
+
+You can also encrypt without IDs if you don't need correlation:
+
+```typescript
+const plaintexts = [
+  { plaintext: "alice@example.com" },
+  { plaintext: "bob@example.com" },
+  { plaintext: "charlie@example.com" },
+];
+
+const encryptedResult = await protectClient.bulkEncrypt(plaintexts, {
+  column: users.email,
+  table: users,
+});
+```
+
+#### Bulk decryption
+
+Use the `bulkDecrypt` method to decrypt multiple encrypted values at once:
+
+```typescript
+import { protectClient } from "./protect";
+
+// encryptedData is the result from bulkEncrypt
+const decryptedResult = await protectClient.bulkDecrypt(encryptedData);
+
+if (decryptedResult.failure) {
+  // Handle the failure
+  console.log(
+    "error when bulk decrypting:",
+    decryptedResult.failure.type,
+    decryptedResult.failure.message
+  );
+}
+
+const decryptedData = decryptedResult.data;
+console.log("decrypted data:", decryptedData);
+```
+
+The `bulkDecrypt` method returns an array of objects with the following structure:
+
+```typescript
+[
+  { id: "user1", data: "alice@example.com" },
+  { id: "user2", data: "bob@example.com" },
+  { id: "user3", data: "charlie@example.com" },
+]
+```
+
+#### Response structure
+
+The `bulkDecrypt` method returns a `Result` object that represents the overall operation status.
+When successful from an HTTP and execution perspective, the `data` field contains an array where each item can have one of two outcomes:
+
+- **Success**: The item has a `data` field containing the decrypted plaintext
+- **Failure**: The item has an `error` field containing a specific error message explaining why that particular decryption failed
+
+```typescript
+// Example response structure
+{
+  data: [
+    { id: "user1", data: "alice@example.com" },           // Success
+    { id: "user2", error: "Invalid ciphertext format" },  // Failure
+    { id: "user3", data: "charlie@example.com" },         // Success
+  ]
+}
+```
+
+> [!NOTE]
+> The underlying ZeroKMS response uses HTTP status code 207 (Multi-Status) to indicate that the bulk operation completed, but individual items within the batch may have succeeded or failed. This allows you to handle partial failures gracefully while still processing the successful decryptions.
+
+You can handle mixed results by checking each item:
+
+```typescript
+const decryptedResult = await protectClient.bulkDecrypt(encryptedData);
+
+if (decryptedResult.failure) {
+  // Handle overall operation failure
+  console.log("Bulk decryption failed:", decryptedResult.failure.message);
+  return;
+}
+
+// Process individual results
+decryptedResult.data.forEach((item) => {
+  if ('data' in item) {
+    // Success - item.data contains the decrypted plaintext
+    console.log(`Decrypted ${item.id}:`, item.data);
+  } else if ('error' in item) {
+    // Failure - item.error contains the specific error message
+    console.log(`Failed to decrypt ${item.id}:`, item.error);
+  }
+});
+```
+
+#### Handling null values
+
+Bulk operations properly handle null values in both encryption and decryption:
+
+```typescript
+const plaintexts = [
+  { id: "user1", plaintext: "alice@example.com" },
+  { id: "user2", plaintext: null },
+  { id: "user3", plaintext: "charlie@example.com" },
+];
+
+const encryptedResult = await protectClient.bulkEncrypt(plaintexts, {
+  column: users.email,
+  table: users,
+});
+
+// Null values are preserved in the encrypted result
+// encryptedResult.data[1].data will be null
+
+const decryptedResult = await protectClient.bulkDecrypt(encryptedResult.data);
+
+// Null values are preserved in the decrypted result
+// decryptedResult.data[1].data will be null
+```
+
+#### Using bulk operations with lock contexts
+
+Bulk operations support identity-aware encryption through lock contexts:
+
+```typescript
+import { LockContext } from "@cipherstash/protect/identify";
+
+const lc = new LockContext();
+const lockContext = await lc.identify(userJwt);
+
+if (lockContext.failure) {
+  // Handle the failure
+}
+
+const plaintexts = [
+  { id: "user1", plaintext: "alice@example.com" },
+  { id: "user2", plaintext: "bob@example.com" },
+];
+
+// Encrypt with lock context
+const encryptedResult = await protectClient
+  .bulkEncrypt(plaintexts, {
+    column: users.email,
+    table: users,
+  })
+  .withLockContext(lockContext.data);
+
+// Decrypt with lock context
+const decryptedResult = await protectClient
+  .bulkDecrypt(encryptedResult.data)
+  .withLockContext(lockContext.data);
+```
+
+#### Performance considerations
+
+Bulk operations are optimized for performance and can handle thousands of values efficiently:
+
+```typescript
+// Create a large array of values
+const plaintexts = Array.from({ length: 1000 }, (_, i) => ({
+  id: `user${i}`,
+  plaintext: `user${i}@example.com`,
+}));
+
+// Single call to ZeroKMS for all 1000 values
+const encryptedResult = await protectClient.bulkEncrypt(plaintexts, {
+  column: users.email,
+  table: users,
+});
+
+// Single call to ZeroKMS for all 1000 values
+const decryptedResult = await protectClient.bulkDecrypt(encryptedResult.data);
+```
+
+The bulk operations maintain the same security guarantees as individual operations - each value gets a unique key - while providing optimal performance through ZeroKMS's bulk processing capabilities.
+
 ### Store encrypted data in a database
 
 Encrypted data can be stored in any database that supports JSONB, noting that searchable encryption is only supported in PostgreSQL at the moment.

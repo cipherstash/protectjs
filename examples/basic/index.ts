@@ -43,6 +43,32 @@ async function main() {
   console.log('Decrypting the ciphertext...')
   console.log('The plaintext is:', plaintext)
 
+  // Demonstrate bulk encryption
+  console.log('\n--- Bulk Encryption Demo ---')
+
+  const bulkPlaintexts = [
+    { id: '1', plaintext: 'Alice' },
+    { id: '2', plaintext: 'Bob' },
+    { id: '3', plaintext: 'Charlie' },
+    { id: '4', plaintext: null },
+  ]
+
+  console.log(
+    'Bulk encrypting names:',
+    bulkPlaintexts.map((p) => p.plaintext),
+  )
+
+  const bulkEncryptResult = await protectClient.bulkEncrypt(bulkPlaintexts, {
+    column: users.name,
+    table: users,
+  })
+
+  if (bulkEncryptResult.failure) {
+    throw new Error(`[protect]: ${bulkEncryptResult.failure.message}`)
+  }
+
+  console.log('Bulk encrypted data:', bulkEncryptResult.data)
+
   rl.close()
 }
 
