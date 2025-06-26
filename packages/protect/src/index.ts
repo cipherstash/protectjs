@@ -1,6 +1,6 @@
 import { ProtectClient } from './ffi'
-import type { ProtectTable, ProtectTableColumn } from './schema'
-import { buildEncryptConfig } from './schema'
+import type { ProtectTable, ProtectTableColumn } from '@cipherstash/schema'
+import { buildEncryptConfig } from '@cipherstash/schema'
 
 export const ProtectErrorTypes = {
   ClientInitError: 'ClientInitError',
@@ -60,13 +60,13 @@ export const protect = async (
 
 export type { Result } from '@byteslice/result'
 export type { ProtectClient } from './ffi'
-export { csTable, csColumn, csValue } from './schema'
+export { csTable, csColumn, csValue } from '@cipherstash/schema'
 export type {
   ProtectColumn,
   ProtectTable,
   ProtectTableColumn,
   ProtectValue,
-} from './schema'
+} from '@cipherstash/schema'
 export * from './helpers'
 export * from './identify'
 export * from './types'

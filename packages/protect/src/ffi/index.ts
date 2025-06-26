@@ -27,7 +27,7 @@ import {
   encryptConfigSchema,
   type ProtectTable,
   type ProtectTableColumn,
-} from '../schema'
+} from '@cipherstash/schema'
 
 export const noClientError = () =>
   new Error(

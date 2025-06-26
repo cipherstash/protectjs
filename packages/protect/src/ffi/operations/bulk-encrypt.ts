@@ -16,7 +16,7 @@ import type {
   ProtectValue,
   ProtectTable,
   ProtectTableColumn,
-} from '../../schema'
+} from '@cipherstash/schema'
 import { ProtectOperation } from './base-operation'
 
 // Helper functions for better composability

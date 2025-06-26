@@ -1,4 +1,4 @@
-import { csColumn, csTable, buildEncryptConfig, csValue } from '../src/schema'
+import { csColumn, csTable, buildEncryptConfig, csValue } from '../src'
 import { describe, it, expect } from 'vitest'
 
 describe('Schema with nested columns', () => {

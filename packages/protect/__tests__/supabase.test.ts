@@ -1,10 +1,8 @@
 import 'dotenv/config'
 import { describe, expect, it } from 'vitest'
-
+import { csTable, csColumn } from '@cipherstash/schema'
 import {
   protect,
-  csTable,
-  csColumn,
   type EncryptedPayload,
   encryptedToPgComposite,
   modelToEncryptedPgComposites,

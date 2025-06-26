@@ -8,7 +8,7 @@ import {
   bulkEncryptModels,
   bulkEncryptModelsWithLockContext,
 } from '../model-helpers'
-import type { ProtectTable, ProtectTableColumn } from '../../schema'
+import type { ProtectTable, ProtectTableColumn } from '@cipherstash/schema'
 import { ProtectOperation } from './base-operation'
 
 export class BulkEncryptModelsOperation<

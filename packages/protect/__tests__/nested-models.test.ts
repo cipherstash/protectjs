@@ -1,7 +1,7 @@
 import 'dotenv/config'
 import { describe, expect, it, vi } from 'vitest'
-
-import { LockContext, protect, csTable, csColumn, csValue } from '../src'
+import { csTable, csColumn, csValue } from '@cipherstash/schema'
+import { LockContext, protect } from '../src'
 
 const users = csTable('users', {
   email: csColumn('email').freeTextSearch().equality().orderAndRange(),

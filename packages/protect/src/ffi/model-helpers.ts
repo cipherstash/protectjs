@@ -4,7 +4,7 @@ import {
   type Encrypted,
 } from '@cipherstash/protect-ffi'
 import type { EncryptedPayload, Decrypted, Client } from '../types'
-import type { ProtectTable, ProtectTableColumn } from '../schema'
+import type { ProtectTable, ProtectTableColumn } from '@cipherstash/schema'
 import type { GetLockContextResponse } from '../identify'
 import { isEncryptedPayload } from '../helpers'
 

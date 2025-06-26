@@ -1,0 +1,45 @@
+{
+	"name": "@cipherstash/schema",
+	"version": "0.0.0",
+	"description": "CipherStash schema builder for TypeScript",
+	"keywords": [
+		"encrypted",
+		"protect",
+		"schema",
+		"builder"
+	],
+	"bugs": {
+		"url": "https://github.com/cipherstash/protectjs/issues"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/cipherstash/protectjs.git"
+	},
+	"license": "MIT",
+	"author": "CipherStash <hello@cipherstash.com>",
+	"type": "module",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js",
+			"require": "./dist/index.cjs"
+		}
+	},
+	"scripts": {
+		"build": "tsup",
+		"dev": "tsup --watch",
+		"test": "vitest run",
+		"release": "tsup"
+	},
+	"devDependencies": {
+		"tsup": "catalog:repo",
+		"typescript": "catalog:repo",
+		"vitest": "catalog:repo"
+	},
+	"dependencies": {
+		"zod": "^3.24.2"
+	},
+	"publishConfig": {
+		"access": "public"
+	}
+}
