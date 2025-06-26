@@ -1,5 +1,11 @@
 # @cipherstash/protect
 
+## 9.4.0
+
+### Minor Changes
+
+- 1cc4772: Released support for bulk encryption and decryption.
+
 ## 9.3.0
 
 ### Minor Changes
