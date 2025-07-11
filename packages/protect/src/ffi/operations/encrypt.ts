@@ -54,11 +54,18 @@ export class EncryptOperation extends ProtectOperation<EncryptedPayload> {
           return null
         }
 
-        return await ffiEncrypt(this.client, {
-          plaintext: this.plaintext,
-          column: this.column.getName(),
-          table: this.table.tableName,
-        })
+        const { metadata } = this.getAuditData()
+
+        return await ffiEncrypt(
+          this.client,
+          {
+            plaintext: this.plaintext,
+            column: this.column.getName(),
+            table: this.table.tableName,
+          },
+          undefined,
+          ...(metadata !== undefined ? [metadata] : []),
+        )
       },
       (error) => ({
         type: ProtectErrorTypes.EncryptionError,
