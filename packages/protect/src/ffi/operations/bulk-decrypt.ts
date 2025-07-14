@@ -97,10 +97,13 @@ export class BulkDecryptOperation extends ProtectOperation<BulkDecryptedData> {
           return createNullResult(this.encryptedPayloads)
         }
 
-        const decryptedData = await decryptBulkFallible(
-          this.client,
-          nonNullPayloads,
-        )
+        const { metadata } = this.getAuditData()
+
+        const decryptedData = await decryptBulkFallible(this.client, {
+          ciphertexts: nonNullPayloads,
+          unverifiedContext: metadata,
+        })
+
         return mapDecryptedDataToResult(this.encryptedPayloads, decryptedData)
       },
       (error: unknown) => ({
@@ -154,11 +157,13 @@ export class BulkDecryptOperationWithLockContext extends ProtectOperation<BulkDe
           return createNullResult(encryptedPayloads)
         }
 
-        const decryptedData = await decryptBulkFallible(
-          client,
-          nonNullPayloads,
-          context.data.ctsToken,
-        )
+        const { metadata } = this.getAuditData()
+
+        const decryptedData = await decryptBulkFallible(client, {
+          ciphertexts: nonNullPayloads,
+          serviceToken: context.data.ctsToken,
+          unverifiedContext: metadata,
+        })
 
         return mapDecryptedDataToResult(encryptedPayloads, decryptedData)
       },

@@ -116,7 +116,13 @@ export class BulkEncryptOperation extends ProtectOperation<BulkEncryptedData> {
           return createNullResult(this.plaintexts)
         }
 
-        const encryptedData = await encryptBulk(this.client, nonNullPayloads)
+        const { metadata } = this.getAuditData()
+
+        const encryptedData = await encryptBulk(this.client, {
+          plaintexts: nonNullPayloads,
+          unverifiedContext: metadata,
+        })
+
         return mapEncryptedDataToResult(this.plaintexts, encryptedData)
       },
       (error: unknown) => ({
@@ -185,11 +191,13 @@ export class BulkEncryptOperationWithLockContext extends ProtectOperation<BulkEn
           return createNullResult(plaintexts)
         }
 
-        const encryptedData = await encryptBulk(
-          client,
-          nonNullPayloads,
-          context.data.ctsToken,
-        )
+        const { metadata } = this.getAuditData()
+
+        const encryptedData = await encryptBulk(client, {
+          plaintexts: nonNullPayloads,
+          serviceToken: context.data.ctsToken,
+          unverifiedContext: metadata,
+        })
 
         return mapEncryptedDataToResult(plaintexts, encryptedData)
       },

@@ -46,7 +46,14 @@ export class EncryptModelOperation<
           throw noClientError()
         }
 
-        return await encryptModelFields<T>(this.model, this.table, this.client)
+        const auditData = this.getAuditData()
+
+        return await encryptModelFields<T>(
+          this.model,
+          this.table,
+          this.client,
+          auditData,
+        )
       },
       (error) => ({
         type: ProtectErrorTypes.EncryptionError,
@@ -99,11 +106,14 @@ export class EncryptModelOperationWithLockContext<
           throw new Error(`[protect]: ${context.failure.message}`)
         }
 
+        const auditData = this.getAuditData()
+
         return await encryptModelFieldsWithLockContext<T>(
           model,
           table,
           client,
           context.data,
+          auditData,
         )
       },
       (error) => ({

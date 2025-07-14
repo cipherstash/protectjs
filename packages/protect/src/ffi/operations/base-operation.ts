@@ -23,7 +23,7 @@ export abstract class ProtectOperation<T> {
   }
 
   /**
-   * Get the audit metadata for this operation.
+   * Get the audit data for this operation.
    */
   public getAuditData(): AuditData {
     return {

@@ -5,6 +5,10 @@ export type AuditConfig = {
   metadata?: Record<string, unknown>
 }
 
+export type AuditData = {
+  metadata?: Record<string, unknown>
+}
+
 export type DynamoDBOperationOptions = {
   logger?: {
     error: (message: string, error: Error) => void
@@ -33,8 +37,10 @@ export abstract class DynamoDBOperation<T> {
   /**
    * Get the audit metadata for this operation.
    */
-  protected getAuditMetadata(): Record<string, unknown> | undefined {
-    return this.auditMetadata
+  protected getAuditData(): AuditData {
+    return {
+      metadata: this.auditMetadata,
+    }
   }
 
   /**

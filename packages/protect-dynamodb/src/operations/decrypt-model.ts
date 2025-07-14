@@ -38,17 +38,9 @@ export class DecryptModelOperation<
         const encryptedAttrs = Object.keys(this.protectTable.build().columns)
         const withEqlPayloads = toItemWithEqlPayloads(this.item, encryptedAttrs)
 
-        const operation = this.protectClient.decryptModel<T>(
-          withEqlPayloads as T,
-        )
-
-        // Apply audit metadata if it exists
-        const auditMetadata = this.getAuditMetadata()
-        if (auditMetadata) {
-          operation.audit({ metadata: auditMetadata })
-        }
-
-        const decryptResult = await operation
+        const decryptResult = await this.protectClient
+          .decryptModel<T>(withEqlPayloads as T)
+          .audit(this.getAuditData())
 
         if (decryptResult.failure) {
           throw new Error(`[protect]: ${decryptResult.failure.message}`)

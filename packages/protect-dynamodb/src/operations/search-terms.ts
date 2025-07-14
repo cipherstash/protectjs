@@ -24,15 +24,9 @@ export class SearchTermsOperation extends DynamoDBOperation<string[]> {
   public async execute(): Promise<Result<string[], ProtectDynamoDBError>> {
     return await withResult(
       async () => {
-        const operation = this.protectClient.createSearchTerms(this.terms)
-
-        // Apply audit metadata if it exists
-        const auditMetadata = this.getAuditMetadata()
-        if (auditMetadata) {
-          operation.audit({ metadata: auditMetadata })
-        }
-
-        const searchTermsResult = await operation
+        const searchTermsResult = await this.protectClient
+          .createSearchTerms(this.terms)
+          .audit(this.getAuditData())
 
         if (searchTermsResult.failure) {
           throw new Error(`[protect]: ${searchTermsResult.failure.message}`)

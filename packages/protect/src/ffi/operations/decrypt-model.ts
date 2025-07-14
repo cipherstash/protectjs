@@ -37,7 +37,9 @@ export class DecryptModelOperation<
           throw noClientError()
         }
 
-        return await decryptModelFields<T>(this.model, this.client)
+        const auditData = this.getAuditData()
+
+        return await decryptModelFields<T>(this.model, this.client, auditData)
       },
       (error) => ({
         type: ProtectErrorTypes.DecryptionError,
@@ -86,10 +88,13 @@ export class DecryptModelOperationWithLockContext<
           throw new Error(`[protect]: ${context.failure.message}`)
         }
 
+        const auditData = this.getAuditData()
+
         return await decryptModelFieldsWithLockContext<T>(
           model,
           client,
           context.data,
+          auditData,
         )
       },
       (error) => ({

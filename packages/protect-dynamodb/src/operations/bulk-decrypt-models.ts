@@ -42,17 +42,9 @@ export class BulkDecryptModelsOperation<
           toItemWithEqlPayloads(item, encryptedAttrs),
         )
 
-        const operation = this.protectClient.bulkDecryptModels<T>(
-          itemsWithEqlPayloads as T[],
-        )
-
-        // Apply audit metadata if it exists
-        const auditMetadata = this.getAuditMetadata()
-        if (auditMetadata) {
-          operation.audit({ metadata: auditMetadata })
-        }
-
-        const decryptResult = await operation
+        const decryptResult = await this.protectClient
+          .bulkDecryptModels<T>(itemsWithEqlPayloads as T[])
+          .audit(this.getAuditData())
 
         if (decryptResult.failure) {
           throw new Error(`[protect]: ${decryptResult.failure.message}`)

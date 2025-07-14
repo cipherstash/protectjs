@@ -46,7 +46,14 @@ export class BulkEncryptModelsOperation<
           throw noClientError()
         }
 
-        return await bulkEncryptModels<T>(this.models, this.table, this.client)
+        const auditData = this.getAuditData()
+
+        return await bulkEncryptModels<T>(
+          this.models,
+          this.table,
+          this.client,
+          auditData,
+        )
       },
       (error) => ({
         type: ProtectErrorTypes.EncryptionError,
@@ -102,11 +109,14 @@ export class BulkEncryptModelsOperationWithLockContext<
           throw new Error(`[protect]: ${context.failure.message}`)
         }
 
+        const auditData = this.getAuditData()
+
         return await bulkEncryptModelsWithLockContext<T>(
           models,
           table,
           client,
           context.data,
+          auditData,
         )
       },
       (error) => ({

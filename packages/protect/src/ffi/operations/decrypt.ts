@@ -20,12 +20,7 @@ export class DecryptOperation extends ProtectOperation<string | null> {
   public withLockContext(
     lockContext: LockContext,
   ): DecryptOperationWithLockContext {
-    const opWithLock = new DecryptOperationWithLockContext(this, lockContext)
-    const auditData = this.getAuditData()
-    if (auditData) {
-      opWithLock.audit(auditData)
-    }
-    return opWithLock
+    return new DecryptOperationWithLockContext(this, lockContext)
   }
 
   public async execute(): Promise<Result<string | null, ProtectError>> {
@@ -45,13 +40,10 @@ export class DecryptOperation extends ProtectOperation<string | null> {
           metadata,
         })
 
-        return await ffiDecrypt(
-          this.client,
-          this.encryptedData.c,
-          undefined,
-          undefined,
-          ...(metadata !== undefined ? [metadata] : []),
-        )
+        return await ffiDecrypt(this.client, {
+          ciphertext: this.encryptedData.c,
+          unverifiedContext: metadata,
+        })
       },
       (error) => ({
         type: ProtectErrorTypes.DecryptionError,
@@ -114,13 +106,12 @@ export class DecryptOperationWithLockContext extends ProtectOperation<
           throw new Error(`[protect]: ${context.failure.message}`)
         }
 
-        return await ffiDecrypt(
-          client,
-          encryptedData.c,
-          context.data.context,
-          context.data.ctsToken,
-          ...(metadata !== undefined ? [metadata] : []),
-        )
+        return await ffiDecrypt(client, {
+          ciphertext: encryptedData.c,
+          unverifiedContext: metadata,
+          lockContext: context.data.context,
+          serviceToken: context.data.ctsToken,
+        })
       },
       (error) => ({
         type: ProtectErrorTypes.DecryptionError,

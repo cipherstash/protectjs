@@ -41,11 +41,7 @@ describe('encryption and decryption', () => {
     // Verify encrypted field
     expect(ciphertext.data).toHaveProperty('c')
 
-    const plaintext = await protectClient.decrypt(ciphertext.data).audit({
-      metadata: {
-        user: 'cj@cjb.io',
-      },
-    })
+    const plaintext = await protectClient.decrypt(ciphertext.data)
 
     expect(plaintext).toEqual({
       data: email,
@@ -698,9 +694,11 @@ describe('encryption and decryption with lock context', () => {
       .decrypt(ciphertext.data)
       .withLockContext(lockContext.data)
 
-    expect(plaintext).toEqual({
-      data: email,
-    })
+    if (plaintext.failure) {
+      throw new Error(`[protect]: ${plaintext.failure.message}`)
+    }
+
+    expect(plaintext.data).toEqual(email)
   }, 30000)
 
   it('should encrypt and decrypt a model with lock context', async () => {
