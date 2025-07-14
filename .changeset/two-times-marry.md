@@ -3,4 +3,4 @@
 "@cipherstash/protect": minor
 ---
 
-Fully implemeted audit metadata functionality.
+Fully implemented audit metadata functionality.
