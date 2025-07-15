@@ -1,5 +1,11 @@
 # @cipherstash/protect
 
+## 9.5.0
+
+### Minor Changes
+
+- 6f45b02: Fully implemented audit metadata functionality.
+
 ## 9.4.1
 
 ### Patch Changes
