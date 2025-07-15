@@ -7,6 +7,7 @@ import type { EncryptedPayload, Decrypted, Client } from '../types'
 import type { ProtectTable, ProtectTableColumn } from '@cipherstash/schema'
 import type { GetLockContextResponse } from '../identify'
 import { isEncryptedPayload } from '../helpers'
+import type { AuditData } from './operations/base-operation'
 
 /**
  * Helper function to extract encrypted fields from a model
@@ -240,6 +241,7 @@ function prepareFieldsForEncryption<T extends Record<string, unknown>>(
 export async function decryptModelFields<T extends Record<string, unknown>>(
   model: T,
   client: Client,
+  auditData?: AuditData,
 ): Promise<Decrypted<T>> {
   if (!client) {
     throw new Error('Client not initialized')
@@ -257,7 +259,11 @@ export async function decryptModelFields<T extends Record<string, unknown>>(
 
   const decryptedFields = await handleSingleModelBulkOperation(
     bulkDecryptPayload,
-    (items) => decryptBulk(client, items),
+    (items) =>
+      decryptBulk(client, {
+        ciphertexts: items,
+        unverifiedContext: auditData?.metadata,
+      }),
     keyMap,
   )
 
@@ -303,6 +309,7 @@ export async function encryptModelFields<T extends Record<string, unknown>>(
   model: Decrypted<T>,
   table: ProtectTable<ProtectTableColumn>,
   client: Client,
+  auditData?: AuditData,
 ): Promise<T> {
   if (!client) {
     throw new Error('Client not initialized')
@@ -322,7 +329,11 @@ export async function encryptModelFields<T extends Record<string, unknown>>(
 
   const encryptedData = await handleSingleModelBulkOperation(
     bulkEncryptPayload,
-    (items) => encryptBulk(client, items),
+    (items) =>
+      encryptBulk(client, {
+        plaintexts: items,
+        unverifiedContext: auditData?.metadata,
+      }),
     keyMap,
   )
 
@@ -370,6 +381,7 @@ export async function decryptModelFieldsWithLockContext<
   model: T,
   client: Client,
   lockContext: GetLockContextResponse,
+  auditData?: AuditData,
 ): Promise<Decrypted<T>> {
   if (!client) {
     throw new Error('Client not initialized')
@@ -392,7 +404,12 @@ export async function decryptModelFieldsWithLockContext<
 
   const decryptedFields = await handleSingleModelBulkOperation(
     bulkDecryptPayload,
-    (items) => decryptBulk(client, items, lockContext.ctsToken),
+    (items) =>
+      decryptBulk(client, {
+        ciphertexts: items,
+        serviceToken: lockContext.ctsToken,
+        unverifiedContext: auditData?.metadata,
+      }),
     keyMap,
   )
 
@@ -441,6 +458,7 @@ export async function encryptModelFieldsWithLockContext<
   table: ProtectTable<ProtectTableColumn>,
   client: Client,
   lockContext: GetLockContextResponse,
+  auditData?: AuditData,
 ): Promise<T> {
   if (!client) {
     throw new Error('Client not initialized')
@@ -465,7 +483,12 @@ export async function encryptModelFieldsWithLockContext<
 
   const encryptedData = await handleSingleModelBulkOperation(
     bulkEncryptPayload,
-    (items) => encryptBulk(client, items, lockContext.ctsToken),
+    (items) =>
+      encryptBulk(client, {
+        plaintexts: items,
+        serviceToken: lockContext.ctsToken,
+        unverifiedContext: auditData?.metadata,
+      }),
     keyMap,
   )
 
@@ -624,6 +647,7 @@ export async function bulkEncryptModels<T extends Record<string, unknown>>(
   models: Decrypted<T>[],
   table: ProtectTable<ProtectTableColumn>,
   client: Client,
+  auditData?: AuditData,
 ): Promise<T[]> {
   if (!client) {
     throw new Error('Client not initialized')
@@ -647,7 +671,11 @@ export async function bulkEncryptModels<T extends Record<string, unknown>>(
 
   const encryptedData = await handleMultiModelBulkOperation(
     bulkEncryptPayload,
-    (items) => encryptBulk(client, items),
+    (items) =>
+      encryptBulk(client, {
+        plaintexts: items,
+        unverifiedContext: auditData?.metadata,
+      }),
     keyMap,
   )
 
@@ -705,6 +733,7 @@ export async function bulkEncryptModels<T extends Record<string, unknown>>(
 export async function bulkDecryptModels<T extends Record<string, unknown>>(
   models: T[],
   client: Client,
+  auditData?: AuditData,
 ): Promise<Decrypted<T>[]> {
   if (!client) {
     throw new Error('Client not initialized')
@@ -726,7 +755,11 @@ export async function bulkDecryptModels<T extends Record<string, unknown>>(
 
   const decryptedFields = await handleMultiModelBulkOperation(
     bulkDecryptPayload,
-    (items) => decryptBulk(client, items),
+    (items) =>
+      decryptBulk(client, {
+        ciphertexts: items,
+        unverifiedContext: auditData?.metadata,
+      }),
     keyMap,
   )
 
@@ -787,6 +820,7 @@ export async function bulkDecryptModelsWithLockContext<
   models: T[],
   client: Client,
   lockContext: GetLockContextResponse,
+  auditData?: AuditData,
 ): Promise<Decrypted<T>[]> {
   if (!client) {
     throw new Error('Client not initialized')
@@ -809,7 +843,12 @@ export async function bulkDecryptModelsWithLockContext<
 
   const decryptedFields = await handleMultiModelBulkOperation(
     bulkDecryptPayload,
-    (items) => decryptBulk(client, items, lockContext.ctsToken),
+    (items) =>
+      decryptBulk(client, {
+        ciphertexts: items,
+        serviceToken: lockContext.ctsToken,
+        unverifiedContext: auditData?.metadata,
+      }),
     keyMap,
   )
 
@@ -841,6 +880,7 @@ export async function bulkEncryptModelsWithLockContext<
   table: ProtectTable<ProtectTableColumn>,
   client: Client,
   lockContext: GetLockContextResponse,
+  auditData?: AuditData,
 ): Promise<T[]> {
   if (!client) {
     throw new Error('Client not initialized')
@@ -865,7 +905,12 @@ export async function bulkEncryptModelsWithLockContext<
 
   const encryptedData = await handleMultiModelBulkOperation(
     bulkEncryptPayload,
-    (items) => encryptBulk(client, items, lockContext.ctsToken),
+    (items) =>
+      encryptBulk(client, {
+        plaintexts: items,
+        serviceToken: lockContext.ctsToken,
+        unverifiedContext: auditData?.metadata,
+      }),
     keyMap,
   )
 

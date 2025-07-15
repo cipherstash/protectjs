@@ -20,12 +20,7 @@ export class DecryptOperation extends ProtectOperation<string | null> {
   public withLockContext(
     lockContext: LockContext,
   ): DecryptOperationWithLockContext {
-    const opWithLock = new DecryptOperationWithLockContext(this, lockContext)
-    const auditMetadata = this.getAuditMetadata()
-    if (auditMetadata) {
-      opWithLock.audit(auditMetadata)
-    }
-    return opWithLock
+    return new DecryptOperationWithLockContext(this, lockContext)
   }
 
   public async execute(): Promise<Result<string | null, ProtectError>> {
@@ -39,10 +34,16 @@ export class DecryptOperation extends ProtectOperation<string | null> {
           return null
         }
 
+        const { metadata } = this.getAuditData()
+
         logger.debug('Decrypting data WITHOUT a lock context', {
-          auditMetadata: this.getAuditMetadata(),
+          metadata,
         })
-        return await ffiDecrypt(this.client, this.encryptedData.c)
+
+        return await ffiDecrypt(this.client, {
+          ciphertext: this.encryptedData.c,
+          unverifiedContext: metadata,
+        })
       },
       (error) => ({
         type: ProtectErrorTypes.DecryptionError,
@@ -54,12 +55,12 @@ export class DecryptOperation extends ProtectOperation<string | null> {
   public getOperation(): {
     client: Client
     encryptedData: EncryptedPayload
-    auditMetadata?: Record<string, unknown>
+    auditData?: Record<string, unknown>
   } {
     return {
       client: this.client,
       encryptedData: this.encryptedData,
-      auditMetadata: this.getAuditMetadata(),
+      auditData: this.getAuditData(),
     }
   }
 }
@@ -74,9 +75,9 @@ export class DecryptOperationWithLockContext extends ProtectOperation<
     super()
     this.operation = operation
     this.lockContext = lockContext
-    const auditMetadata = operation.getAuditMetadata()
-    if (auditMetadata) {
-      this.audit(auditMetadata)
+    const auditData = operation.getAuditData()
+    if (auditData) {
+      this.audit(auditData)
     }
   }
 
@@ -93,8 +94,10 @@ export class DecryptOperationWithLockContext extends ProtectOperation<
           return null
         }
 
+        const { metadata } = this.getAuditData()
+
         logger.debug('Decrypting data WITH a lock context', {
-          auditMetadata: this.getAuditMetadata(),
+          metadata,
         })
 
         const context = await this.lockContext.getLockContext()
@@ -103,12 +106,12 @@ export class DecryptOperationWithLockContext extends ProtectOperation<
           throw new Error(`[protect]: ${context.failure.message}`)
         }
 
-        return await ffiDecrypt(
-          client,
-          encryptedData.c,
-          context.data.context,
-          context.data.ctsToken,
-        )
+        return await ffiDecrypt(client, {
+          ciphertext: encryptedData.c,
+          unverifiedContext: metadata,
+          lockContext: context.data.context,
+          serviceToken: context.data.ctsToken,
+        })
       },
       (error) => ({
         type: ProtectErrorTypes.DecryptionError,

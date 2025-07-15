@@ -33,18 +33,12 @@ export class BulkEncryptModelsOperation<
   public async execute(): Promise<Result<T[], ProtectDynamoDBError>> {
     return await withResult(
       async () => {
-        const operation = this.protectClient.bulkEncryptModels(
-          this.items.map((item) => deepClone(item)),
-          this.protectTable,
-        )
-
-        // Apply audit metadata if it exists
-        const auditMetadata = this.getAuditMetadata()
-        if (auditMetadata) {
-          operation.audit({ metadata: auditMetadata })
-        }
-
-        const encryptResult = await operation
+        const encryptResult = await this.protectClient
+          .bulkEncryptModels(
+            this.items.map((item) => deepClone(item)),
+            this.protectTable,
+          )
+          .audit(this.getAuditData())
 
         if (encryptResult.failure) {
           throw new Error(`encryption error: ${encryptResult.failure.message}`)

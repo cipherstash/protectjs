@@ -5,6 +5,10 @@ export type AuditConfig = {
   metadata?: Record<string, unknown>
 }
 
+export type AuditData = {
+  metadata?: Record<string, unknown>
+}
+
 export abstract class ProtectOperation<T> {
   protected auditMetadata?: Record<string, unknown>
 
@@ -19,10 +23,12 @@ export abstract class ProtectOperation<T> {
   }
 
   /**
-   * Get the audit metadata for this operation.
+   * Get the audit data for this operation.
    */
-  public getAuditMetadata(): Record<string, unknown> | undefined {
-    return this.auditMetadata
+  public getAuditData(): AuditData {
+    return {
+      metadata: this.auditMetadata,
+    }
   }
 
   /**

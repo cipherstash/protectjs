@@ -64,17 +64,16 @@ export class ProtectClient {
           },
         )
 
-        const newClientConfig = JSON.stringify({
-          workspace_crn: config.workspaceCrn,
-          access_key: config.accessKey,
-          client_id: config.clientId,
-          client_key: config.clientKey,
+        this.client = await newClient({
+          encryptConfig: validated,
+          clientOpts: {
+            workspaceCrn: config.workspaceCrn,
+            accessKey: config.accessKey,
+            clientId: config.clientId,
+            clientKey: config.clientKey,
+          },
         })
 
-        this.client = await newClient(
-          JSON.stringify(validated),
-          newClientConfig,
-        )
         this.encryptConfig = validated
 
         logger.info('Successfully initialized the Protect.js client.')

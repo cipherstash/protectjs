@@ -54,10 +54,13 @@ export class EncryptOperation extends ProtectOperation<EncryptedPayload> {
           return null
         }
 
+        const { metadata } = this.getAuditData()
+
         return await ffiEncrypt(this.client, {
           plaintext: this.plaintext,
           column: this.column.getName(),
           table: this.table.tableName,
+          unverifiedContext: metadata,
         })
       },
       (error) => ({
@@ -111,22 +114,21 @@ export class EncryptOperationWithLockContext extends ProtectOperation<EncryptedP
           return null
         }
 
+        const { metadata } = this.getAuditData()
         const context = await this.lockContext.getLockContext()
 
         if (context.failure) {
           throw new Error(`[protect]: ${context.failure.message}`)
         }
 
-        return await ffiEncrypt(
-          client,
-          {
-            plaintext,
-            column: column.getName(),
-            table: table.tableName,
-            lockContext: context.data.context,
-          },
-          context.data.ctsToken,
-        )
+        return await ffiEncrypt(client, {
+          plaintext,
+          column: column.getName(),
+          table: table.tableName,
+          lockContext: context.data.context,
+          serviceToken: context.data.ctsToken,
+          unverifiedContext: metadata,
+        })
       },
       (error) => ({
         type: ProtectErrorTypes.EncryptionError,

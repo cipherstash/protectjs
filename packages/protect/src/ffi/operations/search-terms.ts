@@ -29,14 +29,16 @@ export class SearchTermsOperation extends ProtectOperation<
           throw noClientError()
         }
 
-        const encryptedSearchTerms = await encryptBulk(
-          this.client,
-          this.terms.map((term) => ({
+        const { metadata } = this.getAuditData()
+
+        const encryptedSearchTerms = await encryptBulk(this.client, {
+          plaintexts: this.terms.map((term) => ({
             plaintext: term.value,
             column: term.column.getName(),
             table: term.table.tableName,
           })),
-        )
+          unverifiedContext: metadata,
+        })
 
         return this.terms.map((term, index) => {
           if (term.returnType === 'composite-literal') {

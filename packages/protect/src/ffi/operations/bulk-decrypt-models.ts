@@ -37,7 +37,9 @@ export class BulkDecryptModelsOperation<
           throw noClientError()
         }
 
-        return await bulkDecryptModels<T>(this.models, this.client)
+        const auditData = this.getAuditData()
+
+        return await bulkDecryptModels<T>(this.models, this.client, auditData)
       },
       (error) => ({
         type: ProtectErrorTypes.DecryptionError,
@@ -89,10 +91,13 @@ export class BulkDecryptModelsOperationWithLockContext<
           throw new Error(`[protect]: ${context.failure.message}`)
         }
 
+        const auditData = this.getAuditData()
+
         return await bulkDecryptModelsWithLockContext<T>(
           models,
           client,
           context.data,
+          auditData,
         )
       },
       (error) => ({
