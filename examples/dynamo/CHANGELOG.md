@@ -1,5 +1,13 @@
 # @cipherstash/dynamo-example
 
+## 0.2.7
+
+### Patch Changes
+
+- Updated dependencies [6f45b02]
+  - @cipherstash/protect-dynamodb@3.0.0
+  - @cipherstash/protect@9.5.0
+
 ## 0.2.6
 
 ### Patch Changes

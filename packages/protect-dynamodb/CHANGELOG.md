@@ -1,5 +1,16 @@
 # @cipherstash/protect-dynamodb
 
+## 3.0.0
+
+### Minor Changes
+
+- 6f45b02: Fully implemented audit metadata functionality.
+
+### Patch Changes
+
+- Updated dependencies [6f45b02]
+  - @cipherstash/protect@9.5.0
+
 ## 2.0.1
 
 ### Patch Changes
