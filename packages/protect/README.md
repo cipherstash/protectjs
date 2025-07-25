@@ -97,18 +97,6 @@ pnpm add @cipherstash/protect
 > [!TIP]
 > [Bun](https://bun.sh/) is not currently supported due to a lack of [Node-API compatibility](https://github.com/oven-sh/bun/issues/158). Under the hood, Protect.js uses [CipherStash Client](#cipherstash-client) which is written in Rust and embedded using [Neon](https://github.com/neon-bindings/neon).
 
-Lastly, install the CipherStash CLI:
-
-- On macOS:
-
-  ```bash
-  brew install cipherstash/tap/stash
-  ```
-
-- On Linux, download the binary for your platform, and put it on your `PATH`:
-  - [Linux ARM64](https://github.com/cipherstash/cli-releases/releases/latest/download/stash-aarch64-unknown-linux-gnu)
-  - [Linux x86_64](https://github.com/cipherstash/cli-releases/releases/latest/download/stash-x86_64-unknown-linux-gnu)
-
 ### Opt-out of bundling
 
 > [!IMPORTANT]
@@ -127,28 +115,20 @@ Read more about [building and bundling with Protect.js](#builds-and-bundling).
 
 ### Configuration
 
-> [!IMPORTANT]
-> Make sure you have [installed the CipherStash CLI](#installing-protectjs) before following these steps.
+If you haven't already, sign up for a [CipherStash account](https://cipherstash.com/signup).
+Once you have an account, you will create a Workspace which is scoped to your application environment.
 
-To set up all the configuration and credentials required for Protect.js:
+Follow the onboarding steps to get your first set of credentials required to use Protect.js.
+By the end of the onboarding, you will have the following environment variables:
 
 ```bash
-stash setup
+CS_WORKSPACE_CRN= # The workspace identifier
+CS_CLIENT_ID= # The client identifier
+CS_CLIENT_KEY= # The client key which is used as key material in combination with ZeroKMS
+CS_CLIENT_ACCESS_KEY= # The API key used for authenticating with the CipherStash API
 ```
 
-If you haven't already signed up for a CipherStash account, this will prompt you to do so along the way.
-
-At the end of `stash setup`, you will have two files in your project:
-
-- `cipherstash.toml` which contains the configuration for Protect.js
-- `cipherstash.secret.toml`: which contains the credentials for Protect.js
-
-> [!WARNING]
-> Don't commit `cipherstash.secret.toml` to git; it contains sensitive credentials.
-> The `stash setup` command will attempt to append to your `.gitignore` file with the `cipherstash.secret.toml` file.
-
-Read more about [configuration via TOML file, environment variables, or the Protect client config object](./docs/reference/configuration.md) to meet your needs.
-The method you choose will depend on your use case.
+Save these environment variables to a `.env` file in your project.
 
 ### Basic file structure
 
@@ -530,8 +510,7 @@ They automatically handle the mapping between your model's structure and the enc
 
 ### Bulk operations
 
-Protect.js provides direct access to ZeroKMS bulk operations through the `bulkEncrypt` and `bulkDecrypt` methods.
-These methods are ideal when you need maximum performance and want to handle the correlation between encrypted/decrypted values and your application data manually.
+Protect.js provides direct access to ZeroKMS bulk operations through the `bulkEncrypt` and `bulkDecrypt` methods. These methods are ideal when you need maximum performance and want to handle the correlation between encrypted/decrypted values and your application data manually.
 
 > [!TIP]
 > The bulk operations provide the most direct interface to ZeroKMS's blazing fast bulk encryption and decryption capabilities. Each value gets a unique key while maintaining optimal performance through a single call to ZeroKMS.
@@ -629,8 +608,7 @@ The `bulkDecrypt` method returns an array of objects with the following structur
 
 #### Response structure
 
-The `bulkDecrypt` method returns a `Result` object that represents the overall operation status.
-When successful from an HTTP and execution perspective, the `data` field contains an array where each item can have one of two outcomes:
+The `bulkDecrypt` method returns a `Result` object that represents the overall operation status. When successful from an HTTP and execution perspective, the `data` field contains an array where each item can have one of two outcomes:
 
 - **Success**: The item has a `data` field containing the decrypted plaintext
 - **Failure**: The item has an `error` field containing a specific error message explaining why that particular decryption failed
