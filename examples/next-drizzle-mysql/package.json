@@ -14,7 +14,7 @@
     "@hookform/resolvers": "^5.0.1",
     "drizzle-orm": "^0.44.0",
     "mysql2": "^3.14.1",
-    "next": "15.3.2",
+    "next": "catalog:security",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.56.4",

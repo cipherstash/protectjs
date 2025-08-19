@@ -100,14 +100,7 @@ const decrypted = await client.decrypt(encrypted.data);
 
 ## Architecture (high level)
 
-```mermaid
-graph TD
-  A["App (Node/Next.js)"] --> B["Protect.js"]
-  B --> C["ZeroKMS (bulk per‑value keys)"]
-  C --> D["AWS KMS (root key)"]
-  B --> E["Database (JSONB/EQL payloads)"]
-  E -->|search/sort/filter| F["PostgreSQL (EQL indexes)"]
-```
+![Protect.js Architecture Diagram](https://github.com/cipherstash/protectjs/blob/main/docs/images/protectjs-architecture.png)
 
 ## Table of contents
 
