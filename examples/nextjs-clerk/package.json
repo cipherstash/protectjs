@@ -12,7 +12,7 @@
 	"dependencies": {
 		"@cipherstash/nextjs": "workspace:*",
 		"@cipherstash/protect": "workspace:*",
-		"@clerk/nextjs": "6.9.15",
+		"@clerk/nextjs": "catalog:security",
 		"@radix-ui/react-label": "^2.1.1",
 		"@radix-ui/react-select": "^2.1.4",
 		"@radix-ui/react-slot": "^1.1.1",
@@ -24,7 +24,7 @@
 		"drizzle-orm": "^0.38.2",
 		"jose": "^5.9.6",
 		"lucide-react": "^0.469.0",
-		"next": "15.2.4",
+		"next": "catalog:security",
 		"postgres": "^3.4.5",
 		"react": "^19",
 		"react-dom": "^19",
