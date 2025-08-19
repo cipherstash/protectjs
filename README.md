@@ -4,7 +4,7 @@
   Protect.js
 </h1>
 <p align="center">
-  Implement robust data security without sacrificing performance or usability
+  End-to-end field level encryption for JavaScript/TypeScript apps with zero‑knowledge key management. Search encrypted data without decrypting it.
   <br/>
   <div align="center" style="display: flex; justify-content: center; gap: 1rem;">
     <a href="https://cipherstash.com">
@@ -19,35 +19,103 @@
         src="https://img.shields.io/npm/v/@cipherstash/protect.svg?style=for-the-badge&labelColor=000000"
       />
     </a>
+    <a href="https://www.npmjs.com/package/@cipherstash/protect">
+      <img
+        alt="npm downloads"
+        src="https://img.shields.io/npm/dm/@cipherstash/protect.svg?style=for-the-badge&labelColor=000000"
+      />
+    </a>
+    <a href="https://github.com/cipherstash/protectjs/stargazers">
+      <img
+        alt="GitHub stars"
+        src="https://img.shields.io/github/stars/cipherstash/protectjs?style=for-the-badge&labelColor=000000"
+      />
+    </a>
     <a href="https://github.com/cipherstash/protectjs/blob/main/LICENSE.md">
       <img
         alt="License"
         src="https://img.shields.io/npm/l/@cipherstash/protect.svg?style=for-the-badge&labelColor=000000"
       />
     </a>
+    <a href="https://github.com/cipherstash/protectjs/tree/main/docs">
+      <img
+        alt="Docs"
+        src="https://img.shields.io/badge/docs-Read-blue?style=for-the-badge&labelColor=000000"
+      />
+    </a>
   </div>
 </p>
+<div align="center">⭐ Please star this repo if you find it useful!</div>
 <br/>
 
 <!-- start -->
 
-Protect.js is a TypeScript package for encrypting and decrypting data.
-Encryption operations happen directly in your app, and the ciphertext is stored in your database.
+Protect.js lets you encrypt every value with its own key—without sacrificing performance or usability. Encryption happens in your app; ciphertext is stored in your database.
 
-Every value you encrypt with Protect.js has a unique key, made possible by CipherStash [ZeroKMS](https://cipherstash.com/products/zerokms)'s blazing fast bulk key operations, and backed by a root key in [AWS KMS](https://docs.aws.amazon.com/kms/latest/developerguide/overview.html).
+Per‑value unique keys are powered by CipherStash [ZeroKMS](https://cipherstash.com/products/zerokms) bulk key operations, backed by a root key in [AWS KMS](https://docs.aws.amazon.com/kms/latest/developerguide/overview.html).
 
-The encrypted data is structured as an [EQL](https://github.com/cipherstash/encrypt-query-language) JSON payload, and can be stored in any database that supports JSONB.
+Encrypted data is structured as an [EQL](https://github.com/cipherstash/encrypt-query-language) JSON payload and can be stored in any database that supports JSONB.
 
 > [!IMPORTANT]
 > Searching, sorting, and filtering on encrypted data is currently only supported when storing encrypted data in PostgreSQL.
 > Read more about [searching encrypted data](./docs/concepts/searchable-encryption.md).
 
+Looking for DynamoDB support? Check out the [Protect.js for DynamoDB helper library](https://www.npmjs.com/package/@cipherstash/protect-dynamodb).
+
+## Quick start (60 seconds)
+
+Create an account and workspace in the [CipherStash dashboard](https://cipherstash.com/signup), then follow the onboarding guide to generate your client credentials and store them in your `.env` file.
+
+Install the package:
+
+```bash
+npm install @cipherstash/protect
+```
+
+Start encrypting data:
+
+```ts
+import { protect } from "@cipherstash/protect";
+import { csTable, csColumn } from "@cipherstash/protect";
+
+// 1) Define a schema
+const users = csTable("users", { email: csColumn("email") });
+
+// 2) Create a client (requires CS_* env vars)
+const client = await protect({ schemas: [users] });
+
+// 3) Encrypt → store JSONB payload
+const encrypted = await client.encrypt("alice@example.com", {
+  table: users,
+  column: users.email,
+});
+
+if (encrypted.failure) {
+  // You decide how to handle the failure and the user experience
+}
+
+// 4) Decrypt later
+const decrypted = await client.decrypt(encrypted.data);
+```
+
+## Architecture (high level)
+
+```mermaid
+graph TD
+  A["App (Node/Next.js)"] --> B["Protect.js"]
+  B --> C["ZeroKMS (bulk per‑value keys)"]
+  C --> D["AWS KMS (root key)"]
+  B --> E["Database (JSONB/EQL payloads)"]
+  E -->|search/sort/filter| F["PostgreSQL (EQL indexes)"]
+```
+
 ## Table of contents
 
+- [Quick start (60 seconds)](#quick-start-60-seconds)
+- [Architecture (high level)](#architecture-high-level)
 - [Features](#features)
 - [Installing Protect.js](#installing-protectjs)
 - [Getting started](#getting-started)
-- [Working with models and objects](#working-with-models-and-objects)
 - [Identity-aware encryption](#identity-aware-encryption)
 - [Supported data types](#supported-data-types)
 - [Searchable encryption](#searchable-encryption)
@@ -786,7 +854,7 @@ CREATE TABLE users (
 > The `eql_v2_encrypted` type is a [composite type](https://www.postgresql.org/docs/current/rowtypes.html) and each ORM/client has a different way of handling inserts and selects.
 > We've documented how to handle inserts and selects for the different ORMs/clients in the [docs](./docs/reference/working-with-composite-types.md).
 
-Read more about [how to search encrypted data](./docs/reference/searchable-encryption.md) in the docs.
+Read more about [how to search encrypted data](./docs/reference/searchable-encryption-postgres.md) in the docs.
 
 ## Identity-aware encryption
 
@@ -975,6 +1043,9 @@ Here are a few resources to help based on your tool set:
 
 - [Required Next.js configuration](./docs/how-to/nextjs-external-packages.md).
 - [SST and AWS serverless functions](./docs/how-to/sst-external-packages.md).
+  
+> [!TIP]
+> Deploying to Linux (e.g., AWS Lambda) with npm lockfile v3 and seeing runtime module load errors? See the troubleshooting guide: [`docs/how-to/npm-lockfile-v3`](./docs/how-to/npm-lockfile-v3-linux-deployments.md).
 
 ## Contributing
 
