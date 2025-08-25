@@ -9,6 +9,10 @@ services:
       POSTGRES_PASSWORD: password
     ports:
       - 5432:5432
+    volumes:
+      - ./cipherstash-encrypt-2-1-8.sql:/tmp/cipherstash-encrypt-2-1-8.sql
+      - ./postgres-entrypoint.sh:/usr/local/bin/postgres-entrypoint.sh
+    entrypoint: ["/usr/local/bin/postgres-entrypoint.sh"]
     deploy:
       resources:
         limits:

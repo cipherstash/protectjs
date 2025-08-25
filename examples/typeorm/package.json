@@ -1,0 +1,23 @@
+{
+   "name": "typeorm",
+   "version": "0.0.1",
+   "description": "Awesome project developed with TypeORM.",
+   "type": "commonjs",
+   "devDependencies": {
+      "@types/node": "^22.13.10",
+      "ts-node": "^10.9.2",
+      "tsconfig-paths": "^4.2.0",
+      "typescript": "^5.8.2"
+   },
+   "dependencies": {
+      "@cipherstash/protect": "workspace:*",
+      "dotenv": "^16.4.7",
+      "pg": "^8.14.1",
+      "reflect-metadata": "^0.2.2",
+      "typeorm": "0.3.26"
+   },
+   "scripts": {
+      "start": "ts-node -r tsconfig-paths/register src/index.ts",
+      "typeorm": "typeorm-ts-node-commonjs"
+   }
+}
