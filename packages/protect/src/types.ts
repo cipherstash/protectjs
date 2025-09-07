@@ -17,6 +17,12 @@ export type Client = Awaited<ReturnType<typeof newClient>> | undefined
 export type EncryptedPayload = Encrypted | null
 
 /**
+ * Represents an encrypted data object in the database
+ * @deprecated Use `EncryptedPayload` instead
+ */
+export type EncryptedData = Encrypted | null
+
+/**
  * Represents a value that will be encrypted and used in a search
  */
 export type SearchTerm = {

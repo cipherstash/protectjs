@@ -20,6 +20,8 @@
 	"license": "MIT",
 	"author": "CipherStash <hello@cipherstash.com>",
 	"type": "module",
+	"main": "./dist/index.cjs",
+	"types": "./dist/index.d.ts",
 	"exports": {
 		".": {
 			"types": "./dist/index.d.ts",

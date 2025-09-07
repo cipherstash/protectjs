@@ -78,7 +78,7 @@ AppDataSource.initialize()
     console.log('Found user: ', foundUser)
 
     const decryptedFoundUser = await protectClient.decrypt(
-      foundUser.email_encrypted,
+      foundUser?.email_encrypted || null,
     )
 
     console.log('Decrypted found user: ', decryptedFoundUser)

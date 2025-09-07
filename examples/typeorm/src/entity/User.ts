@@ -50,7 +50,7 @@ export class User {
     if (this.email_encrypted && typeof this.email_encrypted === 'string') {
       try {
         // Parse PostgreSQL composite literal format: (json_string)
-        let jsonString = this.email_encrypted.trim()
+        let jsonString: string = (this.email_encrypted as string).trim()
 
         // Remove outer parentheses if they exist
         if (jsonString.startsWith('(') && jsonString.endsWith(')')) {
@@ -68,10 +68,10 @@ export class User {
 
         // Parse the JSON string
         this.email_encrypted = JSON.parse(jsonString)
-      } catch (error) {
+      } catch (error: unknown) {
         console.error('Failed to parse encrypted data:', {
           original: this.email_encrypted,
-          error: error.message,
+          error: error instanceof Error ? error.message : 'Unknown error',
         })
         // Keep the original string if parsing fails
       }
