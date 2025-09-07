@@ -5,4 +5,6 @@ export default defineConfig({
   format: ['cjs', 'esm'],
   sourcemap: true,
   dts: true,
+  target: 'es2022',
+  tsconfig: './tsconfig.json',
 })
