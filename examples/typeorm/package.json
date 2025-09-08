@@ -1,6 +1,7 @@
 {
    "name": "typeorm",
    "version": "0.0.1",
+   "private": true,
    "description": "Awesome project developed with TypeORM.",
    "type": "commonjs",
    "devDependencies": {
