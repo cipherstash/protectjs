@@ -1,5 +1,12 @@
 # @cipherstash/protect
 
+## 9.6.0
+
+### Minor Changes
+
+- c7ed7ab: Support TypeORM example with ES2022.
+- 211e979: Added support for ES2022 and later.
+
 ## 9.5.0
 
 ### Minor Changes
