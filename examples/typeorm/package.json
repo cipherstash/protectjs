@@ -1,8 +1,8 @@
 {
-   "name": "typeorm",
+   "name": "@cipherstash/typeorm-example",
    "version": "0.0.1",
    "private": true,
-   "description": "Awesome project developed with TypeORM.",
+   "description": "Protect.js with TypeORM example",
    "type": "commonjs",
    "devDependencies": {
       "@types/node": "^22.13.10",
