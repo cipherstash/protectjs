@@ -1,6 +1,6 @@
 {
    "name": "@cipherstash/typeorm-example",
-   "version": "0.0.1",
+   "version": "0.1.0",
    "private": true,
    "description": "Protect.js with TypeORM example",
    "type": "commonjs",
