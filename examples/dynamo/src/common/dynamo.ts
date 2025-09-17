@@ -1,7 +1,7 @@
 import {
   CreateTableCommand,
-  DynamoDBClient,
   type CreateTableCommandInput,
+  DynamoDBClient,
 } from '@aws-sdk/client-dynamodb'
 import { DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb'
 
@@ -31,7 +31,7 @@ export async function createTable(
   try {
     await docClient.send(command)
   } catch (err) {
-    if (err?.name! !== 'ResourceInUseException') {
+    if (err?.name !== 'ResourceInUseException') {
       throw err
     }
   }

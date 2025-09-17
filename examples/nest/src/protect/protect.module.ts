@@ -1,15 +1,15 @@
-import { Module, type DynamicModule, Global } from '@nestjs/common'
-import { ConfigModule, ConfigService } from '@nestjs/config'
 import {
-  protect,
-  type ProtectClientConfig,
   type ProtectClient,
+  type ProtectClientConfig,
   type ProtectTable,
   type ProtectTableColumn,
+  protect,
 } from '@cipherstash/protect'
-import { ProtectService } from './protect.service'
+import { type DynamicModule, Global, Module } from '@nestjs/common'
+import { ConfigModule, ConfigService } from '@nestjs/config'
 import type { ProtectConfig } from './interfaces/protect-config.interface'
-import { PROTECT_CONFIG, PROTECT_CLIENT } from './protect.constants'
+import { PROTECT_CLIENT, PROTECT_CONFIG } from './protect.constants'
+import { ProtectService } from './protect.service'
 import { users } from './schema'
 
 @Global()
@@ -24,13 +24,18 @@ export class ProtectModule {
         {
           provide: PROTECT_CONFIG,
           useFactory: (configService: ConfigService): ProtectConfig => {
+            const workspaceCrn = configService.get<string>('CS_WORKSPACE_CRN')
+            const clientId = configService.get<string>('CS_CLIENT_ID')
+            const clientKey = configService.get<string>('CS_CLIENT_KEY')
+            const clientAccessKey = configService.get<string>(
+              'CS_CLIENT_ACCESS_KEY',
+            )
+
             const defaultConfig: ProtectConfig = {
-              workspaceCrn: configService.get<string>('CS_WORKSPACE_CRN')!,
-              clientId: configService.get<string>('CS_CLIENT_ID')!,
-              clientKey: configService.get<string>('CS_CLIENT_KEY')!,
-              clientAccessKey: configService.get<string>(
-                'CS_CLIENT_ACCESS_KEY',
-              )!,
+              workspaceCrn: workspaceCrn ?? '',
+              clientId: clientId ?? '',
+              clientKey: clientKey ?? '',
+              clientAccessKey: clientAccessKey ?? '',
               logLevel: configService.get<'debug' | 'info' | 'error'>(
                 'PROTECT_LOG_LEVEL',
                 'info',
@@ -79,8 +84,8 @@ export class ProtectModule {
   }
 
   static forRootAsync(options: {
-    useFactory: (...args: any[]) => Promise<ProtectConfig> | ProtectConfig
-    inject?: any[]
+    useFactory: (...args: unknown[]) => Promise<ProtectConfig> | ProtectConfig
+    inject?: unknown[]
   }): DynamicModule {
     return {
       module: ProtectModule,

@@ -1,8 +1,8 @@
 import {
+  type CallHandler,
+  type ExecutionContext,
   Injectable,
   type NestInterceptor,
-  type ExecutionContext,
-  type CallHandler,
 } from '@nestjs/common'
 import type { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
@@ -10,9 +10,9 @@ import type { ProtectService } from '../protect.service'
 import { getProtectService } from '../utils/get-protect-service.util'
 
 import type {
+  ProtectColumn,
   ProtectTable,
   ProtectTableColumn,
-  ProtectColumn,
   ProtectValue,
 } from '@cipherstash/protect'
 
@@ -46,7 +46,7 @@ export class EncryptInterceptor implements NestInterceptor {
   async intercept(
     context: ExecutionContext,
     next: CallHandler,
-  ): Promise<Observable<any>> {
+  ): Promise<Observable<unknown>> {
     const protectService = getProtectService(context)
 
     if (!protectService) {
