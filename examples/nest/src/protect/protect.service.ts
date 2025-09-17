@@ -1,5 +1,4 @@
-import { Injectable, type OnModuleInit } from '@nestjs/common'
-import { protectClient } from './index'
+import { Injectable, Inject } from '@nestjs/common'
 import type {
   ProtectClient,
   EncryptedPayload,
@@ -7,43 +6,90 @@ import type {
   ProtectTable,
   ProtectTableColumn,
   Decrypted,
+  LockContext,
 } from '@cipherstash/protect'
+import { PROTECT_CLIENT } from './protect.constants'
 
 @Injectable()
-export class ProtectService implements OnModuleInit {
-  private client: ProtectClient | null = null
-
-  async onModuleInit() {
-    this.client = await protectClient
-  }
-
-  async getClient(): Promise<ProtectClient> {
-    if (!this.client) {
-      this.client = await protectClient
-    }
-    return this.client
-  }
+export class ProtectService {
+  constructor(
+    @Inject(PROTECT_CLIENT)
+    private readonly client: ProtectClient,
+  ) {}
 
   async encrypt(plaintext: string, options: EncryptOptions) {
-    const client = await this.getClient()
-    return client.encrypt(plaintext, options)
+    return this.client.encrypt(plaintext, options)
   }
 
   async decrypt(encryptedPayload: EncryptedPayload) {
-    const client = await this.getClient()
-    return client.decrypt(encryptedPayload)
+    return this.client.decrypt(encryptedPayload)
   }
 
   async encryptModel<T extends Record<string, unknown>>(
     model: Decrypted<T>,
     table: ProtectTable<ProtectTableColumn>,
   ) {
-    const client = await this.getClient()
-    return client.encryptModel<T>(model, table)
+    return this.client.encryptModel<T>(model, table)
   }
 
   async decryptModel<T extends Record<string, unknown>>(model: T) {
-    const client = await this.getClient()
-    return client.decryptModel<T>(model)
+    return this.client.decryptModel<T>(model)
+  }
+
+  async bulkEncrypt(
+    plaintexts: Array<{ id?: string; plaintext: string | null }>,
+    options: EncryptOptions,
+  ) {
+    return this.client.bulkEncrypt(plaintexts, options)
+  }
+
+  async bulkDecrypt(
+    encryptedData: Array<{ id?: string; data: EncryptedPayload | null }>,
+  ) {
+    return this.client.bulkDecrypt(encryptedData)
+  }
+
+  async bulkEncryptModels<T extends Record<string, unknown>>(
+    models: Decrypted<T>[],
+    table: ProtectTable<ProtectTableColumn>,
+  ) {
+    return this.client.bulkEncryptModels<T>(models, table)
+  }
+
+  async bulkDecryptModels<T extends Record<string, unknown>>(models: T[]) {
+    return this.client.bulkDecryptModels<T>(models)
+  }
+
+  // Identity-aware encryption methods
+  async encryptWithLockContext(
+    plaintext: string,
+    options: EncryptOptions,
+    lockContext: LockContext,
+  ) {
+    return this.client.encrypt(plaintext, options).withLockContext(lockContext)
+  }
+
+  async decryptWithLockContext(
+    encryptedPayload: EncryptedPayload,
+    lockContext: LockContext,
+  ) {
+    return this.client.decrypt(encryptedPayload).withLockContext(lockContext)
+  }
+
+  async encryptModelWithLockContext<T extends Record<string, unknown>>(
+    model: Decrypted<T>,
+    table: ProtectTable<ProtectTableColumn>,
+    lockContext: LockContext,
+  ) {
+    return this.client
+      .encryptModel<T>(model, table)
+      .withLockContext(lockContext)
+  }
+
+  async decryptModelWithLockContext<T extends Record<string, unknown>>(
+    model: T,
+    lockContext: LockContext,
+  ) {
+    return this.client.decryptModel<T>(model).withLockContext(lockContext)
   }
 }

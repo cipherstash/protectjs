@@ -22,6 +22,7 @@
   "dependencies": {
     "@cipherstash/protect": "workspace:*",
     "@nestjs/common": "^11.0.1",
+    "@nestjs/config": "^3.2.0",
     "@nestjs/core": "^11.0.1",
     "@nestjs/platform-express": "^11.0.1",
     "dotenv": "^16.4.7",

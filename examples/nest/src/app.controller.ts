@@ -1,15 +1,31 @@
-import { Controller, Get } from '@nestjs/common'
-// biome-ignore lint/style/useImportType: Required for NestJS
-import { AppService, type User } from './app.service'
-import type { Decrypted } from '@cipherstash/protect'
+import { Controller, Get, Post, Body, Param } from '@nestjs/common'
+import { AppService } from './app.service'
+import type { CreateUserDto, User } from './app.service'
 
 @Controller()
 export class AppController {
   constructor(private readonly appService: AppService) {}
 
   @Get()
-  async getHello(): Promise<string> {
-    const payload = await this.appService.getHello()
-    return JSON.stringify(payload, null, 2)
+  async getHello() {
+    return await this.appService.getHello()
+  }
+
+  @Post('users')
+  async createUser(@Body() userData: CreateUserDto): Promise<User> {
+    const u = await this.appService.createUser(userData)
+    return u
+  }
+
+  @Get('users/:id')
+  async getUser(@Param('id') id: string, @Body() encryptedUser: User) {
+    return await this.appService.getUser(id, encryptedUser)
+  }
+
+  @Get('users')
+  async getUsers() {
+    // This would typically fetch from a database
+    // For demo purposes, return empty array
+    return []
   }
 }

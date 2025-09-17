@@ -25,13 +25,13 @@ DataSource.prototype.initialize = async function (...params) {
 
 export const AppDataSource = new DataSource({
   type: 'postgres',
-  host: 'localhost',
-  port: 5432,
-  username: 'cipherstash',
-  password: 'password',
-  database: 'cipherstash',
-  synchronize: true,
-  logging: true,
+  host: process.env.DB_HOST || 'localhost',
+  port: Number.parseInt(process.env.DB_PORT || '5432'),
+  username: process.env.DB_USERNAME || 'cipherstash',
+  password: process.env.DB_PASSWORD || 'password',
+  database: process.env.DB_DATABASE || 'cipherstash',
+  synchronize: process.env.NODE_ENV !== 'production', // Only auto-sync in development
+  logging: process.env.NODE_ENV === 'development',
   entities: [User],
   migrations: [],
   subscribers: [],
