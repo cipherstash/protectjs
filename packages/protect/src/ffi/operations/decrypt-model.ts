@@ -1,9 +1,9 @@
-import { withResult, type Result } from '@byteslice/result'
-import { noClientError } from '../index'
+import { type Result, withResult } from '@byteslice/result'
 import { type ProtectError, ProtectErrorTypes } from '../..'
 import { logger } from '../../../../utils/logger'
 import type { LockContext } from '../../identify'
 import type { Client, Decrypted } from '../../types'
+import { noClientError } from '../index'
 import {
   decryptModelFields,
   decryptModelFieldsWithLockContext,

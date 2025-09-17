@@ -1,10 +1,10 @@
 'use client'
 
+import { createUser } from '@/app/actions'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { useTransition } from 'react'
 import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
-import { createUser } from '@/app/actions'
 
 const formSchema = z.object({
   name: z.string().min(1, 'Name is required'),

@@ -1,9 +1,9 @@
-import { withResult, type Result } from '@byteslice/result'
-import { noClientError } from '../index'
+import { type Result, withResult } from '@byteslice/result'
+import { encryptBulk } from '@cipherstash/protect-ffi'
 import { type ProtectError, ProtectErrorTypes } from '../..'
 import { logger } from '../../../../utils/logger'
-import type { Client, SearchTerm, EncryptedSearchTerm } from '../../types'
-import { encryptBulk } from '@cipherstash/protect-ffi'
+import type { Client, EncryptedSearchTerm, SearchTerm } from '../../types'
+import { noClientError } from '../index'
 import { ProtectOperation } from './base-operation'
 
 export class SearchTermsOperation extends ProtectOperation<

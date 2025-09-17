@@ -1,42 +1,26 @@
-# Protect.js with TypeORM: How-to Guide
+# Protect.js Example with TypeORM
 
-This guide shows you how to integrate [Protect.js](https://github.com/cipherstash/protectjs) with TypeORM to add searchable encryption to your PostgreSQL database. Protect.js enables you to encrypt sensitive data while maintaining the ability to search and query it efficiently.
+> ⚠️ **Heads-up:** This example was generated with AI with some very specific prompting to make it as useful as possible for you :)
+> If you find any issues, think this example is absolutely terrible, or would like to speak with a human, book a call with the [CipherStash solutions engineering team](https://calendly.com/cipherstash-gtm/cipherstash-discovery-call?month=2025-09)
 
-## What You'll Learn
+## What this shows
+- Field-level encryption on 2+ properties via `encrypt`/`encryptModel` and bulk variants
+- Searchable encryption-ready schema for PostgreSQL
+- Result contract preserved: operations return `{ data }` or `{ failure }`
 
-- How to set up Protect.js with TypeORM
-- How to define encrypted columns in your entities
-- How to encrypt and decrypt data
-- How to perform searchable queries on encrypted data
-- Best practices for production use
-
-## Prerequisites
-
-- Node.js 18+ and npm/pnpm
-- PostgreSQL database
-- CipherStash account and workspace
-
-## Setup
-
-### 1. Install Dependencies
-
+## 90-second Quickstart
 ```bash
-npm install @cipherstash/protect typeorm pg reflect-metadata dotenv
-npm install --save-dev @types/node typescript ts-node tsconfig-paths
+pnpm install
+cp .env.example .env
+pnpm start
 ```
 
-### 2. Configure Environment Variables
-
-Create a `.env` file in your project root:
-
-```env
-# CipherStash configuration
+Environment variables (in `.env`):
+```bash
+CS_WORKSPACE_CRN=
 CS_CLIENT_ID=
 CS_CLIENT_KEY=
 CS_CLIENT_ACCESS_KEY=
-CS_WORKSPACE_CRN=
-
-# Database configuration
 DB_HOST=localhost
 DB_PORT=5432
 DB_USERNAME=cipherstash
@@ -44,61 +28,13 @@ DB_PASSWORD=password
 DB_DATABASE=cipherstash
 ```
 
-### 3. Configure TypeORM Data Source
-
-The key setup is extending TypeORM's DataSource to support the `eql_v2_encrypted` data type:
-
-```typescript
-// src/data-source.ts
-import { DataSource } from 'typeorm'
-import { User } from './entity/User'
-
-// Extend DataSource to support encrypted data types
-const originalConnectionConnectFunction = DataSource.prototype.initialize
-
-DataSource.prototype.initialize = async function (...params) {
-  if (!this.driver.supportedDataTypes.includes('eql_v2_encrypted')) {
-    this.driver.supportedDataTypes.push('eql_v2_encrypted')
-  }
-  
-  await originalConnectionConnectFunction.call(this, ...params)
-  return this
-}
-
-export const AppDataSource = new DataSource({
-  type: 'postgres',
-  host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '5432'),
-  username: process.env.DB_USERNAME,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_DATABASE,
-  synchronize: true, // Set to false in production
-  logging: true,
-  entities: [User],
-  migrations: [],
-  subscribers: [],
-})
-```
-
-## Defining Encrypted Entities
-
-### 1. Create Your Entity
-
-Define your entity with encrypted columns using the `eql_v2_encrypted` type:
+### 3. Define Your Entity (The Easy Way!)
 
 ```typescript
 // src/entity/User.ts
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  BeforeInsert,
-  BeforeUpdate,
-  AfterInsert,
-  AfterLoad,
-  AfterUpdate,
-} from 'typeorm'
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm'
 import type { EncryptedData } from '@cipherstash/protect'
+import { EncryptedColumn } from '../decorators/encrypted-column'
 
 @Entity()
 export class User {
@@ -114,26 +50,86 @@ export class User {
   @Column()
   age: number
 
-  @Column({
-    type: 'eql_v2_encrypted',
-    nullable: true,
-  })
-  email_encrypted: EncryptedData | null
+  // 🎯 Just add @EncryptedColumn() - that's it!
+  @EncryptedColumn()
+  email: EncryptedData | null
 
-  // ... lifecycle hooks for data transformation
+  @EncryptedColumn({ nullable: false })
+  ssn: EncryptedData
+
+  @EncryptedColumn()
+  phone: EncryptedData | null
+
+  @CreateDateColumn()
+  createdAt: Date
+
+  @UpdateDateColumn()
+  updatedAt: Date
 }
 ```
 
-### 2. Add Lifecycle Hooks
-
-TypeORM stores encrypted data as PostgreSQL composite literals, so you need hooks to transform the data:
+### 4. Configure Protect.js
 
 ```typescript
+// src/protect.ts
+import { protect, csTable, csColumn } from '@cipherstash/protect'
+
+export const protectedUser = csTable('user', {
+  email: csColumn('email').equality().orderAndRange(),
+  ssn: csColumn('ssn').equality(),
+  phone: csColumn('phone').equality(),
+})
+
+export const protectClient = await protect({
+  schemas: [protectedUser],
+})
+```
+
+### 5. Use Streamlined Helpers
+
+```typescript
+// src/helpers/protect-entity.ts
+import { ProtectEntityHelper } from './helpers/protect-entity'
+
+const helper = new ProtectEntityHelper(protectClient)
+
+// 🚀 Bulk create with encryption (recommended for production)
+const users = await helper.bulkEncryptAndSave(
+  User,
+  [
+    { firstName: 'John', email: 'john@example.com', ssn: '123-45-6789' },
+    { firstName: 'Jane', email: 'jane@example.com', ssn: '987-65-4321' }
+  ],
+  {
+    email: { table: protectedUser, column: protectedUser.email },
+    ssn: { table: protectedUser, column: protectedUser.ssn }
+  }
+)
+
+// 🔓 Bulk decrypt for display
+const decryptedUsers = await helper.bulkDecrypt(allUsers, {
+  email: { table: protectedUser, column: protectedUser.email },
+  ssn: { table: protectedUser, column: protectedUser.ssn }
+})
+
+// 🔍 Search encrypted data
+const foundUser = await helper.searchEncryptedField(
+  User,
+  'email',
+  'john@example.com',
+  { table: protectedUser, column: protectedUser.email }
+)
+```
+
+## Architecture Overview
+
+### Before (Complex)
+```typescript
+// ❌ Old way: Complex lifecycle hooks
 @BeforeInsert()
 @BeforeUpdate()
 beforeUpsert() {
   if (this.email_encrypted) {
-    // Convert to PostgreSQL composite literal format: (json_string)
     this.email_encrypted = `(${JSON.stringify(JSON.stringify(this.email_encrypted))})`
   }
 }
@@ -142,204 +138,252 @@ beforeUpsert() {
 @AfterLoad()
 @AfterUpdate()
 onLoad() {
-  if (this.email_encrypted && typeof this.email_encrypted === 'string') {
-    try {
-      let jsonString = this.email_encrypted.trim()
-      
-      // Remove outer parentheses if they exist
-      if (jsonString.startsWith('(') && jsonString.endsWith(')')) {
-        jsonString = jsonString.slice(1, -1)
-      }
-      
-      // Handle PostgreSQL's double-quote escaping
-      jsonString = jsonString.replace(/""/g, '"')
-      
-      // Remove outer quotes if they exist
-      if (jsonString.startsWith('"') && jsonString.endsWith('"')) {
-        jsonString = jsonString.slice(1, -1)
-      }
-      
-      // Parse the JSON string
-      this.email_encrypted = JSON.parse(jsonString)
-    } catch (error) {
-      console.error('Failed to parse encrypted data:', error)
-      // Keep the original string if parsing fails
-    }
-  }
+  // 30+ lines of complex string parsing...
 }
 ```
 
-## Using Protect.js
-
-### 1. Initialize Protect Client
-
+### After (Streamlined)
 ```typescript
-// src/protect.ts
-import { protect, csColumn, csTable } from '@cipherstash/protect'
-
-// Define your protected schema
-export const protectedUser = csTable('user', {
-  email_encrypted: csColumn('email_encrypted').equality(),
-})
-
-// Initialize the protect client
-export const protectClient = await protect({
-  schemas: [protectedUser],
-})
+// ✅ New way: Just a decorator!
+@EncryptedColumn()
+email: EncryptedData | null
 ```
 
-### 2. Encrypting Data
+## 📚 Complete Examples
+
+### Single User Creation
 
 ```typescript
-// Encrypt sensitive data before saving
-const emailToInsert = 'user@example.com'
-
-const encryptedEmail = await protectClient.encrypt(emailToInsert, {
+// Encrypt individual fields
+const emailResult = await protectClient.encrypt('user@example.com', {
   table: protectedUser,
-  column: protectedUser.email_encrypted,
+  column: protectedUser.email,
 })
 
-if (encryptedEmail.failure) {
-  console.error('Failed to encrypt email:', encryptedEmail.error)
-  return
+if (emailResult.failure) {
+  throw new Error(`Encryption failed: ${emailResult.failure.message}`)
 }
 
-// Save to database
+// Create and save
 const user = new User()
 user.firstName = 'John'
 user.lastName = 'Doe'
-user.email_encrypted = encryptedEmail.data
+user.email = emailResult.data
 
 const savedUser = await AppDataSource.manager.save(user)
 ```
 
-### 3. Decrypting Data
+### Bulk Operations (Production Recommended)
 
 ```typescript
-// Load users from database
-const users = await AppDataSource.manager.find(User)
-
-// Decrypt the data
-const decryptedUsers = await Promise.all(
-  users.map(async (user) => ({
-    ...user,
-    email_encrypted: await protectClient.decrypt(user.email_encrypted),
-  }))
-)
-```
-
-### 4. Searchable Queries
-
-```typescript
-// Create search terms for encrypted data
-const term = await protectClient.createSearchTerms([
-  {
-    value: 'user@example.com',
-    column: protectedUser.email_encrypted,
-    table: protectedUser,
-    returnType: 'composite-literal', // Required for PostgreSQL
-  },
-])
-
-if (term.failure) {
-  console.error('Failed to create search terms:', term.error)
-  return
-}
-
-// Search for the encrypted data
-const foundUser = await AppDataSource.manager.findOneBy(User, {
-  email_encrypted: term.data[0],
-})
-
-// Decrypt the found user
-const decryptedFoundUser = await protectClient.decrypt(foundUser.email_encrypted)
-```
-
-## Production Best Practices
-
-### 1. Use Bulk Operations
-
-For better performance with multiple records, use bulk operations:
-
-```typescript
-// Bulk encrypt multiple records
-const usersToEncrypt = [
-  { email: 'user1@example.com', firstName: 'John' },
-  { email: 'user2@example.com', firstName: 'Jane' },
+const usersToCreate = [
+  { firstName: 'Alice', email: 'alice@example.com', ssn: '123-45-6789' },
+  { firstName: 'Bob', email: 'bob@example.com', ssn: '987-65-4321' }
 ]
 
-const encryptedUsers = await protectClient.bulkEncryptModels(
-  usersToEncrypt,
+// 🚀 Single call to ZeroKMS for all users
+const savedUsers = await helper.bulkEncryptAndSave(
+  User,
+  usersToCreate,
   {
-    table: protectedUser,
-    column: protectedUser.email_encrypted,
-    valueKey: 'email',
-  }
-)
-
-// Bulk decrypt multiple records
-const users = await AppDataSource.manager.find(User)
-const decryptedUsers = await protectClient.bulkDecryptModels(
-  users,
-  {
-    table: protectedUser,
-    column: protectedUser.email_encrypted,
+    email: { table: protectedUser, column: protectedUser.email },
+    ssn: { table: protectedUser, column: protectedUser.ssn }
   }
 )
 ```
 
-### 2. Error Handling
-
-Always handle encryption/decryption failures gracefully:
+### Model-Level Encryption
 
 ```typescript
-const encryptedEmail = await protectClient.encrypt(email, {
-  table: protectedUser,
-  column: protectedUser.email_encrypted,
-})
+// Alternative: Encrypt entire model at once
+const newUser = {
+  firstName: 'David',
+  lastName: 'Brown',
+  email: 'david@example.com',
+  ssn: '111-22-3333'
+}
 
-if (encryptedEmail.failure) {
-  // Log the error and handle appropriately
-  console.error('Encryption failed:', encryptedEmail.error)
+const encryptedModelResult = await protectClient.encryptModel(newUser, protectedUser)
+
+if (encryptedModelResult.failure) {
+  throw new Error(`Model encryption failed: ${encryptedModelResult.failure.message}`)
+}
+
+const finalUser = new User()
+Object.assign(finalUser, encryptedModelResult.data)
+await AppDataSource.manager.save(finalUser)
+```
+
+## 🔧 Configuration Details
+
+### Data Source Setup
+
+```typescript
+// src/data-source.ts
+import { DataSource } from 'typeorm'
+
+// Extend DataSource to support encrypted types
+const originalInitialize = DataSource.prototype.initialize
+DataSource.prototype.initialize = async function (...params) {
+  const driver: any = this.driver
+  if (!driver.supportedDataTypes.includes('eql_v2_encrypted')) {
+    driver.supportedDataTypes.push('eql_v2_encrypted')
+  }
+  await originalInitialize.call(this, ...params)
+  return this
+}
+
+export const AppDataSource = new DataSource({
+  type: 'postgres',
+  host: process.env.DB_HOST || 'localhost',
+  port: parseInt(process.env.DB_PORT || '5432'),
+  username: process.env.DB_USERNAME,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_DATABASE,
+  synchronize: process.env.NODE_ENV !== 'production',
+  logging: process.env.NODE_ENV === 'development',
+  entities: [User],
+})
+```
+
+### Encrypted Column Transformer
+
+```typescript
+// src/utils/encrypted-column.ts
+export const encryptedDataTransformer = {
+  to(value: EncryptedData | null): string | null {
+    if (value === null) return null
+    return `(${JSON.stringify(JSON.stringify(value))})`
+  },
+
+  from(value: string | null): EncryptedData | null {
+    if (!value) return null
+    
+    try {
+      let jsonString = value.trim()
+      if (jsonString.startsWith('(') && jsonString.endsWith(')')) {
+        jsonString = jsonString.slice(1, -1)
+      }
+      jsonString = jsonString.replace(/""/g, '"')
+      if (jsonString.startsWith('"') && jsonString.endsWith('"')) {
+        jsonString = jsonString.slice(1, -1)
+      }
+      return JSON.parse(jsonString)
+    } catch (error) {
+      console.error('Failed to parse encrypted data:', error)
+      return null
+    }
+  },
+}
+```
+
+## 🎯 Production Best Practices
+
+### 1. Use Bulk Operations
+- **Single operations**: Use for individual records
+- **Bulk operations**: Use for multiple records (recommended)
+- **Model operations**: Use when encrypting entire objects
+
+### 2. Error Handling
+```typescript
+const result = await protectClient.encrypt(data, { table, column })
+
+if (result.failure) {
+  // Always handle failures gracefully
+  console.error('Encryption failed:', result.failure.message)
   throw new Error('Failed to encrypt sensitive data')
 }
 ```
 
 ### 3. Environment Configuration
-
-Use environment variables for all sensitive configuration:
-
 ```typescript
-// src/protect.ts
-import 'dotenv/config'
-
+// Use environment variables for all sensitive data
 export const protectClient = await protect({
   schemas: [protectedUser],
 })
 ```
 
-## Running the Example
+### 4. Database Setup
+```sql
+-- Install EQL extension for searchable encryption
+-- Download from: https://github.com/cipherstash/encrypt-query-language/releases
+-- Then run: psql -f cipherstash-encrypt.sql
+```
 
-1. Set up your environment variables
-2. Install dependencies: `npm install`
-3. Start your PostgreSQL database
-4. Run the example: `npm start`
+## Running the example
 
-## Next Steps
+```bash
+# 1. Set up your environment variables
+cp .env.example .env
+# Edit .env with your CipherStash credentials
 
-- Explore the [Protect.js documentation](https://docs.cipherstash.com/protectjs) for advanced features
-- Check out other examples in the `examples/` directory
-- Learn about [searchable encryption concepts](https://docs.cipherstash.com/protectjs/concepts/searchable-encryption)
+# 2. Install dependencies
+pnpm install
 
-## Troubleshooting
+# 3. Start PostgreSQL database
+# (Make sure EQL extension is installed)
+
+# 4. Run the comprehensive demo
+pnpm start
+```
+
+The demo will show:
+- ✅ Single user creation with encryption
+- ✅ Bulk operations (production recommended)
+- ✅ Bulk decryption for display
+- ✅ Searchable encryption queries
+- ✅ Model-level encryption
+- ✅ Error handling examples
+
+## 🆚 Comparison: Old vs New
+
+| Aspect | Old Implementation | New Implementation |
+|--------|-------------------|-------------------|
+| **Setup Complexity** | 50+ lines of lifecycle hooks | 1 decorator: `@EncryptedColumn()` |
+| **Type Safety** | Manual casting with `any` | Full TypeScript support |
+| **Error Handling** | Manual try/catch in hooks | Automatic transformer error handling |
+| **Maintainability** | Duplicate code per entity | Reusable utilities and decorators |
+| **Performance** | Manual bulk operations | Built-in bulk helper methods |
+| **Developer Experience** | Complex PostgreSQL knowledge needed | Transparent abstraction |
+
+## 🎉 Key Benefits
+
+1. **🎯 Developer Experience**: No more complex lifecycle hooks or PostgreSQL internals
+2. **🔒 Type Safety**: Full TypeScript support with proper type inference
+3. **⚡ Performance**: Optimized bulk operations using ZeroKMS
+4. **🛡️ Reliability**: Robust error handling and validation
+5. **🔍 Searchable**: Full support for encrypted queries
+6. **📦 Reusable**: Clean abstractions that work across your entire application
+
+## 🔗 Next Steps
+
+- **Explore the demo**: Run `npm start` to see all features in action
+- **Read the docs**: Check out [Protect.js documentation](https://github.com/cipherstash/protectjs/tree/main/docs)
+- **Learn concepts**: Understand [searchable encryption](https://github.com/cipherstash/protectjs/blob/main/docs/concepts/searchable-encryption.md)
+- **See other examples**: Browse the [examples directory](https://github.com/cipherstash/protectjs/tree/main/examples)
+
+## 🆘 Troubleshooting
 
 ### Common Issues
 
-1. **"eql_v2_encrypted type not supported"**: Ensure you've extended the DataSource as shown above
-2. **Encryption failures**: Check your CipherStash credentials and workspace configuration
-3. **Data parsing errors**: Verify your entity lifecycle hooks are correctly implemented
+1. **"eql_v2_encrypted type not supported"**
+   - Ensure DataSource extension is properly configured
+   - Check that EQL extension is installed in PostgreSQL
+
+2. **Encryption failures**
+   - Verify CipherStash credentials in `.env`
+   - Check workspace configuration and permissions
+
+3. **Data parsing errors**
+   - The new implementation handles this automatically
+   - Check transformer configuration if using custom setup
 
 ### Getting Help
 
-- Check the [Protect.js documentation](https://www.cipherstash.com/docs/sdks/protect/js)
-- Open an issue on [GitHub](https://github.com/cipherstash/protectjs)
+- 📚 [Protect.js Documentation](https://github.com/cipherstash/protectjs/tree/main/docs)
+- 🐛 [GitHub Issues](https://github.com/cipherstash/protectjs/issues)
+- 💬 [Community Support](https://cipherstash.com)
+
+---
+
+**Ready to build secure applications with encrypted data? This streamlined TypeORM integration makes it easier than ever!** 🚀

@@ -1,16 +1,16 @@
+import type { Result } from '@byteslice/result'
 import type {
-  ProtectClient,
   Decrypted,
+  EncryptedPayload,
+  ProtectClient,
   ProtectTable,
   ProtectTableColumn,
-  EncryptedPayload,
   SearchTerm,
 } from '@cipherstash/protect'
-import type { Result } from '@byteslice/result'
-import type { EncryptModelOperation } from './operations/encrypt-model'
+import type { BulkDecryptModelsOperation } from './operations/bulk-decrypt-models'
 import type { BulkEncryptModelsOperation } from './operations/bulk-encrypt-models'
 import type { DecryptModelOperation } from './operations/decrypt-model'
-import type { BulkDecryptModelsOperation } from './operations/bulk-decrypt-models'
+import type { EncryptModelOperation } from './operations/encrypt-model'
 import type { SearchTermsOperation } from './operations/search-terms'
 
 export interface ProtectDynamoDBConfig {

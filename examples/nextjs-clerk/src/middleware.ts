@@ -1,5 +1,5 @@
-import { clerkMiddleware } from '@clerk/nextjs/server'
 import { protectClerkMiddleware } from '@cipherstash/nextjs/clerk'
+import { clerkMiddleware } from '@clerk/nextjs/server'
 
 export default clerkMiddleware(async (auth, req) => {
   return protectClerkMiddleware(auth, req)

@@ -1,14 +1,14 @@
-import { withResult, type Result } from '@byteslice/result'
-import { noClientError } from '../index'
+import { type Result, withResult } from '@byteslice/result'
+import type { ProtectTable, ProtectTableColumn } from '@cipherstash/schema'
 import { type ProtectError, ProtectErrorTypes } from '../..'
 import { logger } from '../../../../utils/logger'
 import type { LockContext } from '../../identify'
 import type { Client, Decrypted } from '../../types'
+import { noClientError } from '../index'
 import {
   bulkEncryptModels,
   bulkEncryptModelsWithLockContext,
 } from '../model-helpers'
-import type { ProtectTable, ProtectTableColumn } from '@cipherstash/schema'
 import { ProtectOperation } from './base-operation'
 
 export class BulkEncryptModelsOperation<

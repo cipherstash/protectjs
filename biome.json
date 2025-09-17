@@ -1,7 +1,7 @@
 {
   "$schema": "https://biomejs.dev/schemas/1.8.3/schema.json",
   "files": {
-    "ignore": ["**/package.json", ".turbo/", "dist"]
+    "ignore": ["**/package.json", ".turbo/", "dist", "**/nix/store/**"]
   },
   "formatter": {
     "indentStyle": "space",
@@ -13,6 +13,9 @@
       "jsxQuoteStyle": "double",
       "quoteStyle": "single",
       "semicolons": "asNeeded"
+    },
+    "parser": {
+      "unsafeParameterDecoratorsEnabled": true
     }
   },
   "linter": {

@@ -1,15 +1,15 @@
 import type {
+  EncryptedPayload,
   ProtectTable,
   ProtectTableColumn,
-  EncryptedPayload,
   SearchTerm,
 } from '@cipherstash/protect'
-import type { ProtectDynamoDBConfig, ProtectDynamoDBInstance } from './types'
-import { EncryptModelOperation } from './operations/encrypt-model'
+import { BulkDecryptModelsOperation } from './operations/bulk-decrypt-models'
 import { BulkEncryptModelsOperation } from './operations/bulk-encrypt-models'
 import { DecryptModelOperation } from './operations/decrypt-model'
-import { BulkDecryptModelsOperation } from './operations/bulk-decrypt-models'
+import { EncryptModelOperation } from './operations/encrypt-model'
 import { SearchTermsOperation } from './operations/search-terms'
+import type { ProtectDynamoDBConfig, ProtectDynamoDBInstance } from './types'
 
 export function protectDynamoDB(
   config: ProtectDynamoDBConfig,

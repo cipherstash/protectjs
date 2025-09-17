@@ -1,6 +1,6 @@
 import 'dotenv/config'
+import { csColumn, csTable, csValue } from '@cipherstash/schema'
 import { describe, expect, it, vi } from 'vitest'
-import { csTable, csColumn, csValue } from '@cipherstash/schema'
 import { LockContext, protect } from '../src'
 
 const users = csTable('users', {

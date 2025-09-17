@@ -1,10 +1,10 @@
+import { type Result, withResult } from '@byteslice/result'
 import { decrypt as ffiDecrypt } from '@cipherstash/protect-ffi'
-import { withResult, type Result } from '@byteslice/result'
-import { noClientError } from '../index'
 import { type ProtectError, ProtectErrorTypes } from '../..'
 import { logger } from '../../../../utils/logger'
 import type { LockContext } from '../../identify'
 import type { Client, EncryptedPayload } from '../../types'
+import { noClientError } from '../index'
 import { ProtectOperation } from './base-operation'
 
 export class DecryptOperation extends ProtectOperation<string | null> {

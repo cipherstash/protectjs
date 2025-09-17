@@ -1,22 +1,22 @@
+import { type Result, withResult } from '@byteslice/result'
 import { encryptBulk } from '@cipherstash/protect-ffi'
-import { withResult, type Result } from '@byteslice/result'
-import { noClientError } from '../index'
+import type {
+  ProtectColumn,
+  ProtectTable,
+  ProtectTableColumn,
+  ProtectValue,
+} from '@cipherstash/schema'
 import { type ProtectError, ProtectErrorTypes } from '../..'
 import { logger } from '../../../../utils/logger'
-import type { LockContext, Context } from '../../identify'
+import type { Context, LockContext } from '../../identify'
 import type {
+  BulkEncryptPayload,
+  BulkEncryptedData,
   Client,
   EncryptOptions,
   EncryptedPayload,
-  BulkEncryptPayload,
-  BulkEncryptedData,
 } from '../../types'
-import type {
-  ProtectColumn,
-  ProtectValue,
-  ProtectTable,
-  ProtectTableColumn,
-} from '@cipherstash/schema'
+import { noClientError } from '../index'
 import { ProtectOperation } from './base-operation'
 
 // Helper functions for better composability

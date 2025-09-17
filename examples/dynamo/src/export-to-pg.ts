@@ -1,10 +1,10 @@
-// Insert data in dynamo, scan it back out, insert/copy into PG, query from PG.
-import { dynamoClient, docClient, createTable } from './common/dynamo'
-import { log } from './common/log'
-import { users, protectClient } from './common/protect'
 import { PutCommand, ScanCommand } from '@aws-sdk/lib-dynamodb'
 import { protectDynamoDB } from '@cipherstash/protect-dynamodb'
 import pg from 'pg'
+// Insert data in dynamo, scan it back out, insert/copy into PG, query from PG.
+import { createTable, docClient, dynamoClient } from './common/dynamo'
+import { log } from './common/log'
+import { protectClient, users } from './common/protect'
 const PgClient = pg.Client
 
 const tableName = 'UsersExportToPG'

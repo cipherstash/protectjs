@@ -1,8 +1,8 @@
 'use server'
 
+import type { FormData } from '@/components/form'
 import { db } from '@/db'
 import { users } from '@/db/schema'
-import type { FormData } from '@/components/form'
 import { protectClient } from '@/protect'
 import { users as protectedUsers } from '@/protect/schema'
 

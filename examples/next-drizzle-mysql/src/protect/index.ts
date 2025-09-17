@@ -1,4 +1,4 @@
-import { protect, type ProtectClientConfig } from '@cipherstash/protect'
+import { type ProtectClientConfig, protect } from '@cipherstash/protect'
 import { users } from './schema'
 
 const config: ProtectClientConfig = {

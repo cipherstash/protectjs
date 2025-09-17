@@ -1,6 +1,6 @@
-import { ProtectClient } from './ffi'
 import type { ProtectTable, ProtectTableColumn } from '@cipherstash/schema'
 import { buildEncryptConfig } from '@cipherstash/schema'
+import { ProtectClient } from './ffi'
 
 export const ProtectErrorTypes = {
   ClientInitError: 'ClientInitError',

@@ -1,4 +1,4 @@
-import { protect, csColumn, csTable } from '@cipherstash/protect'
+import { csColumn, csTable, protect } from '@cipherstash/protect'
 
 export const users = csTable('users', {
   email: csColumn('email').equality(),

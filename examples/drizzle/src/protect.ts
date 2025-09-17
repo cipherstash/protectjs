@@ -1,9 +1,9 @@
 import 'dotenv/config'
 import {
-  protect,
+  type ProtectClientConfig,
   csColumn,
   csTable,
-  type ProtectClientConfig,
+  protect,
 } from '@cipherstash/protect'
 
 export const users = csTable('users', {

@@ -1,11 +1,11 @@
 import 'dotenv/config'
+import { parseArgs } from 'node:util'
+import type { EncryptedPayload } from '@cipherstash/protect'
+import { bindIfParam, sql } from 'drizzle-orm'
+import type { BinaryOperator, SQL, SQLWrapper } from 'drizzle-orm'
 import { db } from './db'
 import { users } from './db/schema'
 import { protectClient, users as protectUsers } from './protect'
-import { bindIfParam, sql } from 'drizzle-orm'
-import type { BinaryOperator, SQL, SQLWrapper } from 'drizzle-orm'
-import { parseArgs } from 'node:util'
-import type { EncryptedPayload } from '@cipherstash/protect'
 
 const getArgs = () => {
   const { values, positionals } = parseArgs({

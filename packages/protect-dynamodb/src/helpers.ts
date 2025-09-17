@@ -1,5 +1,5 @@
-import type { ProtectDynamoDBError } from './types'
 import type { EncryptedPayload } from '@cipherstash/protect'
+import type { ProtectDynamoDBError } from './types'
 export const ciphertextAttrSuffix = '__source'
 export const searchTermAttrSuffix = '__hmac'
 
