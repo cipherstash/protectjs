@@ -1,33 +1,33 @@
+import { type Result, withResult } from '@byteslice/result'
 import { newClient } from '@cipherstash/protect-ffi'
-import { withResult, type Result } from '@byteslice/result'
+import {
+  type EncryptConfig,
+  type ProtectTable,
+  type ProtectTableColumn,
+  encryptConfigSchema,
+} from '@cipherstash/schema'
 import { type ProtectError, ProtectErrorTypes } from '..'
 import { loadWorkSpaceId } from '../../../utils/config'
 import { logger } from '../../../utils/logger'
 import type {
+  BulkDecryptPayload,
+  BulkEncryptPayload,
   Client,
   Decrypted,
-  EncryptedPayload,
   EncryptOptions,
   EncryptPayload,
+  EncryptedPayload,
   SearchTerm,
-  BulkEncryptPayload,
-  BulkDecryptPayload,
 } from '../types'
-import { EncryptModelOperation } from './operations/encrypt-model'
-import { DecryptModelOperation } from './operations/decrypt-model'
-import { BulkEncryptModelsOperation } from './operations/bulk-encrypt-models'
-import { BulkDecryptModelsOperation } from './operations/bulk-decrypt-models'
-import { EncryptOperation } from './operations/encrypt'
-import { DecryptOperation } from './operations/decrypt'
-import { SearchTermsOperation } from './operations/search-terms'
-import { BulkEncryptOperation } from './operations/bulk-encrypt'
 import { BulkDecryptOperation } from './operations/bulk-decrypt'
-import {
-  type EncryptConfig,
-  encryptConfigSchema,
-  type ProtectTable,
-  type ProtectTableColumn,
-} from '@cipherstash/schema'
+import { BulkDecryptModelsOperation } from './operations/bulk-decrypt-models'
+import { BulkEncryptOperation } from './operations/bulk-encrypt'
+import { BulkEncryptModelsOperation } from './operations/bulk-encrypt-models'
+import { DecryptOperation } from './operations/decrypt'
+import { DecryptModelOperation } from './operations/decrypt-model'
+import { EncryptOperation } from './operations/encrypt'
+import { EncryptModelOperation } from './operations/encrypt-model'
+import { SearchTermsOperation } from './operations/search-terms'
 
 export const noClientError = () =>
   new Error(

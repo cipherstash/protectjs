@@ -1,8 +1,8 @@
-import { Test, TestingModule } from '@nestjs/testing'
-import { AppController } from './app.controller'
-import { AppService, CreateUserDto, User } from './app.service'
-import { ProtectService } from './protect'
 import type { Decrypted, EncryptedPayload } from '@cipherstash/protect'
+import { Test, type TestingModule } from '@nestjs/testing'
+import { AppController } from './app.controller'
+import { AppService, type CreateUserDto, type User } from './app.service'
+import { ProtectService } from './protect'
 
 describe('AppController', () => {
   let appController: AppController

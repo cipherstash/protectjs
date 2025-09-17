@@ -1,13 +1,13 @@
+import { type Result, withResult } from '@byteslice/result'
 import {
-  decryptBulkFallible,
   type DecryptResult,
+  decryptBulkFallible,
 } from '@cipherstash/protect-ffi'
-import { withResult, type Result } from '@byteslice/result'
-import { noClientError } from '../index'
 import { type ProtectError, ProtectErrorTypes } from '../..'
 import { logger } from '../../../../utils/logger'
-import type { LockContext, Context } from '../../identify'
-import type { Client, BulkDecryptPayload, BulkDecryptedData } from '../../types'
+import type { Context, LockContext } from '../../identify'
+import type { BulkDecryptPayload, BulkDecryptedData, Client } from '../../types'
+import { noClientError } from '../index'
 import { ProtectOperation } from './base-operation'
 
 // Helper functions for better composability

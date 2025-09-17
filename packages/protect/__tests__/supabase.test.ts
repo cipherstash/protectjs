@@ -1,13 +1,13 @@
 import 'dotenv/config'
+import { csColumn, csTable } from '@cipherstash/schema'
 import { describe, expect, it } from 'vitest'
-import { csTable, csColumn } from '@cipherstash/schema'
 import {
-  protect,
   type EncryptedPayload,
-  encryptedToPgComposite,
-  modelToEncryptedPgComposites,
-  isEncryptedPayload,
   bulkModelsToEncryptedPgComposites,
+  encryptedToPgComposite,
+  isEncryptedPayload,
+  modelToEncryptedPgComposites,
+  protect,
 } from '../src'
 
 import { createClient } from '@supabase/supabase-js'

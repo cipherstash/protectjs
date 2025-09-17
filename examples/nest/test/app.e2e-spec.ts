@@ -1,10 +1,10 @@
-import { Test, type TestingModule } from '@nestjs/testing'
+import type { EncryptedPayload } from '@cipherstash/protect'
 import type { INestApplication } from '@nestjs/common'
+import { Test, type TestingModule } from '@nestjs/testing'
 import request from 'supertest'
 import { AppController } from '../src/app.controller'
 import { AppService } from '../src/app.service'
 import { ProtectService } from '../src/protect'
-import type { EncryptedPayload } from '@cipherstash/protect'
 
 describe('AppController (e2e)', () => {
   let app: INestApplication

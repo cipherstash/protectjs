@@ -1,5 +1,5 @@
-import Header from '@/components/Header'
 import AddUserForm from '@/components/AddUserForm'
+import Header from '@/components/Header'
 
 export default function AddUser() {
   return (

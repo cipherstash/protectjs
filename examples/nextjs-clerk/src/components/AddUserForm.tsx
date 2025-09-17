@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useToast } from '@/hooks/use-toast'
 import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 import { addUser } from '../lib/actions'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
@@ -13,7 +14,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from './ui/select'
-import { useToast } from '@/hooks/use-toast'
 
 export default function AddUserForm() {
   const [role, setRole] = useState('')

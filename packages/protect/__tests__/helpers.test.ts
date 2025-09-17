@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
-  encryptedToPgComposite,
-  modelToEncryptedPgComposites,
   bulkModelsToEncryptedPgComposites,
+  encryptedToPgComposite,
   isEncryptedPayload,
+  modelToEncryptedPgComposites,
 } from '../src/helpers'
 
 describe('helpers', () => {

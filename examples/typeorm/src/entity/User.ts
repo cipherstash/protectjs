@@ -1,11 +1,11 @@
+import type { EncryptedData } from '@cipherstash/protect'
 import {
-  Entity,
-  PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
+  Entity,
+  PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm'
-import type { EncryptedData } from '@cipherstash/protect'
 import { EncryptedColumn } from '../decorators/encrypted-column'
 
 @Entity()

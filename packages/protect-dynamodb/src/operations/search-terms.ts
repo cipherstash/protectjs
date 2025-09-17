@@ -1,4 +1,4 @@
-import { withResult, type Result } from '@byteslice/result'
+import { type Result, withResult } from '@byteslice/result'
 import type { ProtectClient, SearchTerm } from '@cipherstash/protect'
 import { handleError } from '../helpers'
 import type { ProtectDynamoDBError } from '../types'

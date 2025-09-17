@@ -1,7 +1,7 @@
 import { Column } from 'typeorm'
 import {
-  createEncryptedColumnOptions,
   type EncryptedColumnOptions,
+  createEncryptedColumnOptions,
 } from '../utils/encrypted-column'
 
 /**

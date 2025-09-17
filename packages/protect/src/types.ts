@@ -1,9 +1,9 @@
-import type { newClient, Encrypted } from '@cipherstash/protect-ffi'
+import type { Encrypted, newClient } from '@cipherstash/protect-ffi'
 import type {
+  ProtectColumn,
+  ProtectTable,
   ProtectTableColumn,
   ProtectValue,
-  ProtectTable,
-  ProtectColumn,
 } from '@cipherstash/schema'
 
 /**

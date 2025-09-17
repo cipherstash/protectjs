@@ -1,13 +1,13 @@
-import { Injectable, Inject } from '@nestjs/common'
 import type {
-  ProtectClient,
-  EncryptedPayload,
+  Decrypted,
   EncryptOptions,
+  EncryptedPayload,
+  LockContext,
+  ProtectClient,
   ProtectTable,
   ProtectTableColumn,
-  Decrypted,
-  LockContext,
 } from '@cipherstash/protect'
+import { Inject, Injectable } from '@nestjs/common'
 import { PROTECT_CLIENT } from './protect.constants'
 
 @Injectable()

@@ -2,8 +2,8 @@ import 'reflect-metadata'
 import 'dotenv/config'
 import { AppDataSource } from './data-source'
 import { User } from './entity/User'
-import { initializeProtectClient, protectedUser } from './protect'
 import { ProtectEntityHelper } from './helpers/protect-entity'
+import { initializeProtectClient, protectedUser } from './protect'
 
 async function main() {
   try {

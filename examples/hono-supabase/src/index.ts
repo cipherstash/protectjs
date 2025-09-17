@@ -5,10 +5,10 @@ import { Hono } from 'hono'
 
 // Consolidated protect and it's schemas into a single file
 import {
-  protect,
+  type ProtectClientConfig,
   csColumn,
   csTable,
-  type ProtectClientConfig,
+  protect,
 } from '@cipherstash/protect'
 
 export const users = csTable('users', {

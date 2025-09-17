@@ -1,5 +1,5 @@
-import type { ProtectDynamoDBError } from '../types'
 import type { Result } from '@byteslice/result'
+import type { ProtectDynamoDBError } from '../types'
 
 export type AuditConfig = {
   metadata?: Record<string, unknown>

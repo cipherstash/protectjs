@@ -1,4 +1,4 @@
-import { pgTable, serial, jsonb, varchar } from 'drizzle-orm/pg-core'
+import { jsonb, pgTable, serial, varchar } from 'drizzle-orm/pg-core'
 
 // Data that is encrypted using protectjs is stored as jsonb in postgres
 // ---

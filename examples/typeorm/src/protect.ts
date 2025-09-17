@@ -1,4 +1,4 @@
-import { protect, csTable, csColumn } from '@cipherstash/protect'
+import { csColumn, csTable, protect } from '@cipherstash/protect'
 
 /**
  * Define the protected schema for the User entity

@@ -1,5 +1,5 @@
-import { csColumn, csTable, buildEncryptConfig, csValue } from '../src'
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
+import { buildEncryptConfig, csColumn, csTable, csValue } from '../src'
 
 describe('Schema with nested columns', () => {
   it('should handle nested column structures in encrypt config', () => {

@@ -1,8 +1,8 @@
-import { dynamoClient, docClient, createTable } from './common/dynamo'
-import { log } from './common/log'
-import { users, protectClient } from './common/protect'
 import { GetCommand, PutCommand } from '@aws-sdk/lib-dynamodb'
 import { protectDynamoDB } from '@cipherstash/protect-dynamodb'
+import { createTable, docClient, dynamoClient } from './common/dynamo'
+import { log } from './common/log'
+import { protectClient, users } from './common/protect'
 
 const tableName = 'UsersSimple'
 

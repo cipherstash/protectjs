@@ -1,5 +1,5 @@
-import type { ColumnOptions } from 'typeorm'
 import type { EncryptedData } from '@cipherstash/protect'
+import type { ColumnOptions } from 'typeorm'
 
 /**
  * Transformer for encrypted data columns that handles PostgreSQL composite literal format

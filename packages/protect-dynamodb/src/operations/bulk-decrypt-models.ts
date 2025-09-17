@@ -1,10 +1,10 @@
-import { withResult, type Result } from '@byteslice/result'
+import { type Result, withResult } from '@byteslice/result'
 import type {
+  Decrypted,
+  EncryptedPayload,
   ProtectClient,
   ProtectTable,
   ProtectTableColumn,
-  Decrypted,
-  EncryptedPayload,
 } from '@cipherstash/protect'
 import { handleError, toItemWithEqlPayloads } from '../helpers'
 import type { ProtectDynamoDBError } from '../types'

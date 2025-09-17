@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
-import { logger } from '../../../utils/logger'
 import { loadWorkSpaceId } from '../../../utils/config'
+import { logger } from '../../../utils/logger'
 import {
   CS_COOKIE_NAME,
   type CtsToken,

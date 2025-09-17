@@ -1,7 +1,7 @@
-import { Injectable } from '@nestjs/common'
-import { ProtectService } from './protect'
-import { users } from './protect'
 import type { Decrypted, EncryptedPayload } from '@cipherstash/protect'
+import { Injectable } from '@nestjs/common'
+import type { ProtectService } from './protect'
+import { users } from './protect'
 
 export type User = {
   id: string

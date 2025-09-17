@@ -1,7 +1,7 @@
 import 'dotenv/config'
-import { describe, expect, it, beforeAll } from 'vitest'
+import { csColumn, csTable, csValue, protect } from '@cipherstash/protect'
+import { beforeAll, describe, expect, it } from 'vitest'
 import { protectDynamoDB } from '../src'
-import { protect, csColumn, csTable, csValue } from '@cipherstash/protect'
 
 const schema = csTable('dynamo_cipherstash_test', {
   email: csColumn('email').equality(),

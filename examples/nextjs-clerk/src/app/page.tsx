@@ -1,11 +1,11 @@
-import Header from '../components/Header'
-import UserTable from '../components/UserTable'
-import { users } from '@/core/db/schema'
 import { db } from '@/core/db'
-import { protectClient, getLockContext } from '@/core/protect'
-import { auth, currentUser } from '@clerk/nextjs/server'
+import { users } from '@/core/db/schema'
+import { getLockContext, protectClient } from '@/core/protect'
 import { getCtsToken } from '@cipherstash/nextjs'
 import type { EncryptedData } from '@cipherstash/protect'
+import { auth, currentUser } from '@clerk/nextjs/server'
+import Header from '../components/Header'
+import UserTable from '../components/UserTable'
 
 export type EncryptedUser = {
   id: number

@@ -1,12 +1,12 @@
 'use server'
 
-import { users } from '@/core/db/schema'
 import { db } from '@/core/db'
+import { users } from '@/core/db/schema'
 import { protectClient, users as protectUsers } from '@/core/protect'
 import { getLockContext } from '@/core/protect'
 import { getCtsToken } from '@cipherstash/nextjs'
-import { revalidatePath } from 'next/cache'
 import { auth } from '@clerk/nextjs/server'
+import { revalidatePath } from 'next/cache'
 
 export async function addUser(formData: FormData) {
   const { userId } = await auth()
