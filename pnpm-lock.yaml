@@ -28,7 +28,7 @@ catalogs:
 
 overrides:
   '@babel/runtime': 7.26.10
-  vite: 6.3.5
+  vite: 6.3.6
 
 importers:
 
@@ -627,6 +627,7 @@ packages:
   '@aws-sdk/lib-dynamodb@3.817.0':
     resolution: {integrity: sha512-BHMhLm0OCgplwqxj2j7nGUehMDvTV6i6EE5IZe8FE2XcnCSoh/Pp2xQfVxM2yz33EQLKi5S3m5m2Q7PJvx7cHA==}
     engines: {node: '>=18.0.0'}
+    deprecated: Please upgrade to @aws-sdk/lib-dynamodb@3.850.0 to support Command reuse https://github.com/aws/aws-sdk-js-v3/issues/7217.
     peerDependencies:
       '@aws-sdk/client-dynamodb': ^3.817.0
 
@@ -3358,7 +3359,7 @@ packages:
     resolution: {integrity: sha512-PJbLjonJK82uCWHjzgBJZuR7zmAOrSvKk1QBxrennDIgtH4uK0TB1PvYmc0XBCigxxtiAVPfWtAdy4lpz8SQGQ==}
     peerDependencies:
       msw: ^2.4.9
-      vite: 6.3.5
+      vite: 6.3.6
     peerDependenciesMeta:
       msw:
         optional: true
@@ -6803,8 +6804,8 @@ packages:
     engines: {node: ^18.0.0 || ^20.0.0 || >=22.0.0}
     hasBin: true
 
-  vite@6.3.5:
-    resolution: {integrity: sha512-cZn6NDFE7wdTpINgs++ZJ4N49W2vRp8LCKrn3Ob1kYNtOo21vfDoaV5GzBfLU4MovSAB8uNRm4jgzVQZ+mBzPQ==}
+  vite@6.3.6:
+    resolution: {integrity: sha512-0msEVHJEScQbhkbVTb/4iHZdJ6SXp/AvxL2sjwYQFfBqleHtnCqv1J3sa9zbWz/6kW1m9Tfzn92vW+kZ1WV6QA==}
     engines: {node: ^18.0.0 || ^20.0.0 || >=22.0.0}
     hasBin: true
     peerDependencies:
@@ -10107,13 +10108,13 @@ snapshots:
       chai: 5.2.0
       tinyrainbow: 2.0.0
 
-  '@vitest/mocker@3.1.3(vite@6.3.5(@types/node@22.15.12)(jiti@2.4.2)(lightningcss@1.30.1)(terser@5.44.0)(tsx@4.19.3)(yaml@2.7.0))':
+  '@vitest/mocker@3.1.3(vite@6.3.6(@types/node@22.15.12)(jiti@2.4.2)(lightningcss@1.30.1)(terser@5.44.0)(tsx@4.19.3)(yaml@2.7.0))':
     dependencies:
       '@vitest/spy': 3.1.3
       estree-walker: 3.0.3
       magic-string: 0.30.17
     optionalDependencies:
-      vite: 6.3.5(@types/node@22.15.12)(jiti@2.4.2)(lightningcss@1.30.1)(terser@5.44.0)(tsx@4.19.3)(yaml@2.7.0)
+      vite: 6.3.6(@types/node@22.15.12)(jiti@2.4.2)(lightningcss@1.30.1)(terser@5.44.0)(tsx@4.19.3)(yaml@2.7.0)
 
   '@vitest/pretty-format@3.1.3':
     dependencies:
@@ -13552,7 +13553,7 @@ snapshots:
       debug: 4.4.0
       es-module-lexer: 1.7.0
       pathe: 2.0.3
-      vite: 6.3.5(@types/node@22.15.12)(jiti@2.4.2)(lightningcss@1.30.1)(terser@5.44.0)(tsx@4.19.3)(yaml@2.7.0)
+      vite: 6.3.6(@types/node@22.15.12)(jiti@2.4.2)(lightningcss@1.30.1)(terser@5.44.0)(tsx@4.19.3)(yaml@2.7.0)
     transitivePeerDependencies:
       - '@types/node'
       - jiti
@@ -13567,7 +13568,7 @@ snapshots:
       - tsx
       - yaml
 
-  vite@6.3.5(@types/node@22.15.12)(jiti@2.4.2)(lightningcss@1.30.1)(terser@5.44.0)(tsx@4.19.3)(yaml@2.7.0):
+  vite@6.3.6(@types/node@22.15.12)(jiti@2.4.2)(lightningcss@1.30.1)(terser@5.44.0)(tsx@4.19.3)(yaml@2.7.0):
     dependencies:
       esbuild: 0.25.0
       fdir: 6.4.4(picomatch@4.0.2)
@@ -13587,7 +13588,7 @@ snapshots:
   vitest@3.1.3(@types/node@22.15.12)(jiti@2.4.2)(lightningcss@1.30.1)(terser@5.44.0)(tsx@4.19.3)(yaml@2.7.0):
     dependencies:
       '@vitest/expect': 3.1.3
-      '@vitest/mocker': 3.1.3(vite@6.3.5(@types/node@22.15.12)(jiti@2.4.2)(lightningcss@1.30.1)(terser@5.44.0)(tsx@4.19.3)(yaml@2.7.0))
+      '@vitest/mocker': 3.1.3(vite@6.3.6(@types/node@22.15.12)(jiti@2.4.2)(lightningcss@1.30.1)(terser@5.44.0)(tsx@4.19.3)(yaml@2.7.0))
       '@vitest/pretty-format': 3.1.3
       '@vitest/runner': 3.1.3
       '@vitest/snapshot': 3.1.3
@@ -13604,7 +13605,7 @@ snapshots:
       tinyglobby: 0.2.13
       tinypool: 1.0.2
       tinyrainbow: 2.0.0
-      vite: 6.3.5(@types/node@22.15.12)(jiti@2.4.2)(lightningcss@1.30.1)(terser@5.44.0)(tsx@4.19.3)(yaml@2.7.0)
+      vite: 6.3.6(@types/node@22.15.12)(jiti@2.4.2)(lightningcss@1.30.1)(terser@5.44.0)(tsx@4.19.3)(yaml@2.7.0)
       vite-node: 3.1.3(@types/node@22.15.12)(jiti@2.4.2)(lightningcss@1.30.1)(terser@5.44.0)(tsx@4.19.3)(yaml@2.7.0)
       why-is-node-running: 2.3.0
     optionalDependencies:
