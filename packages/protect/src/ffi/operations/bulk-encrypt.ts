@@ -1,5 +1,5 @@
 import { type Result, withResult } from '@byteslice/result'
-import { encryptBulk } from '@cipherstash/protect-ffi'
+import { type JsPlaintext, encryptBulk } from '@cipherstash/protect-ffi'
 import type {
   ProtectColumn,
   ProtectTable,
@@ -14,7 +14,7 @@ import type {
   BulkEncryptedData,
   Client,
   EncryptOptions,
-  EncryptedPayload,
+  Encrypted,
 } from '../../types'
 import { noClientError } from '../index'
 import { ProtectOperation } from './base-operation'
@@ -31,7 +31,7 @@ const createEncryptPayloads = (
     .filter(({ plaintext }) => plaintext !== null)
     .map(({ id, plaintext, originalIndex }) => ({
       id,
-      plaintext: plaintext as string,
+      plaintext: plaintext as JsPlaintext,
       column: column.getName(),
       table: table.tableName,
       originalIndex,
@@ -47,7 +47,7 @@ const createNullResult = (
 
 const mapEncryptedDataToResult = (
   plaintexts: BulkEncryptPayload,
-  encryptedData: EncryptedPayload[],
+  encryptedData: Encrypted[],
 ): BulkEncryptedData => {
   const result: BulkEncryptedData = new Array(plaintexts.length)
   let encryptedIndex = 0

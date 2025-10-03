@@ -1,5 +1,8 @@
 import { type Result, withResult } from '@byteslice/result'
-import { encrypt as ffiEncrypt } from '@cipherstash/protect-ffi'
+import {
+  type JsPlaintext,
+  encrypt as ffiEncrypt,
+} from '@cipherstash/protect-ffi'
 import type {
   ProtectColumn,
   ProtectTable,
@@ -9,22 +12,21 @@ import type {
 import { type ProtectError, ProtectErrorTypes } from '../..'
 import { logger } from '../../../../utils/logger'
 import type { LockContext } from '../../identify'
-import type {
-  Client,
-  EncryptOptions,
-  EncryptPayload,
-  EncryptedPayload,
-} from '../../types'
+import type { Client, EncryptOptions, Encrypted } from '../../types'
 import { noClientError } from '../index'
 import { ProtectOperation } from './base-operation'
 
-export class EncryptOperation extends ProtectOperation<EncryptedPayload> {
+export class EncryptOperation extends ProtectOperation<Encrypted> {
   private client: Client
-  private plaintext: EncryptPayload
+  private plaintext: JsPlaintext | null
   private column: ProtectColumn | ProtectValue
   private table: ProtectTable<ProtectTableColumn>
 
-  constructor(client: Client, plaintext: EncryptPayload, opts: EncryptOptions) {
+  constructor(
+    client: Client,
+    plaintext: JsPlaintext | null,
+    opts: EncryptOptions,
+  ) {
     super()
     this.client = client
     this.plaintext = plaintext
@@ -38,7 +40,7 @@ export class EncryptOperation extends ProtectOperation<EncryptedPayload> {
     return new EncryptOperationWithLockContext(this, lockContext)
   }
 
-  public async execute(): Promise<Result<EncryptedPayload, ProtectError>> {
+  public async execute(): Promise<Result<Encrypted, ProtectError>> {
     logger.debug('Encrypting data WITHOUT a lock context', {
       column: this.column.getName(),
       table: this.table.tableName,
@@ -72,7 +74,7 @@ export class EncryptOperation extends ProtectOperation<EncryptedPayload> {
 
   public getOperation(): {
     client: Client
-    plaintext: EncryptPayload
+    plaintext: JsPlaintext | null
     column: ProtectColumn | ProtectValue
     table: ProtectTable<ProtectTableColumn>
   } {
@@ -85,7 +87,7 @@ export class EncryptOperation extends ProtectOperation<EncryptedPayload> {
   }
 }
 
-export class EncryptOperationWithLockContext extends ProtectOperation<EncryptedPayload> {
+export class EncryptOperationWithLockContext extends ProtectOperation<Encrypted> {
   private operation: EncryptOperation
   private lockContext: LockContext
 
@@ -95,7 +97,7 @@ export class EncryptOperationWithLockContext extends ProtectOperation<EncryptedP
     this.lockContext = lockContext
   }
 
-  public async execute(): Promise<Result<EncryptedPayload, ProtectError>> {
+  public async execute(): Promise<Result<Encrypted, ProtectError>> {
     return await withResult(
       async () => {
         const { client, plaintext, column, table } =

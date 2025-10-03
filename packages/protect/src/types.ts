@@ -1,4 +1,8 @@
-import type { Encrypted, newClient } from '@cipherstash/protect-ffi'
+import type {
+  Encrypted as CipherStashEncrypted,
+  JsPlaintext,
+  newClient,
+} from '@cipherstash/protect-ffi'
 import type {
   ProtectColumn,
   ProtectTable,
@@ -12,13 +16,19 @@ import type {
 export type Client = Awaited<ReturnType<typeof newClient>> | undefined
 
 /**
+ * Type to represent an encrypted payload
+ */
+export type Encrypted = CipherStashEncrypted | null
+
+/**
  * Represents an encrypted payload in the database
+ * @deprecated Use `Encrypted` instead
  */
 export type EncryptedPayload = Encrypted | null
 
 /**
  * Represents an encrypted data object in the database
- * @deprecated Use `EncryptedPayload` instead
+ * @deprecated Use `Encrypted` instead
  */
 export type EncryptedData = Encrypted | null
 
@@ -26,7 +36,7 @@ export type EncryptedData = Encrypted | null
  * Represents a value that will be encrypted and used in a search
  */
 export type SearchTerm = {
-  value: string
+  value: JsPlaintext
   column: ProtectColumn
   table: ProtectTable<ProtectTableColumn>
   returnType?: 'eql' | 'composite-literal' | 'escaped-composite-literal'
@@ -34,17 +44,16 @@ export type SearchTerm = {
 
 /**
  * The return type of the search term based on the return type specified in the `SearchTerm` type
- * If the return type is `eql`, the return type is `EncryptedPayload`
+ * If the return type is `eql`, the return type is `Encrypted`
  * If the return type is `composite-literal`, the return type is `string` where the value is a composite literal
  * If the return type is `escaped-composite-literal`, the return type is `string` where the value is an escaped composite literal
  */
-export type EncryptedSearchTerm = EncryptedPayload | string
+export type EncryptedSearchTerm = Encrypted | string
 
 /**
  * Represents a payload to be encrypted using the `encrypt` function
- * We currently only support the encryption of strings
  */
-export type EncryptPayload = string | null
+export type EncryptPayload = JsPlaintext | null
 
 /**
  * Represents the options for encrypting a payload using the `encrypt` function
@@ -58,21 +67,21 @@ export type EncryptOptions = {
  * Type to identify encrypted fields in a model
  */
 export type EncryptedFields<T> = {
-  [K in keyof T as T[K] extends EncryptedPayload ? K : never]: T[K]
+  [K in keyof T as T[K] extends Encrypted ? K : never]: T[K]
 }
 
 /**
  * Type to identify non-encrypted fields in a model
  */
 export type OtherFields<T> = {
-  [K in keyof T as T[K] extends EncryptedPayload | null ? never : K]: T[K]
+  [K in keyof T as T[K] extends Encrypted ? never : K]: T[K]
 }
 
 /**
  * Type to represent decrypted fields in a model
  */
 export type DecryptedFields<T> = {
-  [K in keyof T as T[K] extends EncryptedPayload | null ? K : never]: string
+  [K in keyof T as T[K] extends Encrypted ? K : never]: string
 }
 
 /**
@@ -85,12 +94,12 @@ export type Decrypted<T> = OtherFields<T> & DecryptedFields<T>
  */
 export type BulkEncryptPayload = Array<{
   id?: string
-  plaintext: string | null
+  plaintext: JsPlaintext | null
 }>
 
-export type BulkEncryptedData = Array<{ id?: string; data: EncryptedPayload }>
-export type BulkDecryptPayload = Array<{ id?: string; data: EncryptedPayload }>
-export type BulkDecryptedData = Array<DecryptionResult<string | null>>
+export type BulkEncryptedData = Array<{ id?: string; data: Encrypted }>
+export type BulkDecryptPayload = Array<{ id?: string; data: Encrypted }>
+export type BulkDecryptedData = Array<DecryptionResult<JsPlaintext | null>>
 
 type DecryptionSuccess<T> = {
   error?: never

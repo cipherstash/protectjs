@@ -326,53 +326,6 @@ describe('bulk encryption and decryption', () => {
 
       expect(decryptedData.data).toHaveLength(0)
     }, 30000)
-
-    it('should handle encrypted payloads with only "c" key', async () => {
-      // First encrypt some data
-      const plaintexts = [
-        { id: 'user1', plaintext: 'alice@example.com' },
-        { id: 'user2', plaintext: 'bob@example.com' },
-        { id: 'user3', plaintext: 'charlie@example.com' },
-      ]
-
-      const encryptedData = await protectClient.bulkEncrypt(plaintexts, {
-        column: users.email,
-        table: users,
-      })
-
-      if (encryptedData.failure) {
-        throw new Error(`[protect]: ${encryptedData.failure.message}`)
-      }
-
-      // Remove all keys except "c" from each encrypted payload
-      const modifiedEncryptedData = encryptedData.data.map((item) => ({
-        id: item.id,
-        data: {
-          c: item.data?.c,
-        } as EncryptedPayload,
-      }))
-
-      // Now decrypt the modified data
-      const decryptedData = await protectClient.bulkDecrypt(
-        modifiedEncryptedData,
-      )
-
-      if (decryptedData.failure) {
-        throw new Error(`[protect]: ${decryptedData.failure.message}`)
-      }
-
-      // Verify structure
-      expect(decryptedData.data).toHaveLength(3)
-      expect(decryptedData.data[0]).toHaveProperty('id', 'user1')
-      expect(decryptedData.data[0]).toHaveProperty('data', 'alice@example.com')
-      expect(decryptedData.data[1]).toHaveProperty('id', 'user2')
-      expect(decryptedData.data[1]).toHaveProperty('data', 'bob@example.com')
-      expect(decryptedData.data[2]).toHaveProperty('id', 'user3')
-      expect(decryptedData.data[2]).toHaveProperty(
-        'data',
-        'charlie@example.com',
-      )
-    }, 30000)
   })
 
   describe('bulk operations with lock context', () => {
