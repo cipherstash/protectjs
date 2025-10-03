@@ -3,19 +3,7 @@ import { z } from 'zod'
 // ------------------------
 // Zod schemas
 // ------------------------
-const castAsEnum = z
-  .enum([
-    'big_int',
-    'boolean',
-    'date',
-    'real',
-    'double',
-    'int',
-    'small_int',
-    'text',
-    'jsonb',
-  ])
-  .default('text')
+const castAsEnum = z.enum(['text', 'int', 'jsonb']).default('text')
 
 const tokenFilterSchema = z.object({
   kind: z.literal('downcase'),
@@ -200,7 +188,7 @@ export class ProtectColumn {
   /**
    * Enable a STE Vec index, requires a prefix.
    */
-  josn(prefix: string) {
+  searchableJson(prefix: string) {
     this.indexesValue.ste_vec = { prefix }
     return this
   }

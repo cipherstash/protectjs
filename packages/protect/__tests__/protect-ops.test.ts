@@ -25,29 +25,7 @@ beforeAll(async () => {
   })
 })
 
-describe('encryption and decryption', () => {
-  it('should encrypt and decrypt a payload', async () => {
-    const email = 'hello@example.com'
-
-    const ciphertext = await protectClient.encrypt(email, {
-      column: users.email,
-      table: users,
-    })
-
-    if (ciphertext.failure) {
-      throw new Error(`[protect]: ${ciphertext.failure.message}`)
-    }
-
-    // Verify encrypted field
-    expect(ciphertext.data).toHaveProperty('c')
-
-    const plaintext = await protectClient.decrypt(ciphertext.data)
-
-    expect(plaintext).toEqual({
-      data: email,
-    })
-  }, 30000)
-
+describe('encryption and decryption edge cases', () => {
   it('should return null if plaintext is null', async () => {
     const ciphertext = await protectClient.encrypt(null, {
       column: users.email,

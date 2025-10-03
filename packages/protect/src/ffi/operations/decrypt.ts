@@ -1,17 +1,20 @@
 import { type Result, withResult } from '@byteslice/result'
-import { decrypt as ffiDecrypt } from '@cipherstash/protect-ffi'
+import {
+  type JsPlaintext,
+  decrypt as ffiDecrypt,
+} from '@cipherstash/protect-ffi'
 import { type ProtectError, ProtectErrorTypes } from '../..'
 import { logger } from '../../../../utils/logger'
 import type { LockContext } from '../../identify'
-import type { Client, EncryptedPayload } from '../../types'
+import type { Client, Encrypted } from '../../types'
 import { noClientError } from '../index'
 import { ProtectOperation } from './base-operation'
 
-export class DecryptOperation extends ProtectOperation<string | null> {
+export class DecryptOperation extends ProtectOperation<JsPlaintext | null> {
   private client: Client
-  private encryptedData: EncryptedPayload
+  private encryptedData: Encrypted
 
-  constructor(client: Client, encryptedData: EncryptedPayload) {
+  constructor(client: Client, encryptedData: Encrypted) {
     super()
     this.client = client
     this.encryptedData = encryptedData
@@ -23,7 +26,7 @@ export class DecryptOperation extends ProtectOperation<string | null> {
     return new DecryptOperationWithLockContext(this, lockContext)
   }
 
-  public async execute(): Promise<Result<string | null, ProtectError>> {
+  public async execute(): Promise<Result<JsPlaintext | null, ProtectError>> {
     return await withResult(
       async () => {
         if (!this.client) {
@@ -41,7 +44,7 @@ export class DecryptOperation extends ProtectOperation<string | null> {
         })
 
         return await ffiDecrypt(this.client, {
-          ciphertext: this.encryptedData.c,
+          ciphertext: this.encryptedData,
           unverifiedContext: metadata,
         })
       },
@@ -54,7 +57,7 @@ export class DecryptOperation extends ProtectOperation<string | null> {
 
   public getOperation(): {
     client: Client
-    encryptedData: EncryptedPayload
+    encryptedData: Encrypted
     auditData?: Record<string, unknown>
   } {
     return {
@@ -65,9 +68,7 @@ export class DecryptOperation extends ProtectOperation<string | null> {
   }
 }
 
-export class DecryptOperationWithLockContext extends ProtectOperation<
-  string | null
-> {
+export class DecryptOperationWithLockContext extends ProtectOperation<JsPlaintext | null> {
   private operation: DecryptOperation
   private lockContext: LockContext
 
@@ -81,7 +82,7 @@ export class DecryptOperationWithLockContext extends ProtectOperation<
     }
   }
 
-  public async execute(): Promise<Result<string | null, ProtectError>> {
+  public async execute(): Promise<Result<JsPlaintext | null, ProtectError>> {
     return await withResult(
       async () => {
         const { client, encryptedData } = this.operation.getOperation()
@@ -107,7 +108,7 @@ export class DecryptOperationWithLockContext extends ProtectOperation<
         }
 
         return await ffiDecrypt(client, {
-          ciphertext: encryptedData.c,
+          ciphertext: encryptedData,
           unverifiedContext: metadata,
           lockContext: context.data.context,
           serviceToken: context.data.ctsToken,

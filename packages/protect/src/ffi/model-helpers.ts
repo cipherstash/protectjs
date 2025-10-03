@@ -1,12 +1,14 @@
 import {
-  type Encrypted,
+  type Encrypted as CipherStashEncrypted,
+  type DecryptBulkOptions,
+  type JsPlaintext,
   decryptBulk,
   encryptBulk,
 } from '@cipherstash/protect-ffi'
 import type { ProtectTable, ProtectTableColumn } from '@cipherstash/schema'
 import { isEncryptedPayload } from '../helpers'
 import type { GetLockContextResponse } from '../identify'
-import type { Client, Decrypted, EncryptedPayload } from '../types'
+import type { Client, Decrypted, Encrypted } from '../types'
 import type { AuditData } from './operations/base-operation'
 
 /**
@@ -14,8 +16,8 @@ import type { AuditData } from './operations/base-operation'
  */
 export function extractEncryptedFields<T extends Record<string, unknown>>(
   model: T,
-): Record<string, EncryptedPayload> {
-  const result: Record<string, EncryptedPayload> = {}
+): Record<string, Encrypted> {
+  const result: Record<string, Encrypted> = {}
 
   for (const [key, value] of Object.entries(model)) {
     if (isEncryptedPayload(value)) {
@@ -48,7 +50,7 @@ export function extractOtherFields<T extends Record<string, unknown>>(
  */
 export function mergeFields<T>(
   otherFields: Record<string, unknown>,
-  encryptedFields: Record<string, EncryptedPayload>,
+  encryptedFields: Record<string, Encrypted>,
 ): T {
   return { ...otherFields, ...encryptedFields } as T
 }
@@ -201,7 +203,11 @@ function prepareFieldsForEncryption<T extends Record<string, unknown>>(
         continue
       }
 
-      if (typeof value === 'object' && !isEncryptedPayload(value)) {
+      if (
+        typeof value === 'object' &&
+        !isEncryptedPayload(value) &&
+        !columnPaths.includes(fullKey)
+      ) {
         // Only process nested objects if they're in the schema
         if (columnPaths.some((path) => path.startsWith(fullKey))) {
           processNestedFields(
@@ -253,7 +259,7 @@ export async function decryptModelFields<T extends Record<string, unknown>>(
   const bulkDecryptPayload = Object.entries(operationFields).map(
     ([key, value]) => ({
       id: key,
-      ciphertext: (value as EncryptedPayload)?.c ?? '',
+      ciphertext: value as CipherStashEncrypted,
     }),
   )
 
@@ -397,7 +403,7 @@ export async function decryptModelFieldsWithLockContext<
   const bulkDecryptPayload = Object.entries(operationFields).map(
     ([key, value]) => ({
       id: key,
-      ciphertext: (value as EncryptedPayload)?.c ?? '',
+      ciphertext: value as CipherStashEncrypted,
       lockContext: lockContext.context,
     }),
   )
@@ -564,7 +570,11 @@ function prepareBulkModelsForOperation<T extends Record<string, unknown>>(
           continue
         }
 
-        if (typeof value === 'object' && !isEncryptedPayload(value)) {
+        if (
+          typeof value === 'object' &&
+          !isEncryptedPayload(value) &&
+          !columnPaths.includes(fullKey)
+        ) {
           // Only process nested objects if they're in the schema
           if (columnPaths.some((path) => path.startsWith(fullKey))) {
             processNestedFields(
@@ -600,6 +610,7 @@ function prepareBulkModelsForOperation<T extends Record<string, unknown>>(
       const processEncryptedFields = (
         obj: Record<string, unknown>,
         prefix = '',
+        columnPaths: string[] = [],
       ) => {
         for (const [key, value] of Object.entries(obj)) {
           const fullKey = prefix ? `${prefix}.${key}` : key
@@ -609,9 +620,17 @@ function prepareBulkModelsForOperation<T extends Record<string, unknown>>(
             continue
           }
 
-          if (typeof value === 'object' && !isEncryptedPayload(value)) {
+          if (
+            typeof value === 'object' &&
+            !isEncryptedPayload(value) &&
+            !columnPaths.includes(fullKey)
+          ) {
             // Recursively process nested objects
-            processEncryptedFields(value as Record<string, unknown>, fullKey)
+            processEncryptedFields(
+              value as Record<string, unknown>,
+              fullKey,
+              columnPaths,
+            )
           } else if (isEncryptedPayload(value)) {
             // This is an encrypted field
             const id = index.toString()
@@ -749,7 +768,7 @@ export async function bulkDecryptModels<T extends Record<string, unknown>>(
   const bulkDecryptPayload = operationFields.flatMap((fields, modelIndex) =>
     Object.entries(fields).map(([key, value]) => ({
       id: `${modelIndex}-${key}`,
-      ciphertext: (value as EncryptedPayload)?.c ?? '',
+      ciphertext: value as CipherStashEncrypted,
     })),
   )
 
@@ -836,7 +855,7 @@ export async function bulkDecryptModelsWithLockContext<
   const bulkDecryptPayload = operationFields.flatMap((fields, modelIndex) =>
     Object.entries(fields).map(([key, value]) => ({
       id: `${modelIndex}-${key}`,
-      ciphertext: (value as EncryptedPayload)?.c ?? '',
+      ciphertext: value as CipherStashEncrypted,
       lockContext: lockContext.context,
     })),
   )
