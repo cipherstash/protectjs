@@ -38,6 +38,7 @@ export class BulkDecryptModelsOperation<
     return await withResult(
       async () => {
         const encryptedAttrs = Object.keys(this.protectTable.build().columns)
+
         const itemsWithEqlPayloads = this.items.map((item) =>
           toItemWithEqlPayloads(item, encryptedAttrs),
         )
