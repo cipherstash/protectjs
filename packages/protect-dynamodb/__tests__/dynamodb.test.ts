@@ -8,10 +8,17 @@ const schema = csTable('dynamo_cipherstash_test', {
   firstName: csColumn('firstName').equality(),
   lastName: csColumn('lastName').equality(),
   phoneNumber: csColumn('phoneNumber'),
+  json: csColumn('json').dataType('jsonb'),
+  jsonSearchable: csColumn('jsonSearchable')
+    .dataType('jsonb')
+    .searchableJson('users/jsonSearchable'),
   example: {
     protected: csValue('example.protected'),
     deep: {
       protected: csValue('example.deep.protected'),
+      protectNestedJson: csValue('example.deep.protectNestedJson').dataType(
+        'jsonb',
+      ),
     },
   },
 })
@@ -30,7 +37,7 @@ describe('protect dynamodb helpers', () => {
     })
   })
 
-  it('should encrypt columns', async () => {
+  it('should encrypt and decrypt a model', async () => {
     const testData = {
       id: '01ABCDEFGHIJKLMNOPQRSTUVWX',
       email: 'test.user@example.com',
@@ -39,6 +46,22 @@ describe('protect dynamodb helpers', () => {
       firstName: 'John',
       lastName: 'Smith',
       phoneNumber: '555-555-5555',
+      json: {
+        name: 'John Doe',
+        age: 30,
+        preferences: {
+          theme: 'dark',
+          notifications: true,
+        },
+      },
+      jsonSearchable: {
+        name: 'John Doe',
+        age: 30,
+        preferences: {
+          theme: 'dark',
+          notifications: true,
+        },
+      },
       companyName: 'Acme Corp',
       batteryBrands: ['Brand1', 'Brand2'],
       metadata: { role: 'admin' },
@@ -48,6 +71,9 @@ describe('protect dynamodb helpers', () => {
         deep: {
           protected: 'deep protected',
           notProtected: 'deep not protected',
+          protectNestedJson: {
+            hello: 'world',
+          },
         },
       },
     }
@@ -80,6 +106,16 @@ describe('protect dynamodb helpers', () => {
     expect(encryptedData.example.notProtected).toBe('I am not protected')
     expect(encryptedData.example.deep.notProtected).toBe('deep not protected')
     expect(encryptedData.metadata).toEqual({ role: 'admin' })
+
+    const decryptResult = await protectDynamo.decryptModel(
+      encryptedData,
+      schema,
+    )
+    if (decryptResult.failure) {
+      throw new Error(`Decryption failed: ${decryptResult.failure.message}`)
+    }
+
+    expect(decryptResult.data).toEqual(testData)
   })
 
   it('should handle null and undefined values', async () => {

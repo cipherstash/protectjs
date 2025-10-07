@@ -35,8 +35,10 @@ export class DecryptModelOperation<
   public async execute(): Promise<Result<Decrypted<T>, ProtectDynamoDBError>> {
     return await withResult(
       async () => {
-        const encryptedAttrs = Object.keys(this.protectTable.build().columns)
-        const withEqlPayloads = toItemWithEqlPayloads(this.item, encryptedAttrs)
+        const withEqlPayloads = toItemWithEqlPayloads(
+          this.item,
+          this.protectTable,
+        )
 
         const decryptResult = await this.protectClient
           .decryptModel<T>(withEqlPayloads as T)

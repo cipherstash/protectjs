@@ -1,4 +1,8 @@
-import type { Encrypted } from '@cipherstash/protect'
+import type {
+  Encrypted,
+  ProtectTable,
+  ProtectTableColumn,
+} from '@cipherstash/protect'
 import type { ProtectDynamoDBError } from './types'
 export const ciphertextAttrSuffix = '__source'
 export const searchTermAttrSuffix = '__hmac'
@@ -92,6 +96,12 @@ export function toEncryptedDynamoItem(
         result[`${attrName}${ciphertextAttrSuffix}`] = encryptPayload.c
         return result
       }
+
+      if (encryptPayload?.sv) {
+        const result: Record<string, unknown> = {}
+        result[`${attrName}${ciphertextAttrSuffix}`] = encryptPayload.sv
+        return result
+      }
     }
 
     // Handle nested objects recursively
@@ -123,7 +133,7 @@ export function toEncryptedDynamoItem(
 
 export function toItemWithEqlPayloads(
   decrypted: Record<string, Encrypted | unknown>,
-  encryptedAttrs: string[],
+  encryptSchemas: ProtectTable<ProtectTableColumn>,
 ): Record<string, unknown> {
   function processValue(
     attrName: string,
@@ -139,23 +149,42 @@ export function toItemWithEqlPayloads(
       return {}
     }
 
+    const encryptConfig = encryptSchemas.build()
+    const encryptedAttrs = Object.keys(encryptConfig.columns)
+    const columnName = attrName.slice(0, -ciphertextAttrSuffix.length)
+
     // Handle encrypted payload
     if (
       attrName.endsWith(ciphertextAttrSuffix) &&
-      (encryptedAttrs.includes(
-        attrName.slice(0, -ciphertextAttrSuffix.length),
-      ) ||
-        isNested)
+      (encryptedAttrs.includes(columnName) || isNested)
     ) {
-      const baseName = attrName.slice(0, -ciphertextAttrSuffix.length)
+      // TODO: Implement the standardized typing for Encrypted Payloads through the FFI interface
+      const i = { c: columnName, t: encryptConfig.tableName }
+      const v = 2
 
-      // TODO: in order to support the ste_vec eql type, this needs to be updated
+      // Nested values are not searchable, so we can just return the standard EQL payload.
+      // Worth noting, that encryptConfig.columns[columnName] will be undefined if isNested is true.
+      if (
+        !isNested &&
+        encryptConfig.columns[columnName].cast_as === 'jsonb' &&
+        encryptConfig.columns[columnName].indexes.ste_vec
+      ) {
+        return {
+          [columnName]: {
+            i,
+            v,
+            k: 'sv',
+            sv: attrValue,
+          },
+        }
+      }
+
       return {
-        [baseName]: {
-          c: attrValue,
-          i: { c: 'notUsed', t: 'notUsed' },
+        [columnName]: {
+          i,
+          v,
           k: 'ct',
-          v: 2,
+          c: attrValue,
         },
       }
     }
