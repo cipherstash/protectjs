@@ -28,12 +28,10 @@ type User = {
 
 let protectClient: Awaited<ReturnType<typeof protect>>
 
-const test = false
-
 beforeAll(async () => {
   protectClient = await protect({
     schemas: [users],
   })
 })
 
-describe('debugging', () => {})
+// Add your tests here when ready
