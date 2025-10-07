@@ -1,5 +1,5 @@
 import type {
-  EncryptedPayload,
+  Encrypted,
   ProtectTable,
   ProtectTableColumn,
   SearchTerm,
@@ -42,7 +42,7 @@ export function protectDynamoDB(
     },
 
     decryptModel<T extends Record<string, unknown>>(
-      item: Record<string, EncryptedPayload | unknown>,
+      item: Record<string, Encrypted | unknown>,
       protectTable: ProtectTable<ProtectTableColumn>,
     ) {
       return new DecryptModelOperation<T>(
@@ -54,7 +54,7 @@ export function protectDynamoDB(
     },
 
     bulkDecryptModels<T extends Record<string, unknown>>(
-      items: Record<string, EncryptedPayload | unknown>[],
+      items: Record<string, Encrypted | unknown>[],
       protectTable: ProtectTable<ProtectTableColumn>,
     ) {
       return new BulkDecryptModelsOperation<T>(

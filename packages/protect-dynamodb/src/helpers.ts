@@ -1,4 +1,4 @@
-import type { EncryptedPayload } from '@cipherstash/protect'
+import type { Encrypted } from '@cipherstash/protect'
 import type { ProtectDynamoDBError } from './types'
 export const ciphertextAttrSuffix = '__source'
 export const searchTermAttrSuffix = '__hmac'
@@ -83,7 +83,7 @@ export function toEncryptedDynamoItem(
         typeof attrValue === 'object' &&
         'c' in (attrValue as object))
     ) {
-      const encryptPayload = attrValue as EncryptedPayload
+      const encryptPayload = attrValue as Encrypted
       if (encryptPayload?.c) {
         const result: Record<string, unknown> = {}
         if (encryptPayload.hm) {
@@ -122,7 +122,7 @@ export function toEncryptedDynamoItem(
 }
 
 export function toItemWithEqlPayloads(
-  decrypted: Record<string, EncryptedPayload | unknown>,
+  decrypted: Record<string, Encrypted | unknown>,
   encryptedAttrs: string[],
 ): Record<string, unknown> {
   function processValue(
@@ -148,14 +148,13 @@ export function toItemWithEqlPayloads(
         isNested)
     ) {
       const baseName = attrName.slice(0, -ciphertextAttrSuffix.length)
+
+      // TODO: in order to support the ste_vec eql type, this needs to be updated
       return {
         [baseName]: {
           c: attrValue,
-          bf: null,
-          hm: null,
           i: { c: 'notUsed', t: 'notUsed' },
-          k: 'notUsed',
-          ob: null,
+          k: 'ct',
           v: 2,
         },
       }

@@ -1,7 +1,7 @@
 import { type Result, withResult } from '@byteslice/result'
 import type {
   Decrypted,
-  EncryptedPayload,
+  Encrypted,
   ProtectClient,
   ProtectTable,
   ProtectTableColumn,
@@ -17,12 +17,12 @@ export class DecryptModelOperation<
   T extends Record<string, unknown>,
 > extends DynamoDBOperation<Decrypted<T>> {
   private protectClient: ProtectClient
-  private item: Record<string, EncryptedPayload | unknown>
+  private item: Record<string, Encrypted | unknown>
   private protectTable: ProtectTable<ProtectTableColumn>
 
   constructor(
     protectClient: ProtectClient,
-    item: Record<string, EncryptedPayload | unknown>,
+    item: Record<string, Encrypted | unknown>,
     protectTable: ProtectTable<ProtectTableColumn>,
     options?: DynamoDBOperationOptions,
   ) {
