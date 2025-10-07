@@ -97,6 +97,7 @@ export function toEncryptedDynamoItem(
         return result
       }
 
+      // TODO: Need to implement the new Encrypt payload type when FFI is updated
       if (encryptPayload?.sv) {
         const result: Record<string, unknown> = {}
         result[`${attrName}${ciphertextAttrSuffix}`] = encryptPayload.sv
