@@ -1,7 +1,12 @@
 import 'dotenv/config'
-import { csColumn, csTable } from '@cipherstash/schema'
+import { csColumn, csTable, type EncryptConfig } from '@cipherstash/schema'
 import { beforeAll, describe, expect, it } from 'vitest'
-import { type EncryptedPayload, LockContext, protect } from '../src'
+import {
+  type BulkDecryptPayload,
+  type Encrypted,
+  LockContext,
+  protect,
+} from '../src'
 
 const users = csTable('users', {
   email: csColumn('email').freeTextSearch().equality().orderAndRange(),
@@ -315,10 +320,9 @@ describe('bulk encryption and decryption', () => {
     }, 30000)
 
     it('should handle empty array in bulk decrypt', async () => {
-      const encryptedPayloads: Array<{ id?: string; data: EncryptedPayload }> =
-        []
+      const encrypteds: BulkDecryptPayload<EncryptConfig>[] = []
 
-      const decryptedData = await protectClient.bulkDecrypt(encryptedPayloads)
+      const decryptedData = await protectClient.bulkDecrypt(encrypteds)
 
       if (decryptedData.failure) {
         throw new Error(`[protect]: ${decryptedData.failure.message}`)

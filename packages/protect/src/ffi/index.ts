@@ -33,9 +33,9 @@ export const noClientError = () =>
     'The EQL client has not been initialized. Please call init() before using the client.',
   )
 
-export class ProtectClient {
+export class ProtectClient<C extends EncryptConfig = EncryptConfig> {
   private client: Client
-  private encryptConfig: EncryptConfig | undefined
+  private encryptConfig: C | undefined
   private workspaceId: string | undefined
 
   constructor(workspaceCrn?: string) {
@@ -44,17 +44,17 @@ export class ProtectClient {
   }
 
   async init(config: {
-    encryptConfig: EncryptConfig
+    encryptConfig: C
     workspaceCrn?: string
     accessKey?: string
     clientId?: string
     clientKey?: string
-  }): Promise<Result<ProtectClient, ProtectError>> {
+  }): Promise<Result<ProtectClient<C>, ProtectError>> {
     return await withResult(
       async () => {
-        const validated: EncryptConfig = encryptConfigSchema.parse(
+        const validated: C = encryptConfigSchema.parse(
           config.encryptConfig,
-        )
+        ) as C
 
         logger.debug(
           'Initializing the Protect.js client with the following encrypt config:',
@@ -94,8 +94,8 @@ export class ProtectClient {
   encrypt(
     plaintext: JsPlaintext | null,
     opts: EncryptOptions,
-  ): EncryptOperation {
-    return new EncryptOperation(this.client, plaintext, opts)
+  ): EncryptOperation<C> {
+    return new EncryptOperation<C>(this.client, plaintext, opts)
   }
 
   /**
@@ -104,8 +104,8 @@ export class ProtectClient {
    *    await eqlClient.decrypt(encryptedData)
    *    await eqlClient.decrypt(encryptedData).withLockContext(lockContext)
    */
-  decrypt(encryptedData: Encrypted): DecryptOperation {
-    return new DecryptOperation(this.client, encryptedData)
+  decrypt(encryptedData: Encrypted<C>): DecryptOperation<C> {
+    return new DecryptOperation<C>(this.client, encryptedData)
   }
 
   /**
@@ -115,10 +115,10 @@ export class ProtectClient {
    *    await eqlClient.encryptModel(decryptedModel, table).withLockContext(lockContext)
    */
   encryptModel<T extends Record<string, unknown>>(
-    input: Decrypted<T>,
+    input: Decrypted<T, C>,
     table: ProtectTable<ProtectTableColumn>,
-  ): EncryptModelOperation<T> {
-    return new EncryptModelOperation(this.client, input, table)
+  ): EncryptModelOperation<T, C> {
+    return new EncryptModelOperation<T, C>(this.client, input, table)
   }
 
   /**
@@ -129,8 +129,8 @@ export class ProtectClient {
    */
   decryptModel<T extends Record<string, unknown>>(
     input: T,
-  ): DecryptModelOperation<T> {
-    return new DecryptModelOperation(this.client, input)
+  ): DecryptModelOperation<T, C> {
+    return new DecryptModelOperation<T, C>(this.client, input)
   }
 
   /**
@@ -140,10 +140,10 @@ export class ProtectClient {
    *    await eqlClient.bulkEncryptModels(decryptedModels, table).withLockContext(lockContext)
    */
   bulkEncryptModels<T extends Record<string, unknown>>(
-    input: Array<Decrypted<T>>,
+    input: Array<Decrypted<T, C>>,
     table: ProtectTable<ProtectTableColumn>,
-  ): BulkEncryptModelsOperation<T> {
-    return new BulkEncryptModelsOperation(this.client, input, table)
+  ): BulkEncryptModelsOperation<T, C> {
+    return new BulkEncryptModelsOperation<T, C>(this.client, input, table)
   }
 
   /**
@@ -154,8 +154,8 @@ export class ProtectClient {
    */
   bulkDecryptModels<T extends Record<string, unknown>>(
     input: Array<T>,
-  ): BulkDecryptModelsOperation<T> {
-    return new BulkDecryptModelsOperation(this.client, input)
+  ): BulkDecryptModelsOperation<T, C> {
+    return new BulkDecryptModelsOperation<T, C>(this.client, input)
   }
 
   /**
@@ -167,8 +167,8 @@ export class ProtectClient {
   bulkEncrypt(
     plaintexts: BulkEncryptPayload,
     opts: EncryptOptions,
-  ): BulkEncryptOperation {
-    return new BulkEncryptOperation(this.client, plaintexts, opts)
+  ): BulkEncryptOperation<C> {
+    return new BulkEncryptOperation<C>(this.client, plaintexts, opts)
   }
 
   /**
@@ -177,8 +177,10 @@ export class ProtectClient {
    *    await eqlClient.bulkDecrypt(encryptedPayloads)
    *    await eqlClient.bulkDecrypt(encryptedPayloads).withLockContext(lockContext)
    */
-  bulkDecrypt(encryptedPayloads: BulkDecryptPayload): BulkDecryptOperation {
-    return new BulkDecryptOperation(this.client, encryptedPayloads)
+  bulkDecrypt(
+    encryptedPayloads: BulkDecryptPayload<C>,
+  ): BulkDecryptOperation<C> {
+    return new BulkDecryptOperation<C>(this.client, encryptedPayloads)
   }
 
   /**
@@ -187,8 +189,8 @@ export class ProtectClient {
    *    await eqlClient.createSearchTerms(searchTerms)
    *    await eqlClient.createSearchTerms(searchTerms).withLockContext(lockContext)
    */
-  createSearchTerms(terms: SearchTerm[]): SearchTermsOperation {
-    return new SearchTermsOperation(this.client, terms)
+  createSearchTerms(terms: SearchTerm[]): SearchTermsOperation<C> {
+    return new SearchTermsOperation<C>(this.client, terms)
   }
 
   /** e.g., debugging or environment info */
