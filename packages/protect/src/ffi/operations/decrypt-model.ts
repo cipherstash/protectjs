@@ -1,4 +1,5 @@
 import { type Result, withResult } from '@byteslice/result'
+import type { EncryptConfig } from '@cipherstash/schema'
 import { type ProtectError, ProtectErrorTypes } from '../..'
 import { logger } from '../../../../utils/logger'
 import type { LockContext } from '../../identify'
@@ -12,7 +13,8 @@ import { ProtectOperation } from './base-operation'
 
 export class DecryptModelOperation<
   T extends Record<string, unknown>,
-> extends ProtectOperation<Decrypted<T>> {
+  C extends EncryptConfig = EncryptConfig,
+> extends ProtectOperation<Decrypted<T, C>> {
   private client: Client
   private model: T
 
@@ -24,11 +26,11 @@ export class DecryptModelOperation<
 
   public withLockContext(
     lockContext: LockContext,
-  ): DecryptModelOperationWithLockContext<T> {
-    return new DecryptModelOperationWithLockContext(this, lockContext)
+  ): DecryptModelOperationWithLockContext<T, C> {
+    return new DecryptModelOperationWithLockContext<T, C>(this, lockContext)
   }
 
-  public async execute(): Promise<Result<Decrypted<T>, ProtectError>> {
+  public async execute(): Promise<Result<Decrypted<T, C>, ProtectError>> {
     logger.debug('Decrypting model WITHOUT a lock context')
 
     return await withResult(
@@ -61,17 +63,18 @@ export class DecryptModelOperation<
 
 export class DecryptModelOperationWithLockContext<
   T extends Record<string, unknown>,
-> extends ProtectOperation<Decrypted<T>> {
-  private operation: DecryptModelOperation<T>
+  C extends EncryptConfig = EncryptConfig,
+> extends ProtectOperation<Decrypted<T, C>> {
+  private operation: DecryptModelOperation<T, C>
   private lockContext: LockContext
 
-  constructor(operation: DecryptModelOperation<T>, lockContext: LockContext) {
+  constructor(operation: DecryptModelOperation<T, C>, lockContext: LockContext) {
     super()
     this.operation = operation
     this.lockContext = lockContext
   }
 
-  public async execute(): Promise<Result<Decrypted<T>, ProtectError>> {
+  public async execute(): Promise<Result<Decrypted<T, C>, ProtectError>> {
     return await withResult(
       async () => {
         const { client, model } = this.operation.getOperation()

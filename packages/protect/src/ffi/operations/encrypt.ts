@@ -4,6 +4,7 @@ import {
   encrypt as ffiEncrypt,
 } from '@cipherstash/protect-ffi'
 import type {
+  EncryptConfig,
   ProtectColumn,
   ProtectTable,
   ProtectTableColumn,
@@ -16,7 +17,9 @@ import type { Client, EncryptOptions, Encrypted } from '../../types'
 import { noClientError } from '../index'
 import { ProtectOperation } from './base-operation'
 
-export class EncryptOperation extends ProtectOperation<Encrypted> {
+export class EncryptOperation<
+  C extends EncryptConfig = EncryptConfig,
+> extends ProtectOperation<Encrypted<C>> {
   private client: Client
   private plaintext: JsPlaintext | null
   private column: ProtectColumn | ProtectValue
@@ -36,11 +39,11 @@ export class EncryptOperation extends ProtectOperation<Encrypted> {
 
   public withLockContext(
     lockContext: LockContext,
-  ): EncryptOperationWithLockContext {
-    return new EncryptOperationWithLockContext(this, lockContext)
+  ): EncryptOperationWithLockContext<C> {
+    return new EncryptOperationWithLockContext<C>(this, lockContext)
   }
 
-  public async execute(): Promise<Result<Encrypted, ProtectError>> {
+  public async execute(): Promise<Result<Encrypted<C>, ProtectError>> {
     logger.debug('Encrypting data WITHOUT a lock context', {
       column: this.column.getName(),
       table: this.table.tableName,
@@ -87,17 +90,19 @@ export class EncryptOperation extends ProtectOperation<Encrypted> {
   }
 }
 
-export class EncryptOperationWithLockContext extends ProtectOperation<Encrypted> {
-  private operation: EncryptOperation
+export class EncryptOperationWithLockContext<
+  C extends EncryptConfig = EncryptConfig,
+> extends ProtectOperation<Encrypted<C>> {
+  private operation: EncryptOperation<C>
   private lockContext: LockContext
 
-  constructor(operation: EncryptOperation, lockContext: LockContext) {
+  constructor(operation: EncryptOperation<C>, lockContext: LockContext) {
     super()
     this.operation = operation
     this.lockContext = lockContext
   }
 
-  public async execute(): Promise<Result<Encrypted, ProtectError>> {
+  public async execute(): Promise<Result<Encrypted<C>, ProtectError>> {
     return await withResult(
       async () => {
         const { client, plaintext, column, table } =
@@ -127,7 +132,8 @@ export class EncryptOperationWithLockContext extends ProtectOperation<Encrypted>
           plaintext,
           column: column.getName(),
           table: table.tableName,
-          lockContext: context.data.context,
+          // biome-ignore lint/suspicious/noExplicitAny: Context type mismatch between local and FFI types
+          lockContext: [context.data.context] as any,
           serviceToken: context.data.ctsToken,
           unverifiedContext: metadata,
         })

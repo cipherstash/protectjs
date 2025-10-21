@@ -1,14 +1,15 @@
 import { type Result, withResult } from '@byteslice/result'
 import { encryptBulk } from '@cipherstash/protect-ffi'
+import type { EncryptConfig } from '@cipherstash/schema'
 import { type ProtectError, ProtectErrorTypes } from '../..'
 import { logger } from '../../../../utils/logger'
 import type { Client, EncryptedSearchTerm, SearchTerm } from '../../types'
 import { noClientError } from '../index'
 import { ProtectOperation } from './base-operation'
 
-export class SearchTermsOperation extends ProtectOperation<
-  EncryptedSearchTerm[]
-> {
+export class SearchTermsOperation<
+  C extends EncryptConfig = EncryptConfig,
+> extends ProtectOperation<EncryptedSearchTerm<C>[]> {
   private client: Client
   private terms: SearchTerm[]
 
@@ -18,7 +19,9 @@ export class SearchTermsOperation extends ProtectOperation<
     this.terms = terms
   }
 
-  public async execute(): Promise<Result<EncryptedSearchTerm[], ProtectError>> {
+  public async execute(): Promise<
+    Result<EncryptedSearchTerm<C>[], ProtectError>
+  > {
     logger.debug('Creating search terms', {
       terms: this.terms,
     })

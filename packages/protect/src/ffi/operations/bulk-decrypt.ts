@@ -1,9 +1,10 @@
 import { type Result, withResult } from '@byteslice/result'
 import {
-  type Encrypted as CipherStashEncrypted,
+  type AnyEncrypted as CipherStashEncrypted,
   type DecryptResult,
   decryptBulkFallible,
 } from '@cipherstash/protect-ffi'
+import type { EncryptConfig } from '@cipherstash/schema'
 import { type ProtectError, ProtectErrorTypes } from '../..'
 import { logger } from '../../../../utils/logger'
 import type { Context, LockContext } from '../../identify'
@@ -12,8 +13,8 @@ import { noClientError } from '../index'
 import { ProtectOperation } from './base-operation'
 
 // Helper functions for better composability
-const createDecryptPayloads = (
-  encryptedPayloads: BulkDecryptPayload,
+const createDecryptPayloads = <C extends EncryptConfig = EncryptConfig>(
+  encryptedPayloads: BulkDecryptPayload<C>,
   lockContext?: Context,
 ) => {
   return encryptedPayloads
@@ -21,14 +22,14 @@ const createDecryptPayloads = (
     .filter(({ data }) => data !== null)
     .map(({ id, data, originalIndex }) => ({
       id,
-      ciphertext: data as CipherStashEncrypted,
+      ciphertext: data as CipherStashEncrypted<C>,
       originalIndex,
-      ...(lockContext && { lockContext }),
+      ...(lockContext && { lockContext: [lockContext] }),
     }))
 }
 
-const createNullResult = (
-  encryptedPayloads: BulkDecryptPayload,
+const createNullResult = <C extends EncryptConfig = EncryptConfig>(
+  encryptedPayloads: BulkDecryptPayload<C>,
 ): BulkDecryptedData => {
   return encryptedPayloads.map(({ id }) => ({
     id,
@@ -36,8 +37,8 @@ const createNullResult = (
   }))
 }
 
-const mapDecryptedDataToResult = (
-  encryptedPayloads: BulkDecryptPayload,
+const mapDecryptedDataToResult = <C extends EncryptConfig = EncryptConfig>(
+  encryptedPayloads: BulkDecryptPayload<C>,
   decryptedData: DecryptResult[],
 ): BulkDecryptedData => {
   const result: BulkDecryptedData = new Array(encryptedPayloads.length)
@@ -66,11 +67,13 @@ const mapDecryptedDataToResult = (
   return result
 }
 
-export class BulkDecryptOperation extends ProtectOperation<BulkDecryptedData> {
+export class BulkDecryptOperation<
+  C extends EncryptConfig = EncryptConfig,
+> extends ProtectOperation<BulkDecryptedData> {
   private client: Client
-  private encryptedPayloads: BulkDecryptPayload
+  private encryptedPayloads: BulkDecryptPayload<C>
 
-  constructor(client: Client, encryptedPayloads: BulkDecryptPayload) {
+  constructor(client: Client, encryptedPayloads: BulkDecryptPayload<C>) {
     super()
     this.client = client
     this.encryptedPayloads = encryptedPayloads
@@ -78,8 +81,8 @@ export class BulkDecryptOperation extends ProtectOperation<BulkDecryptedData> {
 
   public withLockContext(
     lockContext: LockContext,
-  ): BulkDecryptOperationWithLockContext {
-    return new BulkDecryptOperationWithLockContext(this, lockContext)
+  ): BulkDecryptOperationWithLockContext<C> {
+    return new BulkDecryptOperationWithLockContext<C>(this, lockContext)
   }
 
   public async execute(): Promise<Result<BulkDecryptedData, ProtectError>> {
@@ -90,20 +93,24 @@ export class BulkDecryptOperation extends ProtectOperation<BulkDecryptedData> {
         if (!this.encryptedPayloads || this.encryptedPayloads.length === 0)
           return []
 
-        const nonNullPayloads = createDecryptPayloads(this.encryptedPayloads)
+        const nonNullPayloads = createDecryptPayloads<C>(this.encryptedPayloads)
 
         if (nonNullPayloads.length === 0) {
-          return createNullResult(this.encryptedPayloads)
+          return createNullResult<C>(this.encryptedPayloads)
         }
 
         const { metadata } = this.getAuditData()
 
         const decryptedData = await decryptBulkFallible(this.client, {
-          ciphertexts: nonNullPayloads,
+          // biome-ignore lint/suspicious/noExplicitAny: Context type mismatch between local and FFI types
+          ciphertexts: nonNullPayloads as any,
           unverifiedContext: metadata,
         })
 
-        return mapDecryptedDataToResult(this.encryptedPayloads, decryptedData)
+        return mapDecryptedDataToResult<C>(
+          this.encryptedPayloads,
+          decryptedData,
+        )
       },
       (error: unknown) => ({
         type: ProtectErrorTypes.DecryptionError,
@@ -114,7 +121,7 @@ export class BulkDecryptOperation extends ProtectOperation<BulkDecryptedData> {
 
   public getOperation(): {
     client: Client
-    encryptedPayloads: BulkDecryptPayload
+    encryptedPayloads: BulkDecryptPayload<C>
   } {
     return {
       client: this.client,
@@ -123,11 +130,13 @@ export class BulkDecryptOperation extends ProtectOperation<BulkDecryptedData> {
   }
 }
 
-export class BulkDecryptOperationWithLockContext extends ProtectOperation<BulkDecryptedData> {
-  private operation: BulkDecryptOperation
+export class BulkDecryptOperationWithLockContext<
+  C extends EncryptConfig = EncryptConfig,
+> extends ProtectOperation<BulkDecryptedData> {
+  private operation: BulkDecryptOperation<C>
   private lockContext: LockContext
 
-  constructor(operation: BulkDecryptOperation, lockContext: LockContext) {
+  constructor(operation: BulkDecryptOperation<C>, lockContext: LockContext) {
     super()
     this.operation = operation
     this.lockContext = lockContext
@@ -147,24 +156,25 @@ export class BulkDecryptOperationWithLockContext extends ProtectOperation<BulkDe
           throw new Error(`[protect]: ${context.failure.message}`)
         }
 
-        const nonNullPayloads = createDecryptPayloads(
+        const nonNullPayloads = createDecryptPayloads<C>(
           encryptedPayloads,
           context.data.context,
         )
 
         if (nonNullPayloads.length === 0) {
-          return createNullResult(encryptedPayloads)
+          return createNullResult<C>(encryptedPayloads)
         }
 
         const { metadata } = this.getAuditData()
 
         const decryptedData = await decryptBulkFallible(client, {
-          ciphertexts: nonNullPayloads,
+          // biome-ignore lint/suspicious/noExplicitAny: Context type mismatch between local and FFI types
+          ciphertexts: nonNullPayloads as any,
           serviceToken: context.data.ctsToken,
           unverifiedContext: metadata,
         })
 
-        return mapDecryptedDataToResult(encryptedPayloads, decryptedData)
+        return mapDecryptedDataToResult<C>(encryptedPayloads, decryptedData)
       },
       (error: unknown) => ({
         type: ProtectErrorTypes.DecryptionError,
