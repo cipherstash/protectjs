@@ -136,12 +136,6 @@ Set the data type for a column using `.dataType()`:
 const column = csColumn('field')
   .dataType('text')        // text (default)
   .dataType('int')         // integer
-  .dataType('big_int')     // big integer
-  .dataType('small_int')   // small integer
-  .dataType('real')        // real number
-  .dataType('double')      // double precision
-  .dataType('boolean')     // boolean
-  .dataType('date')        // date
   .dataType('jsonb')       // JSON binary
 ```
 
@@ -189,10 +183,10 @@ const column = csColumn('field').freeTextSearch({
 })
 ```
 
-### JSON Field with Prefix
+### Searchable JSON
 
 ```typescript
-const column = csColumn('metadata').josn('meta')
+const column = csColumn('metadata').searchableJson()
 ```
 
 ## Type Safety
@@ -288,7 +282,7 @@ Creates a column definition.
 - `.equality(tokenFilters?: TokenFilter[])`: Enable equality index
 - `.freeTextSearch(opts?: MatchIndexOpts)`: Enable text search
 - `.orderAndRange()`: Enable order and range index
-- `.josn(prefix: string)`: Enable JSON field with prefix
+- `.searchableJson()`: Enable searchable JSON index
 
 ### `csValue(valueName: string)`
 

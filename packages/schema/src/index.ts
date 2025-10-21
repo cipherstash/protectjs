@@ -188,8 +188,8 @@ export class ProtectColumn {
   /**
    * Enable a STE Vec index, requires a prefix.
    */
-  searchableJson(prefix: string) {
-    this.indexesValue.ste_vec = { prefix }
+  searchableJson() {
+    this.indexesValue.ste_vec = { prefix: 'enabled' }
     return this
   }
 
@@ -237,7 +237,25 @@ export class ProtectTable<T extends ProtectTableColumn> {
       colName: string,
     ) => {
       if (builder instanceof ProtectColumn) {
-        builtColumns[colName] = builder.build()
+        const builtColumn = builder.build()
+
+        // Hanlde building the ste_vec index for JSON columns so users don't have to pass the prefix.
+        if (
+          builtColumn.cast_as === 'jsonb' &&
+          builtColumn.indexes.ste_vec?.prefix === 'enabled'
+        ) {
+          builtColumns[colName] = {
+            ...builtColumn,
+            indexes: {
+              ...builtColumn.indexes,
+              ste_vec: {
+                prefix: `${this.tableName}/${colName}`,
+              },
+            },
+          }
+        } else {
+          builtColumns[colName] = builtColumn
+        }
       } else {
         for (const [key, value] of Object.entries(builder)) {
           if (value instanceof ProtectValue) {

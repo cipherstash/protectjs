@@ -129,4 +129,17 @@ describe('Schema with nested columns', () => {
       indexes: {},
     })
   })
+
+  it('should handle ste_vec index for JSON columns', () => {
+    const users = csTable('users', {
+      json: csColumn('json').dataType('jsonb').searchableJson(),
+    } as const)
+
+    const config = buildEncryptConfig(users)
+
+    expect(config.tables.users.json.indexes).toHaveProperty('ste_vec')
+    expect(config.tables.users.json.indexes.ste_vec?.prefix).toEqual(
+      'users/json',
+    )
+  })
 })
