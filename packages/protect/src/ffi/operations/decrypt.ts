@@ -3,7 +3,6 @@ import {
   type JsPlaintext,
   decrypt as ffiDecrypt,
 } from '@cipherstash/protect-ffi'
-import type { EncryptConfig } from '@cipherstash/schema'
 import { type ProtectError, ProtectErrorTypes } from '../..'
 import { logger } from '../../../../utils/logger'
 import type { LockContext } from '../../identify'
@@ -11,13 +10,11 @@ import type { Client, Encrypted } from '../../types'
 import { noClientError } from '../index'
 import { ProtectOperation } from './base-operation'
 
-export class DecryptOperation<
-  C extends EncryptConfig = EncryptConfig,
-> extends ProtectOperation<JsPlaintext | null> {
+export class DecryptOperation extends ProtectOperation<JsPlaintext | null> {
   private client: Client
-  private encryptedData: Encrypted<C>
+  private encryptedData: Encrypted
 
-  constructor(client: Client, encryptedData: Encrypted<C>) {
+  constructor(client: Client, encryptedData: Encrypted) {
     super()
     this.client = client
     this.encryptedData = encryptedData
@@ -25,8 +22,8 @@ export class DecryptOperation<
 
   public withLockContext(
     lockContext: LockContext,
-  ): DecryptOperationWithLockContext<C> {
-    return new DecryptOperationWithLockContext<C>(this, lockContext)
+  ): DecryptOperationWithLockContext {
+    return new DecryptOperationWithLockContext(this, lockContext)
   }
 
   public async execute(): Promise<Result<JsPlaintext | null, ProtectError>> {
@@ -60,7 +57,7 @@ export class DecryptOperation<
 
   public getOperation(): {
     client: Client
-    encryptedData: Encrypted<C>
+    encryptedData: Encrypted
     auditData?: Record<string, unknown>
   } {
     return {
@@ -71,13 +68,11 @@ export class DecryptOperation<
   }
 }
 
-export class DecryptOperationWithLockContext<
-  C extends EncryptConfig = EncryptConfig,
-> extends ProtectOperation<JsPlaintext | null> {
-  private operation: DecryptOperation<C>
+export class DecryptOperationWithLockContext extends ProtectOperation<JsPlaintext | null> {
+  private operation: DecryptOperation
   private lockContext: LockContext
 
-  constructor(operation: DecryptOperation<C>, lockContext: LockContext) {
+  constructor(operation: DecryptOperation, lockContext: LockContext) {
     super()
     this.operation = operation
     this.lockContext = lockContext
@@ -115,8 +110,7 @@ export class DecryptOperationWithLockContext<
         return await ffiDecrypt(client, {
           ciphertext: encryptedData,
           unverifiedContext: metadata,
-          // biome-ignore lint/suspicious/noExplicitAny: Context type mismatch between local and FFI types
-          lockContext: [context.data.context] as any,
+          lockContext: context.data.context,
           serviceToken: context.data.ctsToken,
         })
       },

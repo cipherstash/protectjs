@@ -1,16 +1,13 @@
-import type { EncryptConfig } from '@cipherstash/schema'
 import type { Encrypted } from '../types'
 
-export type EncryptedPgComposite<C extends EncryptConfig = EncryptConfig> = {
-  data: Encrypted<C>
+export type EncryptedPgComposite = {
+  data: Encrypted
 }
 
 /**
  * Helper function to transform an encrypted payload into a PostgreSQL composite type
  */
-export function encryptedToPgComposite<C extends EncryptConfig = EncryptConfig>(
-  obj: Encrypted<C>,
-): EncryptedPgComposite<C> {
+export function encryptedToPgComposite(obj: Encrypted): EncryptedPgComposite {
   return {
     data: obj,
   }
@@ -47,14 +44,12 @@ export function bulkModelsToEncryptedPgComposites<
 /**
  * Helper function to check if a value is an encrypted payload
  */
-export function isEncryptedPayload<C extends EncryptConfig = EncryptConfig>(
-  value: unknown,
-): value is Encrypted<C> {
+export function isEncryptedPayload(value: unknown): value is Encrypted {
   if (value === null) return false
 
   // TODO: this can definitely be improved
   if (typeof value === 'object') {
-    const obj = value as Encrypted<C>
+    const obj = value as Encrypted
     return (
       obj !== null && 'v' in obj && ('c' in obj || 'sv' in obj) && 'i' in obj
     )

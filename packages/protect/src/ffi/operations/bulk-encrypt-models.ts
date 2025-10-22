@@ -1,5 +1,5 @@
 import { type Result, withResult } from '@byteslice/result'
-import type { EncryptConfig, ProtectTable, ProtectTableColumn } from '@cipherstash/schema'
+import type { ProtectTable, ProtectTableColumn } from '@cipherstash/schema'
 import { type ProtectError, ProtectErrorTypes } from '../..'
 import { logger } from '../../../../utils/logger'
 import type { LockContext } from '../../identify'
@@ -13,15 +13,14 @@ import { ProtectOperation } from './base-operation'
 
 export class BulkEncryptModelsOperation<
   T extends Record<string, unknown>,
-  C extends EncryptConfig = EncryptConfig,
 > extends ProtectOperation<T[]> {
   private client: Client
-  private models: Decrypted<T, C>[]
+  private models: Decrypted<T>[]
   private table: ProtectTable<ProtectTableColumn>
 
   constructor(
     client: Client,
-    models: Decrypted<T, C>[],
+    models: Decrypted<T>[],
     table: ProtectTable<ProtectTableColumn>,
   ) {
     super()
@@ -32,8 +31,8 @@ export class BulkEncryptModelsOperation<
 
   public withLockContext(
     lockContext: LockContext,
-  ): BulkEncryptModelsOperationWithLockContext<T, C> {
-    return new BulkEncryptModelsOperationWithLockContext<T, C>(this, lockContext)
+  ): BulkEncryptModelsOperationWithLockContext<T> {
+    return new BulkEncryptModelsOperationWithLockContext(this, lockContext)
   }
 
   public async execute(): Promise<Result<T[], ProtectError>> {
@@ -65,7 +64,7 @@ export class BulkEncryptModelsOperation<
 
   public getOperation(): {
     client: Client
-    models: Decrypted<T, C>[]
+    models: Decrypted<T>[]
     table: ProtectTable<ProtectTableColumn>
   } {
     return {
@@ -78,13 +77,12 @@ export class BulkEncryptModelsOperation<
 
 export class BulkEncryptModelsOperationWithLockContext<
   T extends Record<string, unknown>,
-  C extends EncryptConfig = EncryptConfig,
 > extends ProtectOperation<T[]> {
-  private operation: BulkEncryptModelsOperation<T, C>
+  private operation: BulkEncryptModelsOperation<T>
   private lockContext: LockContext
 
   constructor(
-    operation: BulkEncryptModelsOperation<T, C>,
+    operation: BulkEncryptModelsOperation<T>,
     lockContext: LockContext,
   ) {
     super()

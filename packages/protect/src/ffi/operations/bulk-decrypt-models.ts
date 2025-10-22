@@ -1,5 +1,4 @@
 import { type Result, withResult } from '@byteslice/result'
-import type { EncryptConfig } from '@cipherstash/schema'
 import { type ProtectError, ProtectErrorTypes } from '../..'
 import { logger } from '../../../../utils/logger'
 import type { LockContext } from '../../identify'
@@ -13,8 +12,7 @@ import { ProtectOperation } from './base-operation'
 
 export class BulkDecryptModelsOperation<
   T extends Record<string, unknown>,
-  C extends EncryptConfig = EncryptConfig,
-> extends ProtectOperation<Decrypted<T, C>[]> {
+> extends ProtectOperation<Decrypted<T>[]> {
   private client: Client
   private models: T[]
 
@@ -26,11 +24,11 @@ export class BulkDecryptModelsOperation<
 
   public withLockContext(
     lockContext: LockContext,
-  ): BulkDecryptModelsOperationWithLockContext<T, C> {
-    return new BulkDecryptModelsOperationWithLockContext<T, C>(this, lockContext)
+  ): BulkDecryptModelsOperationWithLockContext<T> {
+    return new BulkDecryptModelsOperationWithLockContext(this, lockContext)
   }
 
-  public async execute(): Promise<Result<Decrypted<T, C>[], ProtectError>> {
+  public async execute(): Promise<Result<Decrypted<T>[], ProtectError>> {
     logger.debug('Bulk decrypting models WITHOUT a lock context')
 
     return await withResult(
@@ -63,13 +61,12 @@ export class BulkDecryptModelsOperation<
 
 export class BulkDecryptModelsOperationWithLockContext<
   T extends Record<string, unknown>,
-  C extends EncryptConfig = EncryptConfig,
-> extends ProtectOperation<Decrypted<T, C>[]> {
-  private operation: BulkDecryptModelsOperation<T, C>
+> extends ProtectOperation<Decrypted<T>[]> {
+  private operation: BulkDecryptModelsOperation<T>
   private lockContext: LockContext
 
   constructor(
-    operation: BulkDecryptModelsOperation<T, C>,
+    operation: BulkDecryptModelsOperation<T>,
     lockContext: LockContext,
   ) {
     super()
@@ -77,7 +74,7 @@ export class BulkDecryptModelsOperationWithLockContext<
     this.lockContext = lockContext
   }
 
-  public async execute(): Promise<Result<Decrypted<T, C>[], ProtectError>> {
+  public async execute(): Promise<Result<Decrypted<T>[], ProtectError>> {
     return await withResult(
       async () => {
         const { client, models } = this.operation.getOperation()

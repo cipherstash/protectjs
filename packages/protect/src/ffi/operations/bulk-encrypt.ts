@@ -1,7 +1,6 @@
 import { type Result, withResult } from '@byteslice/result'
 import { type JsPlaintext, encryptBulk } from '@cipherstash/protect-ffi'
 import type {
-  EncryptConfig,
   ProtectColumn,
   ProtectTable,
   ProtectTableColumn,
@@ -21,7 +20,7 @@ import { noClientError } from '../index'
 import { ProtectOperation } from './base-operation'
 
 // Helper functions for better composability
-const createEncryptPayloads = <C extends EncryptConfig = EncryptConfig>(
+const createEncryptPayloads = (
   plaintexts: BulkEncryptPayload,
   column: ProtectColumn | ProtectValue,
   table: ProtectTable<ProtectTableColumn>,
@@ -36,21 +35,21 @@ const createEncryptPayloads = <C extends EncryptConfig = EncryptConfig>(
       column: column.getName(),
       table: table.tableName,
       originalIndex,
-      ...(lockContext && { lockContext: [lockContext] }),
+      ...(lockContext && { lockContext }),
     }))
 }
 
-const createNullResult = <C extends EncryptConfig = EncryptConfig>(
+const createNullResult = (
   plaintexts: BulkEncryptPayload,
-): BulkEncryptedData<C> => {
+): BulkEncryptedData => {
   return plaintexts.map(({ id }) => ({ id, data: null }))
 }
 
-const mapEncryptedDataToResult = <C extends EncryptConfig = EncryptConfig>(
+const mapEncryptedDataToResult = (
   plaintexts: BulkEncryptPayload,
-  encryptedData: Encrypted<C>[],
-): BulkEncryptedData<C> => {
-  const result: BulkEncryptedData<C> = new Array(plaintexts.length)
+  encryptedData: Encrypted[],
+): BulkEncryptedData => {
+  const result: BulkEncryptedData = new Array(plaintexts.length)
   let encryptedIndex = 0
 
   for (let i = 0; i < plaintexts.length; i++) {
@@ -68,9 +67,7 @@ const mapEncryptedDataToResult = <C extends EncryptConfig = EncryptConfig>(
   return result
 }
 
-export class BulkEncryptOperation<
-  C extends EncryptConfig = EncryptConfig,
-> extends ProtectOperation<BulkEncryptedData<C>> {
+export class BulkEncryptOperation extends ProtectOperation<BulkEncryptedData> {
   private client: Client
   private plaintexts: BulkEncryptPayload
   private column: ProtectColumn | ProtectValue
@@ -90,11 +87,11 @@ export class BulkEncryptOperation<
 
   public withLockContext(
     lockContext: LockContext,
-  ): BulkEncryptOperationWithLockContext<C> {
-    return new BulkEncryptOperationWithLockContext<C>(this, lockContext)
+  ): BulkEncryptOperationWithLockContext {
+    return new BulkEncryptOperationWithLockContext(this, lockContext)
   }
 
-  public async execute(): Promise<Result<BulkEncryptedData<C>, ProtectError>> {
+  public async execute(): Promise<Result<BulkEncryptedData, ProtectError>> {
     logger.debug('Bulk encrypting data WITHOUT a lock context', {
       column: this.column.getName(),
       table: this.table.tableName,
@@ -109,25 +106,24 @@ export class BulkEncryptOperation<
           return []
         }
 
-        const nonNullPayloads = createEncryptPayloads<C>(
+        const nonNullPayloads = createEncryptPayloads(
           this.plaintexts,
           this.column,
           this.table,
         )
 
         if (nonNullPayloads.length === 0) {
-          return createNullResult<C>(this.plaintexts)
+          return createNullResult(this.plaintexts)
         }
 
         const { metadata } = this.getAuditData()
 
         const encryptedData = await encryptBulk(this.client, {
-          // biome-ignore lint/suspicious/noExplicitAny: Context type mismatch between local and FFI types
-          plaintexts: nonNullPayloads as any,
+          plaintexts: nonNullPayloads,
           unverifiedContext: metadata,
         })
 
-        return mapEncryptedDataToResult<C>(this.plaintexts, encryptedData)
+        return mapEncryptedDataToResult(this.plaintexts, encryptedData)
       },
       (error: unknown) => ({
         type: ProtectErrorTypes.EncryptionError,
@@ -151,19 +147,17 @@ export class BulkEncryptOperation<
   }
 }
 
-export class BulkEncryptOperationWithLockContext<
-  C extends EncryptConfig = EncryptConfig,
-> extends ProtectOperation<BulkEncryptedData<C>> {
-  private operation: BulkEncryptOperation<C>
+export class BulkEncryptOperationWithLockContext extends ProtectOperation<BulkEncryptedData> {
+  private operation: BulkEncryptOperation
   private lockContext: LockContext
 
-  constructor(operation: BulkEncryptOperation<C>, lockContext: LockContext) {
+  constructor(operation: BulkEncryptOperation, lockContext: LockContext) {
     super()
     this.operation = operation
     this.lockContext = lockContext
   }
 
-  public async execute(): Promise<Result<BulkEncryptedData<C>, ProtectError>> {
+  public async execute(): Promise<Result<BulkEncryptedData, ProtectError>> {
     return await withResult(
       async () => {
         const { client, plaintexts, column, table } =
@@ -186,7 +180,7 @@ export class BulkEncryptOperationWithLockContext<
           throw new Error(`[protect]: ${context.failure.message}`)
         }
 
-        const nonNullPayloads = createEncryptPayloads<C>(
+        const nonNullPayloads = createEncryptPayloads(
           plaintexts,
           column,
           table,
@@ -194,19 +188,18 @@ export class BulkEncryptOperationWithLockContext<
         )
 
         if (nonNullPayloads.length === 0) {
-          return createNullResult<C>(plaintexts)
+          return createNullResult(plaintexts)
         }
 
         const { metadata } = this.getAuditData()
 
         const encryptedData = await encryptBulk(client, {
-          // biome-ignore lint/suspicious/noExplicitAny: Context type mismatch between local and FFI types
-          plaintexts: nonNullPayloads as any,
+          plaintexts: nonNullPayloads,
           serviceToken: context.data.ctsToken,
           unverifiedContext: metadata,
         })
 
-        return mapEncryptedDataToResult<C>(plaintexts, encryptedData)
+        return mapEncryptedDataToResult(plaintexts, encryptedData)
       },
       (error: unknown) => ({
         type: ProtectErrorTypes.EncryptionError,
