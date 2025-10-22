@@ -1,5 +1,5 @@
 import { type Result, withResult } from '@byteslice/result'
-import type { EncryptConfig, ProtectTable, ProtectTableColumn } from '@cipherstash/schema'
+import type { ProtectTable, ProtectTableColumn } from '@cipherstash/schema'
 import { type ProtectError, ProtectErrorTypes } from '../..'
 import { logger } from '../../../../utils/logger'
 import type { LockContext } from '../../identify'
@@ -13,15 +13,14 @@ import { ProtectOperation } from './base-operation'
 
 export class EncryptModelOperation<
   T extends Record<string, unknown>,
-  C extends EncryptConfig = EncryptConfig,
 > extends ProtectOperation<T> {
   private client: Client
-  private model: Decrypted<T, C>
+  private model: Decrypted<T>
   private table: ProtectTable<ProtectTableColumn>
 
   constructor(
     client: Client,
-    model: Decrypted<T, C>,
+    model: Decrypted<T>,
     table: ProtectTable<ProtectTableColumn>,
   ) {
     super()
@@ -32,8 +31,8 @@ export class EncryptModelOperation<
 
   public withLockContext(
     lockContext: LockContext,
-  ): EncryptModelOperationWithLockContext<T, C> {
-    return new EncryptModelOperationWithLockContext<T, C>(this, lockContext)
+  ): EncryptModelOperationWithLockContext<T> {
+    return new EncryptModelOperationWithLockContext(this, lockContext)
   }
 
   public async execute(): Promise<Result<T, ProtectError>> {
@@ -65,7 +64,7 @@ export class EncryptModelOperation<
 
   public getOperation(): {
     client: Client
-    model: Decrypted<T, C>
+    model: Decrypted<T>
     table: ProtectTable<ProtectTableColumn>
   } {
     return {
@@ -78,12 +77,11 @@ export class EncryptModelOperation<
 
 export class EncryptModelOperationWithLockContext<
   T extends Record<string, unknown>,
-  C extends EncryptConfig = EncryptConfig,
 > extends ProtectOperation<T> {
-  private operation: EncryptModelOperation<T, C>
+  private operation: EncryptModelOperation<T>
   private lockContext: LockContext
 
-  constructor(operation: EncryptModelOperation<T, C>, lockContext: LockContext) {
+  constructor(operation: EncryptModelOperation<T>, lockContext: LockContext) {
     super()
     this.operation = operation
     this.lockContext = lockContext

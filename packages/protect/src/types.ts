@@ -1,16 +1,13 @@
 import type {
-  EncryptedCell,
-  EncryptedSV,
+  Encrypted as CipherStashEncrypted,
   JsPlaintext,
   newClient,
-  AnyEncrypted,
 } from '@cipherstash/protect-ffi'
 import type {
   ProtectColumn,
   ProtectTable,
   ProtectTableColumn,
   ProtectValue,
-  EncryptConfig,
 } from '@cipherstash/schema'
 
 /**
@@ -21,19 +18,19 @@ export type Client = Awaited<ReturnType<typeof newClient>> | undefined
 /**
  * Type to represent an encrypted payload
  */
-export type Encrypted<T extends EncryptConfig> = AnyEncrypted<T> | null
+export type Encrypted = CipherStashEncrypted | null
 
 /**
  * Represents an encrypted payload in the database
  * @deprecated Use `Encrypted` instead
  */
-export type EncryptedPayload<T extends EncryptConfig> = Encrypted<T>
+export type EncryptedPayload = Encrypted | null
 
 /**
  * Represents an encrypted data object in the database
  * @deprecated Use `Encrypted` instead
  */
-export type EncryptedData<T extends EncryptConfig> = Encrypted<T>
+export type EncryptedData = Encrypted | null
 
 /**
  * Represents a value that will be encrypted and used in a search
@@ -51,7 +48,7 @@ export type SearchTerm = {
  * If the return type is `composite-literal`, the return type is `string` where the value is a composite literal
  * If the return type is `escaped-composite-literal`, the return type is `string` where the value is an escaped composite literal
  */
-export type EncryptedSearchTerm<T extends EncryptConfig> = Encrypted<T> | string
+export type EncryptedSearchTerm = Encrypted | string
 
 /**
  * Represents a payload to be encrypted using the `encrypt` function
@@ -69,29 +66,28 @@ export type EncryptOptions = {
 /**
  * Type to identify encrypted fields in a model
  */
-export type EncryptedFields<T, C extends EncryptConfig> = {
-  [K in keyof T as T[K] extends Encrypted<C> ? K : never]: T[K]
+export type EncryptedFields<T> = {
+  [K in keyof T as T[K] extends Encrypted ? K : never]: T[K]
 }
 
 /**
  * Type to identify non-encrypted fields in a model
  */
-export type OtherFields<T, C extends EncryptConfig> = {
-  [K in keyof T as T[K] extends Encrypted<C> ? never : K]: T[K]
+export type OtherFields<T> = {
+  [K in keyof T as T[K] extends Encrypted ? never : K]: T[K]
 }
 
 /**
  * Type to represent decrypted fields in a model
  */
-export type DecryptedFields<T, C extends EncryptConfig> = {
-  [K in keyof T as T[K] extends Encrypted<C> ? K : never]: string
+export type DecryptedFields<T> = {
+  [K in keyof T as T[K] extends Encrypted ? K : never]: string
 }
 
 /**
  * Represents a model with plaintext (decrypted) values instead of the EQL/JSONB types
  */
-export type Decrypted<T, C extends EncryptConfig> = OtherFields<T, C> &
-  DecryptedFields<T, C>
+export type Decrypted<T> = OtherFields<T> & DecryptedFields<T>
 
 /**
  * Types for bulk encryption and decryption operations.
@@ -101,14 +97,8 @@ export type BulkEncryptPayload = Array<{
   plaintext: JsPlaintext | null
 }>
 
-export type BulkEncryptedData<T extends EncryptConfig> = Array<{
-  id?: string
-  data: Encrypted<T>
-}>
-export type BulkDecryptPayload<T extends EncryptConfig> = Array<{
-  id?: string
-  data: Encrypted<T>
-}>
+export type BulkEncryptedData = Array<{ id?: string; data: Encrypted }>
+export type BulkDecryptPayload = Array<{ id?: string; data: Encrypted }>
 export type BulkDecryptedData = Array<DecryptionResult<JsPlaintext | null>>
 
 type DecryptionSuccess<T> = {
