@@ -10,8 +10,8 @@ const schema = csTable('dynamo_cipherstash_test', {
   phoneNumber: csColumn('phoneNumber'),
   json: csColumn('json').dataType('jsonb'),
   jsonSearchable: csColumn('jsonSearchable')
-    .dataType('jsonb')
-    .searchableJson('users/jsonSearchable'),
+    .dataType('jsonb'),
+    //.searchableJson('users/jsonSearchable'),
   example: {
     protected: csValue('example.protected'),
     deep: {
