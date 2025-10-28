@@ -186,12 +186,13 @@ export class ProtectColumn {
   }
 
   /**
-   * Enable a STE Vec index, requires a prefix.
+   * Enable a STE Vec index, uses the column name for the index.
    */
-  searchableJson() {
-    this.indexesValue.ste_vec = { prefix: 'enabled' }
+  // NOTE: Leaving this commented out until stevec indexing for JSON is supported.
+  /*searchableJson() {
+    this.indexesValue.ste_vec = { prefix: this.columnName }
     return this
-  }
+  }*/
 
   build() {
     return {
