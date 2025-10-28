@@ -183,12 +183,6 @@ const column = csColumn('field').freeTextSearch({
 })
 ```
 
-### Searchable JSON
-
-```typescript
-const column = csColumn('metadata').searchableJson()
-```
-
 ## Type Safety
 
 The schema builder provides full TypeScript support:
