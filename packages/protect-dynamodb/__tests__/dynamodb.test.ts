@@ -8,16 +8,15 @@ const schema = csTable('dynamo_cipherstash_test', {
   firstName: csColumn('firstName').equality(),
   lastName: csColumn('lastName').equality(),
   phoneNumber: csColumn('phoneNumber'),
-  json: csColumn('json').dataType('jsonb'),
-  jsonSearchable: csColumn('jsonSearchable')
-    .dataType('jsonb'),
-    //.searchableJson('users/jsonSearchable'),
+  json: csColumn('json').dataType('json'),
+  jsonSearchable: csColumn('jsonSearchable').dataType('json'),
+  //.searchableJson('users/jsonSearchable'),
   example: {
     protected: csValue('example.protected'),
     deep: {
       protected: csValue('example.deep.protected'),
       protectNestedJson: csValue('example.deep.protectNestedJson').dataType(
-        'jsonb',
+        'json',
       ),
     },
   },

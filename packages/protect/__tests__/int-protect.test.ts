@@ -6,11 +6,11 @@ import { LockContext, protect } from '../src'
 const users = csTable('users', {
   email: csColumn('email').freeTextSearch().equality().orderAndRange(),
   address: csColumn('address').freeTextSearch(),
-  age: csColumn('age').dataType('int').equality().orderAndRange(),
-  score: csColumn('score').dataType('int').equality().orderAndRange(),
+  age: csColumn('age').dataType('number').equality().orderAndRange(),
+  score: csColumn('score').dataType('number').equality().orderAndRange(),
   metadata: {
-    count: csValue('metadata.count').dataType('int'),
-    level: csValue('metadata.level').dataType('int'),
+    count: csValue('metadata.count').dataType('number'),
+    level: csValue('metadata.level').dataType('number'),
   },
 })
 
@@ -716,12 +716,12 @@ describe('Integer search terms', () => {
   it('should create search terms for integer fields', async () => {
     const searchTerms = [
       {
-        value: '25',
+        value: 25,
         column: users.age,
         table: users,
       },
       {
-        value: '100',
+        value: 100,
         column: users.score,
         table: users,
       },
@@ -745,7 +745,7 @@ describe('Integer search terms', () => {
   it('should create search terms with composite-literal return type for integers', async () => {
     const searchTerms = [
       {
-        value: '42',
+        value: 42,
         column: users.age,
         table: users,
         returnType: 'composite-literal' as const,
@@ -766,7 +766,7 @@ describe('Integer search terms', () => {
   it('should create search terms with escaped-composite-literal return type for integers', async () => {
     const searchTerms = [
       {
-        value: '99',
+        value: 99,
         column: users.score,
         table: users,
         returnType: 'escaped-composite-literal' as const,

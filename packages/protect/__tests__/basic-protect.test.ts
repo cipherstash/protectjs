@@ -6,7 +6,7 @@ import { protect } from '../src'
 const users = csTable('users', {
   email: csColumn('email').freeTextSearch().equality().orderAndRange(),
   address: csColumn('address').freeTextSearch(),
-  json: csColumn('json').dataType('jsonb'),
+  json: csColumn('json').dataType('json'),
 })
 
 let protectClient: Awaited<ReturnType<typeof protect>>

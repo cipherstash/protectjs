@@ -6,11 +6,11 @@ import { LockContext, protect } from '../src'
 const users = csTable('users', {
   email: csColumn('email').freeTextSearch().equality().orderAndRange(),
   address: csColumn('address').freeTextSearch(),
-  json: csColumn('json').dataType('jsonb'),//.searchableJson()
+  json: csColumn('json').dataType('json'),
   metadata: {
-    profile: csValue('metadata.profile'),
+    profile: csValue('metadata.profile').dataType('json'),
     settings: {
-      preferences: csValue('metadata.settings.preferences'),
+      preferences: csValue('metadata.settings.preferences').dataType('json'),
     },
   },
 })

@@ -3,7 +3,16 @@ import { z } from 'zod'
 // ------------------------
 // Zod schemas
 // ------------------------
-const castAsEnum = z.enum(['text', 'int', 'jsonb']).default('text')
+// export type CastAs =
+//   | 'bigint'
+//   | 'boolean'
+//   | 'date'
+//   | 'number'
+//   | 'string'
+//   | 'json'
+const castAsEnum = z
+  .enum(['bigint', 'boolean', 'date', 'number', 'string', 'json'])
+  .default('string')
 
 const tokenFilterSchema = z.object({
   kind: z.literal('downcase'),
@@ -102,7 +111,7 @@ export class ProtectValue {
 
   constructor(valueName: string) {
     this.valueName = valueName
-    this.castAsValue = 'text'
+    this.castAsValue = 'string'
   }
 
   /**
@@ -137,7 +146,7 @@ export class ProtectColumn {
 
   constructor(columnName: string) {
     this.columnName = columnName
-    this.castAsValue = 'text'
+    this.castAsValue = 'string'
   }
 
   /**
@@ -242,7 +251,7 @@ export class ProtectTable<T extends ProtectTableColumn> {
 
         // Hanlde building the ste_vec index for JSON columns so users don't have to pass the prefix.
         if (
-          builtColumn.cast_as === 'jsonb' &&
+          builtColumn.cast_as === 'json' &&
           builtColumn.indexes.ste_vec?.prefix === 'enabled'
         ) {
           builtColumns[colName] = {
