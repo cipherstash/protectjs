@@ -911,7 +911,7 @@ describe('JSON performance tests', () => {
       expect(decryptedData.data[i].id).toBe(`user${i}`)
       expect(decryptedData.data[i].data).toEqual(largeJsonArray[i])
     }
-  }, 60000)
+  }, 5000)
 })
 
 describe('JSON advanced scenarios', () => {
