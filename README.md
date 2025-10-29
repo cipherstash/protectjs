@@ -985,14 +985,59 @@ const bulkDecryptedResult = await protectClient
 
 ## Supported data types
 
-Protect.js currently supports encrypting and decrypting text.
-Other data types like booleans, dates, ints, floats, and JSON are well-supported in other CipherStash products, and will be coming to Protect.js soon.
+Protect.js supports a number of different data types with support for additional types on the roadmap.
 
-Until support for other data types are available, you can express interest in this feature by adding a :+1: on this [GitHub Issue](https://github.com/cipherstash/protectjs/issues/48).
-
-| Type | Support operations | Available |
+| JS/TS Type | Available | Notes |
 |--|--|--|
-| String | `=`, `LIKE`, `ORDER BY` | ✅ | 
+| `string` | ✅ |
+| `number` | ✅ |
+| `json` (opaque)  | ✅ |  |
+| `json` (searchable)  | ⚙️ | Coming soon |
+| `bigint` | ⚙️ | Coming soon |
+| `boolean`| ⚙️ | Coming soon |
+| `date`   | ⚙️ | Coming soon |
+
+If you need support for ther data types please [raise an issue](https://github.com/cipherstash/protectjs/issues) and we'll do our best to add it to Protect.js.
+
+### Type casting
+
+When encrypting types other than `string`, Protect requires the data type to be specified explicitly using the `dataType` function on the column definition.
+
+For example, to handle encryption of a `number` field called `score`:
+
+```ts
+const users = csTable('users', {
+  score: csColumn('score').dataType('number')
+})
+```
+
+This means that any JavaScript/TypeScript `number` will encrypt correctly but if an attempt to encrypt a value of a different type is made the operation will fail with an error.
+This is particularly important for searchable index schemes that require data types (and their encodings) to be consistent.
+
+In an unencrypted setup, this type checking is usually handled by the database (the column type in a table) but when the data is encrypted, the database can't determine what type the plaintext value should be so we must specify it in the Protect schema instead.
+
+> [!IMPORTANT]
+> If the data type of a column is set to `bigint`, floating point numbers will be converted to integers (via truncation).
+
+### Handling of null and special values
+
+There are some important special cases to be aware of when encrypting values with Protect.js.
+For example, encrypting `null` or `undefined` will just return a `null`/`undefined` value.
+
+When `dataType` is `number`, attempting to encrypt `NaN`, `Infinity` or `-Infinity` will fail with an error.
+Encrypting `-0.0` will coerce the value into `0.0`.
+
+The table below summarizes these cases.
+
+| Data type | Plaintext | Encryption |
+|--|--|--|
+|`any`| `null` | `null` |
+| `any` | `undefined` | `undefined` |
+| `number` | `-0.0` | Encryption of `0.0` |
+| `number` | `NaN` | _Error_ |
+| `number` | `Infinity` | _Error_| 
+| `number` | `-Infinity` | _Error_| 
+
 
 ## Searchable encryption
 
