@@ -1,7 +1,5 @@
-import type { Result } from '@byteslice/result'
 import type {
-  Decrypted,
-  EncryptedPayload,
+  Encrypted,
   ProtectClient,
   ProtectTable,
   ProtectTableColumn,
@@ -40,12 +38,12 @@ export interface ProtectDynamoDBInstance {
   ): BulkEncryptModelsOperation<T>
 
   decryptModel<T extends Record<string, unknown>>(
-    item: Record<string, EncryptedPayload | unknown>,
+    item: Record<string, Encrypted | unknown>,
     protectTable: ProtectTable<ProtectTableColumn>,
   ): DecryptModelOperation<T>
 
   bulkDecryptModels<T extends Record<string, unknown>>(
-    items: Record<string, EncryptedPayload | unknown>[],
+    items: Record<string, Encrypted | unknown>[],
     protectTable: ProtectTable<ProtectTableColumn>,
   ): BulkDecryptModelsOperation<T>
 

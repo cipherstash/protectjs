@@ -1,5 +1,6 @@
 import { type Result, withResult } from '@byteslice/result'
 import {
+  type Encrypted as CipherStashEncrypted,
   type DecryptResult,
   decryptBulkFallible,
 } from '@cipherstash/protect-ffi'
@@ -20,9 +21,7 @@ const createDecryptPayloads = (
     .filter(({ data }) => data !== null)
     .map(({ id, data, originalIndex }) => ({
       id,
-      ciphertext: (typeof data === 'object' && data !== null
-        ? data.c
-        : data) as string,
+      ciphertext: data as CipherStashEncrypted,
       originalIndex,
       ...(lockContext && { lockContext }),
     }))

@@ -2,7 +2,7 @@ import 'dotenv/config'
 import { csColumn, csTable } from '@cipherstash/schema'
 import { describe, expect, it } from 'vitest'
 import {
-  type EncryptedPayload,
+  type Encrypted,
   bulkModelsToEncryptedPgComposites,
   encryptedToPgComposite,
   isEncryptedPayload,
@@ -61,7 +61,7 @@ describe('supabase', () => {
       throw new Error(`[protect]: ${error.message}`)
     }
 
-    const dataToDecrypt = data[0].encrypted as EncryptedPayload
+    const dataToDecrypt = data[0].encrypted as Encrypted
     const plaintext = await protectClient.decrypt(dataToDecrypt)
 
     await supabase.from('protect-ci').delete().eq('id', insertedData[0].id)

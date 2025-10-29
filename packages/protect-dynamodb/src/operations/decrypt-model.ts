@@ -1,7 +1,7 @@
 import { type Result, withResult } from '@byteslice/result'
 import type {
   Decrypted,
-  EncryptedPayload,
+  Encrypted,
   ProtectClient,
   ProtectTable,
   ProtectTableColumn,
@@ -17,12 +17,12 @@ export class DecryptModelOperation<
   T extends Record<string, unknown>,
 > extends DynamoDBOperation<Decrypted<T>> {
   private protectClient: ProtectClient
-  private item: Record<string, EncryptedPayload | unknown>
+  private item: Record<string, Encrypted | unknown>
   private protectTable: ProtectTable<ProtectTableColumn>
 
   constructor(
     protectClient: ProtectClient,
-    item: Record<string, EncryptedPayload | unknown>,
+    item: Record<string, Encrypted | unknown>,
     protectTable: ProtectTable<ProtectTableColumn>,
     options?: DynamoDBOperationOptions,
   ) {
@@ -35,8 +35,10 @@ export class DecryptModelOperation<
   public async execute(): Promise<Result<Decrypted<T>, ProtectDynamoDBError>> {
     return await withResult(
       async () => {
-        const encryptedAttrs = Object.keys(this.protectTable.build().columns)
-        const withEqlPayloads = toItemWithEqlPayloads(this.item, encryptedAttrs)
+        const withEqlPayloads = toItemWithEqlPayloads(
+          this.item,
+          this.protectTable,
+        )
 
         const decryptResult = await this.protectClient
           .decryptModel<T>(withEqlPayloads as T)

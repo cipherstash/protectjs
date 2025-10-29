@@ -3,19 +3,16 @@ import { z } from 'zod'
 // ------------------------
 // Zod schemas
 // ------------------------
+// export type CastAs =
+//   | 'bigint'
+//   | 'boolean'
+//   | 'date'
+//   | 'number'
+//   | 'string'
+//   | 'json'
 const castAsEnum = z
-  .enum([
-    'big_int',
-    'boolean',
-    'date',
-    'real',
-    'double',
-    'int',
-    'small_int',
-    'text',
-    'jsonb',
-  ])
-  .default('text')
+  .enum(['bigint', 'boolean', 'date', 'number', 'string', 'json'])
+  .default('string')
 
 const tokenFilterSchema = z.object({
   kind: z.literal('downcase'),
@@ -114,7 +111,7 @@ export class ProtectValue {
 
   constructor(valueName: string) {
     this.valueName = valueName
-    this.castAsValue = 'text'
+    this.castAsValue = 'string'
   }
 
   /**
@@ -149,7 +146,7 @@ export class ProtectColumn {
 
   constructor(columnName: string) {
     this.columnName = columnName
-    this.castAsValue = 'text'
+    this.castAsValue = 'string'
   }
 
   /**
@@ -198,12 +195,13 @@ export class ProtectColumn {
   }
 
   /**
-   * Enable a STE Vec index, requires a prefix.
+   * Enable a STE Vec index, uses the column name for the index.
    */
-  josn(prefix: string) {
-    this.indexesValue.ste_vec = { prefix }
+  // NOTE: Leaving this commented out until stevec indexing for JSON is supported.
+  /*searchableJson() {
+    this.indexesValue.ste_vec = { prefix: this.columnName }
     return this
-  }
+  }*/
 
   build() {
     return {
@@ -249,7 +247,25 @@ export class ProtectTable<T extends ProtectTableColumn> {
       colName: string,
     ) => {
       if (builder instanceof ProtectColumn) {
-        builtColumns[colName] = builder.build()
+        const builtColumn = builder.build()
+
+        // Hanlde building the ste_vec index for JSON columns so users don't have to pass the prefix.
+        if (
+          builtColumn.cast_as === 'json' &&
+          builtColumn.indexes.ste_vec?.prefix === 'enabled'
+        ) {
+          builtColumns[colName] = {
+            ...builtColumn,
+            indexes: {
+              ...builtColumn.indexes,
+              ste_vec: {
+                prefix: `${this.tableName}/${colName}`,
+              },
+            },
+          }
+        } else {
+          builtColumns[colName] = builtColumn
+        }
       } else {
         for (const [key, value] of Object.entries(builder)) {
           if (value instanceof ProtectValue) {

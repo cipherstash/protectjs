@@ -1,5 +1,5 @@
 import { type Result, withResult } from '@byteslice/result'
-import { newClient } from '@cipherstash/protect-ffi'
+import { type JsPlaintext, newClient } from '@cipherstash/protect-ffi'
 import {
   type EncryptConfig,
   type ProtectTable,
@@ -15,8 +15,7 @@ import type {
   Client,
   Decrypted,
   EncryptOptions,
-  EncryptPayload,
-  EncryptedPayload,
+  Encrypted,
   SearchTerm,
 } from '../types'
 import { BulkDecryptOperation } from './operations/bulk-decrypt'
@@ -92,7 +91,10 @@ export class ProtectClient {
    *    await eqlClient.encrypt(plaintext, { column, table })
    *    await eqlClient.encrypt(plaintext, { column, table }).withLockContext(lockContext)
    */
-  encrypt(plaintext: EncryptPayload, opts: EncryptOptions): EncryptOperation {
+  encrypt(
+    plaintext: JsPlaintext | null,
+    opts: EncryptOptions,
+  ): EncryptOperation {
     return new EncryptOperation(this.client, plaintext, opts)
   }
 
@@ -102,7 +104,7 @@ export class ProtectClient {
    *    await eqlClient.decrypt(encryptedData)
    *    await eqlClient.decrypt(encryptedData).withLockContext(lockContext)
    */
-  decrypt(encryptedData: EncryptedPayload): DecryptOperation {
+  decrypt(encryptedData: Encrypted): DecryptOperation {
     return new DecryptOperation(this.client, encryptedData)
   }
 
