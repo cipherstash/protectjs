@@ -990,6 +990,10 @@ Other data types like booleans, dates, ints, floats, and JSON are well-supported
 
 Until support for other data types are available, you can express interest in this feature by adding a :+1: on this [GitHub Issue](https://github.com/cipherstash/protectjs/issues/48).
 
+| Type | Support operations | Available |
+|--|--|--|
+| String | `=`, `LIKE`, `ORDER BY` | ✅ | 
+
 ## Searchable encryption
 
 Read more about [searching encrypted data](./docs/concepts/searchable-encryption.md) in the docs.

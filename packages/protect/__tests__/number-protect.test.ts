@@ -1,6 +1,6 @@
 import 'dotenv/config'
 import { csColumn, csTable, csValue } from '@cipherstash/schema'
-import { beforeAll, describe, expect, it } from 'vitest'
+import { beforeAll, describe, expect, it, test } from 'vitest'
 import { LockContext, protect } from '../src'
 
 const users = csTable('users', {
@@ -16,15 +16,15 @@ const users = csTable('users', {
 
 type User = {
   id: string
-  email?: string | null
+  email?: string
   createdAt?: Date
   updatedAt?: Date
-  address?: string | null
-  age?: number | null
-  score?: number | null
+  address?: string
+  age?: number
+  score?: number
   metadata?: {
-    count?: number | null
-    level?: number | null
+    count?: number
+    level?: number
   }
 }
 
@@ -36,10 +36,15 @@ beforeAll(async () => {
   })
 })
 
-describe('Integer encryption and decryption', () => {
-  it('should encrypt and decrypt a simple integer', async () => {
-    const age = 25
+const cases = [
+  25, 0, -42, 2147483647,
+  77.9, 0.0, -117.123456,
+  1e15, -1e15, // Very large floats
+  9007199254740991 // Max safe integer in JavaScript
+]
 
+describe('Number encryption and decryption', () => {
+  test.each(cases)('should encrypt and decrypt a number: %d', async (age) => {
     const ciphertext = await protectClient.encrypt(age, {
       column: users.age,
       table: users,
@@ -56,94 +61,6 @@ describe('Integer encryption and decryption', () => {
 
     expect(plaintext).toEqual({
       data: age,
-    })
-  }, 30000)
-
-  it('should encrypt and decrypt zero', async () => {
-    const score = 0
-
-    const ciphertext = await protectClient.encrypt(score, {
-      column: users.score,
-      table: users,
-    })
-
-    if (ciphertext.failure) {
-      throw new Error(`[protect]: ${ciphertext.failure.message}`)
-    }
-
-    // Verify encrypted field
-    expect(ciphertext.data).toHaveProperty('c')
-
-    const plaintext = await protectClient.decrypt(ciphertext.data)
-
-    expect(plaintext).toEqual({
-      data: score,
-    })
-  }, 30000)
-
-  it('should encrypt and decrypt negative integers', async () => {
-    const temperature = -42
-
-    const ciphertext = await protectClient.encrypt(temperature, {
-      column: users.age,
-      table: users,
-    })
-
-    if (ciphertext.failure) {
-      throw new Error(`[protect]: ${ciphertext.failure.message}`)
-    }
-
-    // Verify encrypted field
-    expect(ciphertext.data).toHaveProperty('c')
-
-    const plaintext = await protectClient.decrypt(ciphertext.data)
-
-    expect(plaintext).toEqual({
-      data: temperature,
-    })
-  }, 30000)
-
-  it('should encrypt and decrypt large integers', async () => {
-    const largeNumber = 2147483647 // Max 32-bit signed integer
-
-    const ciphertext = await protectClient.encrypt(largeNumber, {
-      column: users.age,
-      table: users,
-    })
-
-    if (ciphertext.failure) {
-      throw new Error(`[protect]: ${ciphertext.failure.message}`)
-    }
-
-    // Verify encrypted field
-    expect(ciphertext.data).toHaveProperty('c')
-
-    const plaintext = await protectClient.decrypt(ciphertext.data)
-
-    expect(plaintext).toEqual({
-      data: largeNumber,
-    })
-  }, 30000)
-
-  it('should encrypt and decrypt very large integers', async () => {
-    const veryLargeNumber = 9007199254740991 // Max safe integer in JavaScript
-
-    const ciphertext = await protectClient.encrypt(veryLargeNumber, {
-      column: users.age,
-      table: users,
-    })
-
-    if (ciphertext.failure) {
-      throw new Error(`[protect]: ${ciphertext.failure.message}`)
-    }
-
-    // Verify encrypted field
-    expect(ciphertext.data).toHaveProperty('c')
-
-    const plaintext = await protectClient.decrypt(ciphertext.data)
-
-    expect(plaintext).toEqual({
-      data: veryLargeNumber,
     })
   }, 30000)
 
@@ -166,10 +83,72 @@ describe('Integer encryption and decryption', () => {
       data: null,
     })
   }, 30000)
+
+  // Special case
+  it('should treat a negative zero valued float as 0.0', async () => {
+    const score = -0.0
+
+    const ciphertext = await protectClient.encrypt(score, {
+      column: users.score,
+      table: users,
+    })
+
+    if (ciphertext.failure) {
+      throw new Error(`[protect]: ${ciphertext.failure.message}`)
+    }
+
+    // Verify encrypted field
+    expect(ciphertext.data).toHaveProperty('c')
+
+    const plaintext = await protectClient.decrypt(ciphertext.data)
+
+    expect(plaintext).toEqual({
+      data: 0.0,
+    })
+  }, 30000)
+
+  // Special case
+  it('should error for a NaN float', async () => {
+    const score = NaN
+
+    const result = await protectClient.encrypt(score, {
+      column: users.score,
+      table: users,
+    });
+
+    expect(result.failure).toBeDefined()
+    expect(result.failure?.message).toContain('Cannot encrypt NaN value')
+  }, 30000)
+
+  // Special case
+  it('should error for Infinity', async () => {
+    const score = Infinity
+
+    const result = await protectClient.encrypt(score, {
+      column: users.score,
+      table: users,
+    })
+
+    expect(result.failure).toBeDefined()
+    expect(result.failure?.message).toContain('Cannot encrypt Infinity value')
+  }, 30000)
+
+  // Special case
+  it('should error for -Infinity', async () => {
+    const score = -Infinity
+
+    const result = await protectClient.encrypt(score, {
+      column: users.score,
+      table: users,
+    })
+
+    expect(result.failure).toBeDefined()
+    expect(result.failure?.message).toContain('Cannot encrypt Infinity value')
+  }, 30000)
 })
 
-describe('Integer model encryption and decryption', () => {
-  it('should encrypt and decrypt a model with integer fields', async () => {
+describe('Model encryption and decryption', () => {
+  it('should encrypt and decrypt a model with number fields', async () => {
     const decryptedModel = {
       id: '1',
       email: 'test@example.com',
@@ -211,13 +190,13 @@ describe('Integer model encryption and decryption', () => {
     expect(decryptedResult.data).toEqual(decryptedModel)
   }, 30000)
 
-  it('should handle null integers in model', async () => {
-    const decryptedModel = {
+  it('should handle null numbers in model', async () => {
+    const decryptedModel: User = {
       id: '2',
       email: 'test2@example.com',
       address: '456 Oak St',
-      age: null,
-      score: null,
+      age: undefined,
+      score: undefined,
       createdAt: new Date('2021-01-01'),
       updatedAt: new Date('2021-01-01'),
     }
@@ -234,8 +213,8 @@ describe('Integer model encryption and decryption', () => {
     // Verify encrypted fields
     expect(encryptedModel.data.email).toHaveProperty('c')
     expect(encryptedModel.data.address).toHaveProperty('c')
-    expect(encryptedModel.data.age).toBeNull()
-    expect(encryptedModel.data.score).toBeNull()
+    expect(encryptedModel.data.age).toBeUndefined()
+    expect(encryptedModel.data.score).toBeUndefined()
 
     const decryptedResult = await protectClient.decryptModel<User>(
       encryptedModel.data,
@@ -248,7 +227,7 @@ describe('Integer model encryption and decryption', () => {
     expect(decryptedResult.data).toEqual(decryptedModel)
   }, 30000)
 
-  it('should handle undefined integers in model', async () => {
+  it('should handle undefined numbers in model', async () => {
     const decryptedModel = {
       id: '3',
       email: 'test3@example.com',
@@ -286,12 +265,12 @@ describe('Integer model encryption and decryption', () => {
   }, 30000)
 })
 
-describe('Integer bulk encryption and decryption', () => {
-  it('should bulk encrypt and decrypt integer payloads', async () => {
+describe('Bulk encryption and decryption', () => {
+  it('should bulk encrypt and decrypt number payloads', async () => {
     const intPayloads = [
       { id: 'user1', plaintext: 25 },
-      { id: 'user2', plaintext: 30 },
-      { id: 'user3', plaintext: 35 },
+      { id: 'user2', plaintext: 30.7 },
+      { id: 'user3', plaintext: -35.123 },
     ]
 
     const encryptedData = await protectClient.bulkEncrypt(intPayloads, {
@@ -315,15 +294,24 @@ describe('Integer bulk encryption and decryption', () => {
     expect(encryptedData.data[2]).toHaveProperty('data')
     expect(encryptedData.data[2].data).toHaveProperty('c')
 
+    expect(encryptedData.data[0].data?.k).toBe('ct')
+    expect(encryptedData.data[1].data?.k).toBe('ct')
+    expect(encryptedData.data[2].data?.k).toBe('ct')
+
     // Verify all encrypted values are different
-    expect(encryptedData.data[0].data?.c).not.toBe(
-      encryptedData.data[1].data?.c,
+    const getCiphertext = (data: any) => {
+      if (data?.k === 'ct') return data.c
+      return data?.c
+    }
+    
+    expect(getCiphertext(encryptedData.data[0].data)).not.toBe(
+      getCiphertext(encryptedData.data[1].data),
     )
-    expect(encryptedData.data[1].data?.c).not.toBe(
-      encryptedData.data[2].data?.c,
+    expect(getCiphertext(encryptedData.data[1].data)).not.toBe(
+      getCiphertext(encryptedData.data[2].data),
     )
-    expect(encryptedData.data[0].data?.c).not.toBe(
-      encryptedData.data[2].data?.c,
+    expect(getCiphertext(encryptedData.data[0].data)).not.toBe(
+      getCiphertext(encryptedData.data[2].data),
     )
 
     // Now decrypt the data
@@ -338,12 +326,12 @@ describe('Integer bulk encryption and decryption', () => {
     expect(decryptedData.data[0]).toHaveProperty('id', 'user1')
     expect(decryptedData.data[0]).toHaveProperty('data', 25)
     expect(decryptedData.data[1]).toHaveProperty('id', 'user2')
-    expect(decryptedData.data[1]).toHaveProperty('data', 30)
+    expect(decryptedData.data[1]).toHaveProperty('data', 30.7)
     expect(decryptedData.data[2]).toHaveProperty('id', 'user3')
-    expect(decryptedData.data[2]).toHaveProperty('data', 35)
+    expect(decryptedData.data[2]).toHaveProperty('data', -35.123)
   }, 30000)
 
-  it('should handle mixed null and non-null integers in bulk operations', async () => {
+  it('should handle mixed null and non-null numbers in bulk operations', async () => {
     const intPayloads = [
       { id: 'user1', plaintext: 25 },
       { id: 'user2', plaintext: null },
@@ -388,7 +376,7 @@ describe('Integer bulk encryption and decryption', () => {
     expect(decryptedData.data[2]).toHaveProperty('data', 35)
   }, 30000)
 
-  it('should bulk encrypt and decrypt models with integer fields', async () => {
+  it('should bulk encrypt and decrypt models with number fields', async () => {
     const decryptedModels = [
       {
         id: '1',
@@ -449,8 +437,8 @@ describe('Integer bulk encryption and decryption', () => {
   }, 30000)
 })
 
-describe('Integer encryption with lock context', () => {
-  it('should encrypt and decrypt integer with lock context', async () => {
+describe('Encryption with lock context', () => {
+  it('should encrypt and decrypt number with lock context', async () => {
     const userJwt = process.env.USER_JWT
 
     if (!userJwt) {
@@ -492,7 +480,7 @@ describe('Integer encryption with lock context', () => {
     expect(plaintext.data).toEqual(age)
   }, 30000)
 
-  it('should encrypt integer model with lock context', async () => {
+  it('should encrypt model with lock context', async () => {
     const userJwt = process.env.USER_JWT
 
     if (!userJwt) {
@@ -538,7 +526,7 @@ describe('Integer encryption with lock context', () => {
     expect(decryptedResult.data).toEqual(decryptedModel)
   }, 30000)
 
-  it('should bulk encrypt integers with lock context', async () => {
+  it('should bulk encrypt numbers with lock context', async () => {
     const userJwt = process.env.USER_JWT
 
     if (!userJwt) {
@@ -596,8 +584,8 @@ describe('Integer encryption with lock context', () => {
   }, 30000)
 })
 
-describe('Integer nested object encryption', () => {
-  it('should encrypt and decrypt nested integer objects', async () => {
+describe('Nested object encryption', () => {
+  it('should encrypt and decrypt nested number objects', async () => {
     const protectClient = await protect({ schemas: [users] })
 
     const decryptedModel = {
@@ -637,15 +625,15 @@ describe('Integer nested object encryption', () => {
     expect(decryptedResult.data).toEqual(decryptedModel)
   }, 30000)
 
-  it('should handle null values in nested integer objects', async () => {
+  it('should handle null values in nested objects with number fields', async () => {
     const protectClient = await protect({ schemas: [users] })
 
-    const decryptedModel = {
+    const decryptedModel: User = {
       id: '2',
       email: 'test2@example.com',
       metadata: {
-        count: null,
-        level: null,
+        count: undefined,
+        level: undefined,
       },
     }
 
@@ -660,8 +648,8 @@ describe('Integer nested object encryption', () => {
 
     // Verify null fields are preserved
     expect(encryptedModel.data.email).toHaveProperty('c')
-    expect(encryptedModel.data.metadata?.count).toBeNull()
-    expect(encryptedModel.data.metadata?.level).toBeNull()
+    expect(encryptedModel.data.metadata?.count).toBeUndefined()
+    expect(encryptedModel.data.metadata?.level).toBeUndefined()
 
     const decryptedResult = await protectClient.decryptModel<User>(
       encryptedModel.data,
@@ -674,7 +662,7 @@ describe('Integer nested object encryption', () => {
     expect(decryptedResult.data).toEqual(decryptedModel)
   }, 30000)
 
-  it('should handle undefined values in nested integer objects', async () => {
+  it('should handle undefined values in nested objects with number fields', async () => {
     const protectClient = await protect({ schemas: [users] })
 
     const decryptedModel = {
@@ -712,8 +700,8 @@ describe('Integer nested object encryption', () => {
   }, 30000)
 })
 
-describe('Integer search terms', () => {
-  it('should create search terms for integer fields', async () => {
+describe('Search terms', () => {
+  it('should create search terms for number fields', async () => {
     const searchTerms = [
       {
         value: 25,
@@ -742,7 +730,7 @@ describe('Integer search terms', () => {
     )
   }, 30000)
 
-  it('should create search terms with composite-literal return type for integers', async () => {
+  it('should create search terms with composite-literal return type for numbers', async () => {
     const searchTerms = [
       {
         value: 42,
@@ -763,7 +751,7 @@ describe('Integer search terms', () => {
     expect(() => JSON.parse(result.slice(1, -1))).not.toThrow()
   }, 30000)
 
-  it('should create search terms with escaped-composite-literal return type for integers', async () => {
+  it('should create search terms with escaped-composite-literal return type for numbers', async () => {
     const searchTerms = [
       {
         value: 99,
@@ -787,9 +775,9 @@ describe('Integer search terms', () => {
   }, 30000)
 })
 
-describe('Integer performance tests', () => {
-  it('should handle large numbers of integers efficiently', async () => {
-    const largeIntArray = Array.from({ length: 100 }, (_, i) => ({
+describe('Performance tests', () => {
+  it('should handle large numbers of numbers efficiently', async () => {
+    const largeNumArray = Array.from({ length: 100 }, (_, i) => ({
       id: i,
       data: {
         age: i + 18, // Ages 18-117
@@ -797,12 +785,12 @@ describe('Integer performance tests', () => {
       },
     }))
 
-    const intPayloads = largeIntArray.map((item, index) => ({
+    const numPayloads = largeNumArray.map((item, index) => ({
       id: `user${index}`,
       plaintext: item.data.age,
     }))
 
-    const encryptedData = await protectClient.bulkEncrypt(intPayloads, {
+    const encryptedData = await protectClient.bulkEncrypt(numPayloads, {
       column: users.age,
       table: users,
     })
@@ -826,12 +814,12 @@ describe('Integer performance tests', () => {
 
     for (let i = 0; i < 100; i++) {
       expect(decryptedData.data[i].id).toBe(`user${i}`)
-      expect(decryptedData.data[i].data).toEqual(largeIntArray[i].data.age)
+      expect(decryptedData.data[i].data).toEqual(largeNumArray[i].data.age)
     }
   }, 60000)
 })
 
-describe('Integer advanced scenarios', () => {
+describe('Advanced scenarios', () => {
   it('should handle boundary values', async () => {
     const boundaryValues = [
       Number.MIN_SAFE_INTEGER,
@@ -863,188 +851,27 @@ describe('Integer advanced scenarios', () => {
       })
     }
   }, 30000)
-
-  it('should handle consecutive integers', async () => {
-    const consecutiveInts = Array.from({ length: 10 }, (_, i) => i + 1)
-
-    for (const value of consecutiveInts) {
-      const ciphertext = await protectClient.encrypt(value, {
-        column: users.age,
-        table: users,
-      })
-
-      if (ciphertext.failure) {
-        throw new Error(`[protect]: ${ciphertext.failure.message}`)
-      }
-
-      // Verify encrypted field
-      expect(ciphertext.data).toHaveProperty('c')
-
-      const plaintext = await protectClient.decrypt(ciphertext.data)
-
-      expect(plaintext).toEqual({
-        data: value,
-      })
-    }
-  }, 30000)
-
-  it('should handle random integers', async () => {
-    const randomInts = Array.from(
-      { length: 20 },
-      () => Math.floor(Math.random() * 10000) - 5000,
-    )
-
-    for (const value of randomInts) {
-      const ciphertext = await protectClient.encrypt(value, {
-        column: users.age,
-        table: users,
-      })
-
-      if (ciphertext.failure) {
-        throw new Error(`[protect]: ${ciphertext.failure.message}`)
-      }
-
-      // Verify encrypted field
-      expect(ciphertext.data).toHaveProperty('c')
-
-      const plaintext = await protectClient.decrypt(ciphertext.data)
-
-      expect(plaintext).toEqual({
-        data: value,
-      })
-    }
-  }, 30000)
-
-  it('should handle mixed positive and negative integers', async () => {
-    const mixedInts = [-100, -50, -1, 0, 1, 50, 100]
-
-    for (const value of mixedInts) {
-      const ciphertext = await protectClient.encrypt(value, {
-        column: users.age,
-        table: users,
-      })
-
-      if (ciphertext.failure) {
-        throw new Error(`[protect]: ${ciphertext.failure.message}`)
-      }
-
-      // Verify encrypted field
-      expect(ciphertext.data).toHaveProperty('c')
-
-      const plaintext = await protectClient.decrypt(ciphertext.data)
-
-      expect(plaintext).toEqual({
-        data: value,
-      })
-    }
-  }, 30000)
 })
 
-describe('Integer error handling and edge cases', () => {
-  it('should handle floating point numbers (should be truncated)', async () => {
-    const floatValue = 42.7
+const invalidPlaintexts = [
+  '400',
+  'aaa',
+  '100a',
+  '73.51',
+  {},
+  [],
+  [123],
+  { num: 123 },
+];
 
-    const ciphertext = await protectClient.encrypt(floatValue, {
+describe('Invalid or uncoercable values', () => {
+  test.each(invalidPlaintexts)('should fail to encrypt', async (input) => {
+    const result = await protectClient.encrypt(input, {
       column: users.age,
       table: users,
-    })
-
-    if (ciphertext.failure) {
-      throw new Error(`[protect]: ${ciphertext.failure.message}`)
-    }
-
-    // Verify encrypted field
-    expect(ciphertext.data).toHaveProperty('c')
-
-    const plaintext = await protectClient.decrypt(ciphertext.data)
-
-    // Floating point numbers are preserved as-is (not truncated)
-    expect(plaintext).toEqual({
-      data: floatValue,
-    })
-  }, 30000)
-
-  it('should handle very large numbers (should be handled appropriately)', async () => {
-    const veryLargeNumber = 1e15
-
-    const ciphertext = await protectClient.encrypt(veryLargeNumber, {
-      column: users.age,
-      table: users,
-    })
-
-    if (ciphertext.failure) {
-      throw new Error(`[protect]: ${ciphertext.failure.message}`)
-    }
-
-    // Verify encrypted field
-    expect(ciphertext.data).toHaveProperty('c')
-
-    const plaintext = await protectClient.decrypt(ciphertext.data)
-
-    expect(plaintext).toEqual({
-      data: veryLargeNumber,
-    })
-  }, 30000)
-
-  it('should handle string numbers (should be converted)', async () => {
-    // Note: This test might fail if the library doesn't handle string conversion
-    // Remove this test if string conversion is not supported
-    const stringNumber = '42'
-
-    try {
-      const ciphertext = await protectClient.encrypt(stringNumber, {
-        column: users.age,
-        table: users,
       })
 
-      if (ciphertext.failure) {
-        throw new Error(`[protect]: ${ciphertext.failure.message}`)
-      }
-
-      // Verify encrypted field
-      expect(ciphertext.data).toHaveProperty('c')
-
-      const plaintext = await protectClient.decrypt(ciphertext.data)
-
-      // String should be converted to number
-      expect(plaintext).toEqual({
-        data: Number(stringNumber),
-      })
-    } catch (error) {
-      // If string conversion is not supported, that's also acceptable
-      expect(error).toBeDefined()
-    }
-  }, 30000)
-
-  it('should handle all integer edge cases', async () => {
-    const edgeCases = [
-      Number.MIN_SAFE_INTEGER,
-      Number.MAX_SAFE_INTEGER,
-      0,
-      1,
-      -1,
-      Number.MAX_VALUE,
-      Number.MIN_VALUE,
-    ]
-
-    for (const value of edgeCases) {
-      const ciphertext = await protectClient.encrypt(value, {
-        column: users.age,
-        table: users,
-      })
-
-      if (ciphertext.failure) {
-        throw new Error(`[protect]: ${ciphertext.failure.message}`)
-      }
-
-      // Verify encrypted field
-      expect(ciphertext.data).toHaveProperty('c')
-
-      const plaintext = await protectClient.decrypt(ciphertext.data)
-
-      expect(plaintext).toEqual({
-        data: value,
-      })
-    }
+      expect(result.failure).toBeDefined()
+      expect(result.failure?.message).toContain('Unsupported conversion')
   }, 30000)
 })
