@@ -257,7 +257,7 @@ importers:
         version: 5.0.1(react-hook-form@7.56.4(react@19.0.0))
       drizzle-orm:
         specifier: ^0.44.0
-        version: 0.44.0(@types/pg@8.11.10)(gel@2.0.1)(mysql2@3.14.1)(pg@8.16.3)(postgres@3.4.5)
+        version: 0.44.0(@types/pg@8.11.10)(gel@2.0.1)(mysql2@3.14.1)(pg@8.16.3)(postgres@3.4.7)
       mysql2:
         specifier: ^3.14.1
         version: 3.14.1
@@ -471,12 +471,18 @@ importers:
       dotenv:
         specifier: ^16.4.7
         version: 16.4.7
+      drizzle-orm:
+        specifier: ^0.44.7
+        version: 0.44.7(@types/pg@8.11.10)(gel@2.0.1)(mysql2@3.14.1)(pg@8.16.3)(postgres@3.4.7)
       execa:
         specifier: ^9.5.2
         version: 9.5.2
       json-schema-to-typescript:
         specifier: ^15.0.2
         version: 15.0.3
+      postgres:
+        specifier: ^3.4.7
+        version: 3.4.7
       tsup:
         specifier: catalog:repo
         version: 8.4.0(jiti@2.4.2)(postcss@8.5.3)(tsx@4.19.3)(typescript@5.6.3)(yaml@2.7.0)
@@ -627,6 +633,7 @@ packages:
   '@aws-sdk/lib-dynamodb@3.817.0':
     resolution: {integrity: sha512-BHMhLm0OCgplwqxj2j7nGUehMDvTV6i6EE5IZe8FE2XcnCSoh/Pp2xQfVxM2yz33EQLKi5S3m5m2Q7PJvx7cHA==}
     engines: {node: '>=18.0.0'}
+    deprecated: Please upgrade to @aws-sdk/lib-dynamodb@3.850.0 to support Command reuse https://github.com/aws/aws-sdk-js-v3/issues/7217.
     peerDependencies:
       '@aws-sdk/client-dynamodb': ^3.817.0
 
@@ -4292,6 +4299,98 @@ packages:
       sqlite3:
         optional: true
 
+  drizzle-orm@0.44.7:
+    resolution: {integrity: sha512-quIpnYznjU9lHshEOAYLoZ9s3jweleHlZIAWR/jX9gAWNg/JhQ1wj0KGRf7/Zm+obRrYd9GjPVJg790QY9N5AQ==}
+    peerDependencies:
+      '@aws-sdk/client-rds-data': '>=3'
+      '@cloudflare/workers-types': '>=4'
+      '@electric-sql/pglite': '>=0.2.0'
+      '@libsql/client': '>=0.10.0'
+      '@libsql/client-wasm': '>=0.10.0'
+      '@neondatabase/serverless': '>=0.10.0'
+      '@op-engineering/op-sqlite': '>=2'
+      '@opentelemetry/api': ^1.4.1
+      '@planetscale/database': '>=1.13'
+      '@prisma/client': '*'
+      '@tidbcloud/serverless': '*'
+      '@types/better-sqlite3': '*'
+      '@types/pg': '*'
+      '@types/sql.js': '*'
+      '@upstash/redis': '>=1.34.7'
+      '@vercel/postgres': '>=0.8.0'
+      '@xata.io/client': '*'
+      better-sqlite3: '>=7'
+      bun-types: '*'
+      expo-sqlite: '>=14.0.0'
+      gel: '>=2'
+      knex: '*'
+      kysely: '*'
+      mysql2: '>=2'
+      pg: '>=8'
+      postgres: '>=3'
+      prisma: '*'
+      sql.js: '>=1'
+      sqlite3: '>=5'
+    peerDependenciesMeta:
+      '@aws-sdk/client-rds-data':
+        optional: true
+      '@cloudflare/workers-types':
+        optional: true
+      '@electric-sql/pglite':
+        optional: true
+      '@libsql/client':
+        optional: true
+      '@libsql/client-wasm':
+        optional: true
+      '@neondatabase/serverless':
+        optional: true
+      '@op-engineering/op-sqlite':
+        optional: true
+      '@opentelemetry/api':
+        optional: true
+      '@planetscale/database':
+        optional: true
+      '@prisma/client':
+        optional: true
+      '@tidbcloud/serverless':
+        optional: true
+      '@types/better-sqlite3':
+        optional: true
+      '@types/pg':
+        optional: true
+      '@types/sql.js':
+        optional: true
+      '@upstash/redis':
+        optional: true
+      '@vercel/postgres':
+        optional: true
+      '@xata.io/client':
+        optional: true
+      better-sqlite3:
+        optional: true
+      bun-types:
+        optional: true
+      expo-sqlite:
+        optional: true
+      gel:
+        optional: true
+      knex:
+        optional: true
+      kysely:
+        optional: true
+      mysql2:
+        optional: true
+      pg:
+        optional: true
+      postgres:
+        optional: true
+      prisma:
+        optional: true
+      sql.js:
+        optional: true
+      sqlite3:
+        optional: true
+
   dunder-proto@1.0.1:
     resolution: {integrity: sha512-KIN/nDJBQRcXw0MLVhZE9iQHmG68qAVIBg9CqmUYjmQIhgij9U5MFvrqkUL5FbtyyzZuOeOt0zdeRe4UY7ct+A==}
     engines: {node: '>= 0.4'}
@@ -5861,6 +5960,10 @@ packages:
 
   postgres@3.4.5:
     resolution: {integrity: sha512-cDWgoah1Gez9rN3H4165peY9qfpEo+SA61oQv65O3cRUE1pOEoJWwddwcqKE8XZYjbblOJlYDlLV4h67HrEVDg==}
+    engines: {node: '>=12'}
+
+  postgres@3.4.7:
+    resolution: {integrity: sha512-Jtc2612XINuBjIl/QTWsV5UvE8UHuNblcO3vVADSrKsrc6RqGX6lOW1cEo3CM2v0XG4Nat8nI+YM7/f26VxXLw==}
     engines: {node: '>=12'}
 
   prelude-ls@1.2.1:
@@ -10780,13 +10883,21 @@ snapshots:
       postgres: 3.4.5
       react: 19.0.0
 
-  drizzle-orm@0.44.0(@types/pg@8.11.10)(gel@2.0.1)(mysql2@3.14.1)(pg@8.16.3)(postgres@3.4.5):
+  drizzle-orm@0.44.0(@types/pg@8.11.10)(gel@2.0.1)(mysql2@3.14.1)(pg@8.16.3)(postgres@3.4.7):
     optionalDependencies:
       '@types/pg': 8.11.10
       gel: 2.0.1
       mysql2: 3.14.1
       pg: 8.16.3
-      postgres: 3.4.5
+      postgres: 3.4.7
+
+  drizzle-orm@0.44.7(@types/pg@8.11.10)(gel@2.0.1)(mysql2@3.14.1)(pg@8.16.3)(postgres@3.4.7):
+    optionalDependencies:
+      '@types/pg': 8.11.10
+      gel: 2.0.1
+      mysql2: 3.14.1
+      pg: 8.16.3
+      postgres: 3.4.7
 
   dunder-proto@1.0.1:
     dependencies:
@@ -12560,6 +12671,8 @@ snapshots:
   postgres-range@1.1.4: {}
 
   postgres@3.4.5: {}
+
+  postgres@3.4.7: {}
 
   prelude-ls@1.2.1: {}
 
