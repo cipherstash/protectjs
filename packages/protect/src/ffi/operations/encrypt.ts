@@ -56,11 +56,17 @@ export class EncryptOperation extends ProtectOperation<Encrypted> {
           return null
         }
 
-        if (typeof this.plaintext === 'number' && isNaN(this.plaintext)) {
+        if (
+          typeof this.plaintext === 'number' &&
+          Number.isNaN(this.plaintext)
+        ) {
           throw new Error('[protect]: Cannot encrypt NaN value')
         }
 
-        if (typeof this.plaintext === 'number' && !Number.isFinite(this.plaintext)) {
+        if (
+          typeof this.plaintext === 'number' &&
+          !Number.isFinite(this.plaintext)
+        ) {
           throw new Error('[protect]: Cannot encrypt Infinity value')
         }
 

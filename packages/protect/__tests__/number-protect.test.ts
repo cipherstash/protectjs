@@ -37,32 +37,42 @@ beforeAll(async () => {
 })
 
 const cases = [
-  25, 0, -42, 2147483647,
-  77.9, 0.0, -117.123456,
-  1e15, -1e15, // Very large floats
-  9007199254740991 // Max safe integer in JavaScript
+  25,
+  0,
+  -42,
+  2147483647,
+  77.9,
+  0.0,
+  -117.123456,
+  1e15,
+  -1e15, // Very large floats
+  9007199254740991, // Max safe integer in JavaScript
 ]
 
 describe('Number encryption and decryption', () => {
-  test.each(cases)('should encrypt and decrypt a number: %d', async (age) => {
-    const ciphertext = await protectClient.encrypt(age, {
-      column: users.age,
-      table: users,
-    })
+  test.each(cases)(
+    'should encrypt and decrypt a number: %d',
+    async (age) => {
+      const ciphertext = await protectClient.encrypt(age, {
+        column: users.age,
+        table: users,
+      })
 
-    if (ciphertext.failure) {
-      throw new Error(`[protect]: ${ciphertext.failure.message}`)
-    }
+      if (ciphertext.failure) {
+        throw new Error(`[protect]: ${ciphertext.failure.message}`)
+      }
 
-    // Verify encrypted field
-    expect(ciphertext.data).toHaveProperty('c')
+      // Verify encrypted field
+      expect(ciphertext.data).toHaveProperty('c')
 
-    const plaintext = await protectClient.decrypt(ciphertext.data)
+      const plaintext = await protectClient.decrypt(ciphertext.data)
 
-    expect(plaintext).toEqual({
-      data: age,
-    })
-  }, 30000)
+      expect(plaintext).toEqual({
+        data: age,
+      })
+    },
+    30000,
+  )
 
   it('should handle null integer', async () => {
     const ciphertext = await protectClient.encrypt(null, {
@@ -109,12 +119,12 @@ describe('Number encryption and decryption', () => {
 
   // Special case
   it('should error for a NaN float', async () => {
-    const score = NaN
+    const score = Number.NaN
 
     const result = await protectClient.encrypt(score, {
       column: users.score,
       table: users,
-    });
+    })
 
     expect(result.failure).toBeDefined()
     expect(result.failure?.message).toContain('Cannot encrypt NaN value')
@@ -122,7 +132,7 @@ describe('Number encryption and decryption', () => {
 
   // Special case
   it('should error for Infinity', async () => {
-    const score = Infinity
+    const score = Number.POSITIVE_INFINITY
 
     const result = await protectClient.encrypt(score, {
       column: users.score,
@@ -135,7 +145,7 @@ describe('Number encryption and decryption', () => {
 
   // Special case
   it('should error for -Infinity', async () => {
-    const score = -Infinity
+    const score = Number.NEGATIVE_INFINITY
 
     const result = await protectClient.encrypt(score, {
       column: users.score,
@@ -299,11 +309,13 @@ describe('Bulk encryption and decryption', () => {
     expect(encryptedData.data[2].data?.k).toBe('ct')
 
     // Verify all encrypted values are different
-    const getCiphertext = (data: any) => {
+    const getCiphertext = (
+      data: { k?: string; c?: unknown } | null | undefined,
+    ) => {
       if (data?.k === 'ct') return data.c
       return data?.c
     }
-    
+
     expect(getCiphertext(encryptedData.data[0].data)).not.toBe(
       getCiphertext(encryptedData.data[1].data),
     )
@@ -862,16 +874,20 @@ const invalidPlaintexts = [
   [],
   [123],
   { num: 123 },
-];
+]
 
 describe('Invalid or uncoercable values', () => {
-  test.each(invalidPlaintexts)('should fail to encrypt', async (input) => {
-    const result = await protectClient.encrypt(input, {
-      column: users.age,
-      table: users,
+  test.each(invalidPlaintexts)(
+    'should fail to encrypt',
+    async (input) => {
+      const result = await protectClient.encrypt(input, {
+        column: users.age,
+        table: users,
       })
 
       expect(result.failure).toBeDefined()
       expect(result.failure?.message).toContain('Unsupported conversion')
-  }, 30000)
+    },
+    30000,
+  )
 })
