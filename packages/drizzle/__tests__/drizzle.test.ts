@@ -307,12 +307,13 @@ describe('Drizzle ORM Integration with Protect.js', () => {
     expect(sortedAges).toEqual(ages)
   }, 30000)
 
-  it('should perform complex queries with multiple conditions', async () => {
+  it('should perform complex queries with multiple conditions using batched and()', async () => {
     const minAge = 25
     const maxAge = 35
     const searchText = 'developer'
 
-    // Complex query using Protect operators - encryption is handled automatically
+    // Complex query using Protect operators with batched and() - encryption is handled automatically
+    // All operator calls are batched into a single createSearchTerms call
     const results = await db
       .select({
         id: drizzleUsersTable.id,
@@ -323,10 +324,10 @@ describe('Drizzle ORM Integration with Protect.js', () => {
       })
       .from(drizzleUsersTable)
       .where(
-        and(
-          await protectOps.gte(drizzleUsersTable.age, minAge),
-          await protectOps.lte(drizzleUsersTable.age, maxAge),
-          await protectOps.ilike(drizzleUsersTable.email, searchText),
+        await protectOps.and(
+          protectOps.gte(drizzleUsersTable.age, minAge),
+          protectOps.lte(drizzleUsersTable.age, maxAge),
+          protectOps.ilike(drizzleUsersTable.email, searchText),
         ),
       )
 

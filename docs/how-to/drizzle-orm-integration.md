@@ -244,9 +244,9 @@ const results = await db
   })
   .from(usersTable)
   .where(
-    and(
-      await protectOps.gte(usersTable.age, minAge),
-      await protectOps.lte(usersTable.age, maxAge),
+    await protectOps.and(
+      protectOps.gte(usersTable.age, minAge),
+      protectOps.lte(usersTable.age, maxAge),
     ),
   )
 
@@ -330,13 +330,12 @@ if (decrypted.failure) {
 ### Complex AND Query (multiple conditions)
 
 ```typescript
-import { and } from 'drizzle-orm'
-
 const minAge = 25
 const maxAge = 35
 const searchText = 'developer'
 
-// Use Protect operators - encryption is handled automatically
+// Use Protect operators with batched and() - encryption is handled automatically
+// All operator calls are batched into a single createSearchTerms call for better performance
 const results = await db
   .select({
     id: usersTable.id,
@@ -347,10 +346,10 @@ const results = await db
   })
   .from(usersTable)
   .where(
-    and(
-      await protectOps.gte(usersTable.age, minAge),
-      await protectOps.lte(usersTable.age, maxAge),
-      await protectOps.ilike(usersTable.email, searchText),
+    await protectOps.and(
+      protectOps.gte(usersTable.age, minAge),
+      protectOps.lte(usersTable.age, maxAge),
+      protectOps.ilike(usersTable.email, searchText),
     ),
   )
 
@@ -359,6 +358,9 @@ if (decrypted.failure) {
   throw new Error(`Decryption failed: ${decrypted.failure.message}`)
 }
 ```
+
+> [!NOTE]
+> Using `protectOps.and()` instead of Drizzle's `and()` function batches all encryption operations into a single `createSearchTerms` call, which is more efficient than awaiting each operator individually. This is especially beneficial when using multiple operators in a single query.
 
 ## Available Operators
 

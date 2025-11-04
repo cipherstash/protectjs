@@ -158,6 +158,111 @@ function getColumnInfo(
 }
 
 /**
+ * Lazy operator wrapper that can be collected and batched
+ */
+interface LazyOperator {
+  readonly __isLazyOperator: true
+  operator: string
+  left: SQLWrapper
+  right: unknown
+  min?: unknown
+  max?: unknown
+  createCondition: (
+    encrypted: unknown,
+    encryptedMin?: unknown,
+    encryptedMax?: unknown,
+  ) => SQL
+  needsEncryption: boolean
+}
+
+/**
+ * Promise-like object that also contains lazy operator metadata
+ * This allows operators to return both a Promise and metadata that can be collected
+ */
+class LazyOperatorPromise extends Promise<SQL> implements LazyOperator {
+  readonly __isLazyOperator = true as const
+  operator: string
+  left: SQLWrapper
+  right: unknown
+  min?: unknown
+  max?: unknown
+  createCondition: (
+    encrypted: unknown,
+    encryptedMin?: unknown,
+    encryptedMax?: unknown,
+  ) => SQL
+  needsEncryption: boolean
+  private _resolve?: (value: SQL) => void
+  private _reject?: (reason?: unknown) => void
+
+  constructor(
+    operator: string,
+    left: SQLWrapper,
+    right: unknown,
+    createCondition: (
+      encrypted: unknown,
+      encryptedMin?: unknown,
+      encryptedMax?: unknown,
+    ) => SQL,
+    needsEncryption: boolean,
+    min?: unknown,
+    max?: unknown,
+  ) {
+    let resolveFn!: (value: SQL) => void
+    let rejectFn!: (reason?: unknown) => void
+    super((resolve, reject) => {
+      resolveFn = resolve
+      rejectFn = reject
+    })
+    // Promise constructor calls executor synchronously, so these are defined
+    this._resolve = resolveFn
+    this._reject = rejectFn
+    this.operator = operator
+    this.left = left
+    this.right = right
+    this.min = min
+    this.max = max
+    this.createCondition = createCondition
+    this.needsEncryption = needsEncryption
+  }
+
+  /**
+   * Resolve this promise with the given SQL
+   * Called by and() after batching encryption
+   */
+  resolveWith(sql: SQL): void {
+    if (this._resolve) {
+      this._resolve(sql)
+      this._resolve = undefined
+      this._reject = undefined
+    }
+  }
+
+  /**
+   * Reject this promise with the given error
+   */
+  rejectWith(error: unknown): void {
+    if (this._reject) {
+      this._reject(error)
+      this._resolve = undefined
+      this._reject = undefined
+    }
+  }
+}
+
+/**
+ * Type guard to check if a value is a lazy operator
+ */
+function isLazyOperator(value: unknown): value is LazyOperator {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    '__isLazyOperator' in value &&
+    (value as LazyOperator).__isLazyOperator === true
+  )
+}
+
+/**
  * Helper to convert a value to plaintext format
  */
 function toPlaintext(value: unknown): string | number {
@@ -321,19 +426,23 @@ async function encryptValue(
  */
 export function createProtectOperators(protectClient: ProtectClient): {
   // Comparison operators
-  eq: (left: SQLWrapper, right: unknown) => Promise<SQL>
-  ne: (left: SQLWrapper, right: unknown) => Promise<SQL>
-  gt: (left: SQLWrapper, right: unknown) => Promise<SQL>
-  gte: (left: SQLWrapper, right: unknown) => Promise<SQL>
-  lt: (left: SQLWrapper, right: unknown) => Promise<SQL>
-  lte: (left: SQLWrapper, right: unknown) => Promise<SQL>
+  eq: (left: SQLWrapper, right: unknown) => Promise<SQL> | SQL
+  ne: (left: SQLWrapper, right: unknown) => Promise<SQL> | SQL
+  gt: (left: SQLWrapper, right: unknown) => Promise<SQL> | SQL
+  gte: (left: SQLWrapper, right: unknown) => Promise<SQL> | SQL
+  lt: (left: SQLWrapper, right: unknown) => Promise<SQL> | SQL
+  lte: (left: SQLWrapper, right: unknown) => Promise<SQL> | SQL
   // Range operators
-  between: (left: SQLWrapper, min: unknown, max: unknown) => Promise<SQL>
-  notBetween: (left: SQLWrapper, min: unknown, max: unknown) => Promise<SQL>
+  between: (left: SQLWrapper, min: unknown, max: unknown) => Promise<SQL> | SQL
+  notBetween: (
+    left: SQLWrapper,
+    min: unknown,
+    max: unknown,
+  ) => Promise<SQL> | SQL
   // Text search operators
-  like: (left: SQLWrapper, right: unknown) => Promise<SQL>
-  ilike: (left: SQLWrapper, right: unknown) => Promise<SQL>
-  notIlike: (left: SQLWrapper, right: unknown) => Promise<SQL>
+  like: (left: SQLWrapper, right: unknown) => Promise<SQL> | SQL
+  ilike: (left: SQLWrapper, right: unknown) => Promise<SQL> | SQL
+  notIlike: (left: SQLWrapper, right: unknown) => Promise<SQL> | SQL
   // Array operators
   inArray: (left: SQLWrapper, right: unknown[] | SQLWrapper) => Promise<SQL>
   notInArray: (left: SQLWrapper, right: unknown[] | SQLWrapper) => Promise<SQL>
@@ -346,7 +455,9 @@ export function createProtectOperators(protectClient: ProtectClient): {
   isNull: typeof isNull
   isNotNull: typeof isNotNull
   not: typeof not
-  and: typeof and
+  and: (
+    ...conditions: (SQL | SQLWrapper | Promise<SQL> | undefined)[]
+  ) => Promise<SQL>
   or: typeof or
   // Array operators that work with arrays directly (not encrypted values)
   arrayContains: typeof arrayContains
@@ -362,7 +473,7 @@ export function createProtectOperators(protectClient: ProtectClient): {
   /**
    * Equality operator - encrypts value and uses regular Drizzle operator
    */
-  const protectEq = async (left: SQLWrapper, right: unknown): Promise<SQL> => {
+  const protectEq = (left: SQLWrapper, right: unknown): Promise<SQL> | SQL => {
     const { config } = getColumnInfo(
       left,
       defaultProtectTable,
@@ -370,15 +481,13 @@ export function createProtectOperators(protectClient: ProtectClient): {
     )
 
     if (config?.equality) {
-      const encrypted = await encryptValue(
-        protectClient,
-        right,
+      return new LazyOperatorPromise(
+        'eq',
         left,
-        defaultProtectTable,
-        protectTableCache,
+        right,
+        (encrypted) => eq(left, encrypted),
+        true,
       )
-      // Use regular Drizzle eq - PostgreSQL operators handle encrypted comparison
-      return eq(left, encrypted)
     }
 
     return eq(left, right)
@@ -387,7 +496,7 @@ export function createProtectOperators(protectClient: ProtectClient): {
   /**
    * Not equal operator - encrypts value and uses regular Drizzle operator
    */
-  const protectNe = async (left: SQLWrapper, right: unknown): Promise<SQL> => {
+  const protectNe = (left: SQLWrapper, right: unknown): Promise<SQL> | SQL => {
     const { config } = getColumnInfo(
       left,
       defaultProtectTable,
@@ -395,15 +504,13 @@ export function createProtectOperators(protectClient: ProtectClient): {
     )
 
     if (config?.equality) {
-      const encrypted = await encryptValue(
-        protectClient,
-        right,
+      return new LazyOperatorPromise(
+        'ne',
         left,
-        defaultProtectTable,
-        protectTableCache,
+        right,
+        (encrypted) => ne(left, encrypted),
+        true,
       )
-      // Use regular Drizzle ne - PostgreSQL operators handle encrypted comparison
-      return ne(left, encrypted)
     }
 
     return ne(left, right)
@@ -412,7 +519,7 @@ export function createProtectOperators(protectClient: ProtectClient): {
   /**
    * Greater than operator - uses eql_v2.gt() for encrypted columns with ORE index
    */
-  const protectGt = async (left: SQLWrapper, right: unknown): Promise<SQL> => {
+  const protectGt = (left: SQLWrapper, right: unknown): Promise<SQL> | SQL => {
     const { config } = getColumnInfo(
       left,
       defaultProtectTable,
@@ -420,14 +527,13 @@ export function createProtectOperators(protectClient: ProtectClient): {
     )
 
     if (config?.orderAndRange) {
-      const encrypted = await encryptValue(
-        protectClient,
-        right,
+      return new LazyOperatorPromise(
+        'gt',
         left,
-        defaultProtectTable,
-        protectTableCache,
+        right,
+        (encrypted) => sql`eql_v2.gt(${left}, ${bindIfParam(encrypted, left)})`,
+        true,
       )
-      return sql`eql_v2.gt(${left}, ${bindIfParam(encrypted, left)})`
     }
 
     return gt(left, right)
@@ -436,7 +542,7 @@ export function createProtectOperators(protectClient: ProtectClient): {
   /**
    * Greater than or equal operator - uses eql_v2.gte() for encrypted columns with ORE index
    */
-  const protectGte = async (left: SQLWrapper, right: unknown): Promise<SQL> => {
+  const protectGte = (left: SQLWrapper, right: unknown): Promise<SQL> | SQL => {
     const { config } = getColumnInfo(
       left,
       defaultProtectTable,
@@ -444,14 +550,14 @@ export function createProtectOperators(protectClient: ProtectClient): {
     )
 
     if (config?.orderAndRange) {
-      const encrypted = await encryptValue(
-        protectClient,
-        right,
+      return new LazyOperatorPromise(
+        'gte',
         left,
-        defaultProtectTable,
-        protectTableCache,
+        right,
+        (encrypted) =>
+          sql`eql_v2.gte(${left}, ${bindIfParam(encrypted, left)})`,
+        true,
       )
-      return sql`eql_v2.gte(${left}, ${bindIfParam(encrypted, left)})`
     }
 
     return gte(left, right)
@@ -460,7 +566,7 @@ export function createProtectOperators(protectClient: ProtectClient): {
   /**
    * Less than operator - uses eql_v2.lt() for encrypted columns with ORE index
    */
-  const protectLt = async (left: SQLWrapper, right: unknown): Promise<SQL> => {
+  const protectLt = (left: SQLWrapper, right: unknown): Promise<SQL> | SQL => {
     const { config } = getColumnInfo(
       left,
       defaultProtectTable,
@@ -468,14 +574,13 @@ export function createProtectOperators(protectClient: ProtectClient): {
     )
 
     if (config?.orderAndRange) {
-      const encrypted = await encryptValue(
-        protectClient,
-        right,
+      return new LazyOperatorPromise(
+        'lt',
         left,
-        defaultProtectTable,
-        protectTableCache,
+        right,
+        (encrypted) => sql`eql_v2.lt(${left}, ${bindIfParam(encrypted, left)})`,
+        true,
       )
-      return sql`eql_v2.lt(${left}, ${bindIfParam(encrypted, left)})`
     }
 
     return lt(left, right)
@@ -484,7 +589,7 @@ export function createProtectOperators(protectClient: ProtectClient): {
   /**
    * Less than or equal operator - uses eql_v2.lte() for encrypted columns with ORE index
    */
-  const protectLte = async (left: SQLWrapper, right: unknown): Promise<SQL> => {
+  const protectLte = (left: SQLWrapper, right: unknown): Promise<SQL> | SQL => {
     const { config } = getColumnInfo(
       left,
       defaultProtectTable,
@@ -492,14 +597,14 @@ export function createProtectOperators(protectClient: ProtectClient): {
     )
 
     if (config?.orderAndRange) {
-      const encrypted = await encryptValue(
-        protectClient,
-        right,
+      return new LazyOperatorPromise(
+        'lte',
         left,
-        defaultProtectTable,
-        protectTableCache,
+        right,
+        (encrypted) =>
+          sql`eql_v2.lte(${left}, ${bindIfParam(encrypted, left)})`,
+        true,
       )
-      return sql`eql_v2.lte(${left}, ${bindIfParam(encrypted, left)})`
     }
 
     return lte(left, right)
@@ -508,11 +613,11 @@ export function createProtectOperators(protectClient: ProtectClient): {
   /**
    * Between operator - uses eql_v2.gte() and eql_v2.lte() for encrypted columns with ORE index
    */
-  const protectBetween = async (
+  const protectBetween = (
     left: SQLWrapper,
     min: unknown,
     max: unknown,
-  ): Promise<SQL> => {
+  ): Promise<SQL> | SQL => {
     const { config } = getColumnInfo(
       left,
       defaultProtectTable,
@@ -520,16 +625,20 @@ export function createProtectOperators(protectClient: ProtectClient): {
     )
 
     if (config?.orderAndRange) {
-      const [encryptedMin, encryptedMax] = await encryptValues(
-        protectClient,
-        [
-          { value: min, column: left },
-          { value: max, column: left },
-        ],
-        defaultProtectTable,
-        protectTableCache,
+      return new LazyOperatorPromise(
+        'between',
+        left,
+        undefined,
+        (encrypted, encryptedMin, encryptedMax) => {
+          if (encryptedMin === undefined || encryptedMax === undefined) {
+            throw new Error('between operator requires both min and max values')
+          }
+          return sql`eql_v2.gte(${left}, ${bindIfParam(encryptedMin, left)}) AND eql_v2.lte(${left}, ${bindIfParam(encryptedMax, left)})`
+        },
+        true,
+        min,
+        max,
       )
-      return sql`eql_v2.gte(${left}, ${bindIfParam(encryptedMin, left)}) AND eql_v2.lte(${left}, ${bindIfParam(encryptedMax, left)})`
     }
 
     return between(left, min, max)
@@ -538,11 +647,11 @@ export function createProtectOperators(protectClient: ProtectClient): {
   /**
    * Not between operator - uses eql_v2.gte() and eql_v2.lte() for encrypted columns with ORE index
    */
-  const protectNotBetween = async (
+  const protectNotBetween = (
     left: SQLWrapper,
     min: unknown,
     max: unknown,
-  ): Promise<SQL> => {
+  ): Promise<SQL> | SQL => {
     const { config } = getColumnInfo(
       left,
       defaultProtectTable,
@@ -550,16 +659,22 @@ export function createProtectOperators(protectClient: ProtectClient): {
     )
 
     if (config?.orderAndRange) {
-      const [encryptedMin, encryptedMax] = await encryptValues(
-        protectClient,
-        [
-          { value: min, column: left },
-          { value: max, column: left },
-        ],
-        defaultProtectTable,
-        protectTableCache,
+      return new LazyOperatorPromise(
+        'notBetween',
+        left,
+        undefined,
+        (encrypted, encryptedMin, encryptedMax) => {
+          if (encryptedMin === undefined || encryptedMax === undefined) {
+            throw new Error(
+              'notBetween operator requires both min and max values',
+            )
+          }
+          return sql`NOT (eql_v2.gte(${left}, ${bindIfParam(encryptedMin, left)}) AND eql_v2.lte(${left}, ${bindIfParam(encryptedMax, left)}))`
+        },
+        true,
+        min,
+        max,
       )
-      return sql`NOT (eql_v2.gte(${left}, ${bindIfParam(encryptedMin, left)}) AND eql_v2.lte(${left}, ${bindIfParam(encryptedMax, left)}))`
     }
 
     return notBetween(left, min, max)
@@ -568,10 +683,10 @@ export function createProtectOperators(protectClient: ProtectClient): {
   /**
    * Like operator - encrypts value and uses eql_v2.like() for encrypted columns with match index
    */
-  const protectLike = async (
+  const protectLike = (
     left: SQLWrapper,
     right: unknown,
-  ): Promise<SQL> => {
+  ): Promise<SQL> | SQL => {
     const { config } = getColumnInfo(
       left,
       defaultProtectTable,
@@ -579,14 +694,14 @@ export function createProtectOperators(protectClient: ProtectClient): {
     )
 
     if (config?.freeTextSearch) {
-      const encrypted = await encryptValue(
-        protectClient,
-        right,
+      return new LazyOperatorPromise(
+        'like',
         left,
-        defaultProtectTable,
-        protectTableCache,
+        right,
+        (encrypted) =>
+          sql`eql_v2.like(${left}, ${bindIfParam(encrypted, left)})`,
+        true,
       )
-      return sql`eql_v2.like(${left}, ${bindIfParam(encrypted, left)})`
     }
 
     // Cast to satisfy TypeScript - like accepts SQLWrapper and string
@@ -599,10 +714,10 @@ export function createProtectOperators(protectClient: ProtectClient): {
   /**
    * Case-insensitive like operator - encrypts value and uses eql_v2.ilike() for encrypted columns with match index
    */
-  const protectIlike = async (
+  const protectIlike = (
     left: SQLWrapper,
     right: unknown,
-  ): Promise<SQL> => {
+  ): Promise<SQL> | SQL => {
     const { config } = getColumnInfo(
       left,
       defaultProtectTable,
@@ -610,14 +725,14 @@ export function createProtectOperators(protectClient: ProtectClient): {
     )
 
     if (config?.freeTextSearch) {
-      const encrypted = await encryptValue(
-        protectClient,
-        right,
+      return new LazyOperatorPromise(
+        'ilike',
         left,
-        defaultProtectTable,
-        protectTableCache,
+        right,
+        (encrypted) =>
+          sql`eql_v2.ilike(${left}, ${bindIfParam(encrypted, left)})`,
+        true,
       )
-      return sql`eql_v2.ilike(${left}, ${bindIfParam(encrypted, left)})`
     }
 
     // Cast to satisfy TypeScript - ilike accepts SQLWrapper and string
@@ -630,10 +745,10 @@ export function createProtectOperators(protectClient: ProtectClient): {
   /**
    * Not like operator (case insensitive) - encrypts value and uses eql_v2.ilike() for encrypted columns with match index
    */
-  const protectNotIlike = async (
+  const protectNotIlike = (
     left: SQLWrapper,
     right: unknown,
-  ): Promise<SQL> => {
+  ): Promise<SQL> | SQL => {
     const { config } = getColumnInfo(
       left,
       defaultProtectTable,
@@ -641,14 +756,14 @@ export function createProtectOperators(protectClient: ProtectClient): {
     )
 
     if (config?.freeTextSearch) {
-      const encrypted = await encryptValue(
-        protectClient,
-        right,
+      return new LazyOperatorPromise(
+        'notIlike',
         left,
-        defaultProtectTable,
-        protectTableCache,
+        right,
+        (encrypted) =>
+          sql`NOT eql_v2.ilike(${left}, ${bindIfParam(encrypted, left)})`,
+        true,
       )
-      return sql`NOT eql_v2.ilike(${left}, ${bindIfParam(encrypted, left)})`
     }
 
     // Cast to satisfy TypeScript - notIlike accepts SQLWrapper and string
@@ -793,6 +908,123 @@ export function createProtectOperators(protectClient: ProtectClient): {
     return desc(column)
   }
 
+  /**
+   * Batched AND operator - collects lazy operators, batches encryption, and combines conditions
+   */
+  const protectAnd = async (
+    ...conditions: (SQL | SQLWrapper | Promise<SQL> | undefined)[]
+  ): Promise<SQL> => {
+    // Separate lazy operators from regular conditions
+    const lazyOperators: LazyOperatorPromise[] = []
+    const regularConditions: (SQL | SQLWrapper | undefined)[] = []
+    const regularPromises: Promise<SQL>[] = []
+
+    for (const condition of conditions) {
+      if (condition === undefined) {
+        continue
+      }
+
+      // Check if it's a lazy operator
+      if (isLazyOperator(condition)) {
+        lazyOperators.push(condition as LazyOperatorPromise)
+      } else if (condition instanceof Promise) {
+        // Regular promise - check if it's a lazy operator promise
+        if (isLazyOperator(condition)) {
+          lazyOperators.push(condition as LazyOperatorPromise)
+        } else {
+          regularPromises.push(condition)
+        }
+      } else {
+        // Regular SQL/SQLWrapper
+        regularConditions.push(condition)
+      }
+    }
+
+    // If there are no lazy operators, just use Drizzle's and()
+    if (lazyOperators.length === 0) {
+      const allConditions: (SQL | SQLWrapper | undefined)[] = [
+        ...regularConditions,
+        ...(await Promise.all(regularPromises)),
+      ]
+      return and(...allConditions) ?? sql`true`
+    }
+
+    // Collect all values to encrypt from lazy operators
+    const valuesToEncrypt: Array<{ value: unknown; column: SQLWrapper }> = []
+    const lazyOperatorIndices: number[] = []
+
+    for (let i = 0; i < lazyOperators.length; i++) {
+      const lazyOp = lazyOperators[i]
+      if (lazyOp.needsEncryption) {
+        // For between operators, we have min and max
+        if (lazyOp.min !== undefined && lazyOp.max !== undefined) {
+          valuesToEncrypt.push({ value: lazyOp.min, column: lazyOp.left })
+          valuesToEncrypt.push({ value: lazyOp.max, column: lazyOp.left })
+          lazyOperatorIndices.push(i, i) // Track both min and max
+        } else {
+          valuesToEncrypt.push({ value: lazyOp.right, column: lazyOp.left })
+          lazyOperatorIndices.push(i)
+        }
+      }
+    }
+
+    // Batch encrypt all values
+    let encryptedValues: unknown[] = []
+    if (valuesToEncrypt.length > 0) {
+      encryptedValues = await encryptValues(
+        protectClient,
+        valuesToEncrypt,
+        defaultProtectTable,
+        protectTableCache,
+      )
+    }
+
+    // Create SQL conditions for each lazy operator
+    const sqlConditions: SQL[] = []
+    let encryptedIndex = 0
+
+    for (let i = 0; i < lazyOperators.length; i++) {
+      const lazyOp = lazyOperators[i]
+      let sqlCondition: SQL
+
+      if (lazyOp.needsEncryption) {
+        if (lazyOp.min !== undefined && lazyOp.max !== undefined) {
+          // Between operator - use both encrypted values
+          const encryptedMin = encryptedValues[encryptedIndex++]
+          const encryptedMax = encryptedValues[encryptedIndex++]
+          sqlCondition = lazyOp.createCondition(
+            undefined,
+            encryptedMin,
+            encryptedMax,
+          )
+        } else {
+          // Single value operator
+          const encrypted = encryptedValues[encryptedIndex++]
+          sqlCondition = lazyOp.createCondition(encrypted)
+        }
+      } else {
+        // Operator doesn't need encryption, create condition directly
+        sqlCondition = lazyOp.createCondition(lazyOp.right)
+      }
+
+      // Resolve the lazy operator promise with the SQL condition
+      lazyOp.resolveWith(sqlCondition)
+      sqlConditions.push(sqlCondition)
+    }
+
+    // Await any regular promises
+    const regularPromisesResults = await Promise.all(regularPromises)
+
+    // Combine all conditions
+    const allConditions: (SQL | SQLWrapper | undefined)[] = [
+      ...regularConditions,
+      ...sqlConditions,
+      ...regularPromisesResults,
+    ]
+
+    return and(...allConditions) ?? sql`true`
+  }
+
   return {
     // Comparison operators
     eq: protectEq,
@@ -825,7 +1057,7 @@ export function createProtectOperators(protectClient: ProtectClient): {
     isNull,
     isNotNull,
     not,
-    and,
+    and: protectAnd,
     or,
 
     // Array operators that work with arrays directly (not encrypted values)
