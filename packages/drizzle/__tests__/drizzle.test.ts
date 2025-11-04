@@ -1,6 +1,6 @@
 import 'dotenv/config'
 import { protect } from '@cipherstash/protect'
-import { and, inArray, sql } from 'drizzle-orm'
+import { and, eq, inArray, sql } from 'drizzle-orm'
 import { integer, pgTable, timestamp } from 'drizzle-orm/pg-core'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
@@ -343,13 +343,16 @@ describe('Drizzle ORM Integration with Protect.js', () => {
     }
 
     // Verify all results meet the criteria
+    // Note: We're filtering by id = 1 (regular Drizzle operator) plus encrypted columns
     const allValidResults = decryptedResults.data.every((user) => {
       const decryptedUser = user as DecryptedUser
+      // Encrypted operators: age range
       const ageValid =
         decryptedUser.age !== null &&
         decryptedUser.age !== undefined &&
         decryptedUser.age >= minAge &&
         decryptedUser.age <= maxAge
+      // Encrypted operator: text search
       const textValid =
         decryptedUser.email?.toLowerCase().includes(searchText.toLowerCase()) ||
         decryptedUser.profile?.bio

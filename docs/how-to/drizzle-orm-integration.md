@@ -345,12 +345,15 @@ if (decrypted.failure) {
 ### Complex AND Query (multiple conditions)
 
 ```typescript
+import { eq } from 'drizzle-orm'
+
 const minAge = 25
 const maxAge = 35
 const searchText = 'developer'
 
 // Use Protect operators with batched and() - encryption is handled automatically
 // All operator calls are batched into a single createSearchTerms call for better performance
+// You can mix Protect operators with regular Drizzle operators for non-encrypted columns
 const results = await db
   .select({
     id: usersTable.id,
@@ -362,9 +365,12 @@ const results = await db
   .from(usersTable)
   .where(
     await protectOps.and(
+      // Protect operators for encrypted columns (batched)
       protectOps.gte(usersTable.age, minAge),
       protectOps.lte(usersTable.age, maxAge),
       protectOps.ilike(usersTable.email, searchText),
+      // Regular Drizzle operators for non-encrypted columns work too!
+      eq(usersTable.id, 1),
     ),
   )
 
@@ -376,6 +382,8 @@ if (decrypted.failure) {
 
 > [!NOTE]
 > Using `protectOps.and()` instead of Drizzle's `and()` function batches all encryption operations into a single `createSearchTerms` call, which is more efficient than awaiting each operator individually. This is especially beneficial when using multiple operators in a single query.
+>
+> **Mixing operators**: You can mix Protect operators (for encrypted columns) with regular Drizzle operators (like `eq`, `ne`, `gt`, etc.) for non-encrypted columns. `protectOps.and()` automatically handles both types correctly.
 
 ## Available Operators
 
