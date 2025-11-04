@@ -7,7 +7,7 @@ This comprehensive guide shows how to integrate Protect.js with Drizzle ORM for 
 > See the following notes for more details:
 
 TODO: 
-- [ ] Functionality wise, everything is working but some of the TypeScript support is not working as expected, and the documentation is still a work in progress.
+- [ ] While everything is working, full TypeScript support and documentation are a work in progress.
 - [ ] Sorting with ORE on Supabase and other databases that don't support operator families (an EQL v2 function) may not work as expected.
 
 ---
