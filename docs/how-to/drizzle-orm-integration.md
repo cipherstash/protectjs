@@ -18,7 +18,7 @@ Protect.js integrates seamlessly with Drizzle ORM to provide:
 
 - **Type-safe encryption/decryption** using Drizzle's inferred types
 - **Searchable encryption** with equality, range, and text search capabilities
-- **Bulk operations** for better performance
+- **Bulk operations** for high performance
 - **PostgreSQL composite types** for efficient storage
 - **Automatic encryption** in queries using Protect operators
 
