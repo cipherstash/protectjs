@@ -77,13 +77,13 @@ export const encryptConfigSchema = z.object({
 // ------------------------
 // Type definitions
 // ------------------------
-type CastAs = z.infer<typeof castAsEnum>
-type TokenFilter = z.infer<typeof tokenFilterSchema>
-type MatchIndexOpts = z.infer<typeof matchIndexOptsSchema>
-type SteVecIndexOpts = z.infer<typeof steVecIndexOptsSchema>
-type UniqueIndexOpts = z.infer<typeof uniqueIndexOptsSchema>
-type OreIndexOpts = z.infer<typeof oreIndexOptsSchema>
-type ColumnSchema = z.infer<typeof columnSchema>
+export type CastAs = z.infer<typeof castAsEnum>
+export type TokenFilter = z.infer<typeof tokenFilterSchema>
+export type MatchIndexOpts = z.infer<typeof matchIndexOptsSchema>
+export type SteVecIndexOpts = z.infer<typeof steVecIndexOptsSchema>
+export type UniqueIndexOpts = z.infer<typeof uniqueIndexOptsSchema>
+export type OreIndexOpts = z.infer<typeof oreIndexOptsSchema>
+export type ColumnSchema = z.infer<typeof columnSchema>
 
 export type ProtectTableColumn = {
   [key: string]:
