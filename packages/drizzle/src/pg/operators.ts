@@ -179,8 +179,9 @@ interface LazyOperator {
  * Promise-like object that also contains lazy operator metadata
  * This allows operators to return both a Promise and metadata that can be collected
  */
-class LazyOperatorPromise extends Promise<SQL> implements LazyOperator {
+class LazyOperatorPromise implements LazyOperator, Promise<SQL> {
   readonly __isLazyOperator = true as const
+  readonly [Symbol.toStringTag] = 'Promise'
   operator: string
   left: SQLWrapper
   right: unknown
@@ -192,8 +193,14 @@ class LazyOperatorPromise extends Promise<SQL> implements LazyOperator {
     encryptedMax?: unknown,
   ) => SQL
   needsEncryption: boolean
+  private _promise: Promise<SQL>
   private _resolve?: (value: SQL) => void
   private _reject?: (reason?: unknown) => void
+  private _resolved = false
+  private _executing = false
+  private _protectClient: ProtectClient
+  private _defaultProtectTable: ProtectTable<ProtectTableColumn> | undefined
+  private _protectTableCache: Map<string, ProtectTable<ProtectTableColumn>>
 
   constructor(
     operator: string,
@@ -205,16 +212,18 @@ class LazyOperatorPromise extends Promise<SQL> implements LazyOperator {
       encryptedMax?: unknown,
     ) => SQL,
     needsEncryption: boolean,
+    protectClient: ProtectClient,
+    defaultProtectTable: ProtectTable<ProtectTableColumn> | undefined,
+    protectTableCache: Map<string, ProtectTable<ProtectTableColumn>>,
     min?: unknown,
     max?: unknown,
   ) {
     let resolveFn!: (value: SQL) => void
     let rejectFn!: (reason?: unknown) => void
-    super((resolve, reject) => {
+    this._promise = new Promise<SQL>((resolve, reject) => {
       resolveFn = resolve
       rejectFn = reject
     })
-    // Promise constructor calls executor synchronously, so these are defined
     this._resolve = resolveFn
     this._reject = rejectFn
     this.operator = operator
@@ -224,17 +233,126 @@ class LazyOperatorPromise extends Promise<SQL> implements LazyOperator {
     this.max = max
     this.createCondition = createCondition
     this.needsEncryption = needsEncryption
+    this._protectClient = protectClient
+    this._defaultProtectTable = defaultProtectTable
+    this._protectTableCache = protectTableCache
+
+    // Auto-execute when awaited directly (not in and())
+    // Use queueMicrotask to defer, allowing and() to collect first
+    queueMicrotask(() => {
+      if (!this._resolved && !this._executing && this._resolve) {
+        this._executing = true
+        this._execute().catch((error) => {
+          if (this._reject && !this._resolved) {
+            this.rejectWith(error)
+          }
+        })
+      }
+    })
+  }
+
+  // Implement Promise interface
+  then<TResult1 = SQL, TResult2 = never>(
+    onfulfilled?:
+      | ((value: SQL) => TResult1 | PromiseLike<TResult1>)
+      | null
+      | undefined,
+    onrejected?:
+      | ((reason: unknown) => TResult2 | PromiseLike<TResult2>)
+      | null
+      | undefined,
+  ): Promise<TResult1 | TResult2> {
+    // Trigger execution if not already started
+    if (!this._resolved && !this._executing && this._resolve) {
+      this._executing = true
+      this._execute().catch((error) => {
+        if (this._reject && !this._resolved) {
+          this.rejectWith(error)
+        }
+      })
+    }
+    return this._promise.then(onfulfilled, onrejected)
+  }
+
+  catch<TResult = never>(
+    onrejected?:
+      | ((reason: unknown) => TResult | PromiseLike<TResult>)
+      | null
+      | undefined,
+  ): Promise<SQL | TResult> {
+    // Trigger execution if not already started
+    if (!this._resolved && !this._executing && this._resolve) {
+      this._executing = true
+      this._execute().catch((error) => {
+        if (this._reject && !this._resolved) {
+          this.rejectWith(error)
+        }
+      })
+    }
+    return this._promise.catch(onrejected)
+  }
+
+  finally(onfinally?: (() => void) | null | undefined): Promise<SQL> {
+    return this._promise.finally(onfinally)
+  }
+
+  /**
+   * Auto-execute encryption when awaited directly (not in and())
+   */
+  private async _execute(): Promise<void> {
+    if (this._resolved || !this._resolve) {
+      return
+    }
+
+    try {
+      if (this.needsEncryption) {
+        if (this.min !== undefined && this.max !== undefined) {
+          // Between operator - encrypt min and max
+          const [encryptedMin, encryptedMax] = await encryptValues(
+            this._protectClient,
+            [
+              { value: this.min, column: this.left },
+              { value: this.max, column: this.left },
+            ],
+            this._defaultProtectTable,
+            this._protectTableCache,
+          )
+          const sql = this.createCondition(
+            undefined,
+            encryptedMin,
+            encryptedMax,
+          )
+          this.resolveWith(sql)
+        } else {
+          // Single value operator
+          const encrypted = await encryptValue(
+            this._protectClient,
+            this.right,
+            this.left,
+            this._defaultProtectTable,
+            this._protectTableCache,
+          )
+          const sql = this.createCondition(encrypted)
+          this.resolveWith(sql)
+        }
+      } else {
+        // Operator doesn't need encryption
+        const sql = this.createCondition(this.right)
+        this.resolveWith(sql)
+      }
+    } catch (error) {
+      this.rejectWith(error)
+    }
   }
 
   /**
    * Resolve this promise with the given SQL
-   * Called by and() after batching encryption
+   * Called by and() after batching encryption or by _execute() when awaited directly
    */
   resolveWith(sql: SQL): void {
-    if (this._resolve) {
+    if (this._resolve && !this._resolved) {
+      this._resolved = true
       this._resolve(sql)
-      this._resolve = undefined
-      this._reject = undefined
     }
   }
 
@@ -242,10 +360,9 @@ class LazyOperatorPromise extends Promise<SQL> implements LazyOperator {
    * Reject this promise with the given error
    */
   rejectWith(error: unknown): void {
-    if (this._reject) {
+    if (this._reject && !this._resolved) {
+      this._resolved = true
       this._reject(error)
-      this._resolve = undefined
-      this._reject = undefined
     }
   }
 }
@@ -487,6 +604,9 @@ export function createProtectOperators(protectClient: ProtectClient): {
         right,
         (encrypted) => eq(left, encrypted),
         true,
+        protectClient,
+        defaultProtectTable,
+        protectTableCache,
       )
     }
 
@@ -510,6 +630,9 @@ export function createProtectOperators(protectClient: ProtectClient): {
         right,
         (encrypted) => ne(left, encrypted),
         true,
+        protectClient,
+        defaultProtectTable,
+        protectTableCache,
       )
     }
 
@@ -533,6 +656,9 @@ export function createProtectOperators(protectClient: ProtectClient): {
         right,
         (encrypted) => sql`eql_v2.gt(${left}, ${bindIfParam(encrypted, left)})`,
         true,
+        protectClient,
+        defaultProtectTable,
+        protectTableCache,
       )
     }
 
@@ -557,6 +683,9 @@ export function createProtectOperators(protectClient: ProtectClient): {
         (encrypted) =>
           sql`eql_v2.gte(${left}, ${bindIfParam(encrypted, left)})`,
         true,
+        protectClient,
+        defaultProtectTable,
+        protectTableCache,
       )
     }
 
@@ -580,6 +709,9 @@ export function createProtectOperators(protectClient: ProtectClient): {
         right,
         (encrypted) => sql`eql_v2.lt(${left}, ${bindIfParam(encrypted, left)})`,
         true,
+        protectClient,
+        defaultProtectTable,
+        protectTableCache,
       )
     }
 
@@ -604,6 +736,9 @@ export function createProtectOperators(protectClient: ProtectClient): {
         (encrypted) =>
           sql`eql_v2.lte(${left}, ${bindIfParam(encrypted, left)})`,
         true,
+        protectClient,
+        defaultProtectTable,
+        protectTableCache,
       )
     }
 
@@ -636,6 +771,9 @@ export function createProtectOperators(protectClient: ProtectClient): {
           return sql`eql_v2.gte(${left}, ${bindIfParam(encryptedMin, left)}) AND eql_v2.lte(${left}, ${bindIfParam(encryptedMax, left)})`
         },
         true,
+        protectClient,
+        defaultProtectTable,
+        protectTableCache,
         min,
         max,
       )
@@ -672,6 +810,9 @@ export function createProtectOperators(protectClient: ProtectClient): {
           return sql`NOT (eql_v2.gte(${left}, ${bindIfParam(encryptedMin, left)}) AND eql_v2.lte(${left}, ${bindIfParam(encryptedMax, left)}))`
         },
         true,
+        protectClient,
+        defaultProtectTable,
+        protectTableCache,
         min,
         max,
       )
@@ -701,6 +842,9 @@ export function createProtectOperators(protectClient: ProtectClient): {
         (encrypted) =>
           sql`eql_v2.like(${left}, ${bindIfParam(encrypted, left)})`,
         true,
+        protectClient,
+        defaultProtectTable,
+        protectTableCache,
       )
     }
 
@@ -732,6 +876,9 @@ export function createProtectOperators(protectClient: ProtectClient): {
         (encrypted) =>
           sql`eql_v2.ilike(${left}, ${bindIfParam(encrypted, left)})`,
         true,
+        protectClient,
+        defaultProtectTable,
+        protectTableCache,
       )
     }
 
@@ -763,6 +910,9 @@ export function createProtectOperators(protectClient: ProtectClient): {
         (encrypted) =>
           sql`NOT eql_v2.ilike(${left}, ${bindIfParam(encrypted, left)})`,
         true,
+        protectClient,
+        defaultProtectTable,
+        protectTableCache,
       )
     }
 
