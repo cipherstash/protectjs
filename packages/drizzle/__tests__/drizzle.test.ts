@@ -31,24 +31,27 @@ interface TestUser {
 // Drizzle table definition with encrypted columns using object configuration
 const drizzleUsersTable = pgTable('protect-ci', {
   id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
-  email: encryptedType('email', {
+  email: encryptedType<string>('email', {
     freeTextSearch: true,
     equality: true,
     orderAndRange: true,
   }),
-  age: encryptedType('age', {
+  age: encryptedType<number>('age', {
     dataType: 'number',
     equality: true,
     orderAndRange: true,
   }),
-  score: encryptedType('score', {
+  score: encryptedType<number>('score', {
     dataType: 'number',
     equality: true,
     orderAndRange: true,
   }),
-  profile: encryptedType('profile', {
-    dataType: 'json',
-  }),
+  profile: encryptedType<{ name: string; bio: string; level: number }>(
+    'profile',
+    {
+      dataType: 'json',
+    },
+  ),
   createdAt: timestamp('created_at').defaultNow(),
 })
 

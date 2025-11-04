@@ -2,12 +2,7 @@
 
 This comprehensive guide shows how to integrate Protect.js with Drizzle ORM for secure, type-safe database operations with encrypted data.
 
-> [!WARNING]
-> We are still working out the best dev experience for using Drizzle ORM with Protect.js.
-> See the following notes for more details:
-
 TODO: 
-- [ ] While everything is working, full TypeScript support and documentation are a work in progress.
 - [ ] Sorting with ORE on Supabase and other databases that don't support operator families (an EQL v2 function) may not work as expected.
 
 ---
@@ -56,30 +51,44 @@ import { encryptedType } from '@cipherstash/drizzle/pg'
 export const usersTable = pgTable('users', {
   id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
   // String with searchable encryption
-  email: encryptedType('email', {
+  // Type parameter <string> maintains type safety after decryption
+  email: encryptedType<string>('email', {
     freeTextSearch: true,
     equality: true,
     orderAndRange: true,
   }),
   // Number with range queries
-  age: encryptedType('age', {
+  // Type parameter <number> ensures decrypted values are typed as number
+  age: encryptedType<number>('age', {
     dataType: 'number',
     equality: true,
     orderAndRange: true,
   }),
   // Another number example
-  score: encryptedType('score', {
+  score: encryptedType<number>('score', {
     dataType: 'number',
     equality: true,
     orderAndRange: true,
   }),
-  // JSON example
-  profile: encryptedType('profile', {
-    dataType: 'json',
-  }),
+  // JSON example with typed object structure
+  // Type parameter ensures decrypted profile matches the expected shape
+  profile: encryptedType<{ name: string; bio: string; level: number }>(
+    'profile',
+    {
+      dataType: 'json',
+    },
+  ),
   createdAt: timestamp('created_at').defaultNow(),
 })
 ```
+
+> [!TIP]
+> **Type Safety with `encryptedType<T>`**: Always specify the type parameter when using `encryptedType` to maintain type safety after decryption. This ensures TypeScript knows the correct type of decrypted data:
+> - `encryptedType<string>` for string values
+> - `encryptedType<number>` for numeric values
+> - `encryptedType<YourObjectType>` for JSON objects with known structure
+>
+> Without the type parameter, decrypted values will be typed as `unknown`, requiring manual type assertions.
 
 ### 3. Initialize Protect.js
 
@@ -176,7 +185,13 @@ if (selected[0]) {
   if (decrypted.failure) {
     throw new Error(`Decryption failed: ${decrypted.failure.message}`)
   }
-  // Use decrypted.data
+  
+  // Type safety: decrypted.data is properly typed based on encryptedType<T> definitions
+  // email: string, age: number, score: number, profile: { name: string; bio: string; level: number }
+  const user = decrypted.data
+  console.log(user.email) // TypeScript knows this is a string
+  console.log(user.age) // TypeScript knows this is a number
+  console.log(user.profile.name) // TypeScript knows the profile structure
 }
 ```
 
