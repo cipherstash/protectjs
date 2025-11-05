@@ -499,18 +499,12 @@ importers:
       dotenv:
         specifier: ^16.4.7
         version: 16.4.7
-      drizzle-orm:
-        specifier: ^0.44.7
-        version: 0.44.7(@types/pg@8.11.10)(gel@2.0.1)(mysql2@3.14.1)(pg@8.16.3)(postgres@3.4.7)
       execa:
         specifier: ^9.5.2
         version: 9.5.2
       json-schema-to-typescript:
         specifier: ^15.0.2
         version: 15.0.3
-      postgres:
-        specifier: ^3.4.7
-        version: 3.4.7
       tsup:
         specifier: catalog:repo
         version: 8.4.0(jiti@2.4.2)(postcss@8.5.3)(tsx@4.19.3)(typescript@5.6.3)(yaml@2.7.0)
