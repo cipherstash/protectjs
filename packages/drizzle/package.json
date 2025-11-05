@@ -35,15 +35,28 @@
 		"release": "tsup"
 	},
 	"peerDependencies": {
+		"@cipherstash/protect": ">=10.0.0",
+		"@types/pg": "*",
 		"drizzle-orm": ">=0.33.0",
-		"@cipherstash/protect": ">=10.0.0"
+		"pg": ">=8",
+		"postgres": ">=3.4.7"
+	},
+	"peerDependenciesMeta": {
+		"@types/pg": {
+			"optional": true
+		},
+		"pg": {
+			"optional": true
+		},
+		"postgres": {
+			"optional": true
+		}
 	},
 	"dependencies": {
 		"@cipherstash/schema": "workspace:*"
 	},
 	"devDependencies": {
 		"dotenv": "^16.4.7",
-		"postgres": "^3.4.7",
 		"tsup": "catalog:repo",
 		"typescript": "catalog:repo",
 		"vitest": "catalog:repo"

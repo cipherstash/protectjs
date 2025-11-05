@@ -48,7 +48,20 @@
   "pnpm": {
     "overrides": {
       "@babel/runtime": "7.26.10",
-      "vite": "catalog:security"
-    }
+      "vite": "catalog:security",
+      "pg": "^8.16.3",
+      "postgres": "^3.4.7"
+    },
+    "peerDependencyRules": {
+      "ignoreMissing": [
+        "@types/pg",
+        "pg",
+        "postgres"
+      ],
+      "allowedVersions": {
+        "drizzle-orm": "*"
+      }
+    },
+    "dedupe-peer-dependents": true
   }
 }

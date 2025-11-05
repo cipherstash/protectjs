@@ -1,7 +1,6 @@
 import { type ProtectColumn, csColumn, csTable } from '@cipherstash/schema'
 import type { ProtectTable, ProtectTableColumn } from '@cipherstash/schema'
 import type { PgTable } from 'drizzle-orm/pg-core'
-import type { EncryptedColumnConfig } from './index.js'
 import { getEncryptedColumnConfig } from './index.js'
 
 /**
@@ -52,8 +51,12 @@ export function extractProtectSchema<T extends PgTable<any>>(
     const config = getEncryptedColumnConfig(columnName, column)
 
     if (config) {
-      // This is an encrypted column - build csColumn from configuration
-      const csCol = csColumn(config.name)
+      // Extract the actual column name from the column object (not the schema key)
+      // Drizzle columns have a 'name' property that contains the actual database column name
+      const actualColumnName = column.name || config.name
+
+      // This is an encrypted column - build csColumn using the actual column name
+      const csCol = csColumn(actualColumnName)
 
       // Apply data type
       if (config.dataType && config.dataType !== 'string') {
@@ -85,7 +88,7 @@ export function extractProtectSchema<T extends PgTable<any>>(
         }
       }
 
-      columns[columnName] = csCol
+      columns[actualColumnName] = csCol
     }
   }
 
