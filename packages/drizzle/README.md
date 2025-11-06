@@ -52,7 +52,11 @@ export const usersTable = pgTable('users', {
 })
 ```
 
-> 💡 **Type Safety Tip**: Always specify the type parameter (`encryptedType<string>`, `encryptedType<number>`, etc.) to maintain type safety after decryption. Without it, decrypted values will be typed as `unknown`.
+> [!TIP]
+> **Type Safety Tip**: Always specify the type parameter (`encryptedType<string>`, `encryptedType<number>`, etc.) to maintain type safety after decryption. 
+> Without it, decrypted values will be typed as `unknown`.
+>
+> This is because the database only stores and returns encrypted ciphertext, so it doesn't know the underlying original type. You must specify the decrypted type in your ORM schema for full type safety.
 
 ### 2. Initialize Protect.js
 
@@ -169,7 +173,8 @@ const results = await db
 const decrypted = await protectClient.bulkDecryptModels(results)
 ```
 
-> ⚠️ **Note**: Sorting with ORE on Supabase and other databases that don't support operator families may not work as expected.
+> [!IMPORTANT]
+> Sorting with ORE on Supabase and other databases that don't support operator families will not work as expected.
 
 ### Complex queries with mixed operators
 
@@ -191,7 +196,8 @@ const results = await db
   )
 ```
 
-> 💡 **Performance Tip**: Using `protectOps.and()` batches all encryption operations into a single `createSearchTerms` call, which is more efficient than awaiting each operator individually.
+> [!TIP]
+> **Performance Tip**: Using `protectOps.and()` batches all encryption operations into a single `createSearchTerms` call, which is more efficient than awaiting each operator individually.
 
 ## Available Operators
 

@@ -1476,13 +1476,15 @@ export function createProtectOperators(protectClient: ProtectClient): {
     asc: protectAsc,
     desc: protectDesc,
 
+    // AND operator - batches encryption operations
+    and: protectAnd,
+
     // Operators that don't need encryption (pass through to Drizzle)
     exists,
     notExists,
     isNull,
     isNotNull,
     not,
-    and: protectAnd,
     or,
 
     // Array operators that work with arrays directly (not encrypted values)

@@ -39,13 +39,15 @@ This creates the `eql_v2_encrypted` composite type and search functions needed f
 
 ### 3. Environment Variables
 
-Create a `.env` file in the root directory:
+Create an account on [CipherStash](https://dashboard.cipherstash.com/sign-up), create a workspace, then generate your client credentials.
+
+Then, create a `.env` file in the root directory:
 
 ```bash
 # Database connection
 DATABASE_URL="postgresql://[username]:[password]@[host]:5432/[database]"
 
-# CipherStash credentials
+# CipherStash credentials (generated in your CipherStash workspace)
 CS_CLIENT_ID=[client-id]
 CS_CLIENT_KEY=[client-key]
 CS_WORKSPACE_CRN=[workspace-crn]
@@ -117,6 +119,10 @@ curl "http://localhost:3000/transactions?minAmount=100&maxAmount=1000"
 # Filter by status
 curl "http://localhost:3000/transactions?status=completed"
 ```
+
+> [!IMPORTANT]
+> For production use, you should not use GET requests to filter data.
+> Instead, you should use POST requests to filter data so sensitive data is not exposed in the URL.
 
 **Response:**
 ```json
