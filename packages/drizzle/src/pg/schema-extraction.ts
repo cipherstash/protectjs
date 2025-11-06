@@ -1,9 +1,4 @@
-import {
-  type ProtectColumn,
-  type ProtectTable,
-  csColumn,
-  csTable,
-} from '@cipherstash/protect'
+import { type ProtectColumn, csColumn, csTable } from '@cipherstash/protect'
 import type { PgTable } from 'drizzle-orm/pg-core'
 import { getEncryptedColumnConfig } from './index.js'
 
@@ -28,7 +23,9 @@ import { getEncryptedColumnConfig } from './index.js'
  */
 // We use any for the PgTable generic because we need to access Drizzle's internal properties
 // biome-ignore lint/suspicious/noExplicitAny: Drizzle table types don't expose Symbol properties
-export function extractProtectSchema<T extends PgTable<any>>(table: T) {
+export function extractProtectSchema<T extends PgTable<any>>(
+  table: T,
+): ReturnType<typeof csTable<Record<string, ProtectColumn>>> {
   // Drizzle tables store the name in a Symbol property
   // biome-ignore lint/suspicious/noExplicitAny: Drizzle tables don't expose Symbol properties in types
   const tableName = (table as any)[Symbol.for('drizzle:Name')] as
