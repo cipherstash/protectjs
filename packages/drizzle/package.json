@@ -53,6 +53,7 @@
 		}
 	},
 	"devDependencies": {
+		"@cipherstash/schema": "workspace:*",
 		"dotenv": "^16.4.7",
 		"tsup": "catalog:repo",
 		"typescript": "catalog:repo",

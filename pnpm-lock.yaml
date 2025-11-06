@@ -450,6 +450,9 @@ importers:
         specifier: ^3.4.7
         version: 3.4.7
     devDependencies:
+      '@cipherstash/schema':
+        specifier: workspace:*
+        version: link:../schema
       dotenv:
         specifier: ^16.4.7
         version: 16.6.1
