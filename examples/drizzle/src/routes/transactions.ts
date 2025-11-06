@@ -1,10 +1,10 @@
 import { Router } from 'express'
 import {
   createTransaction,
+  deleteTransaction,
   getTransaction,
   getTransactions,
   updateTransaction,
-  deleteTransaction,
 } from '../controllers/transactions'
 
 export const transactionsRouter = Router()

@@ -1,5 +1,9 @@
 import 'dotenv/config'
-import express, { type Request, type Response, type NextFunction } from 'express'
+import express, {
+  type Request,
+  type Response,
+  type NextFunction,
+} from 'express'
 import { transactionsRouter } from './routes/transactions'
 
 const app = express()
@@ -33,4 +37,3 @@ app.use((_req: Request, res: Response) => {
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`)
 })
-

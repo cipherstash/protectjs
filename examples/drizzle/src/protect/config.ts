@@ -1,9 +1,9 @@
 import 'dotenv/config'
-import { protect } from '@cipherstash/protect'
 import {
-  extractProtectSchema,
   createProtectOperators,
+  extractProtectSchema,
 } from '@cipherstash/drizzle/pg'
+import { protect } from '@cipherstash/protect'
 import { transactions } from '../db/schema'
 
 // Extract Protect.js schema from Drizzle table
