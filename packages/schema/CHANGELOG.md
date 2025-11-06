@@ -1,5 +1,11 @@
 # @cipherstash/schema
 
+## 1.1.0
+
+### Minor Changes
+
+- d8ed4d4: Exported all types for packages looking for deeper integrations with Protect.js.
+
 ## 1.0.0
 
 ### Major Changes

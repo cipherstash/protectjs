@@ -1,5 +1,12 @@
 # @cipherstash/dynamo-example
 
+## 0.2.10
+
+### Patch Changes
+
+- @cipherstash/protect@10.0.1
+- @cipherstash/protect-dynamodb@5.0.1
+
 ## 0.2.9
 
 ### Patch Changes
