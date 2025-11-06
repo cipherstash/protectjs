@@ -1,26 +1,25 @@
 import 'dotenv/config'
-import {
-  customType,
-  jsonb,
-  pgTable,
-  serial,
-  varchar,
-} from 'drizzle-orm/pg-core'
+import { pgTable, serial, timestamp, varchar } from 'drizzle-orm/pg-core'
+import { encryptedType } from '@cipherstash/drizzle/pg'
 
-// Custom types will be implemented in the future - this is an example for now
-// ---
-// const cs_encrypted_v2 = <TData>(name: string) =>
-//   customType<{ data: TData; driverData: string }>({
-//     dataType() {
-//       return 'cs_encrypted_v2'
-//     },
-//     toDriver(value: TData): string {
-//       return JSON.stringify(value)
-//     },
-//   })(name)
-
-export const users = pgTable('users', {
+export const transactions = pgTable('transactions', {
   id: serial('id').primaryKey(),
-  email: varchar('email').unique(),
-  email_encrypted: jsonb('email_encrypted').notNull(),
+  // Encrypted sensitive fields
+  accountNumber: encryptedType<string>('account_number', {
+    freeTextSearch: true,
+    equality: true,
+  }),
+  amount: encryptedType<number>('amount', {
+    dataType: 'number',
+    equality: true,
+    orderAndRange: true,
+  }),
+  description: encryptedType<string>('description', {
+    freeTextSearch: true,
+  }),
+  // Non-sensitive fields
+  transactionType: varchar('transaction_type', { length: 50 }).notNull(),
+  status: varchar('status', { length: 20 }).notNull().default('pending'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })

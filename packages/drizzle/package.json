@@ -1,0 +1,67 @@
+{
+	"name": "@cipherstash/drizzle",
+	"version": "0.0.0",
+	"description": "CipherStash Protect.js Drizzle ORM integration for TypeScript",
+	"keywords": [
+		"encrypted",
+		"drizzle",
+		"orm",
+		"type-safe",
+		"security",
+		"protectjs",
+		"postgres"
+	],
+	"bugs": {
+		"url": "https://github.com/cipherstash/protectjs/issues"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/cipherstash/protectjs.git"
+	},
+	"license": "MIT",
+	"author": "CipherStash <hello@cipherstash.com>",
+	"type": "module",
+	"exports": {
+		"./pg": {
+			"types": "./dist/pg/index.d.ts",
+			"import": "./dist/pg/index.js",
+			"require": "./dist/pg/index.cjs"
+		}
+	},
+	"scripts": {
+		"build": "tsup",
+		"dev": "tsup --watch",
+		"test": "vitest run",
+		"release": "tsup"
+	},
+	"peerDependencies": {
+		"@cipherstash/protect": ">=10.0.0",
+		"@types/pg": "*",
+		"drizzle-orm": ">=0.33.0",
+		"pg": ">=8",
+		"postgres": ">=3.4.7"
+	},
+	"peerDependenciesMeta": {
+		"@types/pg": {
+			"optional": true
+		},
+		"pg": {
+			"optional": true
+		},
+		"postgres": {
+			"optional": true
+		}
+	},
+	"dependencies": {
+		"@cipherstash/schema": "workspace:*"
+	},
+	"devDependencies": {
+		"dotenv": "^16.4.7",
+		"tsup": "catalog:repo",
+		"typescript": "catalog:repo",
+		"vitest": "catalog:repo"
+	},
+	"publishConfig": {
+		"access": "public"
+	}
+}
