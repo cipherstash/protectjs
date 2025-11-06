@@ -1,5 +1,11 @@
 # @cipherstash/drizzle
 
+## 0.2.0
+
+### Minor Changes
+
+- ebda487: Added explicit return type to extractProtectSchem.
+
 ## 0.1.0
 
 ### Minor Changes
