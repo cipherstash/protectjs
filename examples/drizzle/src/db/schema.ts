@@ -1,6 +1,6 @@
 import 'dotenv/config'
-import { pgTable, serial, timestamp, varchar } from 'drizzle-orm/pg-core'
 import { encryptedType } from '@cipherstash/drizzle/pg'
+import { pgTable, serial, timestamp, varchar } from 'drizzle-orm/pg-core'
 
 export const transactions = pgTable('transactions', {
   id: serial('id').primaryKey(),

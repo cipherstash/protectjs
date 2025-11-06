@@ -355,13 +355,13 @@ async function encryptValues(
   // Encrypt all values for each column in batches
   for (const [columnName, group] of columnGroups) {
     try {
-      const searchTerms = await protectClient.createSearchTerms(
-        group.values.map((v) => ({
-          value: v.value,
-          column: group.column,
-          table: group.table,
-        })),
-      )
+      const terms = group.values.map((v) => ({
+        value: v.value,
+        column: group.column,
+        table: group.table,
+      }))
+
+      const searchTerms = await protectClient.createSearchTerms(terms)
 
       if (searchTerms.failure) {
         throw new ProtectOperatorError(

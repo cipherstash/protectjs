@@ -1,5 +1,9 @@
-import { type ProtectColumn, csColumn, csTable } from '@cipherstash/schema'
-import type { ProtectTable, ProtectTableColumn } from '@cipherstash/schema'
+import {
+  type ProtectColumn,
+  type ProtectTable,
+  csColumn,
+  csTable,
+} from '@cipherstash/protect'
 import type { PgTable } from 'drizzle-orm/pg-core'
 import { getEncryptedColumnConfig } from './index.js'
 
@@ -19,14 +23,12 @@ import { getEncryptedColumnConfig } from './index.js'
  * })
  *
  * const protectSchema = extractProtectSchema(drizzleUsersTable)
- * const protectClient = await protect({ schemas: [protectSchema] })
+ * const protectClient = await protect({ schemas: [protectSchema.build()] })
  * ```
  */
 // We use any for the PgTable generic because we need to access Drizzle's internal properties
 // biome-ignore lint/suspicious/noExplicitAny: Drizzle table types don't expose Symbol properties
-export function extractProtectSchema<T extends PgTable<any>>(
-  table: T,
-): ProtectTable<ProtectTableColumn> & ProtectTableColumn {
+export function extractProtectSchema<T extends PgTable<any>>(table: T) {
   // Drizzle tables store the name in a Symbol property
   // biome-ignore lint/suspicious/noExplicitAny: Drizzle tables don't expose Symbol properties in types
   const tableName = (table as any)[Symbol.for('drizzle:Name')] as
@@ -98,10 +100,5 @@ export function extractProtectSchema<T extends PgTable<any>>(
     )
   }
 
-  // csTable returns ProtectTable<T> & T, which makes columns accessible as properties
-  // We cast to ensure TypeScript knows the columns are ProtectColumn instances
-  // and that they're accessible as properties on the returned object
-  type Columns = Record<string, ProtectColumn>
-  return csTable(tableName, columns) as unknown as ProtectTable<Columns> &
-    Columns
+  return csTable(tableName, columns)
 }
