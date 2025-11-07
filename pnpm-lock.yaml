@@ -71,8 +71,8 @@ importers:
   examples/drizzle:
     dependencies:
       '@cipherstash/drizzle':
-        specifier: file:../../packages/drizzle/cipherstash-drizzle-0.2.0.tgz
-        version: file:packages/drizzle/cipherstash-drizzle-0.2.0.tgz(@cipherstash/protect@packages+protect)(@cipherstash/schema@1.1.0)(@types/pg@8.15.6)(drizzle-kit@0.30.6)(drizzle-orm@0.44.7(@types/pg@8.15.6)(gel@2.1.1)(mysql2@3.15.3)(pg@8.16.3)(postgres@3.4.7))(pg@8.16.3)(postgres@3.4.7)
+        specifier: workspace:*
+        version: link:../../packages/drizzle
       '@cipherstash/protect':
         specifier: workspace:*
         version: link:../../packages/protect
@@ -1039,28 +1039,6 @@ packages:
 
   '@changesets/write@0.4.0':
     resolution: {integrity: sha512-CdTLvIOPiCNuH71pyDu3rA+Q0n65cmAbXnwWH84rKGiFumFzkmHNT8KHTMEchcxN+Kl8I54xGUhJ7l3E7X396Q==}
-
-  '@cipherstash/drizzle@file:packages/drizzle/cipherstash-drizzle-0.2.0.tgz':
-    resolution: {integrity: sha512-4o8C0r6woQCEfoGNUNKu5dhru/HaYcEXfM0qVH1+AQL/8kf2y/uqkdwOQT2XYY4Up2xvm0aeBOVGUk8UgBCpaA==, tarball: file:packages/drizzle/cipherstash-drizzle-0.2.0.tgz}
-    version: 0.2.0
-    hasBin: true
-    peerDependencies:
-      '@cipherstash/protect': '>=10'
-      '@cipherstash/schema': '>=1.1'
-      '@types/pg': '*'
-      drizzle-kit: '>=0.20'
-      drizzle-orm: '>=0.33'
-      pg: ^8.16.3
-      postgres: ^3.4.7
-    peerDependenciesMeta:
-      '@types/pg':
-        optional: true
-      drizzle-kit:
-        optional: true
-      pg:
-        optional: true
-      postgres:
-        optional: true
 
   '@cipherstash/protect-ffi-darwin-arm64@0.17.1':
     resolution: {integrity: sha512-hVQJxDDtdXCSX5+r5PCk1Tl2fz/jbaKEtOph/MDz5gSLsxoA9cpgH01TQqmVQdQLV5kKHDBXalvKk6+2b5EgMw==}
@@ -7682,17 +7660,6 @@ snapshots:
       fs-extra: 7.0.1
       human-id: 4.1.2
       prettier: 2.8.8
-
-  '@cipherstash/drizzle@file:packages/drizzle/cipherstash-drizzle-0.2.0.tgz(@cipherstash/protect@packages+protect)(@cipherstash/schema@1.1.0)(@types/pg@8.15.6)(drizzle-kit@0.30.6)(drizzle-orm@0.44.7(@types/pg@8.15.6)(gel@2.1.1)(mysql2@3.15.3)(pg@8.16.3)(postgres@3.4.7))(pg@8.16.3)(postgres@3.4.7)':
-    dependencies:
-      '@cipherstash/protect': link:packages/protect
-      '@cipherstash/schema': 1.1.0
-      drizzle-orm: 0.44.7(@types/pg@8.15.6)(gel@2.1.1)(mysql2@3.15.3)(pg@8.16.3)(postgres@3.4.7)
-    optionalDependencies:
-      '@types/pg': 8.15.6
-      drizzle-kit: 0.30.6
-      pg: 8.16.3
-      postgres: 3.4.7
 
   '@cipherstash/protect-ffi-darwin-arm64@0.17.1':
     optional: true
