@@ -372,6 +372,45 @@ describe('Drizzle ORM Integration with Protect.js', () => {
     expect(allValidResults).toBe(true)
   }, 30000)
 
+  it('should perform queries with multiple conditions using batched or()', async () => {
+    const targetEmails = ['jane.smith@example.com', 'bob.wilson@example.com']
+    const fallbackId = testData[0]?.id ?? -1
+
+    const results = await db
+      .select({
+        id: drizzleUsersTable.id,
+        email: drizzleUsersTable.email,
+        age: drizzleUsersTable.age,
+        score: drizzleUsersTable.score,
+        profile: drizzleUsersTable.profile,
+      })
+      .from(drizzleUsersTable)
+      .where(
+        await protectOps.or(
+          protectOps.eq(drizzleUsersTable.email, targetEmails[0]),
+          protectOps.eq(drizzleUsersTable.email, targetEmails[1]),
+          eq(drizzleUsersTable.id, fallbackId),
+        ),
+      )
+
+    expect(results.length).toBeGreaterThan(0)
+
+    const decryptedResults = await protectClient.bulkDecryptModels(results)
+    if (decryptedResults.failure) {
+      throw new Error(
+        `Bulk decryption failed: ${decryptedResults.failure.message}`,
+      )
+    }
+
+    const emails = decryptedResults.data.map(
+      (user) => (user as DecryptedUser).email,
+    )
+
+    for (const email of targetEmails) {
+      expect(emails).toContain(email)
+    }
+  }, 30000)
+
   it('should handle nested field encryption and decryption', async () => {
     // Get a user with nested data
     const results = await db
