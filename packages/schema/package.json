@@ -25,6 +25,11 @@
 			"require": "./dist/index.cjs"
 		}
 	},
+	"files": [
+		"dist",
+		"cipherstash-encrypt-2-1-8.sql",
+		"README.md"
+	],
 	"scripts": {
 		"build": "tsup",
 		"dev": "tsup --watch",

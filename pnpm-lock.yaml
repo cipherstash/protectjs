@@ -436,10 +436,13 @@ importers:
     dependencies:
       '@cipherstash/protect':
         specifier: '>=10'
-        version: 10.0.0
+        version: 10.0.1
       '@types/pg':
         specifier: '*'
         version: 8.15.6
+      drizzle-kit:
+        specifier: '>=0.20'
+        version: 0.30.6
       drizzle-orm:
         specifier: '>=0.33'
         version: 0.44.7(@types/pg@8.15.6)(gel@2.1.1)(mysql2@3.15.3)(pg@8.16.3)(postgres@3.4.7)
@@ -474,6 +477,10 @@ importers:
       next:
         specifier: ^14 || ^15
         version: 15.5.6(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+    optionalDependencies:
+      '@rollup/rollup-linux-x64-gnu':
+        specifier: 4.24.0
+        version: 4.24.0
     devDependencies:
       '@clerk/nextjs':
         specifier: 6.12.9
@@ -490,10 +497,6 @@ importers:
       vitest:
         specifier: catalog:repo
         version: 3.1.3(@types/node@22.19.0)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.19.3)
-    optionalDependencies:
-      '@rollup/rollup-linux-x64-gnu':
-        specifier: 4.24.0
-        version: 4.24.0
 
   packages/protect:
     dependencies:
@@ -509,6 +512,10 @@ importers:
       zod:
         specifier: ^3.24.2
         version: 3.25.76
+    optionalDependencies:
+      '@rollup/rollup-linux-x64-gnu':
+        specifier: 4.24.0
+        version: 4.24.0
     devDependencies:
       '@supabase/supabase-js':
         specifier: ^2.47.10
@@ -534,10 +541,6 @@ importers:
       vitest:
         specifier: catalog:repo
         version: 3.1.3(@types/node@22.19.0)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.19.3)
-    optionalDependencies:
-      '@rollup/rollup-linux-x64-gnu':
-        specifier: 4.24.0
-        version: 4.24.0
 
   packages/protect-dynamodb:
     dependencies:
@@ -1070,11 +1073,11 @@ packages:
   '@cipherstash/protect-ffi@0.17.1':
     resolution: {integrity: sha512-FGf/GMC+6Qx9KnwaWCdo3a94YaCz2SbqtucHjw2V64h/FXxZf+yNJuVXgfqQz8pNWuz+LgUKojUuXJ2nUmM7KQ==}
 
-  '@cipherstash/protect@10.0.0':
-    resolution: {integrity: sha512-VjyD3BRZiT2htObZZaxQD3MIvyKxCf7OUreINhsp6A8fUsTY46vuQq3o1BNsGVodrI7dkQbUmvvVzO0kL2PLDQ==}
+  '@cipherstash/protect@10.0.1':
+    resolution: {integrity: sha512-uM9oxseWYRg04D4gP80WMaGbmM6ombry49Oufm/68ryETLLyynlPnqXDmCcjuc1+f+s/SNrj2Q/j6FR1rnPLGg==}
 
-  '@cipherstash/schema@1.0.0':
-    resolution: {integrity: sha512-sBwl2MIWl1QlE20esSgLvtMgBO7v1mf6kuSINk/o7cri54B/BpJKgJIIfZSJWjmDOEt88e24/8QsDzNC0Hf0Uw==}
+  '@cipherstash/schema@1.1.0':
+    resolution: {integrity: sha512-3bbi36PRESK41GRbqQGnP/GismRcvptVpl8kTtA8mU2nY3wj6hGYwVgjO20mgeoltwYS7BKXbWKF7gpJVfdniA==}
 
   '@clerk/backend@1.34.0':
     resolution: {integrity: sha512-9rZ8hQJVpX5KX2bEpiuVXfpjhojQCiqCWADJDdCI0PCeKxn58Ep0JPYiIcczg4VKUc3a7jve9vXylykG2XajLQ==}
@@ -7687,16 +7690,16 @@ snapshots:
       '@cipherstash/protect-ffi-linux-x64-musl': 0.17.1
       '@cipherstash/protect-ffi-win32-x64-msvc': 0.17.1
 
-  '@cipherstash/protect@10.0.0':
+  '@cipherstash/protect@10.0.1':
     dependencies:
       '@byteslice/result': 0.2.2
       '@cipherstash/protect-ffi': 0.17.1
-      '@cipherstash/schema': 1.0.0
+      '@cipherstash/schema': 1.1.0
       zod: 3.25.76
     optionalDependencies:
       '@rollup/rollup-linux-x64-gnu': 4.24.0
 
-  '@cipherstash/schema@1.0.0':
+  '@cipherstash/schema@1.1.0':
     dependencies:
       zod: 3.25.76
 

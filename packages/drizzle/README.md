@@ -17,6 +17,57 @@ Seamlessly integrate Protect.js with Drizzle ORM and PostgreSQL to encrypt your 
 npm install @cipherstash/protect @cipherstash/drizzle drizzle-orm
 ```
 
+## Database Setup
+
+Before using encrypted columns, you need to install the CipherStash EQL (Encrypt Query Language) functions in your PostgreSQL database.
+
+### Install EQL via migration
+
+The easiest way is to use the built-in CLI command:
+
+```bash
+npx generate-eql-migration
+# or: pnpm/yarn/bun generate-eql-migration
+```
+
+This will:
+1. Generate a custom Drizzle migration (default name: `install-eql`)
+2. Populate it with the EQL SQL schema from `@cipherstash/schema`
+3. Place it in your `drizzle/` directory
+
+Then run your migrations:
+
+```bash
+npx drizzle-kit migrate
+# or: pnpm/yarn/bun drizzle-kit migrate
+```
+
+#### CLI Options
+
+```bash
+Usage: generate-eql-migration [options]
+
+Options:
+  -n, --name <name>    Migration name (default: "install-eql")
+  -o, --out <dir>      Output directory (default: "drizzle")
+  -h, --help           Display this help message
+
+Examples:
+  npx generate-eql-migration
+  npx generate-eql-migration --name setup-eql
+  npx generate-eql-migration --out migrations
+```
+
+### Manual installation (alternative)
+
+If you prefer to install EQL manually:
+
+```bash
+npx drizzle-kit generate --custom --name=install-eql
+curl -sL https://github.com/cipherstash/encrypt-query-language/releases/latest/download/cipherstash-encrypt.sql > drizzle/0001_install-eql.sql
+npx drizzle-kit migrate
+```
+
 ## Quick Start
 
 ### 1. Define your schema with encrypted columns
