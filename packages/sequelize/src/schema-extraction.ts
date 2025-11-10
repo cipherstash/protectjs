@@ -3,6 +3,7 @@ import { csTable, csColumn } from '@cipherstash/schema'
 import type {
   ProtectTable,
   ProtectTableColumn,
+  TokenFilter,
 } from '@cipherstash/schema'
 import { getEncryptedColumnConfig } from './data-type'
 
@@ -22,7 +23,8 @@ export function extractProtectSchema<M extends Model>(
   const columns: Record<string, any> = {}
 
   for (const [fieldName, attribute] of Object.entries(attributes)) {
-    const config = getEncryptedColumnConfig(fieldName)
+    // Get config from the column instance (each ENCRYPTED factory has its own registry)
+    const config = getEncryptedColumnConfig(attribute.type, fieldName)
 
     if (!config) {
       // Not an encrypted column, skip
@@ -37,9 +39,9 @@ export function extractProtectSchema<M extends Model>(
 
     // Add indexes based on configuration
     if (config.equality) {
-      const tokenFilters = Array.isArray(config.equality)
+      const tokenFilters: TokenFilter[] = Array.isArray(config.equality)
         ? config.equality
-        : [{ kind: 'downcase' }]
+        : [{ kind: 'downcase' } as const]
 
       column = column.equality(tokenFilters)
     }

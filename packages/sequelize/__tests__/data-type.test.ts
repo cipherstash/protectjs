@@ -14,9 +14,9 @@ describe('createEncryptedType', () => {
   })
 
   it('should store column config in registry', () => {
-    ENCRYPTED('email', { equality: true, dataType: 'string' })
+    const column = ENCRYPTED('email', { equality: true, dataType: 'string' })
 
-    const config = getEncryptedColumnConfig('email')
+    const config = getEncryptedColumnConfig(column, 'email')
     expect(config).toBeDefined()
     expect(config?.columnName).toBe('email')
     expect(config?.equality).toBe(true)
