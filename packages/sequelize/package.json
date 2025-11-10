@@ -1,0 +1,60 @@
+{
+  "name": "@cipherstash/sequelize",
+  "version": "0.1.0",
+  "description": "CipherStash Protect.js Sequelize ORM integration for TypeScript",
+  "keywords": [
+    "encrypted",
+    "sequelize",
+    "orm",
+    "type-safe",
+    "security",
+    "protectjs",
+    "postgres"
+  ],
+  "bugs": {
+    "url": "https://github.com/cipherstash/protectjs/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cipherstash/protectjs.git"
+  },
+  "license": "MIT",
+  "author": "CipherStash <hello@cipherstash.com>",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "release": "tsup"
+  },
+  "peerDependencies": {
+    "@cipherstash/protect": ">=10",
+    "@cipherstash/schema": ">=1.1",
+    "sequelize": ">=6.0.0"
+  },
+  "devDependencies": {
+    "@cipherstash/protect": "workspace:*",
+    "@cipherstash/schema": "workspace:*",
+    "@types/node": "^20.0.0",
+    "dotenv": "^16.4.7",
+    "sequelize": "^6.37.0",
+    "tsup": "catalog:repo",
+    "typescript": "catalog:repo",
+    "vitest": "catalog:repo"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
