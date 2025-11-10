@@ -50,6 +50,7 @@
     "@types/node": "^20.0.0",
     "dotenv": "^16.4.7",
     "sequelize": "^6.37.0",
+    "sqlite3": "^5.1.7",
     "tsup": "catalog:repo",
     "typescript": "catalog:repo",
     "vitest": "catalog:repo"
