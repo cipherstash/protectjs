@@ -912,16 +912,18 @@ export function createProtectOperators(protectClient: ProtectClient): {
   // Sorting operators
   asc: (column: SQLWrapper) => SQL
   desc: (column: SQLWrapper) => SQL
+  and: (
+    ...conditions: (SQL | SQLWrapper | Promise<SQL> | undefined)[]
+  ) => Promise<SQL>
+  or: (
+    ...conditions: (SQL | SQLWrapper | Promise<SQL> | undefined)[]
+  ) => Promise<SQL>
   // Operators that don't need encryption (pass through to Drizzle)
   exists: typeof exists
   notExists: typeof notExists
   isNull: typeof isNull
   isNotNull: typeof isNotNull
   not: typeof not
-  and: (
-    ...conditions: (SQL | SQLWrapper | Promise<SQL> | undefined)[]
-  ) => Promise<SQL>
-  or: typeof or
   // Array operators that work with arrays directly (not encrypted values)
   arrayContains: typeof arrayContains
   arrayContained: typeof arrayContained
@@ -1450,6 +1452,153 @@ export function createProtectOperators(protectClient: ProtectClient): {
     return and(...allConditions) ?? sql`true`
   }
 
+  /**
+   * Batched OR operator - collects lazy operators, batches encryption, and combines conditions
+   */
+  const protectOr = async (
+    ...conditions: (SQL | SQLWrapper | Promise<SQL> | undefined)[]
+  ): Promise<SQL> => {
+    const lazyOperators: LazyOperator[] = []
+    const regularConditions: (SQL | SQLWrapper | undefined)[] = []
+    const regularPromises: Promise<SQL>[] = []
+
+    for (const condition of conditions) {
+      if (condition === undefined) {
+        continue
+      }
+
+      if (isLazyOperator(condition)) {
+        lazyOperators.push(condition)
+      } else if (condition instanceof Promise) {
+        if (isLazyOperator(condition)) {
+          lazyOperators.push(condition)
+        } else {
+          regularPromises.push(condition)
+        }
+      } else {
+        regularConditions.push(condition)
+      }
+    }
+
+    if (lazyOperators.length === 0) {
+      const allConditions: (SQL | SQLWrapper | undefined)[] = [
+        ...regularConditions,
+        ...(await Promise.all(regularPromises)),
+      ]
+      return or(...allConditions) ?? sql`false`
+    }
+
+    const valuesToEncrypt: Array<{
+      value: unknown
+      column: SQLWrapper
+      columnInfo: ColumnInfo
+      lazyOpIndex: number
+      isMin?: boolean
+      isMax?: boolean
+    }> = []
+
+    for (let i = 0; i < lazyOperators.length; i++) {
+      const lazyOp = lazyOperators[i]
+      if (!lazyOp.needsEncryption) {
+        continue
+      }
+
+      if (lazyOp.min !== undefined && lazyOp.max !== undefined) {
+        valuesToEncrypt.push({
+          value: lazyOp.min,
+          column: lazyOp.left,
+          columnInfo: lazyOp.columnInfo,
+          lazyOpIndex: i,
+          isMin: true,
+        })
+        valuesToEncrypt.push({
+          value: lazyOp.max,
+          column: lazyOp.left,
+          columnInfo: lazyOp.columnInfo,
+          lazyOpIndex: i,
+          isMax: true,
+        })
+      } else if (lazyOp.right !== undefined) {
+        valuesToEncrypt.push({
+          value: lazyOp.right,
+          column: lazyOp.left,
+          columnInfo: lazyOp.columnInfo,
+          lazyOpIndex: i,
+        })
+      }
+    }
+
+    const encryptedResults = await encryptValues(
+      protectClient,
+      valuesToEncrypt.map((v) => ({ value: v.value, column: v.column })),
+      defaultProtectTable,
+      protectTableCache,
+    )
+
+    const encryptedByLazyOp = new Map<
+      number,
+      { value?: unknown; min?: unknown; max?: unknown }
+    >()
+
+    for (let i = 0; i < valuesToEncrypt.length; i++) {
+      const { lazyOpIndex, isMin, isMax } = valuesToEncrypt[i]
+      const encrypted = encryptedResults[i]
+
+      let group = encryptedByLazyOp.get(lazyOpIndex)
+      if (!group) {
+        group = {}
+        encryptedByLazyOp.set(lazyOpIndex, group)
+      }
+
+      if (isMin) {
+        group.min = encrypted
+      } else if (isMax) {
+        group.max = encrypted
+      } else {
+        group.value = encrypted
+      }
+    }
+
+    const sqlConditions: SQL[] = []
+    for (let i = 0; i < lazyOperators.length; i++) {
+      const lazyOp = lazyOperators[i]
+      const encrypted = encryptedByLazyOp.get(i)
+
+      let sqlCondition: SQL
+      if (lazyOp.needsEncryption && encrypted) {
+        const encryptedValues: Array<{ value: unknown; encrypted: unknown }> =
+          []
+        if (encrypted.value !== undefined) {
+          encryptedValues.push({
+            value: lazyOp.right,
+            encrypted: encrypted.value,
+          })
+        }
+        if (encrypted.min !== undefined) {
+          encryptedValues.push({ value: lazyOp.min, encrypted: encrypted.min })
+        }
+        if (encrypted.max !== undefined) {
+          encryptedValues.push({ value: lazyOp.max, encrypted: encrypted.max })
+        }
+        sqlCondition = await executeLazyOperator(lazyOp, encryptedValues)
+      } else {
+        sqlCondition = lazyOp.execute(lazyOp.right)
+      }
+
+      sqlConditions.push(sqlCondition)
+    }
+
+    const regularPromisesResults = await Promise.all(regularPromises)
+
+    const allConditions: (SQL | SQLWrapper | undefined)[] = [
+      ...regularConditions,
+      ...sqlConditions,
+      ...regularPromisesResults,
+    ]
+
+    return or(...allConditions) ?? sql`false`
+  }
+
   return {
     // Comparison operators
     eq: protectEq,
@@ -1479,14 +1628,15 @@ export function createProtectOperators(protectClient: ProtectClient): {
     // AND operator - batches encryption operations
     and: protectAnd,
 
+    // OR operator - batches encryption operations
+    or: protectOr,
+
     // Operators that don't need encryption (pass through to Drizzle)
     exists,
     notExists,
     isNull,
     isNotNull,
     not,
-    or,
-
     // Array operators that work with arrays directly (not encrypted values)
     arrayContains,
     arrayContained,
