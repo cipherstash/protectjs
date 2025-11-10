@@ -1,5 +1,11 @@
 # @cipherstash/schema
 
+## 2.0.0
+
+### Major Changes
+
+- 9005484: Include EQL 2.1.8 in package distribution
+
 ## 1.1.0
 
 ### Minor Changes
