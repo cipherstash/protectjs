@@ -103,11 +103,11 @@ Examples:
     
     writeFileSync(migrationPath, eqlSql, 'utf-8');
 
-    console.log(`\n✅ Successfully created EQL migration!`);
-    console.log(`\nNext steps:`);
+    console.log('\n✅ Successfully created EQL migration!');
+    console.log('\nNext steps:');
     console.log(`  1. Review the migration: ${migrationPath}`);
-    console.log(`  2. Run migrations: npx drizzle-kit migrate`);
-    console.log(`     (or use your package manager: pnpm/yarn/bun drizzle-kit migrate)`);
+    console.log('  2. Run migrations: npx drizzle-kit migrate');
+    console.log('     (or use your package manager: pnpm/yarn/bun drizzle-kit migrate)');
   } catch (error) {
     // Cleanup: remove the migration file if it was created
     if (migrationPath && existsSync(migrationPath)) {
