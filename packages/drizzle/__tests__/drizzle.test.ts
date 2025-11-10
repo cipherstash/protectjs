@@ -393,7 +393,7 @@ describe('Drizzle ORM Integration with Protect.js', () => {
         ),
       )
 
-    expect(results.length).toBeGreaterThan(0)
+    expect(results.length).toBe(targetEmails.length + 1) // +1 for fallbackId row
 
     const decryptedResults = await protectClient.bulkDecryptModels(results)
     if (decryptedResults.failure) {
