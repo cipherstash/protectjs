@@ -43,8 +43,8 @@
 		"release": "tsup"
 	},
 	"peerDependencies": {
-		"@cipherstash/protect": ">=10.0.2",
-		"@cipherstash/schema": ">=2.0.0",
+		"@cipherstash/protect": ">=10",
+		"@cipherstash/schema": ">=2",
 		"@types/pg": "*",
 		"drizzle-kit": ">=0.20",
 		"drizzle-orm": ">=0.33",
