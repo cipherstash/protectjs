@@ -73,6 +73,26 @@ pnpm dev
 
 The server will start on `http://localhost:3000` (or the port specified in `PORT`).
 
+### 6. Model Context Protocol (MCP) Server
+
+This example also exposes an MCP server so AI assistants can explore transactions securely.
+
+- Default endpoint: `http://localhost:3000/mcp`
+- Configure route via `MCP_ROUTE` (optional)
+- Lock down allowed hosts/origins with `MCP_ALLOWED_HOSTS` and `MCP_ALLOWED_ORIGINS` (comma-separated lists)
+
+You can inspect the MCP server locally with the MCP Inspector:
+
+```bash
+npx @modelcontextprotocol/inspector http://localhost:3000/mcp
+```
+
+The server registers three tools:
+
+- `transactions.list` — browse encrypted transactions with filters
+- `transactions.getById` — inspect a specific transaction by ID
+- `transactions.summary` — compute lightweight stats over a sampled set
+
 ## API Endpoints
 
 ### Health Check
