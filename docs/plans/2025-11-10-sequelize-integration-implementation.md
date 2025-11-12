@@ -123,13 +123,9 @@ import type { MatchIndexOpts, TokenFilter } from '@cipherstash/schema'
 
 /**
  * Configuration for encrypted column indexes and data types
+ * Note: columnName is passed separately to createEncryptedType(), not in this config object
  */
 export interface EncryptedColumnConfig {
-  /**
-   * Column name (required for registry lookup)
-   */
-  columnName: string
-
   /**
    * Data type for the column (default: 'string')
    */
@@ -168,7 +164,23 @@ export type { EncryptedColumnConfig } from './types'
 
 Run: `cd packages/sequelize && pnpm install`
 
-**Step 7: Commit**
+**Step 7: Create .npmignore**
+
+Create `packages/sequelize/.npmignore`:
+
+```
+__tests__
+*.test.ts
+*.test.js
+tsconfig.json
+tsup.config.ts
+.turbo
+.DS_Store
+node_modules
+src
+```
+
+**Step 8: Commit**
 
 ```bash
 git add packages/sequelize/
@@ -207,11 +219,10 @@ describe('createEncryptedType', () => {
     ENCRYPTED('email', { equality: true, dataType: 'string' })
 
     const config = getEncryptedColumnConfig('email')
-    expect(config).toEqual({
-      columnName: 'email',
-      equality: true,
-      dataType: 'string'
-    })
+    expect(config).toBeDefined()
+    expect(config?.columnName).toBe('email')
+    expect(config?.equality).toBe(true)
+    expect(config?.dataType).toBe('string')
   })
 
   it('should return SQL type as eql_v2_encrypted', () => {
@@ -353,10 +364,11 @@ export function createEncryptedType() {
 /**
  * Get configuration for an encrypted column by name
  * Used by hooks to determine how to handle encryption
+ * Returns config with columnName included for convenience
  */
 export function getEncryptedColumnConfig(
   columnName: string
-): EncryptedColumnConfig | undefined {
+): (EncryptedColumnConfig & { columnName: string }) | undefined {
   return encryptedColumnRegistry.get(columnName)
 }
 ```
@@ -618,7 +630,8 @@ export function extractProtectSchema<M extends Model>(
     )
   }
 
-  return csTable(columns)
+  // IMPORTANT: Pass tableName as first parameter to csTable
+  return csTable(tableName, columns)
 }
 
 /**
