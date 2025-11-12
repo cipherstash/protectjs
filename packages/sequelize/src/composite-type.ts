@@ -38,6 +38,7 @@
  * })
  * ```
  */
+// biome-ignore lint/suspicious/noExplicitAny: accepts any JSON-serializable value
 export function toComposite(value: any): string {
   const jsonStr = JSON.stringify(value)
   const escaped = jsonStr.replace(/"/g, '""')
@@ -70,6 +71,7 @@ export function toComposite(value: any): string {
  * const decrypted = await protectClient.decrypt(encrypted)
  * console.log(decrypted.data) // "alice@example.com"
  * ```
+// biome-ignore lint/suspicious/noExplicitAny: returns any JSON-serializable value
  */
 export function fromComposite(value: string): any {
   if (!value || value === '' || typeof value !== 'string') {
@@ -98,7 +100,7 @@ export function fromComposite(value: string): any {
   } catch (error) {
     throw new Error(
       `Failed to parse PostgreSQL composite type value: ${value}. ` +
-      `Error: ${error instanceof Error ? error.message : String(error)}`
+        `Error: ${error instanceof Error ? error.message : String(error)}`,
     )
   }
 }
@@ -136,6 +138,7 @@ export function fromComposite(value: string): any {
  *     email: { [Op.in]: composite }
  *   }
  * })
+// biome-ignore lint/suspicious/noExplicitAny: accepts array of any JSON-serializable values
  * ```
  */
 export function bulkToComposite(values: any[]): string[] {
@@ -162,6 +165,7 @@ export function bulkToComposite(values: any[]): string[] {
  * const parsed = bulkFromComposite(users)
  *
  * // Decrypt (same API as Drizzle)
+// biome-ignore lint/suspicious/noExplicitAny: generic record with any value types
  * const decrypted = await protectClient.bulkDecryptModels(parsed)
  * ```
  */
@@ -177,6 +181,7 @@ export function bulkFromComposite<T extends Record<string, any>>(
     const plainModel =
       typeof model.get === 'function' ? model.get({ plain: true }) : model
 
+    // biome-ignore lint/suspicious/noExplicitAny: recursive value processing
     // Create a shallow copy to avoid mutating the original
     const result = { ...plainModel }
 

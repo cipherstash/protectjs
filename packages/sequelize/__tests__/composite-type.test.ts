@@ -1,9 +1,9 @@
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import {
-  toComposite,
-  fromComposite,
-  bulkToComposite,
   bulkFromComposite,
+  bulkToComposite,
+  fromComposite,
+  toComposite,
 } from '../src/composite-type'
 
 describe('Composite Type Utilities', () => {
@@ -14,7 +14,8 @@ describe('Composite Type Utilities', () => {
   }
 
   // Correct format: PostgreSQL uses doubled quotes "" not backslash \"
-  const mockCompositeString = '("{""c"":""encrypted_ciphertext_data"",""k"":""key_data"",""i"":""iv_data""}")'
+  const mockCompositeString =
+    '("{""c"":""encrypted_ciphertext_data"",""k"":""key_data"",""i"":""iv_data""}")'
 
   describe('toComposite', () => {
     it('should convert encrypted object to composite type format', () => {
@@ -75,8 +76,10 @@ describe('Composite Type Utilities', () => {
     })
 
     it('should handle null-like values', () => {
-      expect(fromComposite(null as any)).toBeNull()
-      expect(fromComposite(undefined as any)).toBeNull()
+      expect(fromComposite// biome-ignore lint/suspicious/noExplicitAny: testing null handling
+      (null as any)).toBeNull()
+      expect(fromComposite// biome-ignore lint/suspicious/noExplicitAny: testing undefined handling
+      (undefined as any)).toBeNull()
     })
 
     it('should parse direct JSON if not in composite format', () => {
@@ -143,7 +146,7 @@ describe('Composite Type Utilities', () => {
       expect(composite).toHaveLength(2)
 
       // Each should be properly formatted
-      composite.forEach((str) => {
+      for (const str of composite) {
         expect(typeof str).toBe('string')
         expect(str).toMatch(/^\(".*"\)$/)
       })
@@ -170,7 +173,7 @@ describe('Composite Type Utilities', () => {
         },
       ]
 
-      testCases.forEach((testCase) => {
+      for (const testCase of testCases) {
         const composite = toComposite(testCase)
         const parsed = fromComposite(composite)
         expect(parsed).toEqual(testCase)
@@ -221,7 +224,11 @@ describe('Composite Type Utilities', () => {
 
     it('should work for Op.in with multiple values', () => {
       // Simulate encrypting multiple emails
-      const emails = ['alice@example.com', 'bob@example.com', 'charlie@example.com']
+      const emails = [
+        'alice@example.com',
+        'bob@example.com',
+        'charlie@example.com',
+      ]
       const encryptedEmails = emails.map((email) => ({
         c: `encrypted_${email}`,
         t: [`token_${email}`],

@@ -121,9 +121,7 @@ describe('bulkFromComposite', () => {
   })
 
   it('should handle null and undefined values', () => {
-    const users = [
-      { id: 1, name: 'Alice', email: null, phone: undefined },
-    ]
+    const users = [{ id: 1, name: 'Alice', email: null, phone: undefined }]
 
     const parsed = bulkFromComposite(users)
 

@@ -19,7 +19,10 @@ export function createEncryptedType() {
    * Keyed by column name for hook access
    * Scoped to this factory to prevent global state pollution
    */
-  const encryptedColumnRegistry = new Map<string, EncryptedColumnConfig & { columnName: string }>()
+  const encryptedColumnRegistry = new Map<
+    string,
+    EncryptedColumnConfig & { columnName: string }
+  >()
   /**
    * Parse composite type value from PostgreSQL: ("ciphertext")
    * PostgreSQL uses "" (doubled quotes) to escape quotes in composite types
@@ -31,7 +34,7 @@ export function createEncryptedType() {
       const trimmed = value.trim()
 
       if (trimmed.startsWith('(') && trimmed.endsWith(')')) {
-        let inner = trimmed.slice(1, -1)
+        const inner = trimmed.slice(1, -1)
 
         if (inner.startsWith('"') && inner.endsWith('"')) {
           // Remove outer quotes
@@ -54,7 +57,7 @@ export function createEncryptedType() {
     } catch (error) {
       throw new Error(
         `Failed to parse PostgreSQL composite type value: ${value}. ` +
-        `Error: ${error instanceof Error ? error.message : String(error)}`
+          `Error: ${error instanceof Error ? error.message : String(error)}`,
       )
     }
   }
@@ -89,15 +92,29 @@ export function createEncryptedType() {
       // Set the key property so toSql() returns the correct value
       this.key = 'eql_v2_encrypted'
     }
+
+    /**
+     * Instance method called by Sequelize to serialize values before sending to database
+     */
+    _stringify(value: any): string {
+      return stringify(value)
+    }
+
+    /**
+     * Instance method called by Sequelize to sanitize/validate values
+     */
+    _sanitize(value: any): any {
+      return value
+    }
   }
 
   /**
    * Factory function to create column with config
    */
-  const factory = function (
+  const factory = (
     columnName: string,
-    config?: Omit<EncryptedColumnConfig, 'columnName'>
-  ) {
+    config?: Omit<EncryptedColumnConfig, 'columnName'>,
+  ) => {
     const instance = new ENCRYPTED()
 
     const fullConfig: EncryptedColumnConfig & { columnName: string } = {
@@ -113,7 +130,8 @@ export function createEncryptedType() {
 
     // Attach registry accessor to instance so schema extraction can find configs
     // This is needed because each factory has its own registry
-    ;(instance as any)._getColumnConfig = (name: string) => encryptedColumnRegistry.get(name)
+    ;(instance as any)._getColumnConfig = (name: string) =>
+      encryptedColumnRegistry.get(name)
 
     // Attach static methods to instance constructor for Sequelize compatibility
     // This is needed because Sequelize's ABSTRACT replaces the constructor
@@ -129,7 +147,8 @@ export function createEncryptedType() {
   }
 
   // Attach registry accessor to factory function for direct access if needed
-  factory.getColumnConfig = (columnName: string) => encryptedColumnRegistry.get(columnName)
+  factory.getColumnConfig = (columnName: string) =>
+    encryptedColumnRegistry.get(columnName)
 
   return factory
 }
@@ -148,7 +167,7 @@ export function createEncryptedType() {
  */
 export function getEncryptedColumnConfig(
   columnInstance: any,
-  columnName: string
+  columnName: string,
 ): (EncryptedColumnConfig & { columnName: string }) | undefined {
   // Access the registry through the column instance
   if (typeof columnInstance?._getColumnConfig === 'function') {

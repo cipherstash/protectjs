@@ -1,10 +1,10 @@
-import type { ModelStatic, Model } from 'sequelize'
-import { csTable, csColumn } from '@cipherstash/schema'
+import { csColumn, csTable } from '@cipherstash/schema'
 import type {
   ProtectTable,
   ProtectTableColumn,
   TokenFilter,
 } from '@cipherstash/schema'
+import type { Model, ModelStatic } from 'sequelize'
 import { getEncryptedColumnConfig } from './data-type'
 
 /**
@@ -15,11 +15,12 @@ import { getEncryptedColumnConfig } from './data-type'
  * @throws Error if model has no encrypted columns
  */
 export function extractProtectSchema<M extends Model>(
-  model: ModelStatic<M>
+  model: ModelStatic<M>,
 ): ProtectTable<ProtectTableColumn> {
   const tableName = model.tableName || model.name
   const attributes = model.getAttributes()
 
+  // biome-ignore lint/suspicious/noExplicitAny: column config can have any shape
   const columns: Record<string, any> = {}
 
   for (const [fieldName, attribute] of Object.entries(attributes)) {
@@ -64,7 +65,7 @@ export function extractProtectSchema<M extends Model>(
 
   if (Object.keys(columns).length === 0) {
     throw new Error(
-      `Model ${tableName} has no encrypted columns. Use DataTypes.ENCRYPTED to define encrypted columns.`
+      `Model ${tableName} has no encrypted columns. Use ENCRYPTED type to define encrypted columns`,
     )
   }
 
@@ -78,6 +79,7 @@ export function extractProtectSchema<M extends Model>(
  * @param models - Sequelize models to extract schemas from
  * @returns Array of Protect table schemas
  */
+// biome-ignore lint/suspicious/noExplicitAny: accepts models of any shape
 export function extractProtectSchemas(
   ...models: ModelStatic<any>[]
 ): ProtectTable<ProtectTableColumn>[] {
