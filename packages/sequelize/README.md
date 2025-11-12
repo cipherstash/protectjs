@@ -1,23 +1,26 @@
 # @cipherstash/sequelize
 
-Sequelize integration for [Protect.js](https://github.com/cipherstash/protect-js) - add searchable encryption to your Sequelize models with transparent encryption hooks.
+CipherStash Protect.js integration for Sequelize ORM - add searchable encryption to your PostgreSQL database with transparent encryption hooks.
 
-## Features
+[![npm version](https://img.shields.io/npm/v/@cipherstash/sequelize.svg)](https://www.npmjs.com/package/@cipherstash/sequelize)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-- 🔒 **Transparent Encryption** - Automatic encryption/decryption via Sequelize hooks
-- 🔍 **Searchable Encryption** - Query encrypted data with equality, range, and text search
-- 🎯 **Type Safe** - Full TypeScript support with Sequelize types
-- ⚡ **Zero Migration** - Works with existing `eql_v2_encrypted` columns
-- 🔌 **Flexible** - Use hooks (automatic) OR manual encryption (full control)
+## Overview
 
-## Two Approaches
+`@cipherstash/sequelize` enables **searchable encryption** in your Sequelize models using CipherStash Protect.js. Each field is encrypted with its own unique key, and you can still query encrypted data with equality, range, and text search operations.
 
-This package supports two approaches to encryption: **automatic hooks** (recommended) and **manual encoding** (advanced).
+### Why This Package?
 
-### ✅ Recommended: Automatic Hooks
+- 🔒 **Transparent Encryption** - Automatic encryption/decryption via Sequelize lifecycle hooks
+- 🔍 **Searchable Encryption** - Query encrypted data without decrypting it first
+- 🎯 **Type Safe** - Full TypeScript support with Sequelize model types
+- ⚡ **Zero Migration** - Works with existing `eql_v2_encrypted` PostgreSQL columns
+- 🔑 **Per-Value Keys** - Every encrypted value gets its own unique encryption key
+- 🔌 **Flexible** - Use hooks (automatic) OR manual encoding (full control)
 
-**Hooks are the standard approach** - like other ORMs with encryption support (sequelize-encrypted, ActiveRecord encryption, Django encryption), hooks provide transparent encryption/decryption.
+### Two Integration Approaches
 
+**✅ Recommended: Automatic Hooks (95% of use cases)**
 ```typescript
 addProtectHooks(User, protectClient)
 
@@ -28,82 +31,106 @@ const user = await User.findOne({
 console.log(user.email) // Automatically decrypted
 ```
 
-**Why use hooks?**
-- ✅ **Standard ORM pattern** - Works like normal Sequelize
-- ✅ **Transparent** - No manual encryption/decryption steps
-- ✅ **Safe** - Harder to forget encryption steps or make mistakes
-- ✅ **Simple** - Minimal code, maximum productivity
-
-**Best for:** 95% of use cases - CRUD operations, APIs, GraphQL, standard applications
-
-> **How it works:** Hooks intercept Sequelize's `beforeFind` and `afterFind` lifecycle events, encrypting WHERE clause values before the QueryGenerator runs and decrypting results after queries complete. This is a proven pattern used by many Sequelize encryption libraries.
-
-### ⚠️ Advanced: Manual Encoding
-
-**Manual encoding is for advanced use cases only.** Most users should use hooks.
-
+**⚠️ Advanced: Manual Encoding (raw SQL, performance optimization)**
 ```typescript
-import { toComposite } from '@cipherstash/sequelize'
+import { toComposite, fromComposite } from '@cipherstash/sequelize'
 
-// Manually encrypt
-const encrypted = await protectClient.encrypt('alice@example.com', {...})
-const stringified = toComposite(encrypted.data)
+// Manually encrypt for raw SQL queries
+const encrypted = await protectClient.createSearchTerms([{
+  value: 'alice@example.com',
+  column: userSchema.email,
+  table: userSchema,
+}])
 
-// Query with encrypted value
-const user = await User.findOne({
-  where: { email: stringified }
-})
+const [results] = await sequelize.query(
+  'SELECT * FROM users WHERE email = :email',
+  { replacements: { email: toComposite(encrypted.data[0]) } }
+)
 
-// Manually decrypt
-const decrypted = await protectClient.decrypt(user.email)
+// Parse and decrypt results
+const parsed = results.map(row => ({ ...row, email: fromComposite(row.email) }))
+const decrypted = await protectClient.bulkDecryptModels(parsed)
+
+// See "Raw SQL with Manual Encryption" section for complete example
 ```
-
-**When you need manual encoding:**
-- Raw SQL queries (hooks don't work with `sequelize.query()`)
-- Performance optimization (encrypt once, reuse across queries)
-- Debugging encryption issues
-- Custom encryption workflows
-
-**Why manual encoding exists:**
-
-Sequelize v6's architecture doesn't allow custom DataTypes to intercept WHERE clause transformation - by the time DataType methods run, WHERE clauses are already processed by the QueryGenerator. Manual encoding gives power users direct control when they need to work outside the hook system (e.g., raw SQL, custom batching).
-
-**See [MANUAL_ENCRYPTION_GUIDE.md](./MANUAL_ENCRYPTION_GUIDE.md) for complete manual workflow.**
 
 ## Installation
 
 ```bash
-npm install @cipherstash/sequelize @cipherstash/protect sequelize
+npm install @cipherstash/sequelize @cipherstash/protect @cipherstash/schema sequelize
 ```
 
-## Prerequisites
+### Prerequisites
 
-- PostgreSQL 14+ with [EQL extension](https://cipherstash.com/docs/eql) installed
-- Protect.js client configured with CipherStash
-- Sequelize 6.x
+- **PostgreSQL 14+** with [EQL extension](https://github.com/cipherstash/encrypt-query-language) installed
+- **Sequelize 6.x**
+- **Node.js 18+**
+- **CipherStash account** - [Sign up for free](https://cipherstash.com/signup)
 
-> **Note:** Use `ensureEqlType()` to verify the EQL extension is installed before syncing:
-> ```typescript
-> import { ensureEqlType } from '@cipherstash/sequelize'
-> await ensureEqlType(sequelize)  // Throws if EQL not installed
-> ```
-> See [Type Verification](#type-verification) for details.
+### Install EQL Extension
+
+The EQL extension provides the `eql_v2_encrypted` PostgreSQL composite type for storing encrypted data.
+
+```bash
+# Download the latest EQL installation script
+curl -sLo cipherstash-encrypt.sql https://github.com/cipherstash/encrypt-query-language/releases/latest/download/cipherstash-encrypt.sql
+
+# Install in your PostgreSQL database
+psql -f cipherstash-encrypt.sql
+```
+
+For Supabase users:
+```bash
+curl -sLo cipherstash-encrypt-supabase.sql https://github.com/cipherstash/encrypt-query-language/releases/latest/download/cipherstash-encrypt-supabase.sql
+psql -f cipherstash-encrypt-supabase.sql
+```
+
+**Verify installation:**
+```typescript
+import { ensureEqlType } from '@cipherstash/sequelize'
+
+await ensureEqlType(sequelize)  // Throws if EQL not installed
+```
 
 ## Quick Start
 
+### 1. Set Up CipherStash
+
+Sign up at [cipherstash.com/signup](https://cipherstash.com/signup) and create a workspace. You'll receive these credentials:
+
+```bash
+# .env
+CS_WORKSPACE_CRN=your_workspace_crn
+CS_CLIENT_ID=your_client_id
+CS_CLIENT_KEY=your_client_key
+CS_CLIENT_ACCESS_KEY=your_access_key
+
+# Database connection
+DATABASE_URL=postgresql://user:password@localhost:5432/mydb
+```
+
+### 2. Define Your Model with Encrypted Columns
+
 ```typescript
 import { Sequelize, DataTypes, Model } from 'sequelize'
-import { ProtectClient } from '@cipherstash/protect'
 import { createEncryptedType, addProtectHooks } from '@cipherstash/sequelize'
+import { protect } from '@cipherstash/protect'
 
-// 1. Create ENCRYPTED data type
+// Initialize Sequelize
+const sequelize = new Sequelize(process.env.DATABASE_URL!, {
+  dialect: 'postgres',
+  logging: false,
+})
+
+// Create ENCRYPTED data type factory
 const ENCRYPTED = createEncryptedType()
 
-// 2. Define your model with encrypted columns
+// Define your model
 class User extends Model {
   declare id: number
   declare email: string
   declare age: number
+  declare salary: number
 }
 
 User.init(
@@ -115,10 +142,16 @@ User.init(
     },
     email: ENCRYPTED('email', {
       equality: true,              // Enable exact match queries
+      freeTextSearch: true,        // Enable LIKE/ILIKE queries
       dataType: 'string',
     }),
     age: ENCRYPTED('age', {
-      orderAndRange: true,         // Enable range queries
+      orderAndRange: true,         // Enable range queries (>, <, BETWEEN)
+      equality: true,              // Enable exact match
+      dataType: 'number',
+    }),
+    salary: ENCRYPTED('salary', {
+      orderAndRange: true,
       dataType: 'number',
     }),
   },
@@ -127,64 +160,208 @@ User.init(
     tableName: 'users',
   }
 )
-
-// 3. Initialize Protect client
-const protectClient = new ProtectClient({
-  // Your Protect.js configuration
-})
-
-// 4. Add encryption hooks
-addProtectHooks(User, protectClient)
-
-// 5. Query transparently!
-const user = await User.findOne({
-  where: { email: 'alice@example.com' }  // Automatically encrypted
-})
-console.log(user.email)  // Automatically decrypted: "alice@example.com"
 ```
 
-## API Reference
-
-### `createEncryptedType()`
-
-Creates a custom Sequelize DataType for encrypted columns.
+### 3. Initialize Protect and Add Hooks
 
 ```typescript
-const ENCRYPTED = createEncryptedType()
+import { extractProtectSchema } from '@cipherstash/sequelize'
+
+// Extract Protect.js schema from Sequelize model
+const userSchema = extractProtectSchema(User)
+
+// Initialize Protect client
+const protectClient = await protect({
+  schemas: [userSchema],
+})
+
+// Add encryption hooks to the model
+addProtectHooks(User, protectClient)
 ```
 
-**Returns:** Factory function to define encrypted columns
+### 4. Create Database Table
 
-### `ENCRYPTED(columnName, config)`
+```sql
+CREATE TABLE users (
+  id SERIAL PRIMARY KEY,
+  email eql_v2_encrypted NOT NULL,
+  age eql_v2_encrypted,
+  salary eql_v2_encrypted
+);
+```
+
+Or use Sequelize sync (in development):
+```typescript
+await sequelize.sync({ force: true })  // Creates tables
+```
+
+### 5. Use Your Encrypted Model
+
+```typescript
+// Create - automatic encryption
+const user = await User.create({
+  email: 'alice@example.com',
+  age: 30,
+  salary: 120000,
+})
+
+// Query - automatic encryption of WHERE clause
+const found = await User.findOne({
+  where: { email: 'alice@example.com' }
+})
+
+// Results are automatically decrypted
+console.log(found.email)   // "alice@example.com"
+console.log(found.age)     // 30
+console.log(found.salary)  // 120000
+```
+
+## Usage Patterns
+
+### Using Hooks (Recommended - Idiomatic Approach)
+
+Hooks provide transparent encryption/decryption, just like other ORM encryption libraries.
+
+```typescript
+import { addProtectHooks } from '@cipherstash/sequelize'
+
+// Add hooks once during initialization
+addProtectHooks(User, protectClient)
+
+// Now all queries work transparently
+await User.create({ email: 'bob@example.com', age: 25 })
+
+const users = await User.findAll({
+  where: {
+    age: { [Op.gte]: 21 }
+  }
+})
+// Results automatically decrypted
+```
+
+**Hooks installed:**
+- `beforeFind` - Encrypts WHERE clause values before query
+- `afterFind` - Decrypts results after query
+- `beforeSave` - Encrypts values before INSERT/UPDATE
+- `beforeBulkCreate` - Encrypts values before bulk INSERT
+- `afterBulkCreate` - Decrypts returned values after bulk INSERT
+
+### Using Direct Encryption (Advanced)
+
+For advanced use cases like raw SQL, custom batching, or debugging:
+
+```typescript
+import { Op } from 'sequelize'
+import { toComposite } from '@cipherstash/sequelize'
+import { extractProtectSchema } from '@cipherstash/sequelize'
+
+// Extract schema for manual operations
+const userSchema = extractProtectSchema(User)
+
+// Encrypt a value
+const encrypted = await protectClient.encrypt('alice@example.com', {
+  table: userSchema,
+  column: userSchema.email,
+})
+
+// Convert to PostgreSQL composite type format
+const composite = toComposite(encrypted.data)
+
+// Query with encrypted value
+const user = await User.findOne({
+  where: { email: composite }
+})
+
+// Manually decrypt result
+const decrypted = await protectClient.decrypt(user.email)
+console.log(decrypted.data)  // "alice@example.com"
+```
+
+### Bulk Operations with Helper Functions
+
+For ergonomic bulk decryption similar to Drizzle:
+
+```typescript
+import { bulkFromComposite } from '@cipherstash/sequelize'
+
+// Query returns models with encrypted fields
+const users = await User.findAll()
+
+// Parse composite type fields automatically
+const parsed = bulkFromComposite(users)
+
+// Decrypt all models at once
+const decrypted = await protectClient.bulkDecryptModels(parsed)
+
+console.log(decrypted.data[0].email)  // "alice@example.com"
+console.log(decrypted.data[1].email)  // "bob@example.com"
+```
+
+## API Documentation
+
+### Data Type Creation
+
+#### `createEncryptedType()`
+
+Creates a factory function for defining encrypted columns.
+
+```typescript
+function createEncryptedType(): EncryptedTypeFactory
+```
+
+**Returns:** Factory function to create ENCRYPTED column definitions
+
+**Usage:**
+```typescript
+const ENCRYPTED = createEncryptedType()
+
+// Use the factory to define columns
+email: ENCRYPTED('email', { equality: true })
+```
+
+**Important:** Call once per application and reuse the returned factory.
+
+---
+
+### Column Configuration
+
+#### `ENCRYPTED(columnName, config)`
 
 Define an encrypted column with searchable indexes.
 
 ```typescript
-ENCRYPTED(columnName: string, config: EncryptedColumnConfig)
+ENCRYPTED(
+  columnName: string,
+  config: EncryptedColumnConfig
+): DataType
 ```
 
 **Parameters:**
 
 - `columnName` - Name of the column
-- `config` - Encryption configuration:
-  - `dataType?: 'string' | 'number' | 'boolean' | 'date'` - Data type for casting (default: 'string')
+- `config` - Configuration object:
+  - `dataType?: 'string' | 'number' | 'json'` - Data type (default: 'string')
   - `equality?: boolean | TokenFilter[]` - Enable exact match queries
   - `orderAndRange?: boolean` - Enable range queries (>, <, BETWEEN)
-  - `freeTextSearch?: boolean | MatchOpts` - Enable full-text search
+  - `freeTextSearch?: boolean | MatchIndexOpts` - Enable LIKE/ILIKE queries
 
-**Example:**
+**Examples:**
 
 ```typescript
+// String with equality (case-insensitive)
 email: ENCRYPTED('email', {
-  equality: [{ kind: 'downcase' }],  // Case-insensitive equality
+  equality: [{ kind: 'downcase' }],
   dataType: 'string',
-}),
+})
 
+// Number with range queries
 age: ENCRYPTED('age', {
-  orderAndRange: true,  // Enable WHERE age > 18
+  orderAndRange: true,
+  equality: true,
   dataType: 'number',
-}),
+})
 
+// Text search
 bio: ENCRYPTED('bio', {
   freeTextSearch: {
     tokenFilters: [{ kind: 'downcase' }],
@@ -192,14 +369,28 @@ bio: ENCRYPTED('bio', {
   },
   dataType: 'string',
 })
+
+// JSON (opaque encryption, no search)
+profile: ENCRYPTED('profile', {
+  dataType: 'json',
+})
 ```
 
-### `addProtectHooks(model, protectClient)`
+**Index Requirements:**
+- `equality: true` required for: `Op.eq`, `Op.ne`, `Op.in`, `Op.notIn`, simple equality
+- `orderAndRange: true` required for: `Op.gt`, `Op.gte`, `Op.lt`, `Op.lte`, `Op.between`
+- `freeTextSearch: true` required for: `Op.like`, `Op.iLike`, `Op.notLike`
+
+---
+
+### Hook Management
+
+#### `addProtectHooks(model, protectClient)`
 
 Install encryption hooks on a Sequelize model.
 
 ```typescript
-addProtectHooks<M extends Model>(
+function addProtectHooks<M extends Model>(
   model: ModelStatic<M>,
   protectClient: ProtectClient
 ): void
@@ -207,20 +398,40 @@ addProtectHooks<M extends Model>(
 
 **Parameters:**
 
-- `model` - Sequelize model class
-- `protectClient` - Initialized ProtectClient instance
+- `model` - Sequelize model class with ENCRYPTED columns
+- `protectClient` - Initialized Protect.js client
 
-**Hooks installed:**
+**Hooks Installed:**
 
-- `beforeFind` - Encrypts WHERE clause values
-- `afterFind` - Decrypts query results
+| Hook | When | What It Does |
+|------|------|--------------|
+| `beforeFind` | Before SELECT queries | Encrypts WHERE clause values |
+| `afterFind` | After SELECT queries | Decrypts query results |
+| `beforeSave` | Before INSERT/UPDATE | Encrypts field values |
+| `beforeBulkCreate` | Before bulk INSERT | Encrypts all records |
+| `afterBulkCreate` | After bulk INSERT with returning | Decrypts returned records |
 
-### `extractProtectSchema(model)`
+**Example:**
+```typescript
+addProtectHooks(User, protectClient)
 
-Extract Protect.js schema from a Sequelize model.
+// Now all queries are transparent
+const user = await User.findOne({
+  where: { email: 'alice@example.com' }  // Automatically encrypted
+})
+console.log(user.email)  // Automatically decrypted
+```
+
+---
+
+### Schema Extraction
+
+#### `extractProtectSchema(model)`
+
+Extract Protect.js schema from Sequelize model for manual operations.
 
 ```typescript
-extractProtectSchema<M extends Model>(
+function extractProtectSchema<M extends Model>(
   model: ModelStatic<M>
 ): ProtectTable<ProtectTableColumn>
 ```
@@ -229,103 +440,152 @@ extractProtectSchema<M extends Model>(
 
 - `model` - Sequelize model with ENCRYPTED columns
 
-**Returns:** Protect table schema for manual operations
+**Returns:** Protect.js table schema
 
-### Composite Type Utilities (Manual Encryption)
+**Usage:**
+```typescript
+const userSchema = extractProtectSchema(User)
 
-**⚠️ Advanced feature** - Most users should use hooks instead. These utilities are for raw SQL, performance optimization, and debugging.
+// Use for manual encryption
+const encrypted = await protectClient.encrypt('value', {
+  table: userSchema,
+  column: userSchema.email,
+})
+```
 
-These utilities allow manual encoding/decoding of encrypted values for advanced use cases.
+#### `extractProtectSchemas(...models)`
+
+Extract schemas from multiple models at once.
+
+```typescript
+function extractProtectSchemas(
+  ...models: ModelStatic<any>[]
+): ProtectTable<ProtectTableColumn>[]
+```
+
+**Example:**
+```typescript
+const schemas = extractProtectSchemas(User, Order, Payment)
+
+const protectClient = await protect({ schemas })
+```
+
+---
+
+### Composite Type Utilities (Manual Encoding)
+
+**⚠️ Advanced feature** - Use hooks for standard operations. These utilities are for raw SQL, batch optimization, and debugging.
 
 #### `toComposite(value)`
 
-Convert encrypted object to PostgreSQL composite type format for manual WHERE clauses.
+Convert encrypted object to PostgreSQL composite type string.
 
 ```typescript
-import { Op } from 'sequelize'
-import { toComposite } from '@cipherstash/sequelize'
-
-// Encrypt a value manually
-const encrypted = await protectClient.encrypt(1000.00, {
-  table: protectTransactions,
-  column: protectTransactions.amount
-})
-
-// Convert to composite format for Sequelize WHERE clause
-const stringified = toComposite(encrypted.data)
-
-// Use in manual query
-const results = await Transaction.findAll({
-  where: {
-    amount: { [Op.gte]: stringified }
-  }
-})
+function toComposite(value: any): string
 ```
 
 **Parameters:**
 - `value` - Encrypted object from `protectClient.encrypt()`
 
-**Returns:** PostgreSQL composite type string: `("{""c"":""...""}")`
+**Returns:** PostgreSQL composite type string: `("json_with_escaped_quotes")`
+
+**Example:**
+```typescript
+import { Op } from 'sequelize'
+import { toComposite } from '@cipherstash/sequelize'
+
+const encrypted = await protectClient.encrypt(1000.00, {
+  table: schema,
+  column: schema.amount,
+})
+
+const composite = toComposite(encrypted.data)
+
+const results = await Transaction.findAll({
+  where: { amount: { [Op.gte]: composite } }
+})
+```
 
 #### `fromComposite(value)`
 
-Parse PostgreSQL composite type format back to encrypted object.
+Parse PostgreSQL composite type string back to encrypted object.
 
+```typescript
+function fromComposite(value: string): any
+```
+
+**Parameters:**
+- `value` - PostgreSQL composite type string
+
+**Returns:** Encrypted object ready for `protectClient.decrypt()`
+
+**Example:**
 ```typescript
 import { fromComposite } from '@cipherstash/sequelize'
 
-// Read raw encrypted data
+// Raw query
 const [raw] = await sequelize.query(
   'SELECT email FROM users WHERE id = ?',
   { replacements: [userId] }
 )
 
-// Parse composite type
+// Parse and decrypt
 const encrypted = fromComposite(raw.email)
-
-// Decrypt
 const decrypted = await protectClient.decrypt(encrypted)
-console.log(decrypted.data) // "alice@example.com"
+console.log(decrypted.data)  // "alice@example.com"
 ```
 
-#### `bulkToComposite(values)` and `bulkFromComposite(values)`
+#### `bulkToComposite(values)`
 
-Bulk versions for arrays:
+Bulk convert for `Op.in` queries.
 
+```typescript
+function bulkToComposite(values: any[]): string[]
+```
+
+**Example:**
 ```typescript
 import { bulkToComposite } from '@cipherstash/sequelize'
 
-// Encrypt multiple values
+// Encrypt multiple emails
 const encrypted = await Promise.all(
   emails.map(email => protectClient.encrypt(email, {...}))
 )
 
-// Bulk convert for Op.in
-const stringified = bulkToComposite(encrypted.map(e => e.data))
+// Convert for Op.in
+const composite = bulkToComposite(encrypted.map(e => e.data))
 
 await User.findAll({
-  where: { email: { [Op.in]: stringified } }
+  where: { email: { [Op.in]: composite } }
 })
 ```
 
-#### `bulkFromComposite(models)` - Ergonomic Bulk Decryption
+#### `bulkFromComposite(models)`
 
-**Recommended for bulk operations** - automatically parse all composite type fields in model objects:
+Ergonomic bulk parsing for `bulkDecryptModels` (similar to Drizzle API).
 
+```typescript
+function bulkFromComposite<T>(models: T[]): T[]
+```
+
+**Parameters:**
+- `models` - Array of Sequelize model instances or plain objects
+
+**Returns:** Array with composite type strings parsed to encrypted objects
+
+**Example:**
 ```typescript
 import { bulkFromComposite } from '@cipherstash/sequelize'
 
 // Query returns models with composite type strings
 const users = await User.findAll()
 
-// Parse all composite type fields (same API as Drizzle)
+// Parse all encrypted fields automatically
 const parsed = bulkFromComposite(users)
 
 // Decrypt all models
 const decrypted = await protectClient.bulkDecryptModels(parsed)
-
-console.log(decrypted[0].email) // "alice@example.com"
-console.log(decrypted[1].email) // "bob@example.com"
+console.log(decrypted.data[0].email)  // "alice@example.com"
 ```
 
 **Why use this?**
@@ -333,100 +593,87 @@ console.log(decrypted[1].email) // "bob@example.com"
 - ✅ Automatically detects and parses all encrypted fields
 - ✅ No need to manually extract individual fields
 - ✅ Works with nested objects and arrays
-- ✅ Handles Sequelize model instances automatically
 
-**When to use:**
-- ✅ **Use hooks** for standard operations (recommended for 95% of use cases)
-- ⚠️ **Use utilities** only for raw SQL, batch optimization, or debugging
+---
 
-**See [COMPOSITE_TYPE_UTILITIES.md](./COMPOSITE_TYPE_UTILITIES.md) for complete documentation.**
+### Type Verification
 
-## Supported Query Operations
+#### `ensureEqlType(sequelize)` ⭐ Recommended
 
-The integration supports automatic encryption for these Sequelize operators:
-
-### Equality Operators (requires `equality: true`)
+Verify EQL extension is installed (fail-fast).
 
 ```typescript
-// Simple equality
-{ email: 'alice@example.com' }
-
-// Op.eq
-{ email: { [Op.eq]: 'alice@example.com' } }
-
-// Op.ne
-{ email: { [Op.ne]: 'bob@example.com' } }
-
-// Op.in
-{ email: { [Op.in]: ['alice@example.com', 'bob@example.com'] } }
-
-// Op.notIn
-{ email: { [Op.notIn]: ['spam@example.com'] } }
+function ensureEqlType(sequelize: Sequelize): Promise<void>
 ```
 
-### Range Operators (requires `orderAndRange: true`)
+**Throws:** Error if `eql_v2_encrypted` type doesn't exist
 
+**Example:**
 ```typescript
-// Greater than
-{ age: { [Op.gt]: 18 } }
+import { ensureEqlType } from '@cipherstash/sequelize'
 
-// Less than or equal
-{ age: { [Op.lte]: 65 } }
-
-// Between
-{ age: { [Op.between]: [18, 65] } }
+// Verify before syncing
+await ensureEqlType(sequelize)
+await sequelize.sync()
 ```
 
-### Text Search Operators (requires `freeTextSearch: true`)
+#### `verifyEqlType(sequelize)`
+
+Check if EQL type exists (returns boolean).
 
 ```typescript
-// LIKE
-{ bio: { [Op.like]: '%engineer%' } }
-
-// Case-insensitive LIKE
-{ bio: { [Op.iLike]: '%engineer%' } }
+function verifyEqlType(sequelize: Sequelize): Promise<boolean>
 ```
 
-### Logical Operators
+**Returns:** `true` if type exists, `false` otherwise
 
+**Example:**
 ```typescript
-// Op.and
-{
-  [Op.and]: [
-    { email: 'alice@example.com' },
-    { age: { [Op.gt]: 18 } }
-  ]
-}
-
-// Op.or
-{
-  [Op.or]: [
-    { email: 'alice@example.com' },
-    { email: 'bob@example.com' }
-  ]
+const hasEql = await verifyEqlType(sequelize)
+if (!hasEql) {
+  console.error('Install EQL extension first')
 }
 ```
 
-## Complete Example
+#### `getEqlTypeInfo(sequelize)`
+
+Get detailed type information.
+
+```typescript
+function getEqlTypeInfo(sequelize: Sequelize): Promise<TypeInfo | null>
+```
+
+**Returns:** Type metadata or `null` if not found
+
+---
+
+## Examples
+
+### Complete Application Example
 
 ```typescript
 import { Sequelize, DataTypes, Model, Op } from 'sequelize'
-import { ProtectClient } from '@cipherstash/protect'
-import { createEncryptedType, addProtectHooks } from '@cipherstash/sequelize'
+import { protect } from '@cipherstash/protect'
+import {
+  createEncryptedType,
+  addProtectHooks,
+  extractProtectSchema,
+  ensureEqlType,
+} from '@cipherstash/sequelize'
 
 // Initialize Sequelize
-const sequelize = new Sequelize({
+const sequelize = new Sequelize(process.env.DATABASE_URL!, {
   dialect: 'postgres',
-  host: 'localhost',
-  database: 'myapp',
-  username: 'postgres',
-  password: 'password',
+  logging: false,
 })
 
-// Create ENCRYPTED type
+// Verify EQL extension is installed
+await ensureEqlType(sequelize)
+
+// Create ENCRYPTED type factory
 const ENCRYPTED = createEncryptedType()
 
-// Define model
+// Define Employee model
 class Employee extends Model {
   declare id: number
   declare email: string
@@ -443,7 +690,7 @@ Employee.init(
       autoIncrement: true,
     },
     email: ENCRYPTED('email', {
-      equality: [{ kind: 'downcase' }],
+      equality: [{ kind: 'downcase' }],  // Case-insensitive
       dataType: 'string',
     }),
     name: DataTypes.STRING,  // Not encrypted
@@ -462,74 +709,405 @@ Employee.init(
   }
 )
 
-// Initialize Protect
-const protectClient = new ProtectClient({
-  workspaceId: process.env.CS_WORKSPACE_ID!,
-  clientId: process.env.CS_CLIENT_ID!,
-  clientKey: process.env.CS_CLIENT_KEY!,
-})
+// Initialize Protect client
+const employeeSchema = extractProtectSchema(Employee)
+const protectClient = await protect({ schemas: [employeeSchema] })
 
-// Add hooks
+// Add encryption hooks
 addProtectHooks(Employee, protectClient)
 
-// Query examples
-async function examples() {
-  // Find by email (case-insensitive)
-  const alice = await Employee.findOne({
-    where: { email: 'ALICE@EXAMPLE.COM' }
-  })
+// Create table
+await sequelize.sync()
 
-  // Salary range query
-  const highEarners = await Employee.findAll({
-    where: {
-      salary: { [Op.gte]: 100000 }
-    }
-  })
+// --- Usage Examples ---
 
-  // Combined query
-  const seniorEngineers = await Employee.findAll({
-    where: {
-      [Op.and]: [
-        { bio: { [Op.iLike]: '%senior%' } },
-        { salary: { [Op.gte]: 120000 } }
-      ]
-    }
-  })
+// Create employee (automatic encryption)
+await Employee.create({
+  email: 'alice@example.com',
+  name: 'Alice Johnson',
+  salary: 150000,
+  bio: 'Senior software engineer with 10 years experience',
+})
 
-  // Multiple values
-  const team = await Employee.findAll({
-    where: {
-      email: {
-        [Op.in]: ['alice@example.com', 'bob@example.com']
-      }
+// Find by email (case-insensitive, automatic)
+const alice = await Employee.findOne({
+  where: { email: 'ALICE@EXAMPLE.COM' }
+})
+console.log(alice?.email)  // "alice@example.com"
+
+// Salary range query
+const highEarners = await Employee.findAll({
+  where: {
+    salary: { [Op.gte]: 100000 }
+  }
+})
+
+// Text search
+const engineers = await Employee.findAll({
+  where: {
+    bio: { [Op.iLike]: '%engineer%' }
+  }
+})
+
+// Combined conditions
+const seniorEngineers = await Employee.findAll({
+  where: {
+    [Op.and]: [
+      { bio: { [Op.iLike]: '%senior%' } },
+      { salary: { [Op.gte]: 120000 } }
+    ]
+  }
+})
+
+// Multiple values
+const team = await Employee.findAll({
+  where: {
+    email: {
+      [Op.in]: ['alice@example.com', 'bob@example.com']
     }
-  })
-}
+  }
+})
 ```
 
-## Database Schema
+### Bulk Insert Example
 
-The package works with PostgreSQL tables using the `eql_v2_encrypted` composite type:
+```typescript
+// Create multiple users at once
+const users = await User.bulkCreate([
+  { email: 'user1@example.com', age: 25, salary: 75000 },
+  { email: 'user2@example.com', age: 30, salary: 90000 },
+  { email: 'user3@example.com', age: 35, salary: 110000 },
+], { returning: true })
+
+// All records encrypted automatically via beforeBulkCreate hook
+// Results decrypted automatically via afterBulkCreate hook
+console.log(users[0].email)  // "user1@example.com"
+```
+
+### JSON Field Encryption Example
+
+```typescript
+const ENCRYPTED = createEncryptedType()
+
+class User extends Model {
+  declare id: number
+  declare email: string
+  declare profile: {
+    name: string
+    preferences: {
+      theme: string
+      notifications: boolean
+    }
+  }
+}
+
+User.init({
+  id: {
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true,
+  },
+  email: ENCRYPTED('email', { equality: true }),
+  profile: ENCRYPTED('profile', { dataType: 'json' }),
+}, { sequelize, tableName: 'users' })
+
+// JSON fields are encrypted as opaque blobs
+const user = await User.create({
+  email: 'alice@example.com',
+  profile: {
+    name: 'Alice',
+    preferences: {
+      theme: 'dark',
+      notifications: true,
+    }
+  }
+})
+
+// Retrieve - entire JSON decrypted
+const found = await User.findByPk(user.id)
+console.log(found.profile.name)  // "Alice"
+console.log(found.profile.preferences.theme)  // "dark"
+```
+
+### Raw SQL with Manual Encryption
+
+```typescript
+import { toComposite, fromComposite } from '@cipherstash/sequelize'
+
+// Encrypt value
+const encrypted = await protectClient.createSearchTerms([{
+  value: 'alice@example.com',
+  column: userSchema.email,
+  table: userSchema,
+}])
+
+const composite = toComposite(encrypted.data[0])
+
+// Raw SQL query
+const [results] = await sequelize.query(
+  `SELECT * FROM users WHERE email = :email`,
+  {
+    replacements: { email: composite },
+    type: 'SELECT',
+  }
+)
+
+// Parse and decrypt
+const parsed = results.map(row => ({
+  ...row,
+  email: fromComposite(row.email),
+  age: fromComposite(row.age),
+}))
+
+const decrypted = await protectClient.bulkDecryptModels(parsed)
+console.log(decrypted.data[0].email)  // "alice@example.com"
+```
+
+## Configuration
+
+### Environment Variables
+
+Required for CipherStash Protect.js:
+
+```bash
+# CipherStash credentials (from dashboard)
+CS_WORKSPACE_CRN=workspace://your-workspace-id
+CS_CLIENT_ID=your-client-id
+CS_CLIENT_KEY=your-client-key-base64
+CS_CLIENT_ACCESS_KEY=your-access-key
+
+# Database connection
+DATABASE_URL=postgresql://user:password@localhost:5432/mydb
+
+# Optional: Protect.js logging
+PROTECT_LOG_LEVEL=info  # debug | info | error
+```
+
+**Getting credentials:**
+1. Sign up at [cipherstash.com/signup](https://cipherstash.com/signup)
+2. Create a workspace
+3. Generate client credentials
+4. Copy to `.env` file
+
+### Database Schema
+
+Use `eql_v2_encrypted` type for encrypted columns:
 
 ```sql
 CREATE TABLE users (
   id SERIAL PRIMARY KEY,
   email eql_v2_encrypted NOT NULL,
   age eql_v2_encrypted,
+  salary eql_v2_encrypted,
   name TEXT  -- Not encrypted
 );
 ```
 
-You can create migrations using Sequelize migrations and the `ENCRYPTED` type will map to `eql_v2_encrypted`.
+Or use Sequelize migrations:
+
+```typescript
+module.exports = {
+  async up(queryInterface, Sequelize) {
+    await queryInterface.createTable('users', {
+      id: {
+        type: Sequelize.INTEGER,
+        primaryKey: true,
+        autoIncrement: true,
+      },
+      email: {
+        type: 'eql_v2_encrypted',
+        allowNull: false,
+      },
+      age: {
+        type: 'eql_v2_encrypted',
+      },
+      name: {
+        type: Sequelize.STRING,
+      },
+    })
+  },
+}
+```
+
+## Supported Query Operations
+
+All Sequelize operators work transparently with hooks:
+
+### Equality Operators
+
+Requires `equality: true` in column config.
+
+```typescript
+// Simple equality
+{ email: 'alice@example.com' }
+
+// Op.eq
+{ email: { [Op.eq]: 'alice@example.com' } }
+
+// Op.ne (not equal)
+{ email: { [Op.ne]: 'spam@example.com' } }
+
+// Op.in
+{ email: { [Op.in]: ['alice@example.com', 'bob@example.com'] } }
+
+// Op.notIn
+{ email: { [Op.notIn]: ['banned@example.com'] } }
+```
+
+### Range Operators
+
+Requires `orderAndRange: true` in column config.
+
+```typescript
+// Greater than
+{ age: { [Op.gt]: 18 } }
+
+// Greater than or equal
+{ salary: { [Op.gte]: 100000 } }
+
+// Less than
+{ age: { [Op.lt]: 65 } }
+
+// Less than or equal
+{ salary: { [Op.lte]: 200000 } }
+
+// Between
+{ age: { [Op.between]: [18, 65] } }
+
+// Not between
+{ salary: { [Op.notBetween]: [0, 50000] } }
+```
+
+### Text Search Operators
+
+Requires `freeTextSearch: true` in column config.
+
+```typescript
+// LIKE
+{ bio: { [Op.like]: '%engineer%' } }
+
+// Case-insensitive LIKE
+{ bio: { [Op.iLike]: '%ENGINEER%' } }
+
+// NOT LIKE
+{ bio: { [Op.notLike]: '%manager%' } }
+
+// NOT ILIKE
+{ bio: { [Op.notILike]: '%MANAGER%' } }
+```
+
+### Logical Operators
+
+Combine conditions with AND/OR:
+
+```typescript
+// AND
+{
+  [Op.and]: [
+    { email: 'alice@example.com' },
+    { age: { [Op.gt]: 18 } }
+  ]
+}
+
+// OR
+{
+  [Op.or]: [
+    { email: 'alice@example.com' },
+    { email: 'bob@example.com' }
+  ]
+}
+
+// Complex nested
+{
+  [Op.and]: [
+    { salary: { [Op.gte]: 100000 } },
+    {
+      [Op.or]: [
+        { bio: { [Op.iLike]: '%senior%' } },
+        { bio: { [Op.iLike]: '%lead%' } }
+      ]
+    }
+  ]
+}
+```
+
+## Testing
+
+### Running Tests
+
+```bash
+# Install dependencies
+npm install
+
+# Set up test database
+createdb sequelize_protect_test
+psql sequelize_protect_test -f cipherstash-encrypt.sql
+
+# Configure environment
+cp .env.example .env
+# Edit .env with your CS_* credentials and DATABASE_URL
+
+# Run tests
+npm test
+
+# Watch mode
+npm run test:watch
+```
+
+### Test Coverage
+
+The package includes comprehensive E2E tests covering:
+
+- ✅ Automatic encryption/decryption via hooks
+- ✅ Equality searches (`Op.eq`, `Op.in`)
+- ✅ Range queries (`Op.gt`, `Op.between`)
+- ✅ Text search (`Op.like`, `Op.iLike`)
+- ✅ Logical operators (`Op.and`, `Op.or`)
+- ✅ Bulk operations (`bulkCreate`)
+- ✅ JSON field encryption
+- ✅ Composite type encoding/decoding
+- ✅ Raw SQL queries
+- ✅ Data verification (encrypted at rest)
+
+### Example Test
+
+```typescript
+import { describe, it, expect, beforeAll } from 'vitest'
+
+describe('Sequelize Protect Integration', () => {
+  beforeAll(async () => {
+    const ENCRYPTED = createEncryptedType()
+
+    User.init({
+      email: ENCRYPTED('email', { equality: true }),
+    }, { sequelize })
+
+    const schema = extractProtectSchema(User)
+    const client = await protect({ schemas: [schema] })
+
+    addProtectHooks(User, client)
+    await sequelize.sync({ force: true })
+  })
+
+  it('encrypts and queries data transparently', async () => {
+    await User.create({ email: 'test@example.com' })
+
+    const user = await User.findOne({
+      where: { email: 'test@example.com' }
+    })
+
+    expect(user?.email).toBe('test@example.com')
+  })
+})
+```
 
 ## Troubleshooting
 
 ### "Column doesn't have equality index"
 
-You're trying to use `Op.eq`, `Op.in`, or simple equality on a column that wasn't configured with `equality: true`.
+**Cause:** Using `Op.eq`, `Op.in`, or simple equality on a column without `equality: true`.
 
-**Fix:** Add `equality: true` to the column configuration:
-
+**Fix:**
 ```typescript
 email: ENCRYPTED('email', {
   equality: true,  // Add this
@@ -539,10 +1117,9 @@ email: ENCRYPTED('email', {
 
 ### "Column doesn't have orderAndRange index"
 
-You're trying to use `Op.gt`, `Op.lt`, `Op.between` on a column without `orderAndRange: true`.
+**Cause:** Using `Op.gt`, `Op.lt`, `Op.between` on a column without `orderAndRange: true`.
 
-**Fix:** Add `orderAndRange: true` to the column configuration:
-
+**Fix:**
 ```typescript
 age: ENCRYPTED('age', {
   orderAndRange: true,  // Add this
@@ -550,132 +1127,232 @@ age: ENCRYPTED('age', {
 })
 ```
 
+### "Column doesn't have freeTextSearch index"
+
+**Cause:** Using `Op.like` or `Op.iLike` on a column without `freeTextSearch: true`.
+
+**Fix:**
+```typescript
+bio: ENCRYPTED('bio', {
+  freeTextSearch: true,  // Add this
+  dataType: 'string',
+})
+```
+
+### "PostgreSQL type 'eql_v2_encrypted' not found"
+
+**Cause:** EQL extension not installed in PostgreSQL.
+
+**Fix:**
+```bash
+# Download and install EQL extension
+curl -sLo cipherstash-encrypt.sql https://github.com/cipherstash/encrypt-query-language/releases/latest/download/cipherstash-encrypt.sql
+psql -f cipherstash-encrypt.sql
+```
+
+Verify:
+```typescript
+await ensureEqlType(sequelize)  // Throws if not installed
+```
+
 ### "Encryption failed" or "Decryption failed"
 
-Check your Protect.js client configuration:
+**Possible causes:**
+1. Invalid CipherStash credentials
+2. Network connectivity to CipherStash API
+3. Workspace permissions
 
-1. Verify workspace ID, client ID, and client key are correct
-2. Ensure the EQL extension is installed in PostgreSQL
-3. Check that your CipherStash workspace has the necessary permissions
+**Debug steps:**
+```bash
+# Enable debug logging
+PROTECT_LOG_LEVEL=debug npm start
 
-### TypeScript errors with ENCRYPTED type
+# Verify credentials
+echo $CS_WORKSPACE_CRN
+echo $CS_CLIENT_ID
+echo $CS_CLIENT_ACCESS_KEY
+# Check CS_CLIENT_KEY is set (don't echo it)
+```
 
-Make sure you're calling `createEncryptedType()` once per application and reusing the returned factory:
-
+**Check Protect client initialization:**
 ```typescript
-// ✅ Correct
-const ENCRYPTED = createEncryptedType()
-email: ENCRYPTED('email', { equality: true })
-
-// ❌ Wrong - creates new type each time
-email: createEncryptedType()('email', { equality: true })
-```
-
-## Type Verification
-
-Before using encrypted columns, verify that the `eql_v2_encrypted` PostgreSQL type exists:
-
-### `ensureEqlType(sequelize)` - Fail-Fast (Recommended)
-
-Throws an error if the EQL extension is not installed:
-
-```typescript
-import { ensureEqlType } from '@cipherstash/sequelize'
-
-// Verify EQL extension is installed
-await ensureEqlType(sequelize)
-
-// Safe to sync
-await sequelize.sync()
-```
-
-**Error if EQL not installed:**
-```
-Error: PostgreSQL type "eql_v2_encrypted" not found.
-Install the EQL extension before using encrypted columns.
-See: https://docs.cipherstash.com/reference/eql
-```
-
-### `verifyEqlType(sequelize)` - Check Existence
-
-Returns a boolean:
-
-```typescript
-import { verifyEqlType } from '@cipherstash/sequelize'
-
-const hasEql = await verifyEqlType(sequelize)
-if (hasEql) {
-  console.log('✅ EQL type available')
-} else {
-  console.log('❌ Install EQL extension')
+try {
+  const protectClient = await protect({ schemas: [schema] })
+  console.log('✅ Protect client initialized')
+} catch (error) {
+  console.error('❌ Protect initialization failed:', error)
 }
 ```
 
-### `getEqlTypeInfo(sequelize)` - Get Type Details
+### TypeScript Errors with ENCRYPTED Type
 
-Returns type information:
+**Problem:** Type errors when defining models.
+
+**Fix:** Ensure you're calling `createEncryptedType()` once and reusing the factory:
 
 ```typescript
-import { getEqlTypeInfo } from '@cipherstash/sequelize'
+// ✅ Correct - create once, reuse
+const ENCRYPTED = createEncryptedType()
 
-const info = await getEqlTypeInfo(sequelize)
-console.log(info)
-// {
-//   schema: 'public',
-//   typname: 'eql_v2_encrypted',
-//   attributes: [{ attname: 'data', typname: 'jsonb' }]
-// }
+User.init({
+  email: ENCRYPTED('email', { equality: true }),
+  age: ENCRYPTED('age', { orderAndRange: true }),
+}, { sequelize })
+
+// ❌ Wrong - creates new type each time
+User.init({
+  email: createEncryptedType()('email', { equality: true }),
+}, { sequelize })
 ```
 
-**See [TYPE_VERIFICATION.md](./TYPE_VERIFICATION.md) for complete documentation.**
+### Hooks Not Working
+
+**Symptoms:** Queries return encrypted data or fail to find records.
+
+**Checklist:**
+1. ✅ Called `addProtectHooks(Model, protectClient)` after model definition
+2. ✅ Using `User.findOne()`, `User.findAll()`, not raw queries
+3. ✅ Hooks registered before any queries executed
+
+**Verify hooks are installed:**
+```typescript
+addProtectHooks(User, protectClient)
+
+// Check hooks exist
+console.log(User.options.hooks)
+// Should show: beforeFind, afterFind, beforeSave, etc.
+```
+
+### Raw Queries Not Working
+
+**Cause:** Hooks only work with Sequelize model methods, not `sequelize.query()`.
+
+**Fix:** Use manual encryption with `toComposite` / `fromComposite`:
+
+```typescript
+import { toComposite, fromComposite } from '@cipherstash/sequelize'
+
+// Encrypt search value
+const encrypted = await protectClient.createSearchTerms([{
+  value: 'alice@example.com',
+  column: schema.email,
+  table: schema,
+}])
+
+const composite = toComposite(encrypted.data[0])
+
+// Raw query
+const [results] = await sequelize.query(
+  'SELECT * FROM users WHERE email = :email',
+  { replacements: { email: composite } }
+)
+
+// Decrypt results
+const parsed = results.map(row => ({
+  ...row,
+  email: fromComposite(row.email),
+}))
+
+const decrypted = await protectClient.bulkDecryptModels(parsed)
+```
 
 ## Migration from Direct Protect.js Usage
 
-If you're currently using Protect.js directly with Sequelize models:
+Switching from manual Protect.js to automated hooks:
 
-**Before (manual):**
-
+**Before (manual encryption):**
 ```typescript
-// Manual encryption
-const encrypted = await protectClient.createSearchTerms([{
+// Encrypt search term
+const searchTerms = await protectClient.createSearchTerms([{
   value: 'alice@example.com',
   column: emailColumn,
   table: usersTable,
 }])
 
+// Query with encrypted value
 const user = await User.findOne({
-  where: { email: encrypted.data[0] }
+  where: { email: searchTerms.data[0] }
 })
 
-// Manual decryption
+// Manually decrypt
 const decrypted = await protectClient.bulkDecryptModels([
   user.get({ plain: true })
 ])
 console.log(decrypted.data[0].email)
 ```
 
-**After (automatic):**
-
+**After (automatic hooks):**
 ```typescript
-// Just query normally!
+// Just add hooks once
+addProtectHooks(User, protectClient)
+
+// Query normally
 const user = await User.findOne({
   where: { email: 'alice@example.com' }
 })
-console.log(user.email)  // Already decrypted
+
+// Already decrypted
+console.log(user.email)
 ```
 
-## License
+## Performance Considerations
 
-MIT
+### Bulk Operations
+
+Use `bulkCreate` for inserting multiple records:
+
+```typescript
+// ✅ Efficient - single ZeroKMS call
+await User.bulkCreate(users, { returning: true })
+
+// ❌ Inefficient - multiple ZeroKMS calls
+for (const user of users) {
+  await User.create(user)
+}
+```
+
+### Query Optimization
+
+Hooks add minimal overhead:
+
+- **beforeFind:** Single encryption call per WHERE clause (even with `Op.in`)
+- **afterFind:** Single bulk decryption call for all results
+- **Network:** One round-trip to CipherStash per query
+
+For 1000 records:
+- Manual: 1 encryption call + 1 bulk decryption call
+- Hooks: Same performance, but automatic
+
+### Manual Encoding for Special Cases
+
+Use manual encoding when:
+- Running raw SQL queries
+- Encrypting once, reusing across multiple queries
+- Building custom query builders
+- Optimizing specific hot paths
 
 ## Related Packages
 
 - [@cipherstash/protect](https://www.npmjs.com/package/@cipherstash/protect) - Core Protect.js client
 - [@cipherstash/schema](https://www.npmjs.com/package/@cipherstash/schema) - Schema definitions
 - [sequelize](https://www.npmjs.com/package/sequelize) - Sequelize ORM
+- [encrypt-query-language](https://github.com/cipherstash/encrypt-query-language) - PostgreSQL EQL extension
+
+## Additional Documentation
+
+- [Composite Type Utilities](../../docs/sequelize/composite-type-utilities.md) - Complete guide to manual encoding
 
 ## Support
 
-- [Documentation](https://cipherstash.com/docs)
-- [GitHub Issues](https://github.com/cipherstash/protect-js/issues)
-- [CipherStash Community](https://cipherstash.com/community)
+- **Documentation:** [cipherstash.com/docs](https://cipherstash.com/docs)
+- **GitHub Issues:** [github.com/cipherstash/protectjs/issues](https://github.com/cipherstash/protectjs/issues)
+- **Community:** [cipherstash.com/community](https://cipherstash.com/community)
+- **Email:** hello@cipherstash.com
+
+## License
+
+MIT
+
+---
+
+**Built with ❤️ by [CipherStash](https://cipherstash.com)**
