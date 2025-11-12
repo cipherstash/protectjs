@@ -9,6 +9,7 @@ import {
 import { type ProtectError, ProtectErrorTypes } from '..'
 import { loadWorkSpaceId } from '../../../utils/config'
 import { logger } from '../../../utils/logger'
+import { toFfiKeysetIdentifier } from '../helpers'
 import type {
   BulkDecryptPayload,
   BulkEncryptPayload,
@@ -16,6 +17,7 @@ import type {
   Decrypted,
   EncryptOptions,
   Encrypted,
+  KeysetIdentifier,
   SearchTerm,
 } from '../types'
 import { BulkDecryptOperation } from './operations/bulk-decrypt'
@@ -49,6 +51,7 @@ export class ProtectClient {
     accessKey?: string
     clientId?: string
     clientKey?: string
+    keyset?: KeysetIdentifier
   }): Promise<Result<ProtectClient, ProtectError>> {
     return await withResult(
       async () => {
@@ -70,6 +73,7 @@ export class ProtectClient {
             accessKey: config.accessKey,
             clientId: config.clientId,
             clientKey: config.clientKey,
+            keyset: toFfiKeysetIdentifier(config.keyset),
           },
         })
 

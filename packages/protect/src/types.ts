@@ -42,6 +42,14 @@ export type SearchTerm = {
   returnType?: 'eql' | 'composite-literal' | 'escaped-composite-literal'
 }
 
+export type KeysetIdentifier =
+  | {
+      name: string
+    }
+  | {
+      id: string
+    }
+
 /**
  * The return type of the search term based on the return type specified in the `SearchTerm` type
  * If the return type is `eql`, the return type is `Encrypted`

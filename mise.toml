@@ -1,9 +1,5 @@
-[tools]
-node = "22.11.0"
-pnpm = "9.15.3"
-
 [env]
-CS_EQL_VERSION="eql-1.0.0"
+CS_EQL_VERSION = "eql-1.0.0"
 
 [tasks."postgres:eql:download"]
 alias = 'e'
