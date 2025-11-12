@@ -11,6 +11,10 @@ import {
 } from '../model-helpers'
 import { ProtectOperation } from './base-operation'
 
+/**
+ * Thenable wrapper returned by {@link ProtectClient.bulkEncryptModels}. Encrypts
+ * an array of models in one ZeroKMS call for high-throughput workloads.
+ */
 export class BulkEncryptModelsOperation<
   T extends Record<string, unknown>,
 > extends ProtectOperation<T[]> {
@@ -29,12 +33,21 @@ export class BulkEncryptModelsOperation<
     this.table = table
   }
 
+  /**
+   * Bind a lock context so each encrypted model is tied to an identity claim.
+   *
+   * @param lockContext - CTS lock context resolved via {@link LockContext}.
+   */
   public withLockContext(
     lockContext: LockContext,
   ): BulkEncryptModelsOperationWithLockContext<T> {
     return new BulkEncryptModelsOperationWithLockContext(this, lockContext)
   }
 
+  /**
+   * Execute the bulk model encryption without identity scoping. The output
+   * mirrors the input array order.
+   */
   public async execute(): Promise<Result<T[], ProtectError>> {
     logger.debug('Bulk encrypting models WITHOUT a lock context', {
       table: this.table.tableName,
@@ -75,6 +88,10 @@ export class BulkEncryptModelsOperation<
   }
 }
 
+/**
+ * Lock-context aware variant of {@link BulkEncryptModelsOperation}. Ensures the
+ * encrypted models can only be decrypted when the same context is supplied.
+ */
 export class BulkEncryptModelsOperationWithLockContext<
   T extends Record<string, unknown>,
 > extends ProtectOperation<T[]> {
@@ -90,6 +107,10 @@ export class BulkEncryptModelsOperationWithLockContext<
     this.lockContext = lockContext
   }
 
+  /**
+   * Execute the lock-context aware model encryption. CTS token failures bubble
+   * through the Protect error taxonomy.
+   */
   public async execute(): Promise<Result<T[], ProtectError>> {
     return await withResult(
       async () => {

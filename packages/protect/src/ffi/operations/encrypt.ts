@@ -16,12 +16,22 @@ import type { Client, EncryptOptions, Encrypted } from '../../types'
 import { noClientError } from '../index'
 import { ProtectOperation } from './base-operation'
 
+/**
+ * Thenable operation returned by {@link ProtectClient.encrypt}. Supports
+ * optional lock contexts and audit metadata, aligning with CipherStash’s
+ * zero-trust access controls.
+ */
 export class EncryptOperation extends ProtectOperation<Encrypted> {
   private client: Client
   private plaintext: JsPlaintext | null
   private column: ProtectColumn | ProtectValue
   private table: ProtectTable<ProtectTableColumn>
 
+  /**
+   * @param client - Native Protect client instance.
+   * @param plaintext - Value to encrypt.
+   * @param opts - Table/column metadata describing where the ciphertext will be stored.
+   */
   constructor(
     client: Client,
     plaintext: JsPlaintext | null,
@@ -34,12 +44,22 @@ export class EncryptOperation extends ProtectOperation<Encrypted> {
     this.table = opts.table
   }
 
+  /**
+   * Bind a lock context so the encryption result is scoped to a specific user
+   * identity. The matching context must be used again when decrypting.
+   *
+   * @param lockContext - Authorised lock context obtained via `LockContext.identify`.
+   */
   public withLockContext(
     lockContext: LockContext,
   ): EncryptOperationWithLockContext {
     return new EncryptOperationWithLockContext(this, lockContext)
   }
 
+  /**
+   * Execute the encryption without a lock context. This honours any configured
+   * audit metadata and propagates Protect.js error types on failure.
+   */
   public async execute(): Promise<Result<Encrypted, ProtectError>> {
     logger.debug('Encrypting data WITHOUT a lock context', {
       column: this.column.getName(),
@@ -86,6 +106,12 @@ export class EncryptOperation extends ProtectOperation<Encrypted> {
     )
   }
 
+  /**
+   * Expose the underlying operation metadata for reuse by lock-context aware
+   * decorators.
+   *
+   * @internal
+   */
   public getOperation(): {
     client: Client
     plaintext: JsPlaintext | null
@@ -105,12 +131,20 @@ export class EncryptOperationWithLockContext extends ProtectOperation<Encrypted>
   private operation: EncryptOperation
   private lockContext: LockContext
 
+  /**
+   * @param operation - Base operation containing encryption metadata.
+   * @param lockContext - CTS-backed lock context.
+   */
   constructor(operation: EncryptOperation, lockContext: LockContext) {
     super()
     this.operation = operation
     this.lockContext = lockContext
   }
 
+  /**
+   * Execute the encryption with a bound lock context, enforcing identity-aware
+   * cryptographic controls.
+   */
   public async execute(): Promise<Result<Encrypted, ProtectError>> {
     return await withResult(
       async () => {

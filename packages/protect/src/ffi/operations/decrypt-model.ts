@@ -10,6 +10,10 @@ import {
 } from '../model-helpers'
 import { ProtectOperation } from './base-operation'
 
+/**
+ * Thenable wrapper returned by {@link ProtectClient.decryptModel}. Restores
+ * encrypted fields on a model while preserving other properties.
+ */
 export class DecryptModelOperation<
   T extends Record<string, unknown>,
 > extends ProtectOperation<Decrypted<T>> {
@@ -22,12 +26,21 @@ export class DecryptModelOperation<
     this.model = model
   }
 
+  /**
+   * Bind a lock context so decryption is authorised by the user's identity.
+   *
+   * @param lockContext - CTS lock context resolved via {@link LockContext}.
+   */
   public withLockContext(
     lockContext: LockContext,
   ): DecryptModelOperationWithLockContext<T> {
     return new DecryptModelOperationWithLockContext(this, lockContext)
   }
 
+  /**
+   * Execute the model decryption without identity scoping. The resulting model
+   * mirrors the input shape with plaintext values restored.
+   */
   public async execute(): Promise<Result<Decrypted<T>, ProtectError>> {
     logger.debug('Decrypting model WITHOUT a lock context')
 
@@ -59,6 +72,10 @@ export class DecryptModelOperation<
   }
 }
 
+/**
+ * Lock-context aware variant of {@link DecryptModelOperation}. Verifies the
+ * supplied CTS token before returning plaintext values.
+ */
 export class DecryptModelOperationWithLockContext<
   T extends Record<string, unknown>,
 > extends ProtectOperation<Decrypted<T>> {
@@ -71,6 +88,10 @@ export class DecryptModelOperationWithLockContext<
     this.lockContext = lockContext
   }
 
+  /**
+   * Execute the lock-context scoped decryption. CTS token failures propagate
+   * through the Protect error taxonomy.
+   */
   public async execute(): Promise<Result<Decrypted<T>, ProtectError>> {
     return await withResult(
       async () => {

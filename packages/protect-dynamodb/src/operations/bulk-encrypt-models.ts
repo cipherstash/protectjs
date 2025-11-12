@@ -11,6 +11,10 @@ import {
   type DynamoDBOperationOptions,
 } from './base-operation'
 
+/**
+ * DynamoDB bulk encryption operation. Encrypts multiple items in one ZeroKMS
+ * round-trip while respecting DynamoDB-specific shape requirements.
+ */
 export class BulkEncryptModelsOperation<
   T extends Record<string, unknown>,
 > extends DynamoDBOperation<T[]> {
@@ -30,6 +34,10 @@ export class BulkEncryptModelsOperation<
     this.protectTable = protectTable
   }
 
+  /**
+   * Execute the bulk encryption call and return DynamoDB-friendly payloads
+   * alongside any captured audit metadata.
+   */
   public async execute(): Promise<Result<T[], ProtectDynamoDBError>> {
     return await withResult(
       async () => {

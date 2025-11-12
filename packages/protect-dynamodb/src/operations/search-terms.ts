@@ -7,6 +7,10 @@ import {
   type DynamoDBOperationOptions,
 } from './base-operation'
 
+/**
+ * DynamoDB helper that converts Protect search terms into HMAC strings usable
+ * in DynamoDB indexes.
+ */
 export class SearchTermsOperation extends DynamoDBOperation<string[]> {
   private protectClient: ProtectClient
   private terms: SearchTerm[]
@@ -21,6 +25,10 @@ export class SearchTermsOperation extends DynamoDBOperation<string[]> {
     this.terms = terms
   }
 
+  /**
+   * Execute the search-term generation and extract the DynamoDB-ready HMAC
+   * values, raising structured errors on invalid payloads.
+   */
   public async execute(): Promise<Result<string[], ProtectDynamoDBError>> {
     return await withResult(
       async () => {

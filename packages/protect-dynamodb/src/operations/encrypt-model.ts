@@ -11,6 +11,10 @@ import {
   type DynamoDBOperationOptions,
 } from './base-operation'
 
+/**
+ * Thenable DynamoDB operation that encrypts a single item using Protect.js
+ * schema metadata. Converts encrypted attributes into DynamoDB-native shapes.
+ */
 export class EncryptModelOperation<
   T extends Record<string, unknown>,
 > extends DynamoDBOperation<T> {
@@ -30,6 +34,10 @@ export class EncryptModelOperation<
     this.protectTable = protectTable
   }
 
+  /**
+   * Execute the encryption and return a Protect Result. On success the payload
+   * is ready to be persisted with DynamoDB's `PutItem`.
+   */
   public async execute(): Promise<Result<T, ProtectDynamoDBError>> {
     return await withResult(
       async () => {

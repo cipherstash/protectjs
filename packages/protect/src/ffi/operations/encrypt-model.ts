@@ -11,6 +11,11 @@ import {
 } from '../model-helpers'
 import { ProtectOperation } from './base-operation'
 
+/**
+ * Thenable wrapper returned by {@link ProtectClient.encryptModel}. Converts
+ * schema-marked fields on an object into EQL payloads while leaving other
+ * properties untouched.
+ */
 export class EncryptModelOperation<
   T extends Record<string, unknown>,
 > extends ProtectOperation<T> {
@@ -29,12 +34,21 @@ export class EncryptModelOperation<
     this.table = table
   }
 
+  /**
+   * Bind a lock context so encrypted fields inherit identity-aware protection.
+   *
+   * @param lockContext - CTS lock context resolved via {@link LockContext}.
+   */
   public withLockContext(
     lockContext: LockContext,
   ): EncryptModelOperationWithLockContext<T> {
     return new EncryptModelOperationWithLockContext(this, lockContext)
   }
 
+  /**
+   * Execute the model encryption without a lock context. The resulting model
+   * mirrors the input shape but with encrypted values.
+   */
   public async execute(): Promise<Result<T, ProtectError>> {
     logger.debug('Encrypting model WITHOUT a lock context', {
       table: this.table.tableName,
@@ -75,6 +89,11 @@ export class EncryptModelOperation<
   }
 }
 
+/**
+ * Lock-context aware variant of {@link EncryptModelOperation}. Ensures the
+ * resulting ciphertexts can only be decrypted when the same lock context is
+ * supplied later.
+ */
 export class EncryptModelOperationWithLockContext<
   T extends Record<string, unknown>,
 > extends ProtectOperation<T> {
@@ -87,6 +106,10 @@ export class EncryptModelOperationWithLockContext<
     this.lockContext = lockContext
   }
 
+  /**
+   * Execute the encryption with a bound lock context. CTS token fetch failures
+   * are surfaced through the Protect error taxonomy.
+   */
   public async execute(): Promise<Result<T, ProtectError>> {
     return await withResult(
       async () => {

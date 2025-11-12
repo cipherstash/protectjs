@@ -10,6 +10,10 @@ import {
 } from '../model-helpers'
 import { ProtectOperation } from './base-operation'
 
+/**
+ * Thenable wrapper returned by {@link ProtectClient.bulkDecryptModels}. Turns
+ * arrays of encrypted models back into plaintext objects in a single request.
+ */
 export class BulkDecryptModelsOperation<
   T extends Record<string, unknown>,
 > extends ProtectOperation<Decrypted<T>[]> {
@@ -22,12 +26,22 @@ export class BulkDecryptModelsOperation<
     this.models = models
   }
 
+  /**
+   * Bind a lock context so every model decrypted is authorised by the
+   * associated user claims.
+   *
+   * @param lockContext - CTS lock context resolved via {@link LockContext}.
+   */
   public withLockContext(
     lockContext: LockContext,
   ): BulkDecryptModelsOperationWithLockContext<T> {
     return new BulkDecryptModelsOperationWithLockContext(this, lockContext)
   }
 
+  /**
+   * Execute the bulk model decryption without identity scoping. The returned
+   * array preserves the input ordering.
+   */
   public async execute(): Promise<Result<Decrypted<T>[], ProtectError>> {
     logger.debug('Bulk decrypting models WITHOUT a lock context')
 
@@ -59,6 +73,10 @@ export class BulkDecryptModelsOperation<
   }
 }
 
+/**
+ * Lock-context aware variant of {@link BulkDecryptModelsOperation}. All models
+ * are decrypted only when the provided CTS token authorises access.
+ */
 export class BulkDecryptModelsOperationWithLockContext<
   T extends Record<string, unknown>,
 > extends ProtectOperation<Decrypted<T>[]> {
@@ -74,6 +92,10 @@ export class BulkDecryptModelsOperationWithLockContext<
     this.lockContext = lockContext
   }
 
+  /**
+   * Execute the lock-context scoped bulk model decryption. CTS token failures
+   * propagate via the Protect error taxonomy.
+   */
   public async execute(): Promise<Result<Decrypted<T>[], ProtectError>> {
     return await withResult(
       async () => {

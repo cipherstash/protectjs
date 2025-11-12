@@ -66,6 +66,10 @@ const mapDecryptedDataToResult = (
   return result
 }
 
+/**
+ * Thenable wrapper for {@link ProtectClient.bulkDecrypt}. Handles large batches
+ * while preserving per-item error reporting so you can retry selectively.
+ */
 export class BulkDecryptOperation extends ProtectOperation<BulkDecryptedData> {
   private client: Client
   private encryptedPayloads: BulkDecryptPayload
@@ -76,12 +80,21 @@ export class BulkDecryptOperation extends ProtectOperation<BulkDecryptedData> {
     this.encryptedPayloads = encryptedPayloads
   }
 
+  /**
+   * Bind a lock context so decryption honours identity-aware access controls.
+   *
+   * @param lockContext - CTS lock context resolved via {@link LockContext.identify}.
+   */
   public withLockContext(
     lockContext: LockContext,
   ): BulkDecryptOperationWithLockContext {
     return new BulkDecryptOperationWithLockContext(this, lockContext)
   }
 
+  /**
+   * Execute the bulk decryption without a lock context. Null payloads remain
+   * null in the response to keep array ordering stable.
+   */
   public async execute(): Promise<Result<BulkDecryptedData, ProtectError>> {
     logger.debug('Bulk decrypting data WITHOUT a lock context')
     return await withResult(
@@ -123,6 +136,10 @@ export class BulkDecryptOperation extends ProtectOperation<BulkDecryptedData> {
   }
 }
 
+/**
+ * Lock-context aware variant of {@link BulkDecryptOperation}. Every decrypted
+ * item is authorised with the supplied CTS token.
+ */
 export class BulkDecryptOperationWithLockContext extends ProtectOperation<BulkDecryptedData> {
   private operation: BulkDecryptOperation
   private lockContext: LockContext
@@ -133,6 +150,10 @@ export class BulkDecryptOperationWithLockContext extends ProtectOperation<BulkDe
     this.lockContext = lockContext
   }
 
+  /**
+   * Execute the lock-context scoped bulk decryption. CTS token resolution
+   * errors bubble through the Protect error contract.
+   */
   public async execute(): Promise<Result<BulkDecryptedData, ProtectError>> {
     return await withResult(
       async () => {
