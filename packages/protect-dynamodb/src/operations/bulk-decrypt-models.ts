@@ -13,6 +13,10 @@ import {
   type DynamoDBOperationOptions,
 } from './base-operation'
 
+/**
+ * DynamoDB bulk decryption operation. Restores plaintext values across multiple
+ * items while maintaining their original ordering.
+ */
 export class BulkDecryptModelsOperation<
   T extends Record<string, unknown>,
 > extends DynamoDBOperation<Decrypted<T>[]> {
@@ -32,6 +36,10 @@ export class BulkDecryptModelsOperation<
     this.protectTable = protectTable
   }
 
+  /**
+   * Execute the bulk decryption call and return decrypted copies ready for use
+   * in application logic.
+   */
   public async execute(): Promise<
     Result<Decrypted<T>[], ProtectDynamoDBError>
   > {

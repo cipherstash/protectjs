@@ -75,7 +75,8 @@ function isPgTable(value: unknown): value is EncryptedDrizzleTable {
 }
 
 /**
- * Custom error types for better debugging
+ * Base error surfaced when Protect-aware Drizzle operators encounter invalid
+ * state. Exposes context so support engineers can trace issues quickly.
  */
 export class ProtectOperatorError extends Error {
   constructor(

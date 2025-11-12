@@ -2,7 +2,8 @@ import type { CastAs, MatchIndexOpts, TokenFilter } from '@cipherstash/schema'
 import { customType } from 'drizzle-orm/pg-core'
 
 /**
- * Configuration for encrypted column indexes and data types
+ * Declarative options that mirror the Protect.js schema builders. Each flag
+ * corresponds to a search capability backed by CipherStash ZeroKMS.
  */
 export type EncryptedColumnConfig = {
   /**
@@ -24,8 +25,9 @@ export type EncryptedColumnConfig = {
 }
 
 /**
- * Map to store configuration for encrypted columns
- * Keyed by column name (the name passed to encryptedType)
+ * Internal cache keyed by the column name originally passed to
+ * {@link encryptedType}. Enables schema extraction and operator helpers to
+ * recover the Protect.js metadata later in the Drizzle lifecycle.
  */
 const columnConfigMap = new Map<
   string,
@@ -122,11 +124,7 @@ export const encryptedType = <TData>(
   return column
 }
 
-/**
- * Get configuration for an encrypted column by checking if it's an encrypted type
- * and looking up the config by column name
- * @internal
- */
+/** @internal Retrieve Protect.js configuration metadata for a Drizzle column. */
 export function getEncryptedColumnConfig(
   columnName: string,
   column: unknown,

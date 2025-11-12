@@ -67,6 +67,11 @@ const mapEncryptedDataToResult = (
   return result
 }
 
+/**
+ * Thenable wrapper for {@link ProtectClient.bulkEncrypt}. Batches thousands of
+ * plaintext values into a single ZeroKMS round-trip while preserving
+ * per-record correlation IDs.
+ */
 export class BulkEncryptOperation extends ProtectOperation<BulkEncryptedData> {
   private client: Client
   private plaintexts: BulkEncryptPayload
@@ -85,12 +90,22 @@ export class BulkEncryptOperation extends ProtectOperation<BulkEncryptedData> {
     this.table = opts.table
   }
 
+  /**
+   * Bind a CTS-derived lock context so every encrypted value is scoped to the
+   * initiating user's identity claims.
+   *
+   * @param lockContext - Authorised lock context created via {@link LockContext}.
+   */
   public withLockContext(
     lockContext: LockContext,
   ): BulkEncryptOperationWithLockContext {
     return new BulkEncryptOperationWithLockContext(this, lockContext)
   }
 
+  /**
+   * Run the encryption batch without identity scoping. Null inputs return null
+   * ciphertext placeholders to maintain positional integrity.
+   */
   public async execute(): Promise<Result<BulkEncryptedData, ProtectError>> {
     logger.debug('Bulk encrypting data WITHOUT a lock context', {
       column: this.column.getName(),
@@ -147,6 +162,11 @@ export class BulkEncryptOperation extends ProtectOperation<BulkEncryptedData> {
   }
 }
 
+/**
+ * Lock-context aware variant of {@link BulkEncryptOperation}. Ensures the
+ * resulting ciphertexts are only decryptable when the same lock context is
+ * supplied.
+ */
 export class BulkEncryptOperationWithLockContext extends ProtectOperation<BulkEncryptedData> {
   private operation: BulkEncryptOperation
   private lockContext: LockContext
@@ -157,6 +177,10 @@ export class BulkEncryptOperationWithLockContext extends ProtectOperation<BulkEn
     this.lockContext = lockContext
   }
 
+  /**
+   * Execute the bulk encryption using the bound lock context. Propagates CTS
+   * token fetch failures via the Protect error contract.
+   */
   public async execute(): Promise<Result<BulkEncryptedData, ProtectError>> {
     return await withResult(
       async () => {

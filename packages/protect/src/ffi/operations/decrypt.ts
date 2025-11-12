@@ -10,22 +10,37 @@ import type { Client, Encrypted } from '../../types'
 import { noClientError } from '../index'
 import { ProtectOperation } from './base-operation'
 
+/**
+ * Thenable operation returned by {@link ProtectClient.decrypt}. Mirrors the
+ * behaviour of {@link EncryptOperation} but for ciphertext-to-plaintext flows.
+ */
 export class DecryptOperation extends ProtectOperation<JsPlaintext | null> {
   private client: Client
   private encryptedData: Encrypted
 
+  /**
+   * @param client - Native Protect client instance.
+   * @param encryptedData - Payload retrieved from your datastore.
+   */
   constructor(client: Client, encryptedData: Encrypted) {
     super()
     this.client = client
     this.encryptedData = encryptedData
   }
 
+  /**
+   * Attach a lock context so decryption enforces the same identity that was
+   * used during encryption.
+   *
+   * @param lockContext - Authorised lock context.
+   */
   public withLockContext(
     lockContext: LockContext,
   ): DecryptOperationWithLockContext {
     return new DecryptOperationWithLockContext(this, lockContext)
   }
 
+  /** Execute the decryption without a lock context. */
   public async execute(): Promise<Result<JsPlaintext | null, ProtectError>> {
     return await withResult(
       async () => {
@@ -55,6 +70,11 @@ export class DecryptOperation extends ProtectOperation<JsPlaintext | null> {
     )
   }
 
+  /**
+   * Expose internal state for lock-context aware wrappers.
+   *
+   * @internal
+   */
   public getOperation(): {
     client: Client
     encryptedData: Encrypted
@@ -68,10 +88,18 @@ export class DecryptOperation extends ProtectOperation<JsPlaintext | null> {
   }
 }
 
+/**
+ * Lock-context aware variant of {@link DecryptOperation}. Ensures decrypting
+ * parties present valid identity claims.
+ */
 export class DecryptOperationWithLockContext extends ProtectOperation<JsPlaintext | null> {
   private operation: DecryptOperation
   private lockContext: LockContext
 
+  /**
+   * @param operation - Base decryption operation.
+   * @param lockContext - CTS-backed lock context.
+   */
   constructor(operation: DecryptOperation, lockContext: LockContext) {
     super()
     this.operation = operation
@@ -82,6 +110,7 @@ export class DecryptOperationWithLockContext extends ProtectOperation<JsPlaintex
     }
   }
 
+  /** Execute the decryption with a bound lock context. */
   public async execute(): Promise<Result<JsPlaintext | null, ProtectError>> {
     return await withResult(
       async () => {

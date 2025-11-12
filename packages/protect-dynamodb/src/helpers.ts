@@ -4,9 +4,16 @@ import type {
   ProtectTableColumn,
 } from '@cipherstash/protect'
 import type { ProtectDynamoDBError } from './types'
+
+/** DynamoDB attribute suffix applied to ciphertext storage columns. */
 export const ciphertextAttrSuffix = '__source'
+/** DynamoDB attribute suffix applied to encrypted search-term columns. */
 export const searchTermAttrSuffix = '__hmac'
 
+/**
+ * Concrete {@link ProtectDynamoDBError} implementation. Wraps underlying
+ * runtime issues with a stable error code and optional diagnostic details.
+ */
 export class ProtectDynamoDBErrorImpl
   extends Error
   implements ProtectDynamoDBError
@@ -21,6 +28,10 @@ export class ProtectDynamoDBErrorImpl
   }
 }
 
+/**
+ * Normalise unexpected errors into {@link ProtectDynamoDBError} instances and
+ * optionally forward them to caller-provided telemetry hooks.
+ */
 export function handleError(
   error: Error,
   context: string,
@@ -48,6 +59,10 @@ export function handleError(
   return protectError
 }
 
+/**
+ * Recursively clone DynamoDB items so encryption routines can mutate payloads
+ * without touching the caller's original object graph.
+ */
 export function deepClone<T>(obj: T): T {
   if (obj === null || typeof obj !== 'object') {
     return obj
@@ -67,6 +82,10 @@ export function deepClone<T>(obj: T): T {
   )
 }
 
+/**
+ * Transform a Protect-encrypted model into a DynamoDB `PutItem` shape by
+ * splitting ciphertext and search-term values into suffixed attributes.
+ */
 export function toEncryptedDynamoItem(
   encrypted: Record<string, unknown>,
   encryptedAttrs: string[],
@@ -132,6 +151,10 @@ export function toEncryptedDynamoItem(
   )
 }
 
+/**
+ * Convert a DynamoDB item containing suffixed ciphertext/search-term
+ * attributes back into the canonical Protect EQL payload structure.
+ */
 export function toItemWithEqlPayloads(
   decrypted: Record<string, Encrypted | unknown>,
   encryptSchemas: ProtectTable<ProtectTableColumn>,

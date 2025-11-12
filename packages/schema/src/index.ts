@@ -105,6 +105,10 @@ export type EncryptConfig = z.infer<typeof encryptConfigSchema>
 // ------------------------
 // Interface definitions
 // ------------------------
+/**
+ * Builder for declaring nested JSON value encryption. Mirrors the Protect.js
+ * schema DSL while keeping method chaining ergonomic.
+ */
 export class ProtectValue {
   private valueName: string
   private castAsValue: CastAs
@@ -134,6 +138,10 @@ export class ProtectValue {
   }
 }
 
+/**
+ * Declarative builder used to describe a single column's encryption behaviour
+ * (data type and searchable indexes).
+ */
 export class ProtectColumn {
   private columnName: string
   private castAsValue: CastAs
@@ -220,6 +228,10 @@ interface TableDefinition {
   columns: Record<string, ColumnSchema>
 }
 
+/**
+ * Aggregates column builders into a cohesive Protect schema table definition.
+ * Instances are passed directly to {@link protect} during client initialisation.
+ */
 export class ProtectTable<T extends ProtectTableColumn> {
   constructor(
     public readonly tableName: string,
@@ -291,6 +303,10 @@ export class ProtectTable<T extends ProtectTableColumn> {
 // ------------------------
 // User facing functions
 // ------------------------
+/**
+ * Create a Protect.js table definition that preserves strong typing for its
+ * columns. Equivalent to the schema DSL showcased in the Protect.js README.
+ */
 export function csTable<T extends ProtectTableColumn>(
   tableName: string,
   columns: T,
@@ -305,10 +321,12 @@ export function csTable<T extends ProtectTableColumn>(
   return tableBuilder
 }
 
+/** Create a Protect column builder for the specified database column name. */
 export function csColumn(columnName: string) {
   return new ProtectColumn(columnName)
 }
 
+/** Create a Protect value builder for nested JSON properties. */
 export function csValue(valueName: string) {
   return new ProtectValue(valueName)
 }
@@ -316,6 +334,10 @@ export function csValue(valueName: string) {
 // ------------------------
 // Internal functions
 // ------------------------
+/**
+ * Convert Protect table builders into the Encrypt Config structure consumed by
+ * the native ZeroKMS client. Automatically invoked by {@link protect}.
+ */
 export function buildEncryptConfig(
   ...protectTables: Array<ProtectTable<ProtectTableColumn>>
 ): EncryptConfig {

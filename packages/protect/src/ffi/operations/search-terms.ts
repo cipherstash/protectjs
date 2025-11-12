@@ -6,6 +6,11 @@ import type { Client, EncryptedSearchTerm, SearchTerm } from '../../types'
 import { noClientError } from '../index'
 import { ProtectOperation } from './base-operation'
 
+/**
+ * Thenable operation produced by {@link ProtectClient.createSearchTerms}. It
+ * batches plaintext inputs into ZeroKMS to generate encrypted tokens for
+ * PostgreSQL equality, range, and match indexes.
+ */
 export class SearchTermsOperation extends ProtectOperation<
   EncryptedSearchTerm[]
 > {
@@ -18,6 +23,10 @@ export class SearchTermsOperation extends ProtectOperation<
     this.terms = terms
   }
 
+  /**
+   * Create encrypted search tokens for the configured terms. Supports optional
+   * audit metadata to enrich CipherStash audit trails.
+   */
   public async execute(): Promise<Result<EncryptedSearchTerm[], ProtectError>> {
     logger.debug('Creating search terms', {
       terms: this.terms,

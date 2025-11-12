@@ -13,6 +13,10 @@ import {
   type DynamoDBOperationOptions,
 } from './base-operation'
 
+/**
+ * DynamoDB operation that decrypts a single item back into plaintext form,
+ * ready for application consumption.
+ */
 export class DecryptModelOperation<
   T extends Record<string, unknown>,
 > extends DynamoDBOperation<Decrypted<T>> {
@@ -32,6 +36,10 @@ export class DecryptModelOperation<
     this.protectTable = protectTable
   }
 
+  /**
+   * Execute the decryption and return the decrypted model or a structured
+   * error via the Protect Result contract.
+   */
   public async execute(): Promise<Result<Decrypted<T>, ProtectDynamoDBError>> {
     return await withResult(
       async () => {
