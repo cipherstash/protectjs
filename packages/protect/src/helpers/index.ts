@@ -1,4 +1,5 @@
-import type { Encrypted } from '../types'
+import type { KeysetIdentifier as KeysetIdentifierFfi } from '@cipherstash/protect-ffi'
+import type { Encrypted, KeysetIdentifier } from '../types'
 
 export type EncryptedPgComposite = {
   data: Encrypted
@@ -39,6 +40,18 @@ export function bulkModelsToEncryptedPgComposites<
   T extends Record<string, unknown>,
 >(models: T[]): T[] {
   return models.map((model) => modelToEncryptedPgComposites(model))
+}
+
+export function toFfiKeysetIdentifier(
+  keyset: KeysetIdentifier | undefined,
+): KeysetIdentifierFfi | undefined {
+  if (!keyset) return undefined
+
+  if ('name' in keyset) {
+    return { Name: keyset.name }
+  }
+
+  return { Uuid: keyset.id }
 }
 
 /**

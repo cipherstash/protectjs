@@ -1,6 +1,7 @@
 import type { ProtectTable, ProtectTableColumn } from '@cipherstash/schema'
 import { buildEncryptConfig } from '@cipherstash/schema'
 import { ProtectClient } from './ffi'
+import type { KeysetIdentifier } from './types'
 
 export const ProtectErrorTypes = {
   ClientInitError: 'ClientInitError',
@@ -23,6 +24,13 @@ export type ProtectClientConfig = {
   accessKey?: string
   clientId?: string
   clientKey?: string
+  keyset?: KeysetIdentifier
+}
+
+function isValidUuid(uuid: string): boolean {
+  const uuidRegex =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+  return uuidRegex.test(uuid)
 }
 
 export const protect = async (
@@ -36,11 +44,22 @@ export const protect = async (
     )
   }
 
+  if (
+    config.keyset &&
+    'id' in config.keyset &&
+    !isValidUuid(config.keyset.id)
+  ) {
+    throw new Error(
+      '[protect]: Invalid UUID provided for keyset id. Must be a valid UUID.',
+    )
+  }
+
   const clientConfig = {
     workspaceCrn: config.workspaceCrn,
     accessKey: config.accessKey,
     clientId: config.clientId,
     clientKey: config.clientKey,
+    keyset: config.keyset,
   }
 
   const client = new ProtectClient(clientConfig.workspaceCrn)

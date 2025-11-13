@@ -112,6 +112,7 @@ const decrypted = await client.decrypt(encrypted.data);
 - [Identity-aware encryption](#identity-aware-encryption)
 - [Supported data types](#supported-data-types)
 - [Searchable encryption](#searchable-encryption)
+- [Multi-tenant encryption](#multi-tenant-encryption)
 - [Logging](#logging)
 - [CipherStash Client](#cipherstash-client)
 - [Example applications](#example-applications)
@@ -994,9 +995,43 @@ Until support for other data types are available, you can express interest in th
 
 Read more about [searching encrypted data](./docs/concepts/searchable-encryption.md) in the docs.
 
+## Multi-tenant encryption
+
+Protect.js supports multi-tenant encryption by using keysets.
+Each keyset is cryptographically isolated from other keysets which esentially means that each tenant has their own unique keyspace.
+If you are using a multi-tenant application, you can use keysets to encrypt data for each tenant creating a strong security boundary.
+
+In the [CipherStash Dashboard](https://dashboard.cipherstash.com/workspaces/_/encryption/keysets), you can create and manage keysets and then use the keyset identifier to encrypt data for each tenant when initializing the Protect.js client.
+
+```typescript
+import { protect } from "@cipherstash/protect";
+import { users } from "./protect/schema";
+
+const protectClient = await protect({
+  schemas: [users],
+  keyset: {
+    // Must be a valid UUID which can be found in the CipherStash Dashboard
+    id: '123e4567-e89b-12d3-a456-426614174000'
+  },
+})
+
+// or with a keyset name
+
+const protectClient = await protect({
+  schemas: [users],
+  keyset: {
+    name: 'Company A'
+  },
+})
+```
+
+> [!IMPORTANT]
+> When creating a new keyset, make sure to grant your client access to the keyset or client initialization will fail.
+> Read more about [managing keyset access](https://cipherstash.com/docs/platform/workspaces/key-sets).
+
 ## Logging
 
-> [!IMPORTANT] 
+> [!TIP] 
 > `@cipherstash/protect` will NEVER log plaintext data.
 > This is by design to prevent sensitive data from leaking into logs.
 
