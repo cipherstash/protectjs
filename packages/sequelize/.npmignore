@@ -1,0 +1,9 @@
+__tests__
+*.test.ts
+*.test.js
+tsconfig.json
+tsup.config.ts
+.turbo
+.DS_Store
+node_modules
+src
