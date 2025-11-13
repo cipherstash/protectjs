@@ -1,5 +1,12 @@
 # @cipherstash/drizzle
 
+## 2.0.0
+
+### Patch Changes
+
+- Updated dependencies [6b87c17]
+  - @cipherstash/protect@10.1.0
+
 ## 1.0.0
 
 ### Minor Changes

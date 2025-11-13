@@ -1,5 +1,11 @@
 # @cipherstash/protect
 
+## 10.1.0
+
+### Minor Changes
+
+- 6b87c17: Added support for multi-tenant encryption with configurable keysets.
+
 ## 10.0.2
 
 ### Patch Changes
