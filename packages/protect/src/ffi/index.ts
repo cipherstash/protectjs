@@ -91,9 +91,25 @@ export class ProtectClient {
 
   /**
    * Encryption - returns a thenable object.
-   * Usage:
+   * 
+   * @param plaintext - The plaintext value to be encrypted. Can be null.
+   * @param opts - Options specifying the column and table for encryption.
+   * @returns An EncryptOperation that can be awaited or chained with additional methods.
+   * 
+   * @example
+   * ```
    *    await eqlClient.encrypt(plaintext, { column, table })
-   *    await eqlClient.encrypt(plaintext, { column, table }).withLockContext(lockContext)
+   * ```
+   * 
+   * @example
+   * Provide a lock context when encrypting:
+   * ```
+   *    await eqlClient.encrypt(plaintext, { column, table })
+   *      .withLockContext(lockContext)
+   * ```
+   * 
+   * @see {@link LockContext}
+   * @see {@link EncryptOperation}
    */
   encrypt(
     plaintext: JsPlaintext | null,
