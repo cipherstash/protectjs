@@ -33,6 +33,16 @@ function isValidUuid(uuid: string): boolean {
   return uuidRegex.test(uuid)
 }
 
+/* Initialize a Protect client with the provided configuration.
+
+  @param config - The configuration object for initializing the Protect client.
+
+  @see {@link ProtectClientConfig} for details on the configuration options.
+
+  @returns A Promise that resolves to an instance of ProtectClient.
+
+  @throws Will throw an error if no schemas are provided or if the keyset ID is not a valid UUID.
+*/
 export const protect = async (
   config: ProtectClientConfig,
 ): Promise<ProtectClient> => {
@@ -79,6 +89,16 @@ export const protect = async (
 
 export type { Result } from '@byteslice/result'
 export type { ProtectClient } from './ffi'
+export type { ProtectOperation } from './ffi/operations/base-operation'
+export type { BulkEncryptOperation } from './ffi/operations/bulk-encrypt'
+export type { BulkDecryptOperation } from './ffi/operations/bulk-decrypt'
+export type { BulkEncryptModelsOperation } from './ffi/operations/bulk-encrypt-models'
+export type { BulkDecryptModelsOperation } from './ffi/operations/bulk-decrypt-models'
+export type { DecryptOperation } from './ffi/operations/decrypt'
+export type { DecryptModelOperation } from './ffi/operations/decrypt-model'
+export type { EncryptModelOperation } from './ffi/operations/encrypt-model'
+export type { EncryptOperation } from './ffi/operations/encrypt'
+
 export { csTable, csColumn, csValue } from '@cipherstash/schema'
 export type {
   ProtectColumn,
@@ -86,6 +106,14 @@ export type {
   ProtectTableColumn,
   ProtectValue,
 } from '@cipherstash/schema'
+export type {
+  LockContext,
+  CtsRegions,
+  IdentifyOptions,
+  CtsToken,
+  Context,
+  LockContextOptions,
+  GetLockContextResponse,
+} from './identify'
 export * from './helpers'
-export * from './identify'
 export * from './types'
