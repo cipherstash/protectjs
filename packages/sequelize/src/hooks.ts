@@ -319,6 +319,21 @@ export function addProtectHooks<M extends Model>(
   })
 
   /**
+   * beforeCount: Transform WHERE clause in count queries
+   */
+  model.addHook('beforeCount', async (options: FindOptions) => {
+    if (!options.where) return
+
+    // Transform WHERE clause recursively (same as beforeFind)
+    options.where = await transformWhereClause(
+      options.where,
+      model,
+      protectClient,
+      protectTable,
+    )
+  })
+
+  /**
    * beforeBulkCreate: Encrypt values before bulk INSERT
    */
   model.addHook('beforeBulkCreate', async (instances: M[]) => {
