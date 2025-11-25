@@ -889,21 +889,146 @@ function createTextSearchOperator(
  */
 export function createProtectOperators(protectClient: ProtectClient): {
   // Comparison operators
+  /**
+   * Equality operator - encrypts value for encrypted columns.
+   * Requires either `equality` or `orderAndRange` to be set on {@link EncryptedColumnConfig}.
+   * 
+   * @example
+   * Select users with a specific email address.
+   * ```ts
+   * const condition = await protectOps.eq(usersTable.email, 'user@example.com')
+   * const results = await db.select().from(usersTable).where(condition)
+   * ```
+   */
   eq: (left: SQLWrapper, right: unknown) => Promise<SQL> | SQL
+
+  /**
+   * Not equal operator - encrypts value for encrypted columns.
+   * Requires either `equality` or `orderAndRange` to be set on {@link EncryptedColumnConfig}.
+   * 
+   * @example
+   * Select users whose email address is not a specific value.
+   * ```ts
+   * const condition = await protectOps.ne(usersTable.email, 'user@example.com')
+   * const results = await db.select().from(usersTable).where(condition)
+   * ```
+   */
   ne: (left: SQLWrapper, right: unknown) => Promise<SQL> | SQL
+
+  /**
+   * Greater than operator for encrypted columns with ORE index.
+   * Requires `orderAndRange` to be set on {@link EncryptedColumnConfig}.
+   * 
+   * @example
+   * Select users older than a specific age.
+   * ```ts
+   * const condition = await protectOps.gt(usersTable.age, 30)
+   * const results = await db.select().from(usersTable).where(condition)
+   * ```
+   */
   gt: (left: SQLWrapper, right: unknown) => Promise<SQL> | SQL
+
+  /**
+   * Greater than or equal operator for encrypted columns with ORE index.
+   * Requires `orderAndRange` to be set on {@link EncryptedColumnConfig}.
+   * 
+   * @example
+   * Select users older than or equal to a specific age.
+   * ```ts
+   * const condition = await protectOps.gte(usersTable.age, 30)
+   * const results = await db.select().from(usersTable).where(condition)
+   * ```
+   */
   gte: (left: SQLWrapper, right: unknown) => Promise<SQL> | SQL
+
+  /**
+   * Less than operator for encrypted columns with ORE index.
+   * Requires `orderAndRange` to be set on {@link EncryptedColumnConfig}.
+   * 
+   * @example
+   * Select users younger than a specific age.
+   * ```ts
+   * const condition = await protectOps.lt(usersTable.age, 30)
+   * const results = await db.select().from(usersTable).where(condition)
+   * ```
+   */
   lt: (left: SQLWrapper, right: unknown) => Promise<SQL> | SQL
+
+  /**
+   * Less than or equal operator for encrypted columns with ORE index.
+   * Requires `orderAndRange` to be set on {@link EncryptedColumnConfig}.
+   * 
+   * @example
+   * Select users younger than or equal to a specific age.
+   * ```ts
+   * const condition = await protectOps.lte(usersTable.age, 30)
+   * const results = await db.select().from(usersTable).where(condition)
+   * ```
+   */
   lte: (left: SQLWrapper, right: unknown) => Promise<SQL> | SQL
-  // Range operators
+  
+  /**
+   * Between operator for encrypted columns with ORE index.
+   * Requires `orderAndRange` to be set on {@link EncryptedColumnConfig}.
+   * 
+   * @example
+   * Select users within a specific age range.
+   * ```ts
+   * const condition = await protectOps.between(usersTable.age, 20, 30)
+   * const results = await db.select().from(usersTable).where(condition)
+   * ```
+   */
   between: (left: SQLWrapper, min: unknown, max: unknown) => Promise<SQL> | SQL
+
+  /**
+   * Not between operator for encrypted columns with ORE index.
+   * Requires `orderAndRange` to be set on {@link EncryptedColumnConfig}.
+   * 
+   * @example
+   * Select users outside a specific age range.
+   * ```ts
+   * const condition = await protectOps.notBetween(usersTable.age, 20, 30)
+   * const results = await db.select().from(usersTable).where(condition)
+   * ```
+   */
   notBetween: (
     left: SQLWrapper,
     min: unknown,
     max: unknown,
   ) => Promise<SQL> | SQL
-  // Text search operators
+
+  /**
+   * Like operator for encrypted columns with free text search.
+   * Requires `freeTextSearch` to be set on {@link EncryptedColumnConfig}.
+   * 
+   * > [!IMPORTANT]
+   * > Case sensitivity on encrypted columns depends on the {@link EncryptedColumnConfig}.
+   * > Ensure that the column is configured for case-insensitive search if needed.
+   * 
+   * @example
+   * Select users with email addresses matching a pattern.
+   * ```ts
+   * const condition = await protectOps.like(usersTable.email, '%@example.com')
+   * const results = await db.select().from(usersTable).where(condition)
+   * ``` 
+   */
   like: (left: SQLWrapper, right: unknown) => Promise<SQL> | SQL
+
+  /**
+   * ILike operator for encrypted columns with free text search.
+   * Requires `freeTextSearch` to be set on {@link EncryptedColumnConfig}.
+   * 
+   * > [!IMPORTANT]
+   * > Case sensitivity on encrypted columns depends on the {@link EncryptedColumnConfig}.
+   * > Ensure that the column is configured for case-insensitive search if needed.
+   * 
+   * @example
+   * Select users with email addresses matching a pattern (case-insensitive).
+   * ```ts
+   * const condition = await protectOps.ilike(usersTable.email, '%@example.com')
+   * const results = await db.select().from(usersTable).where(condition)
+   * ```
+   */
   ilike: (left: SQLWrapper, right: unknown) => Promise<SQL> | SQL
   notIlike: (left: SQLWrapper, right: unknown) => Promise<SQL> | SQL
   // Array operators
