@@ -10,6 +10,10 @@ import type { Client, Encrypted } from '../../types'
 import { noClientError } from '../index'
 import { ProtectOperation } from './base-operation'
 
+/**
+ * Decrypts an encrypted payload using the provided client.
+ * This is the type returned by the {@link ProtectClient.decrypt | decrypt} method of the {@link ProtectClient}.
+ */
 export class DecryptOperation extends ProtectOperation<JsPlaintext | null> {
   private client: Client
   private encryptedData: Encrypted

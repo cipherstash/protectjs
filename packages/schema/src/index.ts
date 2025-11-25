@@ -3,14 +3,23 @@ import { z } from 'zod'
 // ------------------------
 // Zod schemas
 // ------------------------
-// export type CastAs =
-//   | 'bigint'
-//   | 'boolean'
-//   | 'date'
-//   | 'number'
-//   | 'string'
-//   | 'json'
-const castAsEnum = z
+
+/**
+ * Allowed cast types for CipherStash schema fields.
+ *
+ * **Possible values:**
+ * - `"bigint"`
+ * - `"boolean"`
+ * - `"date"`
+ * - `"number"`
+ * - `"string"`
+ * - `"json"`
+ *
+ * @remarks
+ * This is a Zod enum used at runtime to validate schema definitions.
+ * Use {@link CastAs} when typing your own code.
+ */
+export const castAsEnum = z
   .enum(['bigint', 'boolean', 'date', 'number', 'string', 'json'])
   .default('string')
 
@@ -77,6 +86,13 @@ export const encryptConfigSchema = z.object({
 // ------------------------
 // Type definitions
 // ------------------------
+
+/**
+ * Type-safe alias for {@link castAsEnum} used to specify the *unencrypted* data type of a column or value.
+ * This is important because once encrypted, all data is stored as binary blobs.
+ * 
+ * @see {@link castAsEnum} for possible values.
+ */
 export type CastAs = z.infer<typeof castAsEnum>
 export type TokenFilter = z.infer<typeof tokenFilterSchema>
 export type MatchIndexOpts = z.infer<typeof matchIndexOptsSchema>

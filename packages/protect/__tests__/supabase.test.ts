@@ -1,6 +1,6 @@
 import 'dotenv/config'
 import { csColumn, csTable } from '@cipherstash/schema'
-import { describe, expect, it } from 'vitest'
+import { beforeAll, describe, expect, it } from 'vitest'
 import {
   type Encrypted,
   bulkModelsToEncryptedPgComposites,
@@ -32,6 +32,14 @@ const table = csTable('protect-ci', {
 
 // Hard code this as the CI database doesn't support order by on encrypted columns
 const SKIP_ORDER_BY_TEST = true
+
+beforeAll(async () => {
+  // Truncate the table before running tests
+  const { error } = await supabase.from('protect-ci').delete().neq('id', 0)
+  if (error) {
+    throw new Error(`[protect]: Failed to truncate table: ${error.message}`)
+  }
+})
 
 describe('supabase', () => {
   it('should insert and select encrypted data', async () => {
