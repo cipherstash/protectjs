@@ -5,10 +5,9 @@ This document describes the security posture, reporting process, and guidelines 
 
 ## Supported Packages
 
-This repository contains the JavaScript/TypeScript SDK for CipherStash Protect, including:
+This repository contains the JavaScript/TypeScript SDK for CipherStash Protect and related packages.
 
-Use this section to tell people about which versions of your project are
-currently being supported with security updates.
+The below tables list each package along with the currently supported (receiving security updates).
 
 ### `@cipherstash/protect`
 
