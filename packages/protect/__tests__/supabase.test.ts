@@ -25,9 +25,9 @@ const supabase = createClient(
 )
 
 const table = csTable('protect-ci', {
-  encrypted: csColumn('encrypted').freeTextSearch().equality().orderAndRange(),
-  age: csColumn('age').dataType('number').equality().orderAndRange(),
-  score: csColumn('score').dataType('number').equality().orderAndRange(),
+  encrypted: csColumn('encrypted').freeTextSearch().equality(),
+  age: csColumn('age').dataType('number').equality(),
+  score: csColumn('score').dataType('number').equality(),
 })
 
 // Hard code this as the CI database doesn't support order by on encrypted columns
