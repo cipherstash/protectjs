@@ -1,5 +1,11 @@
 # @cipherstash/schema
 
+## 2.0.1
+
+### Patch Changes
+
+- ff4421f: Expanded typedoc documentation
+
 ## 2.0.0
 
 ### Major Changes

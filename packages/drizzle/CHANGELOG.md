@@ -1,5 +1,14 @@
 # @cipherstash/drizzle
 
+## 1.1.1
+
+### Patch Changes
+
+- ff4421f: Expanded typedoc documentation
+- Updated dependencies [ff4421f]
+  - @cipherstash/protect@10.1.1
+  - @cipherstash/schema@2.0.1
+
 ## 1.1.0
 
 ### Patch Changes

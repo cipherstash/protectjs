@@ -1,5 +1,12 @@
 # @cipherstash/nextjs-clerk-example
 
+## 0.2.12
+
+### Patch Changes
+
+- Updated dependencies [ff4421f]
+  - @cipherstash/protect@10.1.1
+
 ## 0.2.11
 
 ### Patch Changes

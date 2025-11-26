@@ -1,7 +1,7 @@
 {
   "name": "@cipherstash/dynamo-example",
   "private": true,
-  "version": "0.2.12",
+  "version": "0.2.13",
   "type": "module",
   "scripts": {
     "simple": "tsx src/simple.ts",
