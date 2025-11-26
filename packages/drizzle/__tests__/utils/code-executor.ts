@@ -1,19 +1,4 @@
 export interface ExecutionContext {
-  db: unknown
-  transactions: unknown
-  protect: unknown
-  protectClient: unknown
-  protectTransactions: unknown
-  eq: unknown
-  gte: unknown
-  lte: unknown
-  ilike: unknown
-  and: unknown
-  or: unknown
-  desc: unknown
-  asc: unknown
-  sql: unknown
-  inArray: unknown
   [key: string]: unknown
 }
 
