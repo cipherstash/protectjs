@@ -57,7 +57,6 @@ jobs:
           echo "CS_CLIENT_KEY=${{ secrets.CS_CLIENT_KEY }}" >> ./packages/drizzle/.env
           echo "CS_CLIENT_ACCESS_KEY=${{ secrets.CS_CLIENT_ACCESS_KEY }}" >> ./packages/drizzle/.env
           echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> ./packages/drizzle/.env
-          echo "DOCS_DRIFT_STRICT=true" >> ./packages/drizzle/.env
 
       # Run TurboRepo tests
       - name: Run tests

@@ -27,39 +27,29 @@ import { docSeedData } from './fixtures/doc-seed-data'
 import { type ExecutionContext, executeCodeBlock } from './utils/code-executor'
 import { extractExecutableBlocks } from './utils/markdown-parser'
 
-// Strict mode for CI - fails instead of skipping when docs are missing
-const STRICT_MODE = process.env.DOCS_DRIFT_STRICT === 'true'
-
 if (!process.env.DATABASE_URL) {
   throw new Error('Missing env.DATABASE_URL')
 }
 
 /**
- * Load documentation file with strict mode support.
- * In strict mode (CI), missing files cause test failure.
- * In development mode, missing files are skipped with a warning.
+ * Load documentation file and extract executable blocks.
+ * Throws if the file is missing or has no executable blocks.
  */
 function loadDocumentation(docsPath: string, docName: string) {
   if (!existsSync(docsPath)) {
-    if (STRICT_MODE) {
-      throw new Error(
-        `[STRICT MODE] Documentation file not found: ${docsPath}\nExpected documentation at: ${docName}\nSet DOCS_DRIFT_STRICT=false to skip missing docs during development.`,
-      )
-    }
-    console.warn(`[DEV MODE] Skipping missing documentation: ${docsPath}`)
-    return { blocks: [], skipped: true }
+    throw new Error(`Documentation file not found: ${docsPath}`)
   }
 
   const markdown = readFileSync(docsPath, 'utf-8')
   const blocks = extractExecutableBlocks(markdown)
 
-  if (blocks.length === 0 && STRICT_MODE) {
+  if (blocks.length === 0) {
     throw new Error(
-      `[STRICT MODE] No executable blocks found in: ${docsPath}\nExpected \`\`\`ts:run code blocks in documentation.`,
+      `No executable blocks found in: ${docsPath}\nExpected \`\`\`ts:run code blocks in documentation.`,
     )
   }
 
-  return { blocks, skipped: false }
+  return blocks
 }
 
 // Table schema matching documentation examples
@@ -148,12 +138,9 @@ describe('Documentation Drift Tests', () => {
       '../../../docs/reference/drizzle/drizzle.md',
     )
 
-    const { blocks, skipped } = loadDocumentation(docsPath, 'drizzle.md')
+    const blocks = loadDocumentation(docsPath, 'drizzle.md')
 
-    if (skipped || blocks.length === 0) {
-      it.skip('No executable blocks found in drizzle.md', () => {})
-    } else {
-      it.each(blocks.map((b) => [b.section, b]))(
+    it.each(blocks.map((b) => [b.section, b]))(
         '%s',
         async (_section, block) => {
           const context: ExecutionContext = {
@@ -189,7 +176,6 @@ describe('Documentation Drift Tests', () => {
         },
         30000,
       )
-    }
   })
 
   describe('drizzle-protect.md - Manual Encryption Pattern', () => {
@@ -198,50 +184,43 @@ describe('Documentation Drift Tests', () => {
       '../../../docs/reference/drizzle/drizzle-protect.md',
     )
 
-    const { blocks, skipped } = loadDocumentation(
-      docsPath,
-      'drizzle-protect.md',
+    const blocks = loadDocumentation(docsPath, 'drizzle-protect.md')
+
+    it.each(blocks.map((b) => [b.section, b]))(
+      '%s',
+      async (_section, block) => {
+        const context: ExecutionContext = {
+          db,
+          transactions,
+          protect: protectOps,
+          protectClient,
+          protectTransactions,
+          eq,
+          gte,
+          lte,
+          ilike,
+          and,
+          or,
+          desc,
+          asc,
+          sql,
+          inArray,
+        }
+
+        const result = await executeCodeBlock(block.code, context)
+
+        if (!result.success) {
+          console.error(`\nFailed block at line ${block.lineNumber}:`)
+          console.error('---')
+          console.error(block.code)
+          console.error('---')
+          console.error(`Error: ${result.error}`)
+        }
+
+        expect(result.success, `Block failed: ${result.error}`).toBe(true)
+        expect(result.result).toBeDefined()
+      },
+      30000,
     )
-
-    if (skipped || blocks.length === 0) {
-      it.skip('No executable blocks found in drizzle-protect.md', () => {})
-    } else {
-      it.each(blocks.map((b) => [b.section, b]))(
-        '%s',
-        async (_section, block) => {
-          const context: ExecutionContext = {
-            db,
-            transactions,
-            protect: protectOps,
-            protectClient,
-            protectTransactions,
-            eq,
-            gte,
-            lte,
-            ilike,
-            and,
-            or,
-            desc,
-            asc,
-            sql,
-            inArray,
-          }
-
-          const result = await executeCodeBlock(block.code, context)
-
-          if (!result.success) {
-            console.error(`\nFailed block at line ${block.lineNumber}:`)
-            console.error('---')
-            console.error(block.code)
-            console.error('---')
-            console.error(`Error: ${result.error}`)
-          }
-
-          expect(result.success, `Block failed: ${result.error}`).toBe(true)
-          expect(result.result).toBeDefined()
-        },
-        30000,
-      )
-    }
   })
 })

@@ -215,20 +215,6 @@ cd packages/drizzle
 pnpm vitest run __tests__/docs.test.ts
 ```
 
-### Strict Mode vs Development Mode
-
-**Strict mode (CI):** Missing documentation or empty code blocks cause test failure.
-
-```bash
-DOCS_DRIFT_STRICT=true pnpm test
-```
-
-**Development mode (default):** Missing documentation is skipped with a warning.
-
-```bash
-pnpm test  # or DOCS_DRIFT_STRICT=false pnpm test
-```
-
 ## Adding New Documentation Examples
 
 ### Step 1: Write the Example
@@ -389,7 +375,7 @@ Set up your `.env` file with database credentials.
 Ensure your code blocks use `` ```ts:run `` not `` ```typescript `` or `` ```ts ``.
 
 ### Test passes locally but fails in CI
-Check that seed data values match what your example expects. CI uses `DOCS_DRIFT_STRICT=true`.
+Check that seed data values match what your example expects.
 
 ### "Column does not exist"
 Verify you're using the correct column names from the `transactions` schema:
@@ -405,18 +391,12 @@ return decrypted.data  // Not results!
 
 ## CI Integration
 
-The GitHub Actions workflow (`.github/workflows/tests.yml`) enables strict mode:
+The documentation drift tests run as part of the standard test suite in CI (`.github/workflows/tests.yml`).
 
-```yaml
-- name: Create .env files
-  run: |
-    echo "DOCS_DRIFT_STRICT=true" >> ./packages/drizzle/.env
-```
-
-This ensures:
-- Missing documentation files fail the build
-- Empty documentation (no `ts:run` blocks) fails the build
-- Any code execution errors fail the build
+Tests fail when:
+- Documentation files are missing
+- Documentation has no `ts:run` blocks
+- Any code block throws an error
 
 ## Architecture Decisions
 
