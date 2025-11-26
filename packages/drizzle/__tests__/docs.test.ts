@@ -98,6 +98,18 @@ describe('Documentation Drift Tests', () => {
     protectClient = await protect({ schemas: [protectTransactions] })
     protectOps = createProtectOperators(protectClient)
 
+    // Create test table (drop if exists for clean state)
+    await client`DROP TABLE IF EXISTS "drizzle-docs-test"`
+    await client`
+      CREATE TABLE "drizzle-docs-test" (
+        id INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+        account_number TEXT,
+        amount TEXT,
+        description TEXT,
+        created_at TEXT
+      )
+    `
+
     // Seed test data
     const encrypted = await protectClient.bulkEncryptModels(
       docSeedData,
@@ -116,16 +128,8 @@ describe('Documentation Drift Tests', () => {
 
   afterAll(async () => {
     try {
-      if (seedDataIds.length > 0) {
-        // Primary: delete only our seeded rows by ID
-        await db
-          .delete(transactions)
-          .where(inArray(transactions.id, seedDataIds))
-      } else {
-        // Fallback: delete all rows from test table (safe - it's test-only)
-        // This handles partial failures during seeding
-        await db.delete(transactions)
-      }
+      // Drop the test table for clean teardown
+      await client`DROP TABLE IF EXISTS "drizzle-docs-test"`
     } catch (cleanupError) {
       console.error(
         '[CLEANUP ERROR] Failed to clean up test data:',
