@@ -1,0 +1,243 @@
+import 'dotenv/config'
+import { existsSync, readFileSync } from 'node:fs'
+import { join } from 'node:path'
+import { protect } from '@cipherstash/protect'
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  gte,
+  ilike,
+  inArray,
+  lte,
+  or,
+  sql,
+} from 'drizzle-orm'
+import { integer, pgTable } from 'drizzle-orm/pg-core'
+import { drizzle } from 'drizzle-orm/postgres-js'
+import postgres from 'postgres'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import {
+  createProtectOperators,
+  encryptedType,
+  extractProtectSchema,
+} from '../src/pg'
+import { docSeedData } from './fixtures/doc-seed-data'
+import { type ExecutionContext, executeCodeBlock } from './utils/code-executor'
+import { extractExecutableBlocks } from './utils/markdown-parser'
+
+// Strict mode for CI - fails instead of skipping when docs are missing
+const STRICT_MODE = process.env.DOCS_DRIFT_STRICT === 'true'
+
+if (!process.env.DATABASE_URL) {
+  throw new Error('Missing env.DATABASE_URL')
+}
+
+/**
+ * Load documentation file with strict mode support.
+ * In strict mode (CI), missing files cause test failure.
+ * In development mode, missing files are skipped with a warning.
+ */
+function loadDocumentation(docsPath: string, docName: string) {
+  if (!existsSync(docsPath)) {
+    if (STRICT_MODE) {
+      throw new Error(
+        `[STRICT MODE] Documentation file not found: ${docsPath}\nExpected documentation at: ${docName}\nSet DOCS_DRIFT_STRICT=false to skip missing docs during development.`,
+      )
+    }
+    console.warn(`[DEV MODE] Skipping missing documentation: ${docsPath}`)
+    return { blocks: [], skipped: true }
+  }
+
+  const markdown = readFileSync(docsPath, 'utf-8')
+  const blocks = extractExecutableBlocks(markdown)
+
+  if (blocks.length === 0 && STRICT_MODE) {
+    throw new Error(
+      `[STRICT MODE] No executable blocks found in: ${docsPath}\nExpected \`\`\`ts:run code blocks in documentation.`,
+    )
+  }
+
+  return { blocks, skipped: false }
+}
+
+// Table schema matching documentation examples
+const transactions = pgTable('drizzle-docs-test', {
+  id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
+  account: encryptedType<string>('account_number', {
+    equality: true,
+  }),
+  amount: encryptedType<number>('amount', {
+    dataType: 'number',
+    equality: true,
+    orderAndRange: true,
+  }),
+  description: encryptedType<string>('description', {
+    freeTextSearch: true,
+    equality: true,
+  }),
+  createdAt: encryptedType<number>('created_at', {
+    dataType: 'number',
+    orderAndRange: true,
+  }),
+})
+
+const protectTransactions = extractProtectSchema(transactions)
+
+describe('Documentation Drift Tests', () => {
+  let db: ReturnType<typeof drizzle>
+  let client: ReturnType<typeof postgres>
+  let protectClient: Awaited<ReturnType<typeof protect>>
+  let protectOps: ReturnType<typeof createProtectOperators>
+  let seedDataIds: number[] = []
+
+  beforeAll(async () => {
+    client = postgres(process.env.DATABASE_URL as string)
+    db = drizzle({ client })
+    protectClient = await protect({ schemas: [protectTransactions] })
+    protectOps = createProtectOperators(protectClient)
+
+    // Seed test data
+    const encrypted = await protectClient.bulkEncryptModels(
+      docSeedData,
+      protectTransactions,
+    )
+    if (encrypted.failure) {
+      throw new Error(`Encryption failed: ${encrypted.failure.message}`)
+    }
+
+    const inserted = await db
+      .insert(transactions)
+      .values(encrypted.data)
+      .returning({ id: transactions.id })
+    seedDataIds = inserted.map((r) => r.id)
+  }, 120000)
+
+  afterAll(async () => {
+    try {
+      if (seedDataIds.length > 0) {
+        // Primary: delete only our seeded rows by ID
+        await db
+          .delete(transactions)
+          .where(inArray(transactions.id, seedDataIds))
+      } else {
+        // Fallback: delete all rows from test table (safe - it's test-only)
+        // This handles partial failures during seeding
+        await db.delete(transactions)
+      }
+    } catch (cleanupError) {
+      console.error(
+        '[CLEANUP ERROR] Failed to clean up test data:',
+        cleanupError,
+      )
+      // Don't throw - allow test results to be reported even if cleanup fails
+    } finally {
+      await client.end()
+    }
+  }, 30000)
+
+  describe('drizzle.md - Protect Operators Pattern', () => {
+    // Path to documentation relative to repo root
+    const docsPath = join(
+      __dirname,
+      '../../../docs/reference/drizzle/drizzle.md',
+    )
+
+    const { blocks, skipped } = loadDocumentation(docsPath, 'drizzle.md')
+
+    if (skipped || blocks.length === 0) {
+      it.skip('No executable blocks found in drizzle.md', () => {})
+    } else {
+      it.each(blocks.map((b) => [b.section, b]))(
+        '%s',
+        async (_section, block) => {
+          const context: ExecutionContext = {
+            db,
+            transactions,
+            protect: protectOps,
+            protectClient,
+            protectTransactions,
+            eq,
+            gte,
+            lte,
+            ilike,
+            and,
+            or,
+            desc,
+            asc,
+            sql,
+            inArray,
+          }
+
+          const result = await executeCodeBlock(block.code, context)
+
+          if (!result.success) {
+            console.error(`\nFailed block at line ${block.lineNumber}:`)
+            console.error('---')
+            console.error(block.code)
+            console.error('---')
+            console.error(`Error: ${result.error}`)
+          }
+
+          expect(result.success, `Block failed: ${result.error}`).toBe(true)
+          expect(result.result).toBeDefined()
+        },
+        30000,
+      )
+    }
+  })
+
+  describe('drizzle-protect.md - Manual Encryption Pattern', () => {
+    const docsPath = join(
+      __dirname,
+      '../../../docs/reference/drizzle/drizzle-protect.md',
+    )
+
+    const { blocks, skipped } = loadDocumentation(
+      docsPath,
+      'drizzle-protect.md',
+    )
+
+    if (skipped || blocks.length === 0) {
+      it.skip('No executable blocks found in drizzle-protect.md', () => {})
+    } else {
+      it.each(blocks.map((b) => [b.section, b]))(
+        '%s',
+        async (_section, block) => {
+          const context: ExecutionContext = {
+            db,
+            transactions,
+            protect: protectOps,
+            protectClient,
+            protectTransactions,
+            eq,
+            gte,
+            lte,
+            ilike,
+            and,
+            or,
+            desc,
+            asc,
+            sql,
+            inArray,
+          }
+
+          const result = await executeCodeBlock(block.code, context)
+
+          if (!result.success) {
+            console.error(`\nFailed block at line ${block.lineNumber}:`)
+            console.error('---')
+            console.error(block.code)
+            console.error('---')
+            console.error(`Error: ${result.error}`)
+          }
+
+          expect(result.success, `Block failed: ${result.error}`).toBe(true)
+          expect(result.result).toBeDefined()
+        },
+        30000,
+      )
+    }
+  })
+})
