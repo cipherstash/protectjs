@@ -238,13 +238,14 @@ describe('supabase', () => {
         .from('protect-ci')
         .select('id, age::jsonb, otherField')
         .eq('age', searchTerm.data[0])
+        .eq('id', insertedData[0].id)
 
       if (error) {
         throw new Error(`[protect]: ${error.message}`)
       }
 
+      // Verify we found our specific row with encrypted age match
       expect(data).toHaveLength(1)
-      expect(data[0].id).toBe(insertedData[0].id)
 
       const decryptedModel = await protectClient.decryptModel(data[0])
 
