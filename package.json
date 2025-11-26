@@ -51,7 +51,8 @@
       "vite": "catalog:security",
       "pg": "^8.16.3",
       "postgres": "^3.4.7",
-      "js-yaml": "3.14.2"
+      "js-yaml": "3.14.2",
+      "test-exclude": "^7.0.1"
     },
     "peerDependencyRules": {
       "ignoreMissing": [
