@@ -98,15 +98,15 @@ describe('Documentation Drift Tests', () => {
     protectClient = await protect({ schemas: [protectTransactions] })
     protectOps = createProtectOperators(protectClient)
 
-    // Create test table (drop if exists for clean state)
+    // Create test table with EQL encrypted columns (drop if exists for clean state)
     await client`DROP TABLE IF EXISTS "drizzle-docs-test"`
     await client`
       CREATE TABLE "drizzle-docs-test" (
         id INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-        account_number TEXT,
-        amount TEXT,
-        description TEXT,
-        created_at TEXT
+        account_number eql_v2_encrypted,
+        amount eql_v2_encrypted,
+        description eql_v2_encrypted,
+        created_at eql_v2_encrypted
       )
     `
 
