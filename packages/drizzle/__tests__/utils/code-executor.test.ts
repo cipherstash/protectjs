@@ -2,22 +2,11 @@ import { describe, expect, it } from 'vitest'
 import { type ExecutionContext, executeCodeBlock } from './code-executor'
 
 describe('executeCodeBlock', () => {
+  // ExecutionContext is now a simple index signature: { [key: string]: unknown }
+  // Tests can define any properties needed for their specific test cases
   const mockContext: ExecutionContext = {
     db: {},
     transactions: {},
-    protect: {},
-    protectClient: {},
-    protectTransactions: {},
-    eq: () => {},
-    gte: () => {},
-    lte: () => {},
-    ilike: () => {},
-    and: () => {},
-    or: () => {},
-    desc: () => {},
-    asc: () => {},
-    sql: () => {},
-    inArray: () => {},
   }
 
   it('executes simple code and returns result', async () => {
@@ -29,12 +18,9 @@ describe('executeCodeBlock', () => {
   })
 
   it('provides context variables to code', async () => {
-    const contextWithValue = { ...mockContext, testValue: 42 }
+    const contextWithValue: ExecutionContext = { ...mockContext, testValue: 42 }
     const code = 'return testValue'
-    const result = await executeCodeBlock(
-      code,
-      contextWithValue as ExecutionContext,
-    )
+    const result = await executeCodeBlock(code, contextWithValue)
 
     expect(result.success).toBe(true)
     expect(result.result).toBe(42)
