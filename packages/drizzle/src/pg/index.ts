@@ -1,6 +1,8 @@
 import type { CastAs, MatchIndexOpts, TokenFilter } from '@cipherstash/schema'
 import { customType } from 'drizzle-orm/pg-core'
 
+export type { CastAs, MatchIndexOpts, TokenFilter }
+
 /**
  * Configuration for encrypted column indexes and data types
  */
@@ -34,13 +36,33 @@ const columnConfigMap = new Map<
 
 /**
  * Creates an encrypted column type for Drizzle ORM with configurable searchable encryption options.
+ * 
+ * When data is encrypted, the actual stored value is an [EQL v2](/docs/reference/eql) encrypted composite type which includes any searchable encryption indexes defined for the column.
+ * Importantly, the original data type is not known until it is decrypted. Therefore, this function allows specifying
+ * the original data type via the `dataType` option in the configuration.
+ * This ensures that when data is decrypted, it can be correctly interpreted as the intended TypeScript type.
  *
+ * @typeParam TData - The TypeScript type of the data stored in the column
  * @param name - The column name in the database
  * @param config - Optional configuration for data type and searchable encryption indexes
  * @returns A Drizzle column type that can be used in pgTable definitions
+ * 
+ * ## Searchable Encryption Options
+ * 
+ * - `dataType`: Specifies the original data type of the column (e.g., 'string', 'number', 'json'). Default is 'string'.
+ * - `freeTextSearch`: Enables free text search index. Can be a boolean for default options, or an object for custom configuration.
+ * - `equality`: Enables equality index. Can be a boolean for default options, or an array of token filters.
+ * - `orderAndRange`: Enables order and range index for sorting and range queries.
+ * 
+ * See {@link EncryptedColumnConfig}.
  *
  * @example
- * ```ts
+ * Defining a drizzle table schema for postgres table with encrypted columns.
+ * 
+ * ```typescript
+ * import { pgTable, integer, timestamp } from 'drizzle-orm/pg-core'
+ * import { encryptedType } from '@cipherstash/drizzle/pg'
+ * 
  * const users = pgTable('users', {
  *   email: encryptedType('email', {
  *     freeTextSearch: true,

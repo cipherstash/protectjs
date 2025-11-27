@@ -35,6 +35,11 @@ export const noClientError = () =>
     'The EQL client has not been initialized. Please call init() before using the client.',
   )
 
+/** The ProtectClient is the main entry point for interacting with the CipherStash Protect.js library.
+ * It provides methods for encrypting and decrypting individual values, as well as models (objects) and bulk operations.
+ *
+ * The client must be initialized using the {@link protect} function before it can be used.
+ */
 export class ProtectClient {
   private client: Client
   private encryptConfig: EncryptConfig | undefined
@@ -45,6 +50,12 @@ export class ProtectClient {
     this.workspaceId = workspaceId
   }
 
+  /**
+   * Initializes the ProtectClient with the provided configuration.
+   * @internal
+   * @param config - The configuration object for initializing the client.
+   * @returns A promise that resolves to a {@link Result} containing the initialized ProtectClient or a {@link ProtectError}.
+   **/
   async init(config: {
     encryptConfig: EncryptConfig
     workspaceCrn?: string
@@ -90,10 +101,75 @@ export class ProtectClient {
   }
 
   /**
-   * Encryption - returns a thenable object.
-   * Usage:
-   *    await eqlClient.encrypt(plaintext, { column, table })
-   *    await eqlClient.encrypt(plaintext, { column, table }).withLockContext(lockContext)
+   * Encrypt a value - returns a promise which resolves to an encrypted value.
+   *
+   * @param plaintext - The plaintext value to be encrypted. Can be null.
+   * @param opts - Options specifying the column and table for encryption.
+   * @returns An EncryptOperation that can be awaited or chained with additional methods.
+   *
+   * @example
+   * The following example demonstrates how to encrypt a value using the Protect client.
+   * It includes defining an encryption schema with {@link csTable} and {@link csColumn},
+   * initializing the client with {@link protect}, and performing the encryption.
+   *
+   * `encrypt` returns an {@link EncryptOperation} which can be awaited to get a {@link Result}
+   * which can either be the encrypted value or a {@link ProtectError}.
+   *
+   * ```typescript
+   * // Define encryption schema
+   * import { csTable, csColumn } from "@cipherstash/protect"
+   * const userSchema = csTable("users", {
+   *  email: csColumn("email"),
+   * });
+   *
+   * // Initialize Protect client
+   * const protectClient = await protect({ schemas: [userSchema] })
+   *
+   * // Encrypt a value
+   * const encryptedResult = await protectClient.encrypt(
+   *  "person@example.com",
+   *  { column: userSchema.email, table: userSchema }
+   * )
+   *
+   * // Handle encryption result
+   * if (encryptedResult.failure) {
+   *   throw new Error(`Encryption failed: ${encryptedResult.failure.message}`);
+   * }
+   *
+   * console.log("Encrypted data:", encryptedResult.data);
+   * ```
+   *
+   * @example
+   * When encrypting data, a {@link LockContext} can be provided to tie the encryption to a specific user or session.
+   * This ensures that the same lock context is required for decryption.
+   *
+   * The following example demonstrates how to create a lock context using a user's JWT token
+   * and use it during encryption.
+   *
+   * ```typescript
+   * // Define encryption schema and initialize client as above
+   *
+   * // Create a lock for the user's `sub` claim from their JWT
+   * const lc = new LockContext();
+   * const lockContext = await lc.identify(userJwt);
+   *
+   * if (lockContext.failure) {
+   *   // Handle the failure
+   * }
+   *
+   * // Encrypt a value with the lock context
+   * // Decryption will then require the same lock context
+   * const encryptedResult = await protectClient.encrypt(
+   *  "person@example.com",
+   *  { column: userSchema.email, table: userSchema }
+   * )
+   *  .withLockContext(lockContext)
+   * ```
+   *
+   * @see {@link Result}
+   * @see {@link csTable}
+   * @see {@link LockContext}
+   * @see {@link EncryptOperation}
    */
   encrypt(
     plaintext: JsPlaintext | null,
@@ -103,20 +179,65 @@ export class ProtectClient {
   }
 
   /**
-   * Decryption - returns a thenable object.
-   * Usage:
+   * Decryption - returns a promise which resolves to a decrypted value.
+   *
+   * @param encryptedData - The encrypted data to be decrypted.
+   * @returns A DecryptOperation that can be awaited or chained with additional methods.
+   *
+   * @example
+   * The following example demonstrates how to decrypt a value that was previously encrypted using {@link encrypt} client.
+   * It includes encrypting a value first, then decrypting it, and handling the result.
+   *
+   * ```typescript
+   * const encryptedData = await eqlClient.encrypt(
+   *  "person@example.com",
+   *  { column: "email", table: "users" }
+   * )
+   * const decryptResult = await eqlClient.decrypt(encryptedData)
+   * if (decryptResult.failure) {
+   *   throw new Error(`Decryption failed: ${decryptResult.failure.message}`);
+   * }
+   * console.log("Decrypted data:", decryptResult.data);
+   * ```
+   *
+   * @example
+   * Provide a lock context when decrypting:
+   * ```typescript
    *    await eqlClient.decrypt(encryptedData)
-   *    await eqlClient.decrypt(encryptedData).withLockContext(lockContext)
+   *      .withLockContext(lockContext)
+   * ```
+   *
+   * @see {@link LockContext}
+   * @see {@link DecryptOperation}
    */
   decrypt(encryptedData: Encrypted): DecryptOperation {
     return new DecryptOperation(this.client, encryptedData)
   }
 
   /**
-   * Encrypt a model with decrypted values
-   * Usage:
-   *    await eqlClient.encryptModel(decryptedModel, table)
-   *    await eqlClient.encryptModel(decryptedModel, table).withLockContext(lockContext)
+   * Encrypt a model based on its encryptConfig.
+   *
+   * @example
+   * ```typescript
+   * type User = {
+   *   id: string;
+   *   email: string; // encrypted
+   * }
+   *
+   * // Define the schema for the users table
+   * const usersSchema = csTable('users', {
+   *   email: csColumn('email').freeTextSearch().equality().orderAndRange(),
+   * })
+   *
+   * // Initialize the Protect client
+   * const protectClient = await protect({ schemas: [usersSchema] })
+   *
+   * // Encrypt a user model
+   * const encryptedModel = await protectClient.encryptModel<User>(
+   *   { id: 'user_123', email: 'person@example.com' },
+   *   usersSchema,
+   * )
+   * ```
    */
   encryptModel<T extends Record<string, unknown>>(
     input: Decrypted<T>,
