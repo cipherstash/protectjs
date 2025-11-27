@@ -1,5 +1,12 @@
 # nest
 
+## 0.0.6
+
+### Patch Changes
+
+- Updated dependencies [ff4421f]
+  - @cipherstash/protect@10.1.1
+
 ## 0.0.5
 
 ### Patch Changes
