@@ -172,19 +172,10 @@ describe('Documentation Drift Tests', () => {
         const context: ExecutionContext = {
           db,
           transactions,
-          protect: protectOps,
           protectClient,
           protectTransactions,
-          eq,
-          gte,
-          lte,
-          ilike,
-          and,
-          or,
-          desc,
-          asc,
-          sql,
-          inArray,
+          ...drizzleOrm,
+          // Note: 'protect' intentionally omitted
         }
 
         const result = await executeCodeBlock(block.code, context)
