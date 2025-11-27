@@ -2,18 +2,7 @@ import 'dotenv/config'
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { protect } from '@cipherstash/protect'
-import {
-  and,
-  asc,
-  desc,
-  eq,
-  gte,
-  ilike,
-  inArray,
-  lte,
-  or,
-  sql,
-} from 'drizzle-orm'
+import * as drizzleOrm from 'drizzle-orm'
 import { integer, pgTable } from 'drizzle-orm/pg-core'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
