@@ -130,32 +130,32 @@ describe('Documentation Drift Tests', () => {
     const blocks = loadDocumentation(docsPath, 'drizzle.md')
 
     it.each(blocks.map((b) => [b.section, b]))(
-        '%s',
-        async (_section, block) => {
-          const context: ExecutionContext = {
-            db,
-            transactions,
-            protect: protectOps,
-            protectClient,
-            protectTransactions,
-            ...drizzleOrm,
-          }
+      '%s',
+      async (_section, block) => {
+        const context: ExecutionContext = {
+          db,
+          transactions,
+          protect: protectOps,
+          protectClient,
+          protectTransactions,
+          ...drizzleOrm,
+        }
 
-          const result = await executeCodeBlock(block.code, context)
+        const result = await executeCodeBlock(block.code, context)
 
-          if (!result.success) {
-            console.error(`\nFailed block at line ${block.lineNumber}:`)
-            console.error('---')
-            console.error(block.code)
-            console.error('---')
-            console.error(`Error: ${result.error}`)
-          }
+        if (!result.success) {
+          console.error(`\nFailed block at line ${block.lineNumber}:`)
+          console.error('---')
+          console.error(block.code)
+          console.error('---')
+          console.error(`Error: ${result.error}`)
+        }
 
-          expect(result.success, `Block failed: ${result.error}`).toBe(true)
-          expect(result.result).toBeDefined()
-        },
-        30000,
-      )
+        expect(result.success, `Block failed: ${result.error}`).toBe(true)
+        expect(result.result).toBeDefined()
+      },
+      30000,
+    )
   })
 
   describe('drizzle-protect.md - Manual Encryption Pattern', () => {
