@@ -69,6 +69,7 @@
 		"@cipherstash/protect": "workspace:*",
 		"@cipherstash/schema": "workspace:*",
 		"dotenv": "^16.4.7",
+		"fast-check": "^4.3.0",
 		"tsup": "catalog:repo",
 		"typescript": "catalog:repo",
 		"vitest": "catalog:repo"
