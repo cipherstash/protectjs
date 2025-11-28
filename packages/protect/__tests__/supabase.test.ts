@@ -41,14 +41,16 @@ const TEST_RUN_ID = `test-run-${Date.now()}-${Math.random().toString(36).slice(2
 const insertedIds: number[] = []
 
 beforeAll(async () => {
-  // Clean up any stale test data from previous runs
-  // This handles cases where previous test runs crashed before cleanup
+  // Clean up any data from this specific test run (safe for concurrent runs)
   const { error } = await supabase
     .from('protect-ci')
     .delete()
-    .like('test_run_id', 'test-run-%')
+    .eq('test_run_id', TEST_RUN_ID)
+
   if (error) {
-    console.warn(`[protect]: Failed to clean up stale test data: ${error.message}`)
+    console.warn(
+      `[protect]: Failed to clean up test data: ${error.message}`,
+    )
   }
 })
 
@@ -186,12 +188,12 @@ describe('supabase', () => {
       throw new Error(`[protect]: ${encryptedModels.failure.message}`)
     }
 
-    const dataToInsert = bulkModelsToEncryptedPgComposites(encryptedModels.data).map(
-      (row) => ({
-        ...row,
-        test_run_id: TEST_RUN_ID,
-      }),
-    )
+    const dataToInsert = bulkModelsToEncryptedPgComposites(
+      encryptedModels.data,
+    ).map((row) => ({
+      ...row,
+      test_run_id: TEST_RUN_ID,
+    }))
 
     const { data: insertedData, error: insertError } = await supabase
       .from('protect-ci')
