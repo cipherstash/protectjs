@@ -1,6 +1,6 @@
 import 'dotenv/config'
 import { csColumn, csTable } from '@cipherstash/schema'
-import { beforeAll, describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import {
   type Encrypted,
   bulkModelsToEncryptedPgComposites,
@@ -33,11 +33,37 @@ const table = csTable('protect-ci', {
 // Hard code this as the CI database doesn't support order by on encrypted columns
 const SKIP_ORDER_BY_TEST = true
 
+// Unique identifier for this test run to isolate data from concurrent test runs
+// This is stored in a dedicated test_run_id column to avoid polluting test data
+const TEST_RUN_ID = `test-run-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+
+// Track all inserted IDs for cleanup
+const insertedIds: number[] = []
+
 beforeAll(async () => {
-  // Truncate the table before running tests
-  const { error } = await supabase.from('protect-ci').delete().neq('id', 0)
+  // Clean up any data from this specific test run (safe for concurrent runs)
+  const { error } = await supabase
+    .from('protect-ci')
+    .delete()
+    .eq('test_run_id', TEST_RUN_ID)
+
   if (error) {
-    throw new Error(`[protect]: Failed to truncate table: ${error.message}`)
+    console.warn(
+      `[protect]: Failed to clean up test data: ${error.message}`,
+    )
+  }
+})
+
+afterAll(async () => {
+  // Clean up all data from this test run
+  if (insertedIds.length > 0) {
+    const { error } = await supabase
+      .from('protect-ci')
+      .delete()
+      .in('id', insertedIds)
+    if (error) {
+      console.error(`[protect]: Failed to clean up test data: ${error.message}`)
+    }
   }
 })
 
@@ -58,12 +84,17 @@ describe('supabase', () => {
 
     const { data: insertedData, error: insertError } = await supabase
       .from('protect-ci')
-      .insert({ encrypted: encryptedToPgComposite(ciphertext.data) })
+      .insert({
+        encrypted: encryptedToPgComposite(ciphertext.data),
+        test_run_id: TEST_RUN_ID,
+      })
       .select('id')
 
     if (insertError) {
       throw new Error(`[protect]: ${insertError.message}`)
     }
+
+    insertedIds.push(insertedData[0].id)
 
     const { data, error } = await supabase
       .from('protect-ci')
@@ -76,8 +107,6 @@ describe('supabase', () => {
 
     const dataToDecrypt = data[0].encrypted as Encrypted
     const plaintext = await protectClient.decrypt(dataToDecrypt)
-
-    await supabase.from('protect-ci').delete().eq('id', insertedData[0].id)
 
     expect(plaintext).toEqual({
       data: e,
@@ -100,12 +129,19 @@ describe('supabase', () => {
 
     const { data: insertedData, error: insertError } = await supabase
       .from('protect-ci')
-      .insert([modelToEncryptedPgComposites(encryptedModel.data)])
+      .insert([
+        {
+          ...modelToEncryptedPgComposites(encryptedModel.data),
+          test_run_id: TEST_RUN_ID,
+        },
+      ])
       .select('id')
 
     if (insertError) {
       throw new Error(`[protect]: ${insertError.message}`)
     }
+
+    insertedIds.push(insertedData[0].id)
 
     const { data, error } = await supabase
       .from('protect-ci')
@@ -125,8 +161,6 @@ describe('supabase', () => {
     if (decryptedModel.failure) {
       throw new Error(`[protect]: ${decryptedModel.failure.message}`)
     }
-
-    await supabase.from('protect-ci').delete().eq('id', insertedData[0].id)
 
     expect({
       encrypted: decryptedModel.data.encrypted,
@@ -154,14 +188,23 @@ describe('supabase', () => {
       throw new Error(`[protect]: ${encryptedModels.failure.message}`)
     }
 
+    const dataToInsert = bulkModelsToEncryptedPgComposites(
+      encryptedModels.data,
+    ).map((row) => ({
+      ...row,
+      test_run_id: TEST_RUN_ID,
+    }))
+
     const { data: insertedData, error: insertError } = await supabase
       .from('protect-ci')
-      .insert(bulkModelsToEncryptedPgComposites(encryptedModels.data))
+      .insert(dataToInsert)
       .select('id')
 
     if (insertError) {
       throw new Error(`[protect]: ${insertError.message}`)
     }
+
+    insertedIds.push(...insertedData.map((d: { id: number }) => d.id))
 
     const { data, error } = await supabase
       .from('protect-ci')
@@ -181,14 +224,6 @@ describe('supabase', () => {
       throw new Error(`[protect]: ${decryptedModels.failure.message}`)
     }
 
-    await supabase
-      .from('protect-ci')
-      .delete()
-      .in(
-        'id',
-        insertedData.map((d: { id: number }) => d.id),
-      )
-
     expect(
       decryptedModels.data.map((d) => {
         return {
@@ -200,81 +235,72 @@ describe('supabase', () => {
   }, 30000)
 
   it('should insert and query encrypted number data with equality', async () => {
-    let insertedData: { id: number }[] = []
+    const protectClient = await protect({ schemas: [table] })
 
-    try {
-      const protectClient = await protect({ schemas: [table] })
+    const testAge = 25
+    const model = {
+      age: testAge,
+      otherField: 'not encrypted',
+    }
 
-      const testAge = 25
-      const model = {
-        age: testAge,
-        otherField: 'not encrypted',
-      }
+    const encryptedModel = await protectClient.encryptModel(model, table)
 
-      const encryptedModel = await protectClient.encryptModel(model, table)
+    if (encryptedModel.failure) {
+      throw new Error(`[protect]: ${encryptedModel.failure.message}`)
+    }
 
-      if (encryptedModel.failure) {
-        throw new Error(`[protect]: ${encryptedModel.failure.message}`)
-      }
-
-      const insertResult = await supabase
-        .from('protect-ci')
-        .insert([modelToEncryptedPgComposites(encryptedModel.data)])
-        .select('id')
-
-      if (insertResult.error) {
-        throw new Error(`[protect]: ${insertResult.error.message}`)
-      }
-
-      insertedData = insertResult.data
-
-      // Create search term for equality query
-      const searchTerm = await protectClient.createSearchTerms([
+    const insertResult = await supabase
+      .from('protect-ci')
+      .insert([
         {
-          value: testAge,
-          column: table.age,
-          table: table,
-          returnType: 'composite-literal',
+          ...modelToEncryptedPgComposites(encryptedModel.data),
+          test_run_id: TEST_RUN_ID,
         },
       ])
+      .select('id')
 
-      if (searchTerm.failure) {
-        throw new Error(`[protect]: ${searchTerm.failure.message}`)
-      }
-
-      const { data, error } = await supabase
-        .from('protect-ci')
-        .select('id, age::jsonb, otherField')
-        .eq('age', searchTerm.data[0])
-
-      if (error) {
-        throw new Error(`[protect]: ${error.message}`)
-      }
-
-      expect(data).toHaveLength(1)
-      expect(data[0].id).toBe(insertedData[0].id)
-
-      const decryptedModel = await protectClient.decryptModel(data[0])
-
-      if (decryptedModel.failure) {
-        throw new Error(`[protect]: ${decryptedModel.failure.message}`)
-      }
-
-      expect(decryptedModel.data.age).toBe(testAge)
-    } finally {
-      // Cleanup - always runs regardless of success or failure
-      if (insertedData.length > 0) {
-        const deleteResult = await supabase
-          .from('protect-ci')
-          .delete()
-          .eq('id', insertedData[0].id)
-        if (deleteResult.error) {
-          console.error(
-            'Failed to delete test data:',
-            deleteResult.error.message,
-          )
-        }
-      }
+    if (insertResult.error) {
+      throw new Error(`[protect]: ${insertResult.error.message}`)
     }
+
+    const insertedRecordId = insertResult.data[0].id
+    insertedIds.push(insertedRecordId)
+
+    // Create search term for equality query
+    const searchTerm = await protectClient.createSearchTerms([
+      {
+        value: testAge,
+        column: table.age,
+        table: table,
+        returnType: 'composite-literal',
+      },
+    ])
+
+    if (searchTerm.failure) {
+      throw new Error(`[protect]: ${searchTerm.failure.message}`)
+    }
+
+    // Query filtering by both encrypted age AND our specific test run's ID
+    // This ensures we don't pick up stale data from other test runs
+    const { data, error } = await supabase
+      .from('protect-ci')
+      .select('id, age::jsonb, otherField')
+      .eq('age', searchTerm.data[0])
+      .eq('test_run_id', TEST_RUN_ID)
+
+    if (error) {
+      throw new Error(`[protect]: ${error.message}`)
+    }
+
+    // Verify we found our specific row with encrypted age match
+    expect(data).toHaveLength(1)
+
+    const decryptedModel = await protectClient.decryptModel(data[0])
+
+    if (decryptedModel.failure) {
+      throw new Error(`[protect]: ${decryptedModel.failure.message}`)
+    }
+
+    expect(decryptedModel.data.age).toBe(testAge)
   }, 30000)
 })
