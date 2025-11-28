@@ -34,6 +34,7 @@ const table = csTable('protect-ci', {
 const SKIP_ORDER_BY_TEST = true
 
 // Unique identifier for this test run to isolate data from concurrent test runs
+// This is stored in a dedicated test_run_id column to avoid polluting test data
 const TEST_RUN_ID = `test-run-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
 
 // Track all inserted IDs for cleanup
@@ -45,7 +46,7 @@ beforeAll(async () => {
   const { error } = await supabase
     .from('protect-ci')
     .delete()
-    .like('otherField', 'test-run-%')
+    .like('test_run_id', 'test-run-%')
   if (error) {
     console.warn(`[protect]: Failed to clean up stale test data: ${error.message}`)
   }
@@ -83,7 +84,7 @@ describe('supabase', () => {
       .from('protect-ci')
       .insert({
         encrypted: encryptedToPgComposite(ciphertext.data),
-        otherField: TEST_RUN_ID,
+        test_run_id: TEST_RUN_ID,
       })
       .select('id')
 
@@ -115,7 +116,7 @@ describe('supabase', () => {
 
     const model = {
       encrypted: 'hello world',
-      otherField: TEST_RUN_ID,
+      otherField: 'not encrypted',
     }
 
     const encryptedModel = await protectClient.encryptModel(model, table)
@@ -126,7 +127,12 @@ describe('supabase', () => {
 
     const { data: insertedData, error: insertError } = await supabase
       .from('protect-ci')
-      .insert([modelToEncryptedPgComposites(encryptedModel.data)])
+      .insert([
+        {
+          ...modelToEncryptedPgComposites(encryptedModel.data),
+          test_run_id: TEST_RUN_ID,
+        },
+      ])
       .select('id')
 
     if (insertError) {
@@ -166,11 +172,11 @@ describe('supabase', () => {
     const models = [
       {
         encrypted: 'hello world 1',
-        otherField: `${TEST_RUN_ID}-1`,
+        otherField: 'not encrypted 1',
       },
       {
         encrypted: 'hello world 2',
-        otherField: `${TEST_RUN_ID}-2`,
+        otherField: 'not encrypted 2',
       },
     ]
 
@@ -180,9 +186,16 @@ describe('supabase', () => {
       throw new Error(`[protect]: ${encryptedModels.failure.message}`)
     }
 
+    const dataToInsert = bulkModelsToEncryptedPgComposites(encryptedModels.data).map(
+      (row) => ({
+        ...row,
+        test_run_id: TEST_RUN_ID,
+      }),
+    )
+
     const { data: insertedData, error: insertError } = await supabase
       .from('protect-ci')
-      .insert(bulkModelsToEncryptedPgComposites(encryptedModels.data))
+      .insert(dataToInsert)
       .select('id')
 
     if (insertError) {
@@ -225,7 +238,7 @@ describe('supabase', () => {
     const testAge = 25
     const model = {
       age: testAge,
-      otherField: TEST_RUN_ID,
+      otherField: 'not encrypted',
     }
 
     const encryptedModel = await protectClient.encryptModel(model, table)
@@ -236,7 +249,12 @@ describe('supabase', () => {
 
     const insertResult = await supabase
       .from('protect-ci')
-      .insert([modelToEncryptedPgComposites(encryptedModel.data)])
+      .insert([
+        {
+          ...modelToEncryptedPgComposites(encryptedModel.data),
+          test_run_id: TEST_RUN_ID,
+        },
+      ])
       .select('id')
 
     if (insertResult.error) {
@@ -260,13 +278,13 @@ describe('supabase', () => {
       throw new Error(`[protect]: ${searchTerm.failure.message}`)
     }
 
-    // Query filtering by both encrypted age AND our specific test run's otherField
+    // Query filtering by both encrypted age AND our specific test run's ID
     // This ensures we don't pick up stale data from other test runs
     const { data, error } = await supabase
       .from('protect-ci')
       .select('id, age::jsonb, otherField')
       .eq('age', searchTerm.data[0])
-      .eq('otherField', TEST_RUN_ID)
+      .eq('test_run_id', TEST_RUN_ID)
 
     if (error) {
       throw new Error(`[protect]: ${error.message}`)
