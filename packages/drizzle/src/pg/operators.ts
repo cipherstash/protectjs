@@ -892,7 +892,7 @@ export function createProtectOperators(protectClient: ProtectClient): {
   /**
    * Equality operator - encrypts value for encrypted columns.
    * Requires either `equality` or `orderAndRange` to be set on {@link EncryptedColumnConfig}.
-   * 
+   *
    * @example
    * Select users with a specific email address.
    * ```ts
@@ -905,7 +905,7 @@ export function createProtectOperators(protectClient: ProtectClient): {
   /**
    * Not equal operator - encrypts value for encrypted columns.
    * Requires either `equality` or `orderAndRange` to be set on {@link EncryptedColumnConfig}.
-   * 
+   *
    * @example
    * Select users whose email address is not a specific value.
    * ```ts
@@ -918,7 +918,7 @@ export function createProtectOperators(protectClient: ProtectClient): {
   /**
    * Greater than operator for encrypted columns with ORE index.
    * Requires `orderAndRange` to be set on {@link EncryptedColumnConfig}.
-   * 
+   *
    * @example
    * Select users older than a specific age.
    * ```ts
@@ -931,7 +931,7 @@ export function createProtectOperators(protectClient: ProtectClient): {
   /**
    * Greater than or equal operator for encrypted columns with ORE index.
    * Requires `orderAndRange` to be set on {@link EncryptedColumnConfig}.
-   * 
+   *
    * @example
    * Select users older than or equal to a specific age.
    * ```ts
@@ -944,7 +944,7 @@ export function createProtectOperators(protectClient: ProtectClient): {
   /**
    * Less than operator for encrypted columns with ORE index.
    * Requires `orderAndRange` to be set on {@link EncryptedColumnConfig}.
-   * 
+   *
    * @example
    * Select users younger than a specific age.
    * ```ts
@@ -957,7 +957,7 @@ export function createProtectOperators(protectClient: ProtectClient): {
   /**
    * Less than or equal operator for encrypted columns with ORE index.
    * Requires `orderAndRange` to be set on {@link EncryptedColumnConfig}.
-   * 
+   *
    * @example
    * Select users younger than or equal to a specific age.
    * ```ts
@@ -966,11 +966,11 @@ export function createProtectOperators(protectClient: ProtectClient): {
    * ```
    */
   lte: (left: SQLWrapper, right: unknown) => Promise<SQL> | SQL
-  
+
   /**
    * Between operator for encrypted columns with ORE index.
    * Requires `orderAndRange` to be set on {@link EncryptedColumnConfig}.
-   * 
+   *
    * @example
    * Select users within a specific age range.
    * ```ts
@@ -983,7 +983,7 @@ export function createProtectOperators(protectClient: ProtectClient): {
   /**
    * Not between operator for encrypted columns with ORE index.
    * Requires `orderAndRange` to be set on {@link EncryptedColumnConfig}.
-   * 
+   *
    * @example
    * Select users outside a specific age range.
    * ```ts
@@ -1000,28 +1000,28 @@ export function createProtectOperators(protectClient: ProtectClient): {
   /**
    * Like operator for encrypted columns with free text search.
    * Requires `freeTextSearch` to be set on {@link EncryptedColumnConfig}.
-   * 
+   *
    * > [!IMPORTANT]
    * > Case sensitivity on encrypted columns depends on the {@link EncryptedColumnConfig}.
    * > Ensure that the column is configured for case-insensitive search if needed.
-   * 
+   *
    * @example
    * Select users with email addresses matching a pattern.
    * ```ts
    * const condition = await protectOps.like(usersTable.email, '%@example.com')
    * const results = await db.select().from(usersTable).where(condition)
-   * ``` 
+   * ```
    */
   like: (left: SQLWrapper, right: unknown) => Promise<SQL> | SQL
 
   /**
    * ILike operator for encrypted columns with free text search.
    * Requires `freeTextSearch` to be set on {@link EncryptedColumnConfig}.
-   * 
+   *
    * > [!IMPORTANT]
    * > Case sensitivity on encrypted columns depends on the {@link EncryptedColumnConfig}.
    * > Ensure that the column is configured for case-insensitive search if needed.
-   * 
+   *
    * @example
    * Select users with email addresses matching a pattern (case-insensitive).
    * ```ts
