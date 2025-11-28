@@ -66,6 +66,7 @@
 		}
 	},
 	"devDependencies": {
+		"@cipherstash/protect": "workspace:*",
 		"@cipherstash/schema": "workspace:*",
 		"dotenv": "^16.4.7",
 		"tsup": "catalog:repo",
