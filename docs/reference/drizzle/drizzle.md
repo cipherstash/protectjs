@@ -1,4 +1,4 @@
-# Drizzle + Protect.js Interactive Examples
+# Drizzle + Protect.js Query Examples
 ## Protect Operators Pattern (Recommended)
 
 This page demonstrates how to perform queries on encrypted data using **Drizzle ORM** with **CipherStash Protect.js** using the **protect operators pattern**.

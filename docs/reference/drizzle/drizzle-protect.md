@@ -1,4 +1,4 @@
-# Drizzle + Protect.js Manual Encryption Examples
+# Drizzle + Protect.js Query Examples
 ## Manual Encryption Pattern (Verbose)
 
 This page demonstrates how to perform queries on encrypted data using **Drizzle ORM** with **explicit Protect.js encryption calls** for full control.
