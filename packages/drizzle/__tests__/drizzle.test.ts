@@ -1,7 +1,7 @@
 import 'dotenv/config'
 import { protect } from '@cipherstash/protect'
 import { and, eq, inArray, sql } from 'drizzle-orm'
-import { integer, pgTable, timestamp } from 'drizzle-orm/pg-core'
+import { integer, pgTable, text, timestamp } from 'drizzle-orm/pg-core'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
@@ -53,6 +53,7 @@ const drizzleUsersTable = pgTable('protect-ci', {
     },
   ),
   createdAt: timestamp('created_at').defaultNow(),
+  testRunId: text('test_run_id'),
 })
 
 // Extract Protect.js schema from Drizzle table
@@ -60,6 +61,9 @@ const users = extractProtectSchema(drizzleUsersTable)
 
 // Hard code this as the CI database doesn't support order by on encrypted columns
 const SKIP_ORDER_BY_TEST = true
+
+// Unique identifier for this test run to isolate data from concurrent test runs
+const TEST_RUN_ID = `drizzle-test-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
 
 // Test data interface for decrypted results
 interface DecryptedUser {
@@ -148,9 +152,15 @@ beforeAll(async () => {
     throw new Error(`Encryption failed: ${encryptedUser.failure.message}`)
   }
 
+  // Add test_run_id to each record for test isolation
+  const dataWithTestRunId = encryptedUser.data.map((user) => ({
+    ...user,
+    testRunId: TEST_RUN_ID,
+  }))
+
   const insertedUsers = await db
     .insert(drizzleUsersTable)
-    .values(encryptedUser.data)
+    .values(dataWithTestRunId)
     .returning({
       id: drizzleUsersTable.id,
       email: drizzleUsersTable.email,
@@ -164,11 +174,10 @@ beforeAll(async () => {
 }, 60000)
 
 afterAll(async () => {
-  // Clean up test data using Drizzle
-  if (testData.length > 0) {
-    const ids = testData.map((d) => d.id)
-    await db.delete(drizzleUsersTable).where(inArray(drizzleUsersTable.id, ids))
-  }
+  // Clean up test data using test_run_id for reliable isolation
+  await db
+    .delete(drizzleUsersTable)
+    .where(eq(drizzleUsersTable.testRunId, TEST_RUN_ID))
 }, 30000)
 
 describe('Drizzle ORM Integration with Protect.js', () => {
@@ -185,7 +194,12 @@ describe('Drizzle ORM Integration with Protect.js', () => {
         profile: drizzleUsersTable.profile,
       })
       .from(drizzleUsersTable)
-      .where(await protectOps.eq(drizzleUsersTable.email, searchEmail))
+      .where(
+        and(
+          eq(drizzleUsersTable.testRunId, TEST_RUN_ID),
+          await protectOps.eq(drizzleUsersTable.email, searchEmail),
+        ),
+      )
 
     expect(results).toHaveLength(1)
 
@@ -212,7 +226,12 @@ describe('Drizzle ORM Integration with Protect.js', () => {
         profile: drizzleUsersTable.profile,
       })
       .from(drizzleUsersTable)
-      .where(await protectOps.ilike(drizzleUsersTable.email, searchText))
+      .where(
+        and(
+          eq(drizzleUsersTable.testRunId, TEST_RUN_ID),
+          await protectOps.ilike(drizzleUsersTable.email, searchText),
+        ),
+      )
 
     // Should find users with 'smith' in their email
     expect(results.length).toBeGreaterThan(0)
@@ -251,7 +270,12 @@ describe('Drizzle ORM Integration with Protect.js', () => {
         profile: drizzleUsersTable.profile,
       })
       .from(drizzleUsersTable)
-      .where(await protectOps.gte(drizzleUsersTable.age, minAge))
+      .where(
+        and(
+          eq(drizzleUsersTable.testRunId, TEST_RUN_ID),
+          await protectOps.gte(drizzleUsersTable.age, minAge),
+        ),
+      )
 
     // Should find users with age >= 28
     expect(results.length).toBeGreaterThan(0)
@@ -291,6 +315,7 @@ describe('Drizzle ORM Integration with Protect.js', () => {
         profile: drizzleUsersTable.profile,
       })
       .from(drizzleUsersTable)
+      .where(eq(drizzleUsersTable.testRunId, TEST_RUN_ID))
       .orderBy(protectOps.asc(drizzleUsersTable.age))
 
     const results = await a
@@ -336,6 +361,7 @@ describe('Drizzle ORM Integration with Protect.js', () => {
       .from(drizzleUsersTable)
       .where(
         await protectOps.and(
+          eq(drizzleUsersTable.testRunId, TEST_RUN_ID),
           protectOps.gte(drizzleUsersTable.age, minAge),
           protectOps.lte(drizzleUsersTable.age, maxAge),
           protectOps.ilike(drizzleUsersTable.email, searchText),
@@ -386,10 +412,13 @@ describe('Drizzle ORM Integration with Protect.js', () => {
       })
       .from(drizzleUsersTable)
       .where(
-        await protectOps.or(
-          protectOps.eq(drizzleUsersTable.email, targetEmails[0]),
-          protectOps.eq(drizzleUsersTable.email, targetEmails[1]),
-          eq(drizzleUsersTable.id, fallbackId),
+        await protectOps.and(
+          eq(drizzleUsersTable.testRunId, TEST_RUN_ID),
+          protectOps.or(
+            protectOps.eq(drizzleUsersTable.email, targetEmails[0]),
+            protectOps.eq(drizzleUsersTable.email, targetEmails[1]),
+            eq(drizzleUsersTable.id, fallbackId),
+          ),
         ),
       )
 
@@ -422,6 +451,7 @@ describe('Drizzle ORM Integration with Protect.js', () => {
         profile: drizzleUsersTable.profile,
       })
       .from(drizzleUsersTable)
+      .where(eq(drizzleUsersTable.testRunId, TEST_RUN_ID))
       .limit(1)
 
     if (!results[0]) {
@@ -457,7 +487,12 @@ describe('Drizzle ORM Integration with Protect.js', () => {
         profile: drizzleUsersTable.profile,
       })
       .from(drizzleUsersTable)
-      .where(await protectOps.inArray(drizzleUsersTable.email, searchEmails))
+      .where(
+        and(
+          eq(drizzleUsersTable.testRunId, TEST_RUN_ID),
+          await protectOps.inArray(drizzleUsersTable.email, searchEmails),
+        ),
+      )
 
     // Should find 2 users
     expect(results.length).toBe(2)
@@ -492,7 +527,12 @@ describe('Drizzle ORM Integration with Protect.js', () => {
         profile: drizzleUsersTable.profile,
       })
       .from(drizzleUsersTable)
-      .where(await protectOps.between(drizzleUsersTable.age, minAge, maxAge))
+      .where(
+        and(
+          eq(drizzleUsersTable.testRunId, TEST_RUN_ID),
+          await protectOps.between(drizzleUsersTable.age, minAge, maxAge),
+        ),
+      )
 
     // Should find users with age between 25 and 30
     expect(results.length).toBeGreaterThan(0)

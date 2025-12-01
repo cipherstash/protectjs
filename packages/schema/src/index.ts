@@ -90,7 +90,7 @@ export const encryptConfigSchema = z.object({
 /**
  * Type-safe alias for {@link castAsEnum} used to specify the *unencrypted* data type of a column or value.
  * This is important because once encrypted, all data is stored as binary blobs.
- * 
+ *
  * @see {@link castAsEnum} for possible values.
  */
 export type CastAs = z.infer<typeof castAsEnum>
