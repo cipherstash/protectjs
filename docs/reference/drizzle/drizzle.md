@@ -39,7 +39,7 @@ The TypeScript schema uses camelCase property names that map to snake_case datab
 
 This is the **recommended pattern** for most use cases.
 
-**Alternative:** See [manual encryption pattern](/drizzle-protect) for explicit control over encryption workflow.
+**Alternative:** See [manual encryption pattern](/reference/drizzle/drizzle-protect) for explicit control over encryption workflow.
 
 ## Setup
 

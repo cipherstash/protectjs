@@ -10,7 +10,7 @@ This page demonstrates how to perform queries on encrypted data using **Drizzle 
 - Use standard Drizzle operators (`eq()`, `gte()`, `lte()`) with pre-encrypted values
 - Manually decrypt results using `protectClient.bulkDecryptModels()`
 
-This verbose pattern demonstrates the low-level encryption workflow. For cleaner syntax, see the [protect operators pattern](/drizzle).
+This verbose pattern demonstrates the low-level encryption workflow. For cleaner syntax, see the [protect operators pattern](/reference/drizzle/drizzle).
 
 ## Overview
 
@@ -39,7 +39,7 @@ This gives you explicit visibility into the encryption/decryption workflow at th
 - You're implementing batch operations with encryption
 - You want to inspect encrypted values for debugging
 
-**Recommended:** Most applications should use the [protect operators pattern](/drizzle) for cleaner syntax.
+**Recommended:** Most applications should use the [protect operators pattern](/reference/drizzle/drizzle) for cleaner syntax.
 
 ## Setup
 
