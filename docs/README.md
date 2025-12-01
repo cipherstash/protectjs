@@ -19,6 +19,11 @@ The documentation for Protect.js is organized into the following sections:
 
 - [Supabase SDK](./reference/supabase-sdk.md)
 
+### Drizzle ORM Integration
+
+- [Protect Operators Pattern](reference/drizzle/drizzle.md) - Recommended approach with auto-encrypting operators
+- [Manual Encryption Pattern](reference/drizzle/drizzle-protect.md) - Explicit control over encryption workflow
+
 ## How-to guides
 
 - [Lock contexts with Clerk and Next.js](./how-to/lock-contexts-with-clerk.md)
