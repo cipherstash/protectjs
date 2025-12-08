@@ -1,6 +1,8 @@
 services:
   postgres: &postgres
-    image: postgres:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
     environment:
       PGPORT: 5432
       POSTGRES_DB: "cipherstash"
@@ -9,11 +11,6 @@ services:
       POSTGRES_PASSWORD: password
     ports:
       - 5432:5432
-    volumes:
-      - ./cipherstash-encrypt-2-1-8.sql:/tmp/cipherstash-encrypt-2-1-8.sql
-      - ./postgres-entrypoint.sh:/usr/local/bin/postgres-entrypoint.sh
-      - ./create-ci-table.sql:/tmp/create-ci-table.sql
-    entrypoint: ["/usr/local/bin/postgres-entrypoint.sh"]
     deploy:
       resources:
         limits:
