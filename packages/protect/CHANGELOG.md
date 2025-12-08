@@ -1,5 +1,11 @@
 # @cipherstash/protect
 
+## 10.2.0
+
+### Minor Changes
+
+- de029de: Add client safe exports.
+
 ## 10.1.1
 
 ### Patch Changes

@@ -1,5 +1,12 @@
 # @cipherstash/typeorm-example
 
+## 0.1.6
+
+### Patch Changes
+
+- Updated dependencies [de029de]
+  - @cipherstash/protect@10.2.0
+
 ## 0.1.5
 
 ### Patch Changes
