@@ -28,6 +28,11 @@
 			"import": "./dist/index.js",
 			"require": "./dist/index.cjs"
 		},
+		"./client": {
+			"types": "./dist/client.d.ts",
+			"import": "./dist/client.js",
+			"require": "./dist/client.cjs"
+		},
 		"./identify": {
 			"types": "./dist/identify/index.d.ts",
 			"import": "./dist/identify/index.js",
