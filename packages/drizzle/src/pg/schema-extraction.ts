@@ -1,4 +1,8 @@
-import { type ProtectColumn, csColumn, csTable } from '@cipherstash/protect'
+import {
+  type ProtectColumn,
+  csColumn,
+  csTable,
+} from '@cipherstash/protect/client'
 import type { PgTable } from 'drizzle-orm/pg-core'
 import { getEncryptedColumnConfig } from './index.js'
 
