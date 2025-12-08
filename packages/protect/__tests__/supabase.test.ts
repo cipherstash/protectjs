@@ -48,9 +48,7 @@ beforeAll(async () => {
     .eq('test_run_id', TEST_RUN_ID)
 
   if (error) {
-    console.warn(
-      `[protect]: Failed to clean up test data: ${error.message}`,
-    )
+    console.warn(`[protect]: Failed to clean up test data: ${error.message}`)
   }
 })
 
