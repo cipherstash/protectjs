@@ -3,7 +3,7 @@ import type {
   ProtectColumn,
   ProtectTable,
   ProtectTableColumn,
-} from '@cipherstash/protect'
+} from '@cipherstash/protect/client'
 import {
   type SQL,
   type SQLWrapper,
