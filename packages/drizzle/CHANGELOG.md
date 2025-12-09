@@ -1,5 +1,11 @@
 # @cipherstash/drizzle
 
+## 2.1.0
+
+### Minor Changes
+
+- 41c4169: Update drizzle imports to use /client export path from Protect.js.
+
 ## 2.0.0
 
 ### Patch Changes
