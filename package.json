@@ -48,6 +48,7 @@
   "pnpm": {
     "overrides": {
       "@babel/runtime": "7.26.10",
+      "body-parser": "2.2.1",
       "vite": "catalog:security",
       "pg": "^8.16.3",
       "postgres": "^3.4.7",
