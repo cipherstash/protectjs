@@ -1,5 +1,11 @@
 # @cipherstash/nextjs
 
+## 4.1.0
+
+### Minor Changes
+
+- 1535259: Remove node api calls which are incompatible with Next.js middleware.
+
 ## 4.0.0
 
 ### Major Changes
