@@ -1,11 +1,39 @@
 import { NextResponse } from 'next/server'
-import { loadWorkSpaceId } from '../../../utils/config'
 import { logger } from '../../../utils/logger'
 import {
   CS_COOKIE_NAME,
   type CtsToken,
   type GetCtsTokenResponse,
 } from '../index'
+
+/**
+ * Extracts the workspace ID from a CRN string.
+ * CRN format: crn:region.aws:ID
+ *
+ * @param crn The CRN string to extract from
+ * @returns The workspace ID portion of the CRN
+ */
+function extractWorkspaceIdFromCrn(crn: string): string {
+  const match = crn.match(/crn:[^:]+:([^:]+)$/)
+  if (!match) {
+    throw new Error('Invalid CRN format')
+  }
+  return match[1]
+}
+
+export function loadWorkSpaceId(suppliedCrn?: string): string {
+  if (suppliedCrn) {
+    return extractWorkspaceIdFromCrn(suppliedCrn)
+  }
+
+  if (!process.env.CS_WORKSPACE_CRN) {
+    throw new Error(
+      'You have not defined a workspace CRN in your config file, or the CS_WORKSPACE_CRN environment variable.',
+    )
+  }
+
+  return extractWorkspaceIdFromCrn(process.env.CS_WORKSPACE_CRN)
+}
 
 // Can be used independently of the Next.js middleware
 export const fetchCtsToken = async (oidcToken: string): GetCtsTokenResponse => {
