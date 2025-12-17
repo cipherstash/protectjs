@@ -12,5 +12,5 @@ catalogs:
 
   security:
     '@clerk/nextjs': 6.31.2
-    next: 15.5.7
+    next: 15.5.8
     vite: 6.4.1
