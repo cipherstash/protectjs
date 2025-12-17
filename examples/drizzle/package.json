@@ -22,7 +22,7 @@
 		"@cipherstash/drizzle": "workspace:*",
 		"@cipherstash/protect": "workspace:*",
 		"drizzle-orm": "^0.44.7",
-		"express": "^5.2.0",
+		"express": "^5.2.1",
 		"pg": "^8.16.3",
 		"postgres": "^3.4.7"
 	}
