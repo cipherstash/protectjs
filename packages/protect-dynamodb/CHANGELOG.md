@@ -1,5 +1,11 @@
 # @cipherstash/protect-dynamodb
 
+## 6.0.1
+
+### Patch Changes
+
+- @cipherstash/protect@10.2.1
+
 ## 6.0.0
 
 ### Patch Changes

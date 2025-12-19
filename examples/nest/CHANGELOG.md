@@ -1,5 +1,11 @@
 # nest
 
+## 0.0.8
+
+### Patch Changes
+
+- @cipherstash/protect@10.2.1
+
 ## 0.0.7
 
 ### Patch Changes
