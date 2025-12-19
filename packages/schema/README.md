@@ -59,7 +59,7 @@ const emailColumn = csColumn('email')
   .freeTextSearch()    // Enable text search
   .equality()          // Enable exact matching
   .orderAndRange()     // Enable sorting and range queries
-  .dataType('text')    // Set data type
+  .dataType('string')  // Set data type
 ```
 
 ### `csValue(valueName)`
@@ -134,9 +134,9 @@ Set the data type for a column using `.dataType()`:
 
 ```typescript
 const column = csColumn('field')
-  .dataType('text')        // text (default)
-  .dataType('int')         // integer
-  .dataType('jsonb')       // JSON binary
+  .dataType('string')    // text (default)
+  .dataType('number')    // Javascript number (i.e. integer or float)
+  .dataType('jsonb')     // JSON binary
 ```
 
 ## Nested Objects
