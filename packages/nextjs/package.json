@@ -36,7 +36,7 @@
 		"release": "tsup"
 	},
 	"devDependencies": {
-		"@clerk/nextjs": "6.12.9",
+		"@clerk/nextjs": "catalog:security",
 		"dotenv": "^16.4.7",
 		"tsup": "catalog:repo",
 		"typescript": "catalog:repo",
