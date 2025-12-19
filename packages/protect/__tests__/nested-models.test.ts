@@ -287,6 +287,45 @@ describe('encrypt models with nested fields', () => {
     expect(decryptedResult.data).toEqual(decryptedModel)
   }, 30000)
 
+  it('should handle dates as ISO strings', async () => {
+    const protectClient = await protect({ schemas: [users] })
+
+    const now = new Date()
+
+    const decryptedModel = {
+      id: '5',
+      example: {
+        field: now.toISOString(),
+      },
+    }
+
+    const encryptedModel = await protectClient.encryptModel<User>(
+      decryptedModel,
+      users,
+    )
+
+    if (encryptedModel.failure) {
+      throw new Error(`[protect]: ${encryptedModel.failure.message}`)
+    }
+
+    // Verify encrypted fields
+    expect(encryptedModel.data.example.field).toHaveProperty('c')
+
+    // Verify non-encrypted fields remain unchanged
+    expect(encryptedModel.data.id).toBe('5')
+    expect(encryptedModel.data.example.nested).toBeUndefined()
+
+    const decryptedResult = await protectClient.decryptModel<User>(
+      encryptedModel.data,
+    )
+
+    if (decryptedResult.failure) {
+      throw new Error(`[protect]: ${decryptedResult.failure.message}`)
+    }
+
+    expect(new Date(decryptedResult.data.example.field as string)).toEqual(now)
+  }, 30000)
+
   it('should handle missing optional nested fields', async () => {
     const protectClient = await protect({ schemas: [users] })
 
