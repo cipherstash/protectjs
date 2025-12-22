@@ -1,5 +1,11 @@
 name: Release JS
 
+# Permissions for the workflow to use Trusted Actions
+# See https://docs.npmjs.com/trusted-publishers#supported-cicd-providers
+permissions:
+  id-token: write  # Required for OIDC
+  contents: read
+
 on:
   push:
     branches:
