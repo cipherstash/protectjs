@@ -1,13 +1,5 @@
 # @cipherstash/schema
 
-## 2.0.2
-
-### Patch Changes
-
-- 532ac3a: Corrected types documentation in README to match Typedoc.
-  `int` -> `number`
-  `text` -> `string`
-
 ## 2.0.1
 
 ### Patch Changes
