@@ -304,17 +304,13 @@ describe('Bulk encryption and decryption', () => {
     expect(encryptedData.data[2]).toHaveProperty('data')
     expect(encryptedData.data[2].data).toHaveProperty('c')
 
-    expect(encryptedData.data[0].data?.k).toBe('ct')
-    expect(encryptedData.data[1].data?.k).toBe('ct')
-    expect(encryptedData.data[2].data?.k).toBe('ct')
+    // Forward compatibility: new encryptions should NOT have k field
+    expect(encryptedData.data[0].data).not.toHaveProperty('k')
+    expect(encryptedData.data[1].data).not.toHaveProperty('k')
+    expect(encryptedData.data[2].data).not.toHaveProperty('k')
 
     // Verify all encrypted values are different
-    const getCiphertext = (
-      data: { k?: string; c?: unknown } | null | undefined,
-    ) => {
-      if (data?.k === 'ct') return data.c
-      return data?.c
-    }
+    const getCiphertext = (data: { c?: unknown } | null | undefined) => data?.c
 
     expect(getCiphertext(encryptedData.data[0].data)).not.toBe(
       getCiphertext(encryptedData.data[1].data),
