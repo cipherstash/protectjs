@@ -211,13 +211,15 @@ export class ProtectColumn {
   }
 
   /**
-   * Enable a STE Vec index, uses the column name for the index.
+   * Enable a STE Vec index for searchable JSON columns.
+   * This automatically sets the cast_as to 'json' and configures the ste_vec index.
+   * The prefix is resolved to 'table/column' format in buildEncryptConfig().
    */
-  // NOTE: Leaving this commented out until stevec indexing for JSON is supported.
-  /*searchableJson() {
-    this.indexesValue.ste_vec = { prefix: this.columnName }
+  searchableJson() {
+    this.castAsValue = 'json'
+    this.indexesValue.ste_vec = { prefix: '__RESOLVE_AT_BUILD__' }
     return this
-  }*/
+  }
 
   build() {
     return {
@@ -342,7 +344,16 @@ export function buildEncryptConfig(
 
   for (const tb of protectTables) {
     const tableDef = tb.build()
-    config.tables[tableDef.tableName] = tableDef.columns
+    const tableName = tableDef.tableName
+
+    // Resolve ste_vec prefix markers to actual table/column paths
+    for (const [columnName, columnConfig] of Object.entries(tableDef.columns)) {
+      if (columnConfig.indexes.ste_vec?.prefix === '__RESOLVE_AT_BUILD__') {
+        columnConfig.indexes.ste_vec.prefix = `${tableName}/${columnName}`
+      }
+    }
+
+    config.tables[tableName] = tableDef.columns
   }
 
   return config
