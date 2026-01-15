@@ -42,6 +42,42 @@ export type SearchTerm = {
   returnType?: 'eql' | 'composite-literal' | 'escaped-composite-literal'
 }
 
+/**
+ * JSON path - either dot-notation string ('user.email') or array of keys (['user', 'email'])
+ */
+export type JsonPath = string | string[]
+
+/**
+ * Search term for JSON containment queries (@> / <@)
+ */
+export type JsonContainmentSearchTerm = {
+  /** The JSON object or partial object to search for */
+  value: Record<string, unknown>
+  column: ProtectColumn
+  table: ProtectTable<ProtectTableColumn>
+  /** Type of containment: 'contains' for @>, 'contained_by' for <@ */
+  containmentType: 'contains' | 'contained_by'
+  returnType?: 'eql' | 'composite-literal' | 'escaped-composite-literal'
+}
+
+/**
+ * Search term for JSON path access queries (-> / ->>)
+ */
+export type JsonPathSearchTerm = {
+  /** The path to navigate to in the JSON */
+  path: JsonPath
+  /** The value to compare at the path (optional, for WHERE clauses) */
+  value?: JsPlaintext
+  column: ProtectColumn
+  table: ProtectTable<ProtectTableColumn>
+  returnType?: 'eql' | 'composite-literal' | 'escaped-composite-literal'
+}
+
+/**
+ * Union type for JSON search operations
+ */
+export type JsonSearchTerm = JsonContainmentSearchTerm | JsonPathSearchTerm
+
 export type KeysetIdentifier =
   | {
       name: string
