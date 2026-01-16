@@ -1,8 +1,29 @@
 import type {
   Encrypted as CipherStashEncrypted,
-  JsPlaintext,
+  JsPlaintext as FfiJsPlaintext,
+  IndexTypeName as FfiIndexTypeName,
+  QueryOpName as FfiQueryOpName,
   newClient,
 } from '@cipherstash/protect-ffi'
+
+export type { JsPlaintext } from '@cipherstash/protect-ffi'
+
+/**
+ * Index type for query encryption.
+ * - 'ore': Order-Revealing Encryption for range queries (<, >, BETWEEN)
+ * - 'match': Fuzzy/substring search
+ * - 'unique': Exact equality matching
+ * - 'ste_vec': Structured Text Encryption Vector for JSON path/containment queries
+ */
+export type IndexTypeName = FfiIndexTypeName
+
+/**
+ * Query operation type for ste_vec index.
+ * - 'default': Standard JSON query using column's cast_type
+ * - 'ste_vec_selector': JSON path selection ($.user.email)
+ * - 'ste_vec_term': JSON containment (@>)
+ */
+export type QueryOpName = FfiQueryOpName
 import type {
   ProtectColumn,
   ProtectTable,
@@ -36,9 +57,43 @@ export type EncryptedData = Encrypted | null
  * Represents a value that will be encrypted and used in a search
  */
 export type SearchTerm = {
-  value: JsPlaintext
+  value: FfiJsPlaintext
   column: ProtectColumn
   table: ProtectTable<ProtectTableColumn>
+  returnType?: 'eql' | 'composite-literal' | 'escaped-composite-literal'
+}
+
+/**
+ * Options for encrypting a query term with explicit index type control.
+ * Used with encryptQuery() for single-value query encryption.
+ */
+export type EncryptQueryOptions = {
+  /** The column definition from the schema */
+  column: ProtectColumn | ProtectValue
+  /** The table definition from the schema */
+  table: ProtectTable<ProtectTableColumn>
+  /** Which index type to use for the query */
+  indexType: IndexTypeName
+  /** Query operation (defaults to 'default') */
+  queryOp?: QueryOpName
+}
+
+/**
+ * Individual query payload for bulk query operations.
+ * Used with createQuerySearchTerms() for batch query encryption.
+ */
+export type QuerySearchTerm = {
+  /** The value to encrypt for querying */
+  value: FfiJsPlaintext
+  /** The column definition */
+  column: ProtectColumn | ProtectValue
+  /** The table definition */
+  table: ProtectTable<ProtectTableColumn>
+  /** Which index type to use */
+  indexType: IndexTypeName
+  /** Query operation (optional, defaults to 'default') */
+  queryOp?: QueryOpName
+  /** Return format for the encrypted result */
   returnType?: 'eql' | 'composite-literal' | 'escaped-composite-literal'
 }
 
@@ -67,7 +122,7 @@ export type JsonPathSearchTerm = {
   /** The path to navigate to in the JSON */
   path: JsonPath
   /** The value to compare at the path (optional, for WHERE clauses) */
-  value?: JsPlaintext
+  value?: FfiJsPlaintext
   column: ProtectColumn
   table: ProtectTable<ProtectTableColumn>
   returnType?: 'eql' | 'composite-literal' | 'escaped-composite-literal'
@@ -97,7 +152,7 @@ export type EncryptedSearchTerm = Encrypted | string
 /**
  * Represents a payload to be encrypted using the `encrypt` function
  */
-export type EncryptPayload = JsPlaintext | null
+export type EncryptPayload = FfiJsPlaintext | null
 
 /**
  * Represents the options for encrypting a payload using the `encrypt` function
@@ -138,12 +193,12 @@ export type Decrypted<T> = OtherFields<T> & DecryptedFields<T>
  */
 export type BulkEncryptPayload = Array<{
   id?: string
-  plaintext: JsPlaintext | null
+  plaintext: FfiJsPlaintext | null
 }>
 
 export type BulkEncryptedData = Array<{ id?: string; data: Encrypted }>
 export type BulkDecryptPayload = Array<{ id?: string; data: Encrypted }>
-export type BulkDecryptedData = Array<DecryptionResult<JsPlaintext | null>>
+export type BulkDecryptedData = Array<DecryptionResult<FfiJsPlaintext | null>>
 
 type DecryptionSuccess<T> = {
   error?: never
