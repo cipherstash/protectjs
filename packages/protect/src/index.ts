@@ -99,18 +99,6 @@ export type { DecryptModelOperation } from './ffi/operations/decrypt-model'
 export type { EncryptModelOperation } from './ffi/operations/encrypt-model'
 export type { EncryptOperation } from './ffi/operations/encrypt'
 export type { SearchTermsOperation } from './ffi/operations/search-terms'
-export type {
-  JsonSearchTermsOperation,
-  JsonSearchTermsOperationWithLockContext,
-} from './ffi/operations/json-search-terms'
-export type {
-  EncryptQueryOperation,
-  EncryptQueryOperationWithLockContext,
-} from './ffi/operations/encrypt-query'
-export type {
-  QuerySearchTermsOperation,
-  QuerySearchTermsOperationWithLockContext,
-} from './ffi/operations/query-search-terms'
 
 export { csTable, csColumn, csValue } from '@cipherstash/schema'
 export type {
@@ -128,15 +116,27 @@ export type {
   LockContextOptions,
   GetLockContextResponse,
 } from './identify'
-export type {
-  JsonPath,
-  JsonContainmentSearchTerm,
-  JsonPathSearchTerm,
-  JsonSearchTerm,
-  IndexTypeName,
-  QueryOpName,
-  EncryptQueryOptions,
-  QuerySearchTerm,
-} from './types'
 export * from './helpers'
-export * from './types'
+
+// Explicitly export only the public types (not internal query types)
+export type {
+  Client,
+  Encrypted,
+  EncryptedPayload,
+  EncryptedData,
+  SearchTerm,
+  KeysetIdentifier,
+  EncryptedSearchTerm,
+  EncryptPayload,
+  EncryptOptions,
+  EncryptedFields,
+  OtherFields,
+  DecryptedFields,
+  Decrypted,
+  BulkEncryptPayload,
+  BulkEncryptedData,
+  BulkDecryptPayload,
+  BulkDecryptedData,
+  DecryptionResult,
+} from './types'
+export type { JsPlaintext } from '@cipherstash/protect-ffi'

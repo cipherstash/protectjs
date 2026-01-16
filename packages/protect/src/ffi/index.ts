@@ -16,11 +16,8 @@ import type {
   Client,
   Decrypted,
   EncryptOptions,
-  EncryptQueryOptions,
   Encrypted,
-  JsonSearchTerm,
   KeysetIdentifier,
-  QuerySearchTerm,
   SearchTerm,
 } from '../types'
 import { BulkDecryptOperation } from './operations/bulk-decrypt'
@@ -31,9 +28,6 @@ import { DecryptOperation } from './operations/decrypt'
 import { DecryptModelOperation } from './operations/decrypt-model'
 import { EncryptOperation } from './operations/encrypt'
 import { EncryptModelOperation } from './operations/encrypt-model'
-import { EncryptQueryOperation } from './operations/encrypt-query'
-import { JsonSearchTermsOperation } from './operations/json-search-terms'
-import { QuerySearchTermsOperation } from './operations/query-search-terms'
 import { SearchTermsOperation } from './operations/search-terms'
 
 export const noClientError = () =>
@@ -320,107 +314,6 @@ export class ProtectClient {
    */
   createSearchTerms(terms: SearchTerm[]): SearchTermsOperation {
     return new SearchTermsOperation(this.client, terms)
-  }
-
-  /**
-   * Create search terms for JSON containment and path queries.
-   *
-   * @example
-   * // Path query - find where metadata.user.email equals value
-   * const terms = await protectClient.createJsonSearchTerms([{
-   *   path: 'user.email',
-   *   value: 'admin@example.com',
-   *   column: usersSchema.metadata,
-   *   table: usersSchema,
-   * }])
-   *
-   * @example
-   * // Containment query - find where metadata contains object
-   * const terms = await protectClient.createJsonSearchTerms([{
-   *   value: { role: 'admin' },
-   *   column: usersSchema.metadata,
-   *   table: usersSchema,
-   *   containmentType: 'contains'
-   * }])
-   */
-  createJsonSearchTerms(terms: JsonSearchTerm[]): JsonSearchTermsOperation {
-    return new JsonSearchTermsOperation(this.client, terms)
-  }
-
-  /**
-   * Encrypt a value for use in a query (produces SEM-only payload).
-   *
-   * Unlike `encrypt()`, this produces a payload optimized for searching,
-   * containing only the cryptographic metadata needed for the specified
-   * index type (no ciphertext field).
-   *
-   * @param plaintext - The value to encrypt for querying
-   * @param opts - Options specifying column, table, index type, and optional query operation
-   * @returns An EncryptQueryOperation that can be awaited or chained with .withLockContext()
-   *
-   * @example
-   * // ORE query for range comparison
-   * const term = await protectClient.encryptQuery(100, {
-   *   column: usersSchema.score,
-   *   table: usersSchema,
-   *   indexType: 'ore',
-   * })
-   *
-   * @example
-   * // Match query for fuzzy search
-   * const term = await protectClient.encryptQuery('john', {
-   *   column: usersSchema.email,
-   *   table: usersSchema,
-   *   indexType: 'match',
-   * })
-   *
-   * @example
-   * // SteVec selector for JSON path queries
-   * const term = await protectClient.encryptQuery('admin@example.com', {
-   *   column: usersSchema.metadata,
-   *   table: usersSchema,
-   *   indexType: 'ste_vec',
-   *   queryOp: 'ste_vec_term',
-   * })
-   *
-   * @see {@link EncryptQueryOperation}
-   */
-  encryptQuery(
-    plaintext: JsPlaintext | null,
-    opts: EncryptQueryOptions,
-  ): EncryptQueryOperation {
-    return new EncryptQueryOperation(this.client, plaintext, opts)
-  }
-
-  /**
-   * Create encrypted query terms for multiple values with explicit index control.
-   *
-   * This is the query-mode equivalent of `createSearchTerms()`, but provides
-   * explicit control over which index type and query operation to use for each term.
-   *
-   * @param terms - Array of query terms with value, column, table, and index specifications
-   * @returns A QuerySearchTermsOperation that can be awaited or chained with .withLockContext()
-   *
-   * @example
-   * const terms = await protectClient.createQuerySearchTerms([
-   *   {
-   *     value: 'admin@example.com',
-   *     column: usersSchema.email,
-   *     table: usersSchema,
-   *     indexType: 'unique',
-   *   },
-   *   {
-   *     value: 100,
-   *     column: usersSchema.score,
-   *     table: usersSchema,
-   *     indexType: 'ore',
-   *   },
-   * ])
-   *
-   * @see {@link QuerySearchTermsOperation}
-   */
-  createQuerySearchTerms(terms: QuerySearchTerm[]): QuerySearchTermsOperation {
-    return new QuerySearchTermsOperation(this.client, terms)
   }
 
   /** e.g., debugging or environment info */
