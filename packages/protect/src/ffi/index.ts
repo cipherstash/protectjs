@@ -16,8 +16,11 @@ import type {
   Client,
   Decrypted,
   EncryptOptions,
+  EncryptQueryOptions,
   Encrypted,
+  JsonSearchTerm,
   KeysetIdentifier,
+  QuerySearchTerm,
   SearchTerm,
 } from '../types'
 import { BulkDecryptOperation } from './operations/bulk-decrypt'
@@ -28,6 +31,9 @@ import { DecryptOperation } from './operations/decrypt'
 import { DecryptModelOperation } from './operations/decrypt-model'
 import { EncryptOperation } from './operations/encrypt'
 import { EncryptModelOperation } from './operations/encrypt-model'
+import { EncryptQueryOperation } from './operations/encrypt-query'
+import { JsonSearchTermsOperation } from './operations/json-search-terms'
+import { QuerySearchTermsOperation } from './operations/query-search-terms'
 import { SearchTermsOperation } from './operations/search-terms'
 
 export const noClientError = () =>
@@ -314,6 +320,100 @@ export class ProtectClient {
    */
   createSearchTerms(terms: SearchTerm[]): SearchTermsOperation {
     return new SearchTermsOperation(this.client, terms)
+  }
+
+  /**
+   * Encrypt a single value for query operations with explicit index type control.
+   *
+   * This method produces SEM-only payloads optimized for database queries,
+   * allowing you to specify which index type (ore, match, unique, ste_vec) to use.
+   *
+   * @param plaintext - The value to encrypt for querying
+   * @param opts - Options specifying the column, table, index type, and optional query operation
+   * @returns An EncryptQueryOperation that can be awaited or chained with withLockContext
+   *
+   * @example
+   * ```typescript
+   * const term = await protectClient.encryptQuery(100, {
+   *   column: usersSchema.score,
+   *   table: usersSchema,
+   *   indexType: 'ore',
+   * })
+   * ```
+   */
+  encryptQuery(
+    plaintext: JsPlaintext | null,
+    opts: EncryptQueryOptions,
+  ): EncryptQueryOperation {
+    return new EncryptQueryOperation(this.client, plaintext, opts)
+  }
+
+  /**
+   * Create multiple encrypted query terms with explicit index type control.
+   *
+   * This method produces SEM-only payloads optimized for database queries,
+   * providing explicit control over which index type and query operation to use for each term.
+   *
+   * @param terms - Array of query search terms with index type specifications
+   * @returns A QuerySearchTermsOperation that can be awaited or chained with withLockContext
+   *
+   * @example
+   * ```typescript
+   * const terms = await protectClient.createQuerySearchTerms([
+   *   {
+   *     value: 'admin@example.com',
+   *     column: usersSchema.email,
+   *     table: usersSchema,
+   *     indexType: 'unique',
+   *   },
+   *   {
+   *     value: 100,
+   *     column: usersSchema.score,
+   *     table: usersSchema,
+   *     indexType: 'ore',
+   *   },
+   * ])
+   * ```
+   */
+  createQuerySearchTerms(terms: QuerySearchTerm[]): QuerySearchTermsOperation {
+    return new QuerySearchTermsOperation(this.client, terms)
+  }
+
+  /**
+   * Create encrypted search terms for JSON path queries and containment operations.
+   *
+   * This method encrypts JSON search terms for use with the ste_vec index,
+   * supporting both path-based queries and containment operations (@>, <@).
+   *
+   * @param terms - Array of JSON search terms (path queries or containment queries)
+   * @returns A JsonSearchTermsOperation that can be awaited or chained with withLockContext
+   *
+   * @example Path query
+   * ```typescript
+   * const terms = await protectClient.createJsonSearchTerms([
+   *   {
+   *     path: 'user.email',
+   *     value: 'admin@example.com',
+   *     column: usersSchema.metadata,
+   *     table: usersSchema,
+   *   },
+   * ])
+   * ```
+   *
+   * @example Containment query
+   * ```typescript
+   * const terms = await protectClient.createJsonSearchTerms([
+   *   {
+   *     value: { role: 'admin' },
+   *     column: usersSchema.metadata,
+   *     table: usersSchema,
+   *     containmentType: 'contains',
+   *   },
+   * ])
+   * ```
+   */
+  createJsonSearchTerms(terms: JsonSearchTerm[]): JsonSearchTermsOperation {
+    return new JsonSearchTermsOperation(this.client, terms)
   }
 
   /** e.g., debugging or environment info */

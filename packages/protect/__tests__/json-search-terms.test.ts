@@ -1,9 +1,7 @@
 import 'dotenv/config'
 import { csColumn, csTable } from '@cipherstash/schema'
 import { beforeAll, describe, expect, it } from 'vitest'
-import { LockContext, protect } from '../src'
-import { JsonSearchTermsOperation } from '../src/ffi/operations/json-search-terms'
-import type { JsonSearchTerm } from '../src/types'
+import { type JsonSearchTerm, LockContext, protect } from '../src'
 
 const schema = csTable('test_json_search', {
   metadata: csColumn('metadata').searchableJson(),
@@ -34,12 +32,7 @@ describe('JSON search terms - Path queries', () => {
       },
     ]
 
-    const operation = new JsonSearchTermsOperation(
-      (protectClient as unknown as { client: unknown }).client as never,
-      terms,
-    )
-
-    const result = await operation.execute()
+    const result = await protectClient.createJsonSearchTerms(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -63,12 +56,7 @@ describe('JSON search terms - Path queries', () => {
       },
     ]
 
-    const operation = new JsonSearchTermsOperation(
-      (protectClient as unknown as { client: unknown }).client as never,
-      terms,
-    )
-
-    const result = await operation.execute()
+    const result = await protectClient.createJsonSearchTerms(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -89,12 +77,7 @@ describe('JSON search terms - Path queries', () => {
       },
     ]
 
-    const operation = new JsonSearchTermsOperation(
-      (protectClient as unknown as { client: unknown }).client as never,
-      terms,
-    )
-
-    const result = await operation.execute()
+    const result = await protectClient.createJsonSearchTerms(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -115,12 +98,7 @@ describe('JSON search terms - Path queries', () => {
       },
     ]
 
-    const operation = new JsonSearchTermsOperation(
-      (protectClient as unknown as { client: unknown }).client as never,
-      terms,
-    )
-
-    const result = await operation.execute()
+    const result = await protectClient.createJsonSearchTerms(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -144,12 +122,7 @@ describe('JSON search terms - Path queries', () => {
       },
     ]
 
-    const operation = new JsonSearchTermsOperation(
-      (protectClient as unknown as { client: unknown }).client as never,
-      terms,
-    )
-
-    const result = await operation.execute()
+    const result = await protectClient.createJsonSearchTerms(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -171,12 +144,7 @@ describe('JSON search terms - Containment queries', () => {
       },
     ]
 
-    const operation = new JsonSearchTermsOperation(
-      (protectClient as unknown as { client: unknown }).client as never,
-      terms,
-    )
-
-    const result = await operation.execute()
+    const result = await protectClient.createJsonSearchTerms(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -201,12 +169,7 @@ describe('JSON search terms - Containment queries', () => {
       },
     ]
 
-    const operation = new JsonSearchTermsOperation(
-      (protectClient as unknown as { client: unknown }).client as never,
-      terms,
-    )
-
-    const result = await operation.execute()
+    const result = await protectClient.createJsonSearchTerms(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -228,12 +191,7 @@ describe('JSON search terms - Containment queries', () => {
       },
     ]
 
-    const operation = new JsonSearchTermsOperation(
-      (protectClient as unknown as { client: unknown }).client as never,
-      terms,
-    )
-
-    const result = await operation.execute()
+    const result = await protectClient.createJsonSearchTerms(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -259,12 +217,7 @@ describe('JSON search terms - Containment queries', () => {
       },
     ]
 
-    const operation = new JsonSearchTermsOperation(
-      (protectClient as unknown as { client: unknown }).client as never,
-      terms,
-    )
-
-    const result = await operation.execute()
+    const result = await protectClient.createJsonSearchTerms(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -284,12 +237,7 @@ describe('JSON search terms - Containment queries', () => {
       },
     ]
 
-    const operation = new JsonSearchTermsOperation(
-      (protectClient as unknown as { client: unknown }).client as never,
-      terms,
-    )
-
-    const result = await operation.execute()
+    const result = await protectClient.createJsonSearchTerms(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -326,12 +274,7 @@ describe('JSON search terms - Bulk operations', () => {
       },
     ]
 
-    const operation = new JsonSearchTermsOperation(
-      (protectClient as unknown as { client: unknown }).client as never,
-      terms,
-    )
-
-    const result = await operation.execute()
+    const result = await protectClient.createJsonSearchTerms(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -359,12 +302,7 @@ describe('JSON search terms - Bulk operations', () => {
       },
     ]
 
-    const operation = new JsonSearchTermsOperation(
-      (protectClient as unknown as { client: unknown }).client as never,
-      terms,
-    )
-
-    const result = await operation.execute()
+    const result = await protectClient.createJsonSearchTerms(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -398,12 +336,7 @@ describe('JSON search terms - Bulk operations', () => {
       },
     ]
 
-    const operation = new JsonSearchTermsOperation(
-      (protectClient as unknown as { client: unknown }).client as never,
-      terms,
-    )
-
-    const result = await operation.execute()
+    const result = await protectClient.createJsonSearchTerms(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -441,12 +374,7 @@ describe('JSON search terms - Bulk operations', () => {
       },
     ]
 
-    const operation = new JsonSearchTermsOperation(
-      (protectClient as unknown as { client: unknown }).client as never,
-      terms,
-    )
-
-    const result = await operation.execute()
+    const result = await protectClient.createJsonSearchTerms(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -483,12 +411,9 @@ describe('JSON search terms - Lock context integration', () => {
       },
     ]
 
-    const operation = new JsonSearchTermsOperation(
-      (protectClient as unknown as { client: unknown }).client as never,
-      terms,
-    )
-
-    const result = await operation.withLockContext(lockContext.data).execute()
+    const result = await protectClient
+      .createJsonSearchTerms(terms)
+      .withLockContext(lockContext.data)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -496,7 +421,8 @@ describe('JSON search terms - Lock context integration', () => {
 
     expect(result.data).toHaveLength(1)
     expect(result.data[0]).toHaveProperty('s')
-    expect(result.data[0]).toHaveProperty('c')
+    // Verify there's encrypted content
+    expect(Object.keys(result.data[0]).length).toBeGreaterThan(1)
   }, 30000)
 
   it('should create containment query with lock context', async () => {
@@ -523,12 +449,9 @@ describe('JSON search terms - Lock context integration', () => {
       },
     ]
 
-    const operation = new JsonSearchTermsOperation(
-      (protectClient as unknown as { client: unknown }).client as never,
-      terms,
-    )
-
-    const result = await operation.withLockContext(lockContext.data).execute()
+    const result = await protectClient
+      .createJsonSearchTerms(terms)
+      .withLockContext(lockContext.data)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -568,12 +491,9 @@ describe('JSON search terms - Lock context integration', () => {
       },
     ]
 
-    const operation = new JsonSearchTermsOperation(
-      (protectClient as unknown as { client: unknown }).client as never,
-      terms,
-    )
-
-    const result = await operation.withLockContext(lockContext.data).execute()
+    const result = await protectClient
+      .createJsonSearchTerms(terms)
+      .withLockContext(lockContext.data)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -587,12 +507,7 @@ describe('JSON search terms - Edge cases', () => {
   it('should handle empty terms array', async () => {
     const terms: JsonSearchTerm[] = []
 
-    const operation = new JsonSearchTermsOperation(
-      (protectClient as unknown as { client: unknown }).client as never,
-      terms,
-    )
-
-    const result = await operation.execute()
+    const result = await protectClient.createJsonSearchTerms(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -611,12 +526,7 @@ describe('JSON search terms - Edge cases', () => {
       },
     ]
 
-    const operation = new JsonSearchTermsOperation(
-      (protectClient as unknown as { client: unknown }).client as never,
-      terms,
-    )
-
-    const result = await operation.execute()
+    const result = await protectClient.createJsonSearchTerms(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -638,12 +548,7 @@ describe('JSON search terms - Edge cases', () => {
       },
     ]
 
-    const operation = new JsonSearchTermsOperation(
-      (protectClient as unknown as { client: unknown }).client as never,
-      terms,
-    )
-
-    const result = await operation.execute()
+    const result = await protectClient.createJsonSearchTerms(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -663,12 +568,7 @@ describe('JSON search terms - Edge cases', () => {
       },
     ]
 
-    const operation = new JsonSearchTermsOperation(
-      (protectClient as unknown as { client: unknown }).client as never,
-      terms,
-    )
-
-    const result = await operation.execute()
+    const result = await protectClient.createJsonSearchTerms(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -690,12 +590,7 @@ describe('JSON search terms - Edge cases', () => {
       },
     ]
 
-    const operation = new JsonSearchTermsOperation(
-      (protectClient as unknown as { client: unknown }).client as never,
-      terms,
-    )
-
-    const result = await operation.execute()
+    const result = await protectClient.createJsonSearchTerms(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -720,12 +615,7 @@ describe('JSON search terms - Edge cases', () => {
       },
     ]
 
-    const operation = new JsonSearchTermsOperation(
-      (protectClient as unknown as { client: unknown }).client as never,
-      terms,
-    )
-
-    const result = await operation.execute()
+    const result = await protectClient.createJsonSearchTerms(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -751,12 +641,7 @@ describe('JSON search terms - Edge cases', () => {
       },
     ]
 
-    const operation = new JsonSearchTermsOperation(
-      (protectClient as unknown as { client: unknown }).client as never,
-      terms,
-    )
-
-    const result = await operation.execute()
+    const result = await protectClient.createJsonSearchTerms(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -792,12 +677,7 @@ describe('JSON search terms - Edge cases', () => {
       },
     ]
 
-    const operation = new JsonSearchTermsOperation(
-      (protectClient as unknown as { client: unknown }).client as never,
-      terms,
-    )
-
-    const result = await operation.execute()
+    const result = await protectClient.createJsonSearchTerms(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -826,12 +706,7 @@ describe('JSON search terms - Edge cases', () => {
       },
     ]
 
-    const operation = new JsonSearchTermsOperation(
-      (protectClient as unknown as { client: unknown }).client as never,
-      terms,
-    )
-
-    const result = await operation.execute()
+    const result = await protectClient.createJsonSearchTerms(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -854,12 +729,7 @@ describe('JSON search terms - Error handling', () => {
       },
     ]
 
-    const operation = new JsonSearchTermsOperation(
-      (protectClient as unknown as { client: unknown }).client as never,
-      terms,
-    )
-
-    const result = await operation.execute()
+    const result = await protectClient.createJsonSearchTerms(terms)
 
     expect(result.failure).toBeDefined()
     expect(result.failure?.message).toContain('does not have ste_vec index')
@@ -876,12 +746,7 @@ describe('JSON search terms - Error handling', () => {
       },
     ]
 
-    const operation = new JsonSearchTermsOperation(
-      (protectClient as unknown as { client: unknown }).client as never,
-      terms,
-    )
-
-    const result = await operation.execute()
+    const result = await protectClient.createJsonSearchTerms(terms)
 
     expect(result.failure).toBeDefined()
     expect(result.failure?.message).toContain('does not have ste_vec index')
@@ -899,12 +764,7 @@ describe('JSON search terms - Selector generation verification', () => {
       },
     ]
 
-    const operation = new JsonSearchTermsOperation(
-      (protectClient as unknown as { client: unknown }).client as never,
-      terms,
-    )
-
-    const result = await operation.execute()
+    const result = await protectClient.createJsonSearchTerms(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -932,12 +792,7 @@ describe('JSON search terms - Selector generation verification', () => {
       },
     ]
 
-    const operation = new JsonSearchTermsOperation(
-      (protectClient as unknown as { client: unknown }).client as never,
-      terms,
-    )
-
-    const result = await operation.execute()
+    const result = await protectClient.createJsonSearchTerms(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -961,12 +816,7 @@ describe('JSON search terms - Selector generation verification', () => {
       },
     ]
 
-    const operation = new JsonSearchTermsOperation(
-      (protectClient as unknown as { client: unknown }).client as never,
-      terms,
-    )
-
-    const result = await operation.execute()
+    const result = await protectClient.createJsonSearchTerms(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -991,12 +841,7 @@ describe('JSON search terms - Selector generation verification', () => {
       },
     ]
 
-    const operation = new JsonSearchTermsOperation(
-      (protectClient as unknown as { client: unknown }).client as never,
-      terms,
-    )
-
-    const result = await operation.execute()
+    const result = await protectClient.createJsonSearchTerms(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)

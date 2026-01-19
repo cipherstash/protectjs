@@ -99,6 +99,9 @@ export type { DecryptModelOperation } from './ffi/operations/decrypt-model'
 export type { EncryptModelOperation } from './ffi/operations/encrypt-model'
 export type { EncryptOperation } from './ffi/operations/encrypt'
 export type { SearchTermsOperation } from './ffi/operations/search-terms'
+export type { EncryptQueryOperation } from './ffi/operations/encrypt-query'
+export type { QuerySearchTermsOperation } from './ffi/operations/query-search-terms'
+export type { JsonSearchTermsOperation } from './ffi/operations/json-search-terms'
 
 export { csTable, csColumn, csValue } from '@cipherstash/schema'
 export type {
@@ -129,6 +132,7 @@ export type {
   EncryptedSearchTerm,
   EncryptPayload,
   EncryptOptions,
+  EncryptQueryOptions,
   EncryptedFields,
   OtherFields,
   DecryptedFields,
@@ -138,5 +142,10 @@ export type {
   BulkDecryptPayload,
   BulkDecryptedData,
   DecryptionResult,
+  QuerySearchTerm,
+  JsonSearchTerm,
+  JsonPath,
+  JsonPathSearchTerm,
+  JsonContainmentSearchTerm,
 } from './types'
 export type { JsPlaintext } from '@cipherstash/protect-ffi'
