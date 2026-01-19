@@ -1,8 +1,6 @@
 import type {
   Encrypted as CipherStashEncrypted,
   JsPlaintext as FfiJsPlaintext,
-  IndexTypeName as FfiIndexTypeName,
-  QueryOpName as FfiQueryOpName,
   newClient,
 } from '@cipherstash/protect-ffi'
 
@@ -15,7 +13,7 @@ export type { JsPlaintext } from '@cipherstash/protect-ffi'
  * - 'unique': Exact equality matching
  * - 'ste_vec': Structured Text Encryption Vector for JSON path/containment queries
  */
-export type IndexTypeName = FfiIndexTypeName
+export type IndexTypeName = 'ore' | 'match' | 'unique' | 'ste_vec'
 
 /**
  * Query operation type for ste_vec index.
@@ -23,7 +21,7 @@ export type IndexTypeName = FfiIndexTypeName
  * - 'ste_vec_selector': JSON path selection ($.user.email)
  * - 'ste_vec_term': JSON containment (@>)
  */
-export type QueryOpName = FfiQueryOpName
+export type QueryOpName = 'default' | 'ste_vec_selector' | 'ste_vec_term'
 import type {
   ProtectColumn,
   ProtectTable,
