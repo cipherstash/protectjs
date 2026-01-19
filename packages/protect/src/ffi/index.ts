@@ -382,34 +382,19 @@ export class ProtectClient {
   /**
    * Create encrypted search terms for JSON path queries and containment operations.
    *
-   * This method encrypts JSON search terms for use with the ste_vec index,
-   * supporting both path-based queries and containment operations (@>, <@).
+   * @deprecated Use createSearchTerms() instead - it now accepts JSON path and containment terms.
+   * This method continues to work but will be removed in a future major version.
    *
    * @param terms - Array of JSON search terms (path queries or containment queries)
    * @returns A JsonSearchTermsOperation that can be awaited or chained with withLockContext
    *
-   * @example Path query
+   * @example Migrate to createSearchTerms
    * ```typescript
-   * const terms = await protectClient.createJsonSearchTerms([
-   *   {
-   *     path: 'user.email',
-   *     value: 'admin@example.com',
-   *     column: usersSchema.metadata,
-   *     table: usersSchema,
-   *   },
-   * ])
-   * ```
+   * // Before (deprecated):
+   * const terms = await protectClient.createJsonSearchTerms([...])
    *
-   * @example Containment query
-   * ```typescript
-   * const terms = await protectClient.createJsonSearchTerms([
-   *   {
-   *     value: { role: 'admin' },
-   *     column: usersSchema.metadata,
-   *     table: usersSchema,
-   *     containmentType: 'contains',
-   *   },
-   * ])
+   * // After (preferred):
+   * const terms = await protectClient.createSearchTerms([...])
    * ```
    */
   createJsonSearchTerms(terms: JsonSearchTerm[]): JsonSearchTermsOperation {
