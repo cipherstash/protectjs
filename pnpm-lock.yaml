@@ -517,6 +517,9 @@ importers:
       '@cipherstash/schema':
         specifier: workspace:*
         version: link:../schema
+      '@stricli/core':
+        specifier: ^1.2.5
+        version: 1.2.5
       zod:
         specifier: ^3.24.2
         version: 3.25.76
@@ -2876,6 +2879,9 @@ packages:
 
   '@standard-schema/utils@0.3.0':
     resolution: {integrity: sha512-e7Mew686owMaPJVNNLs55PUvgz371nKgwsc4vxE49zsODpJEnxgxRo2y/OKrqueavXgZNMDVj3DdHFlaSAeU8g==}
+
+  '@stricli/core@1.2.5':
+    resolution: {integrity: sha512-+afyztQW7fwWkqmU2WQZbdc3LjnZThWYdtE0l+hykZ1Rvy7YGxZSvsVCS/wZ/2BNv117pQ9TU1GZZRIcPnB4tw==}
 
   '@supabase/auth-js@2.89.0':
     resolution: {integrity: sha512-wiWZdz8WMad8LQdJMWYDZ2SJtZP5MwMqzQq3ehtW2ngiI3UTgbKiFrvMUUS3KADiVlk4LiGfODB2mrYx7w2f8w==}
@@ -9129,6 +9135,8 @@ snapshots:
   '@stablelib/base64@1.0.1': {}
 
   '@standard-schema/utils@0.3.0': {}
+
+  '@stricli/core@1.2.5': {}
 
   '@supabase/auth-js@2.89.0':
     dependencies:
