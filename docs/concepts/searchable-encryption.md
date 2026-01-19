@@ -132,7 +132,7 @@ With searchable encryption, you can:
 With searchable encryption:
 
 - Data can be encrypted, stored, and searched in your existing PostgreSQL database.
-- Encrypted data can be searched using equality, free text search, and range queries.
+- Encrypted data can be searched using equality, free text search, range queries, and JSON path/containment queries.
 - Data remains encrypted, and will be decrypted using the Protect.js library in your application.
 - Queries are blazing fast, and won't slow down your application experience.
 - Every decryption event is logged, giving you an audit trail of data access events.

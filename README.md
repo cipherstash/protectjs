@@ -993,7 +993,7 @@ Protect.js supports a number of different data types with support for additional
 | `string` | ✅ |
 | `number` | ✅ |
 | `json` (opaque)  | ✅ |  |
-| `json` (searchable)  | ⚙️ | Coming soon |
+| `json` (searchable)  | ✅ |  |
 | `bigint` | ⚙️ | Coming soon |
 | `boolean`| ⚙️ | Coming soon |
 | `date`   | ⚙️ | Coming soon |
@@ -1043,6 +1043,49 @@ The table below summarizes these cases.
 ## Searchable encryption
 
 Read more about [searching encrypted data](./docs/concepts/searchable-encryption.md) in the docs.
+
+### Searchable JSON
+
+Protect.js allows you to perform deep searches within encrypted JSON documents. You can query nested fields, arrays, and objects without decrypting the entire document.
+
+To enable searchable JSON, configure your schema:
+
+```ts
+// schema.ts
+import { csTable, csColumn } from "@cipherstash/protect";
+
+export const users = csTable("users", {
+  metadata: csColumn("metadata").searchableJson(),
+});
+```
+
+Then generate search terms for your queries:
+
+```ts
+// index.ts
+// Path query: find users with metadata.role = 'admin'
+const searchTerms = await protectClient.createJsonSearchTerms([
+  {
+    path: "role", // or "user.role" or ["user", "role"]
+    value: "admin",
+    column: users.metadata,
+    table: users,
+  }
+]);
+
+// Containment query: find users where metadata contains { tags: ['premium'] }
+const containmentTerms = await protectClient.createJsonSearchTerms([
+  {
+    value: { tags: ["premium"] },
+    column: users.metadata,
+    table: users,
+    containmentType: "contains",
+  }
+]);
+```
+
+These search terms can then be used in your database query (e.g., using SQL or an ORM).
+
 
 ## Multi-tenant encryption
 

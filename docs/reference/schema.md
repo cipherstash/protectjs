@@ -76,6 +76,22 @@ export const protectedUsers = csTable("users", {
 });
 ```
 
+### Searchable JSON
+
+To enable searching within JSON columns, use the `searchableJson()` method. This automatically sets the column data type to `json` and configures the necessary indexes for path and containment queries.
+
+```ts
+import { csTable, csColumn } from "@cipherstash/protect";
+
+export const protectedUsers = csTable("users", {
+  metadata: csColumn("metadata").searchableJson(),
+});
+```
+
+> [!NOTE]
+> `searchableJson()` is mutually exclusive with other index types like `equality()`, `freeTextSearch()`, etc. on the same column.
+
+
 ### Nested objects
 
 Protect.js supports nested objects in your schema, allowing you to encrypt **but not search on** nested properties. You can define nested objects up to 3 levels deep.
@@ -124,6 +140,7 @@ The following index options are available for your schema:
 | equality   | Enables a exact index for equality queries. | `WHERE email = 'example@example.com'` |
 | freeTextSearch   | Enables a match index for free text queries. | `WHERE description LIKE '%example%'` |
 | orderAndRange   | Enables an sorting and range queries index. | `ORDER BY price ASC` |
+| searchableJson | Enables searching inside JSON columns. | `WHERE data->'user'->>'email' = '...'` |
 
 You can chain these methods to your column to configure them in any combination.
 

@@ -104,6 +104,52 @@ console.log(term.data) // array of search terms
 > [!NOTE]
 > As a developer, you must track the index of the search term in the array when using the `createSearchTerms` function.
 
+## The `createJsonSearchTerms` function
+
+The `createJsonSearchTerms` function generates search terms for querying encrypted JSON data. This requires columns to be configured with `.searchableJson()` in the schema.
+
+The function takes an array of `JsonSearchTerm` objects.
+
+### Path Queries
+Used for finding records where a specific path in the JSON equals a value.
+
+| Property | Description |
+|----------|-------------|
+| `path` | The path to the field (e.g., `'user.email'` or `['user', 'email']`) |
+| `value` | The value to match exactly |
+| `column` | The column definition |
+| `table` | The table definition |
+
+### Containment Queries
+Used for finding records where the JSON column contains a specific JSON structure (subset).
+
+| Property | Description |
+|----------|-------------|
+| `value` | The JSON object/array structure to search for |
+| `containmentType` | Must be `'contains'` (for `@>`) or `'contained_by'` (for `<@`) |
+| `column` | The column definition |
+| `table` | The table definition |
+
+Example:
+
+```typescript
+// Path query
+const pathTerms = await protectClient.createJsonSearchTerms([{
+  path: 'user.email',
+  value: 'alice@example.com',
+  column: schema.metadata,
+  table: schema
+}])
+
+// Containment query
+const containmentTerms = await protectClient.createJsonSearchTerms([{
+  value: { roles: ['admin'] },
+  containmentType: 'contains',
+  column: schema.metadata,
+  table: schema
+}])
+```
+
 ## Search capabilities
 
 ### Exact matching
@@ -166,6 +212,54 @@ Use `.orderAndRange()` for sorting and range operations:
 const result = await client.query(
   'SELECT * FROM users ORDER BY eql_v2.ore_block_u64_8_256(age_encrypted) ASC'
 )
+```
+
+### JSON Search
+
+When searching encrypted JSON columns, you use the `ste_vec` index type which supports both path access and containment operators.
+
+#### Path Search (Access Operator)
+Equivalent to `data->'path'->>'field' = 'value'`.
+
+```typescript
+const terms = await protectClient.createJsonSearchTerms([{
+  path: 'user.email',
+  value: 'alice@example.com',
+  column: schema.metadata,
+  table: schema
+}])
+
+// The generated term contains a selector and the encrypted term
+const term = terms.data[0]
+
+// SQL: metadata->(term.s) = term.c
+const query = `
+  SELECT * FROM users 
+  WHERE eql_ste_vec_u64_8_128_access(metadata, $1) = $2
+`
+// Bind parameters: [term.s, term.c]
+```
+
+#### Containment Search
+Equivalent to `data @> '{"key": "value"}'`.
+
+```typescript
+const terms = await protectClient.createJsonSearchTerms([{
+  value: { tags: ['premium'] },
+  containmentType: 'contains',
+  column: schema.metadata,
+  table: schema
+}])
+
+// Containment terms return a vector of terms to match
+const termVector = terms.data[0].sv
+
+// SQL: metadata @> termVector
+const query = `
+  SELECT * FROM users 
+  WHERE eql_ste_vec_u64_8_128_contains(metadata, $1)
+`
+// Bind parameter: [JSON.stringify(termVector)]
 ```
 
 ## Implementation examples
