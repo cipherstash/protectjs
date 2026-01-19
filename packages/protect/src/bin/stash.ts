@@ -5,6 +5,7 @@ import {
   buildRouteMap,
   run,
 } from '@stricli/core'
+import readline from 'node:readline'
 import { Stash } from '../stash/index.js'
 
 // ANSI color codes for beautiful terminal output
@@ -87,6 +88,24 @@ function getConfig(environment: string): Stash['config'] {
 function createStash(environment: string): Stash {
   const config = getConfig(environment)
   return new Stash(config)
+}
+
+/**
+ * Prompt user for confirmation
+ */
+function askConfirmation(prompt: string): Promise<boolean> {
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  })
+
+  return new Promise((resolve) => {
+    rl.question(prompt, (answer) => {
+      rl.close()
+      const normalized = answer.trim().toLowerCase()
+      resolve(normalized === 'y' || normalized === 'yes')
+    })
+  })
 }
 
 /**
@@ -296,12 +315,28 @@ Examples:
  * Delete command - Delete a secret from the vault
  */
 const deleteCommand = buildCommand({
-  func: async (flags: { name: string; environment: string }) => {
-    const { name, environment } = flags
+  func: async (flags: {
+    name: string
+    environment: string
+    yes?: boolean
+  }) => {
+    const { name, environment, yes } = flags
     const stash = createStash(environment)
 
+    // Ask for confirmation unless --yes flag is set
+    if (!yes) {
+      const confirmation = await askConfirmation(
+        `${style.warning(`Are you sure you want to delete secret "${name}" from environment "${environment}"? This action cannot be undone. (yes/no): `)}`,
+      )
+
+      if (!confirmation) {
+        console.log(style.info('Deletion cancelled.'))
+        return
+      }
+    }
+
     console.log(
-      `${style.warning(`Deleting secret "${name}" from environment "${environment}"...`)}`,
+      `${style.info(`Deleting secret "${name}" from environment "${environment}"...`)}`,
     )
 
     const result = await stash.delete(name)
@@ -330,21 +365,28 @@ const deleteCommand = buildCommand({
         parse: String,
         brief: 'Environment name (e.g., production, staging, development)',
       },
+      yes: {
+        kind: 'boolean',
+        optional: true,
+        brief: 'Skip confirmation prompt',
+      },
     },
     aliases: {
       n: 'name',
       e: 'environment',
+      y: 'yes',
     },
   },
   docs: {
     brief: 'Delete a secret from CipherStash',
     fullDescription: `
 Permanently delete a secret from the specified environment. This action cannot be undone.
+By default, you will be prompted for confirmation before deletion. Use --yes to skip the confirmation.
 
 Examples:
   stash secrets delete --name DATABASE_URL --environment production
-  stash secrets delete -n DATABASE_URL -e production
-  stash secrets delete --name API_KEY --environment staging
+  stash secrets delete -n DATABASE_URL -e production --yes
+  stash secrets delete --name API_KEY --environment staging -y
 		`.trim(),
   },
 })
@@ -385,7 +427,8 @@ Examples:
   stash secrets list --environment production
   stash secrets list -e production
   stash secrets delete --name DATABASE_URL --environment production
-  stash secrets delete -n DATABASE_URL -e production
+  stash secrets delete -n DATABASE_URL -e production --yes
+  stash secrets delete -n DATABASE_URL -e production -y
 		`.trim(),
   },
 })
