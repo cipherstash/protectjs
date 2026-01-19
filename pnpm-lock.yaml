@@ -512,8 +512,8 @@ importers:
         specifier: ^0.2.0
         version: 0.2.2
       '@cipherstash/protect-ffi':
-        specifier: 0.19.0
-        version: 0.19.0
+        specifier: link:/Users/tobyhede/src/protectjs-ffi
+        version: link:../../../protectjs-ffi
       '@cipherstash/schema':
         specifier: workspace:*
         version: link:../schema
@@ -1058,39 +1058,6 @@ packages:
   '@changesets/write@0.4.0':
     resolution: {integrity: sha512-CdTLvIOPiCNuH71pyDu3rA+Q0n65cmAbXnwWH84rKGiFumFzkmHNT8KHTMEchcxN+Kl8I54xGUhJ7l3E7X396Q==}
 
-  '@cipherstash/protect-ffi-darwin-arm64@0.19.0':
-    resolution: {integrity: sha512-0U/paHskpD2SCiy4T4s5Ery112n5MfT3cXudCZ0m82x03SiK5sU9SNtD2tI0tJhcUlDP9TsFUKnYEEZPFR8pUA==}
-    cpu: [arm64]
-    os: [darwin]
-
-  '@cipherstash/protect-ffi-darwin-x64@0.19.0':
-    resolution: {integrity: sha512-gbPomTjvBCO7eZsMLGzMVv0Al/TZQ3SOfLWCRzRdWzff3BIC+wPrqJJBbpxIb/WRG7Ak8ceRSdMkrnhQnlsYHA==}
-    cpu: [x64]
-    os: [darwin]
-
-  '@cipherstash/protect-ffi-linux-arm64-gnu@0.19.0':
-    resolution: {integrity: sha512-z4ZFJGrmxlsZM5arFyLeeiod8z5SONPYLYnQnO+HG9CH+ra2jRhCvA5qvPjF1+/7vL/zpuV+9MhVJGTt7Vo38A==}
-    cpu: [arm64]
-    os: [linux]
-
-  '@cipherstash/protect-ffi-linux-x64-gnu@0.19.0':
-    resolution: {integrity: sha512-ZD3YSzGdgtN7Elsp4rKGBREvbhsYNIt5ywnme8JEgVID7UFENQK5WmsLr20ZbMT1C37TaMRS5ZuIS+loSZvE5Q==}
-    cpu: [x64]
-    os: [linux]
-
-  '@cipherstash/protect-ffi-linux-x64-musl@0.19.0':
-    resolution: {integrity: sha512-dngMn6EP2016fwJMg8yeZiJJ/lDOiZ5lkA8fMrVxkr/pv6t7x8m1pdbh4TuLA4OSozm2MLXFu/SZInPwdWZu/w==}
-    cpu: [x64]
-    os: [linux]
-
-  '@cipherstash/protect-ffi-win32-x64-msvc@0.19.0':
-    resolution: {integrity: sha512-A0WaKj+8WtO+synaMUbOy4a34/s7urJemXj5nC/8EKS8ppGcAJR5pZqV4+RV57j0pQSSR52BAvAenuQEGyKZPA==}
-    cpu: [x64]
-    os: [win32]
-
-  '@cipherstash/protect-ffi@0.19.0':
-    resolution: {integrity: sha512-UfPwO2axmi4O18Wwv87wDg1aGU1RHIEZoWtb/nEYWQgXDOhYtKmWcKQic0MMednBeHAF972pNsrw9Dxhs0ZxXw==}
-
   '@clerk/backend@2.28.0':
     resolution: {integrity: sha512-rd0hWrU7VES/CEYwnyaXDDHzDXYIaSzI5G03KLUfxLyOQSChU0ZUeViDYyXEsjZgAQqiUP1TFykh9JU2YlaNYg==}
     engines: {node: '>=18.17.0'}
@@ -1586,6 +1553,12 @@ packages:
     peerDependencies:
       eslint: ^6.0.0 || ^7.0.0 || >=8.0.0
 
+  '@eslint-community/eslint-utils@4.9.1':
+    resolution: {integrity: sha512-phrYmNiYppR7znFEdqgfWHXR6NCkZEK7hwWDHZUjit/2/U0r6XvkDl0SYnoM51Hq7FhCGdLDT6zxCCOY1hexsQ==}
+    engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
+    peerDependencies:
+      eslint: ^6.0.0 || ^7.0.0 || >=8.0.0
+
   '@eslint-community/regexpp@4.12.2':
     resolution: {integrity: sha512-EriSTlt5OC9/7SXkRSCAhfSxxoSUgBm33OH+IkwbdpgoqsSsUg7y3uh+IICI/Qg4BBWr3U2i39RpmycbxMq4ew==}
     engines: {node: ^12.0.0 || ^14.0.0 || >=16.0.0}
@@ -2075,9 +2048,6 @@ packages:
 
   '@napi-rs/wasm-runtime@0.2.12':
     resolution: {integrity: sha512-ZVWUcfwY4E/yPitQJl481FjFo3K22D6qF0DuFH6Y/nbnE11GY5uguDxZMGXPQ8WQ0128MXQD7TnfHyK4oWoIJQ==}
-
-  '@neon-rs/load@0.1.82':
-    resolution: {integrity: sha512-H4Gu2o5kPp+JOEhRrOQCnJnf7X6sv9FBLttM/wSbb4efsgFWeHzfU/ItZ01E5qqEk+U6QGdeVO7lxXIAtYHr5A==}
 
   '@nestjs/cli@11.0.14':
     resolution: {integrity: sha512-YwP03zb5VETTwelXU+AIzMVbEZKk/uxJL+z9pw0mdG9ogAtqZ6/mpmIM4nEq/NU8D0a7CBRLcMYUmWW/55pfqw==}
@@ -4241,8 +4211,8 @@ packages:
     engines: {node: '>=4'}
     hasBin: true
 
-  esquery@1.6.0:
-    resolution: {integrity: sha512-ca9pw9fomFcKPvFLXhBKUK90ZvGibiGOvRJNbjljY7s7uq/5YO4BOzcYtJqExdx99rF6aAcnRxHmcUHcz6sQsg==}
+  esquery@1.7.0:
+    resolution: {integrity: sha512-Ap6G0WQwcU/LHsvLwON1fAQX9Zp0A2Y6Y/cJBl9r/JbW90Zyg4/zbG6zzKa2OTALELarYHmKu0GhpM5EO+7T0g==}
     engines: {node: '>=0.10'}
 
   esrecurse@4.3.0:
@@ -7426,35 +7396,6 @@ snapshots:
       human-id: 4.1.3
       prettier: 2.8.8
 
-  '@cipherstash/protect-ffi-darwin-arm64@0.19.0':
-    optional: true
-
-  '@cipherstash/protect-ffi-darwin-x64@0.19.0':
-    optional: true
-
-  '@cipherstash/protect-ffi-linux-arm64-gnu@0.19.0':
-    optional: true
-
-  '@cipherstash/protect-ffi-linux-x64-gnu@0.19.0':
-    optional: true
-
-  '@cipherstash/protect-ffi-linux-x64-musl@0.19.0':
-    optional: true
-
-  '@cipherstash/protect-ffi-win32-x64-msvc@0.19.0':
-    optional: true
-
-  '@cipherstash/protect-ffi@0.19.0':
-    dependencies:
-      '@neon-rs/load': 0.1.82
-    optionalDependencies:
-      '@cipherstash/protect-ffi-darwin-arm64': 0.19.0
-      '@cipherstash/protect-ffi-darwin-x64': 0.19.0
-      '@cipherstash/protect-ffi-linux-arm64-gnu': 0.19.0
-      '@cipherstash/protect-ffi-linux-x64-gnu': 0.19.0
-      '@cipherstash/protect-ffi-linux-x64-musl': 0.19.0
-      '@cipherstash/protect-ffi-win32-x64-msvc': 0.19.0
-
   '@clerk/backend@2.28.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3)':
     dependencies:
       '@clerk/shared': 3.41.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
@@ -7753,6 +7694,11 @@ snapshots:
     optional: true
 
   '@eslint-community/eslint-utils@4.9.0(eslint@9.39.2(jiti@2.6.1))':
+    dependencies:
+      eslint: 9.39.2(jiti@2.6.1)
+      eslint-visitor-keys: 3.4.3
+
+  '@eslint-community/eslint-utils@4.9.1(eslint@9.39.2(jiti@2.6.1))':
     dependencies:
       eslint: 9.39.2(jiti@2.6.1)
       eslint-visitor-keys: 3.4.3
@@ -8322,8 +8268,6 @@ snapshots:
       '@emnapi/runtime': 1.7.1
       '@tybys/wasm-util': 0.10.1
     optional: true
-
-  '@neon-rs/load@0.1.82': {}
 
   '@nestjs/cli@11.0.14(@types/node@22.19.3)(esbuild@0.25.12)':
     dependencies:
@@ -10394,7 +10338,7 @@ snapshots:
 
   eslint@9.39.2(jiti@2.6.1):
     dependencies:
-      '@eslint-community/eslint-utils': 4.9.0(eslint@9.39.2(jiti@2.6.1))
+      '@eslint-community/eslint-utils': 4.9.1(eslint@9.39.2(jiti@2.6.1))
       '@eslint-community/regexpp': 4.12.2
       '@eslint/config-array': 0.21.1
       '@eslint/config-helpers': 0.4.2
@@ -10414,7 +10358,7 @@ snapshots:
       eslint-scope: 8.4.0
       eslint-visitor-keys: 4.2.1
       espree: 10.4.0
-      esquery: 1.6.0
+      esquery: 1.7.0
       esutils: 2.0.3
       fast-deep-equal: 3.1.3
       file-entry-cache: 8.0.0
@@ -10441,7 +10385,7 @@ snapshots:
 
   esprima@4.0.1: {}
 
-  esquery@1.6.0:
+  esquery@1.7.0:
     dependencies:
       estraverse: 5.3.0
 
