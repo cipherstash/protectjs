@@ -128,6 +128,7 @@ export type {
   EncryptedPayload,
   EncryptedData,
   SearchTerm,
+  SimpleSearchTerm,
   KeysetIdentifier,
   EncryptedSearchTerm,
   EncryptPayload,

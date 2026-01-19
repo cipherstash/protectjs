@@ -52,14 +52,20 @@ export type EncryptedPayload = Encrypted | null
 export type EncryptedData = Encrypted | null
 
 /**
- * Represents a value that will be encrypted and used in a search
+ * Simple search term for basic value encryption (original SearchTerm behavior)
  */
-export type SearchTerm = {
+export type SimpleSearchTerm = {
   value: FfiJsPlaintext
   column: ProtectColumn
   table: ProtectTable<ProtectTableColumn>
   returnType?: 'eql' | 'composite-literal' | 'escaped-composite-literal'
 }
+
+/**
+ * Represents a value that will be encrypted and used in a search.
+ * Can be a simple value search, JSON path search, or JSON containment search.
+ */
+export type SearchTerm = SimpleSearchTerm | JsonPathSearchTerm | JsonContainmentSearchTerm
 
 /**
  * Options for encrypting a query term with explicit index type control.
