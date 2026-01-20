@@ -104,11 +104,11 @@ console.log(term.data) // array of search terms
 > [!NOTE]
 > As a developer, you must track the index of the search term in the array when using the `createSearchTerms` function.
 
-## The `createJsonSearchTerms` function
+## JSON Search Terms
 
-The `createJsonSearchTerms` function generates search terms for querying encrypted JSON data. This requires columns to be configured with `.searchableJson()` in the schema.
+The `createSearchTerms` function also supports querying encrypted JSON data. This requires columns to be configured with `.searchableJson()` in the schema.
 
-The function takes an array of `JsonSearchTerm` objects.
+The function accepts JSON search terms in addition to simple value terms.
 
 ### Path Queries
 Used for finding records where a specific path in the JSON equals a value.
@@ -134,7 +134,7 @@ Example:
 
 ```typescript
 // Path query
-const pathTerms = await protectClient.createJsonSearchTerms([{
+const pathTerms = await protectClient.createSearchTerms([{
   path: 'user.email',
   value: 'alice@example.com',
   column: schema.metadata,
@@ -142,7 +142,7 @@ const pathTerms = await protectClient.createJsonSearchTerms([{
 }])
 
 // Containment query
-const containmentTerms = await protectClient.createJsonSearchTerms([{
+const containmentTerms = await protectClient.createSearchTerms([{
   value: { roles: ['admin'] },
   containmentType: 'contains',
   column: schema.metadata,
@@ -222,7 +222,7 @@ When searching encrypted JSON columns, you use the `ste_vec` index type which su
 Equivalent to `data->'path'->>'field' = 'value'`.
 
 ```typescript
-const terms = await protectClient.createJsonSearchTerms([{
+const terms = await protectClient.createSearchTerms([{
   path: 'user.email',
   value: 'alice@example.com',
   column: schema.metadata,
@@ -234,7 +234,7 @@ const term = terms.data[0]
 
 // SQL: metadata->(term.s) = term.c
 const query = `
-  SELECT * FROM users 
+  SELECT * FROM users
   WHERE eql_ste_vec_u64_8_128_access(metadata, $1) = $2
 `
 // Bind parameters: [term.s, term.c]
@@ -244,7 +244,7 @@ const query = `
 Equivalent to `data @> '{"key": "value"}'`.
 
 ```typescript
-const terms = await protectClient.createJsonSearchTerms([{
+const terms = await protectClient.createSearchTerms([{
   value: { tags: ['premium'] },
   containmentType: 'contains',
   column: schema.metadata,
@@ -256,7 +256,7 @@ const termVector = terms.data[0].sv
 
 // SQL: metadata @> termVector
 const query = `
-  SELECT * FROM users 
+  SELECT * FROM users
   WHERE eql_ste_vec_u64_8_128_contains(metadata, $1)
 `
 // Bind parameter: [JSON.stringify(termVector)]

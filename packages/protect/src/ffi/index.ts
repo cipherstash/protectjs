@@ -18,7 +18,6 @@ import type {
   EncryptOptions,
   EncryptQueryOptions,
   Encrypted,
-  JsonSearchTerm,
   KeysetIdentifier,
   QuerySearchTerm,
   SearchTerm,
@@ -32,7 +31,6 @@ import { DecryptModelOperation } from './operations/decrypt-model'
 import { EncryptOperation } from './operations/encrypt'
 import { EncryptModelOperation } from './operations/encrypt-model'
 import { EncryptQueryOperation } from './operations/encrypt-query'
-import { JsonSearchTermsOperation } from './operations/json-search-terms'
 import { QuerySearchTermsOperation } from './operations/query-search-terms'
 import { SearchTermsOperation } from './operations/search-terms'
 
@@ -377,28 +375,6 @@ export class ProtectClient {
    */
   createQuerySearchTerms(terms: QuerySearchTerm[]): QuerySearchTermsOperation {
     return new QuerySearchTermsOperation(this.client, terms)
-  }
-
-  /**
-   * Create encrypted search terms for JSON path queries and containment operations.
-   *
-   * @deprecated Use createSearchTerms() instead - it now accepts JSON path and containment terms.
-   * This method continues to work but will be removed in a future major version.
-   *
-   * @param terms - Array of JSON search terms (path queries or containment queries)
-   * @returns A JsonSearchTermsOperation that can be awaited or chained with withLockContext
-   *
-   * @example Migrate to createSearchTerms
-   * ```typescript
-   * // Before (deprecated):
-   * const terms = await protectClient.createJsonSearchTerms([...])
-   *
-   * // After (preferred):
-   * const terms = await protectClient.createSearchTerms([...])
-   * ```
-   */
-  createJsonSearchTerms(terms: JsonSearchTerm[]): JsonSearchTermsOperation {
-    return new JsonSearchTermsOperation(this.client, terms)
   }
 
   /** e.g., debugging or environment info */
