@@ -39,12 +39,6 @@ export class SearchTermsOperation extends DynamoDBOperation<string[]> {
             )
           }
 
-          if (term?.k !== 'ct') {
-            throw new Error(
-              'Tried to create search term with an invalid encrypted payload',
-            )
-          }
-
           if (!term?.hm) {
             throw new Error('expected encrypted search term to have an HMAC')
           }
