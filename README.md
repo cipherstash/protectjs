@@ -30,7 +30,7 @@ Visit the documentation for our products to get started:
 
 ## Features
 
-Protect.js protects data using industry-standard AES encryption and [ZeroKMS](https://cipherstash.com/products/zerokms) for bulk encryption and decryption operations. This enables every encrypted value, in every column, in every row in your database to have a unique key, without sacrificing performance.
+Protect.js protects data using industry-standard AES encryption and [ZeroKMS](https://cipherstash.com/products/zerokms) for bulk encryption and decryption operations and is up to 14x faster than AWS KMS or Hashicorp Vault. This enables every encrypted value, in every column, in every row in your database to have a unique key, without sacrificing performance.
 
 **Features:**
 
@@ -38,12 +38,12 @@ Protect.js protects data using industry-standard AES encryption and [ZeroKMS](ht
 - **Identity-aware encryption**: Lock down access to sensitive data by requiring a valid JWT to perform decryption
 - **Searchable encryption**: Search encrypted data in PostgreSQL with equality, range, and text search
 - **TypeScript support**: Strongly typed with TypeScript interfaces and types
-- **Audit trail**: Every decryption event is logged in ZeroKMS to help you prove compliance
+- **Audit trail**: Every decryption event is logged via ZeroKMS Access Intelligence to help you prove compliance
 
 **Use cases:**
 
 - **Trusted data access**: Ensure only your end-users can access their sensitive data
-- **Meet compliance requirements faster**: Meet and exceed the data encryption requirements of SOC2 and ISO27001
+- **Meet compliance requirements faster**: Meet stringent 2026 privacy and security requirements
 - **Reduce the blast radius of data breaches**: Limit the impact of exploited vulnerabilities to only the data your end-users can decrypt
 
 > [!IMPORTANT]
