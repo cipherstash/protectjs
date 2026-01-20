@@ -140,7 +140,7 @@ async function encryptSearchTermsHelper(
       const columnConfig = term.column.build()
       const prefix = columnConfig.indexes.ste_vec?.prefix
 
-      if (!prefix || prefix === '__RESOLVE_AT_BUILD__') {
+      if (!prefix) {
         throw new Error(
           `Column "${term.column.getName()}" does not have ste_vec index configured. ` +
             `Use .searchableJson() when defining the column.`,
@@ -165,7 +165,7 @@ async function encryptSearchTermsHelper(
       const columnConfig = term.column.build()
       const prefix = columnConfig.indexes.ste_vec?.prefix
 
-      if (!prefix || prefix === '__RESOLVE_AT_BUILD__') {
+      if (!prefix) {
         throw new Error(
           `Column "${term.column.getName()}" does not have ste_vec index configured. ` +
             `Use .searchableJson() when defining the column.`,
