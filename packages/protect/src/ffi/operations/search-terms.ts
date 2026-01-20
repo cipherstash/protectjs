@@ -138,14 +138,16 @@ async function encryptSearchTermsHelper(
     } else if (isJsonContainmentTerm(term)) {
       // Containment query - validate ste_vec index
       const columnConfig = term.column.build()
-      const prefix = columnConfig.indexes.ste_vec?.prefix
 
-      if (!prefix) {
+      if (!columnConfig.indexes.ste_vec) {
         throw new Error(
           `Column "${term.column.getName()}" does not have ste_vec index configured. ` +
             `Use .searchableJson() when defining the column.`,
         )
       }
+
+      // Always use full table/column prefix
+      const prefix = `${term.table.tableName}/${term.column.getName()}`
 
       // Flatten and add all leaf values
       const pairs = flattenJson(term.value, prefix)
@@ -163,14 +165,16 @@ async function encryptSearchTermsHelper(
     } else if (isJsonPathTerm(term)) {
       // Path query - validate ste_vec index
       const columnConfig = term.column.build()
-      const prefix = columnConfig.indexes.ste_vec?.prefix
 
-      if (!prefix) {
+      if (!columnConfig.indexes.ste_vec) {
         throw new Error(
           `Column "${term.column.getName()}" does not have ste_vec index configured. ` +
             `Use .searchableJson() when defining the column.`,
         )
       }
+
+      // Always use full table/column prefix
+      const prefix = `${term.table.tableName}/${term.column.getName()}`
 
       if (term.value !== undefined) {
         // Path query with value - wrap in nested object
@@ -258,8 +262,8 @@ async function encryptSearchTermsHelper(
       }
     } else if (isJsonContainmentTerm(term)) {
       // Gather all encrypted values for this containment term
-      const columnConfig = term.column.build()
-      const prefix = columnConfig.indexes.ste_vec?.prefix!
+      // Always use full table/column prefix
+      const prefix = `${term.table.tableName}/${term.column.getName()}`
       const pairs = flattenJson(term.value, prefix)
       const svEntries: Array<Record<string, unknown>> = []
 
@@ -273,8 +277,8 @@ async function encryptSearchTermsHelper(
 
       results[i] = { sv: svEntries } as Encrypted
     } else if (isJsonPathTerm(term)) {
-      const columnConfig = term.column.build()
-      const prefix = columnConfig.indexes.ste_vec?.prefix!
+      // Always use full table/column prefix
+      const prefix = `${term.table.tableName}/${term.column.getName()}`
 
       if (term.value !== undefined) {
         // Path query with value

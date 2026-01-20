@@ -217,7 +217,8 @@ export class ProtectColumn {
    */
   searchableJson() {
     this.castAsValue = 'json'
-    this.indexesValue.ste_vec = {}
+    // Use column name as temporary prefix; will be replaced with table/column during table build
+    this.indexesValue.ste_vec = { prefix: this.columnName }
     return this
   }
 
@@ -267,8 +268,8 @@ export class ProtectTable<T extends ProtectTableColumn> {
       if (builder instanceof ProtectColumn) {
         const builtColumn = builder.build()
 
-        // Infer ste_vec prefix from table/column when not explicitly set
-        if (builtColumn.indexes.ste_vec && !builtColumn.indexes.ste_vec.prefix) {
+        // Set ste_vec prefix to table/column (overwriting any temporary prefix)
+        if (builtColumn.indexes.ste_vec) {
           builtColumns[colName] = {
             ...builtColumn,
             indexes: {
@@ -343,9 +344,9 @@ export function buildEncryptConfig(
     const tableDef = tb.build()
     const tableName = tableDef.tableName
 
-    // Infer ste_vec prefix from table/column when not explicitly set
+    // Set ste_vec prefix to table/column (overwriting any temporary prefix)
     for (const [columnName, columnConfig] of Object.entries(tableDef.columns)) {
-      if (columnConfig.indexes.ste_vec && !columnConfig.indexes.ste_vec.prefix) {
+      if (columnConfig.indexes.ste_vec) {
         columnConfig.indexes.ste_vec.prefix = `${tableName}/${columnName}`
       }
     }
