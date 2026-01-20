@@ -8,7 +8,7 @@
 <a href="https://www.npmjs.com/package/@cipherstash/protect"><img alt="NPM version" src="https://img.shields.io/npm/v/@cipherstash/protect.svg?style=for-the-badge&labelColor=000000"></a>
 <a href="https://www.npmjs.com/package/@cipherstash/protect"><img alt="npm downloads" src="https://img.shields.io/npm/dm/@cipherstash/protect.svg?style=for-the-badge&labelColor=000000"></a>
 <a href="https://github.com/cipherstash/protectjs/blob/main/LICENSE.md"><img alt="License" src="https://img.shields.io/npm/l/@cipherstash/protect.svg?style=for-the-badge&labelColor=000000"></a>
-<a href="https://github.com/cipherstash/protectjs/discussions"><img alt="Join the community on GitHub" src="https://img.shields.io/badge/Join%20the%20community-blueviolet.svg?style=for-the-badge&logo=GitHub&labelColor=000000&logoWidth=20"></a>
+<a href="https://discord.gg/5qwXUFb6PB"><img alt="Join the community on Discord" src="https://img.shields.io/badge/Join%20the%20community-blueviolet.svg?style=for-the-badge&logo=Discord&labelColor=000000&logoWidth=20"></a>
 
 </div>
 
