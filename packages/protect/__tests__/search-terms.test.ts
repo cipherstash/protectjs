@@ -201,6 +201,33 @@ const schemaWithoutSteVec = csTable('test_no_ste_vec', {
   data: csColumn('data').dataType('json'),
 })
 
+describe('Selector prefix resolution', () => {
+  it('should use table/column prefix in selector for searchableJson columns', async () => {
+    const protectClient = await protect({ schemas: [jsonSearchSchema] })
+
+    const terms = [
+      {
+        path: 'user.email',
+        value: 'test@example.com',
+        column: jsonSearchSchema.metadata,
+        table: jsonSearchSchema,
+      },
+    ] as SearchTerm[]
+
+    const result = await protectClient.createSearchTerms(terms)
+
+    if (result.failure) {
+      throw new Error(`[protect]: ${result.failure.message}`)
+    }
+
+    const selector = (result.data[0] as { s: string }).s
+    // Verify prefix is resolved table/column, not a placeholder
+    expect(selector).toBe('test_json_search/metadata/user/email')
+    expect(selector).not.toContain('__RESOLVE')
+    expect(selector).not.toContain('enabled')
+  }, 30000)
+})
+
 describe('create search terms - JSON comprehensive', () => {
   let protectClient: Awaited<ReturnType<typeof protect>>
 

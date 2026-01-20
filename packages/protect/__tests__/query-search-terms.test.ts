@@ -8,10 +8,15 @@ const users = csTable('users', {
   score: csColumn('score').dataType('number').orderAndRange(),
 })
 
+// Schema with searchableJson for ste_vec tests
+const jsonSchema = csTable('json_users', {
+  metadata: csColumn('metadata').searchableJson(),
+})
+
 let protectClient: Awaited<ReturnType<typeof protect>>
 
 beforeAll(async () => {
-  protectClient = await protect({ schemas: [users] })
+  protectClient = await protect({ schemas: [users, jsonSchema] })
 })
 
 describe('encryptQuery', () => {
@@ -61,6 +66,21 @@ describe('encryptQuery', () => {
     const keys = Object.keys(result.data || {})
     const metaKeys = keys.filter(k => k !== 'i' && k !== 'v')
     expect(metaKeys.length).toBeGreaterThan(0)
+  })
+
+  it('should handle null value in encryptQuery', async () => {
+    const result = await protectClient.encryptQuery(null, {
+      column: users.email,
+      table: users,
+      indexType: 'unique',
+    })
+
+    if (result.failure) {
+      throw new Error(`[protect]: ${result.failure.message}`)
+    }
+
+    // Null should produce null output (passthrough behavior)
+    expect(result.data).toBeNull()
   })
 })
 
@@ -118,6 +138,54 @@ describe('createQuerySearchTerms', () => {
     expect(term).toMatch(/^\(.*\)$/)
     // Check for the presence of the HMAC key in the JSON string
     expect(term.toLowerCase()).toContain('hm')
+  })
+
+  it('should handle escaped-composite-literal return type', async () => {
+    const terms: QuerySearchTerm[] = [
+      {
+        value: 'test@example.com',
+        column: users.email,
+        table: users,
+        indexType: 'unique',
+        returnType: 'escaped-composite-literal',
+      },
+    ]
+
+    const result = await protectClient.createQuerySearchTerms(terms)
+
+    if (result.failure) {
+      throw new Error(`[protect]: ${result.failure.message}`)
+    }
+
+    const term = result.data[0] as string
+    // escaped-composite-literal wraps in quotes
+    expect(term).toMatch(/^".*"$/)
+    const unescaped = JSON.parse(term)
+    expect(unescaped).toMatch(/^\(.*\)$/)
+  })
+
+  it('should handle ste_vec index with default queryOp', async () => {
+    const terms: QuerySearchTerm[] = [
+      {
+        // For ste_vec with default queryOp, value must be a JSON object
+        // matching the structure expected for the ste_vec index
+        value: { role: 'admin' },
+        column: jsonSchema.metadata,
+        table: jsonSchema,
+        indexType: 'ste_vec',
+        queryOp: 'default',
+      },
+    ]
+
+    const result = await protectClient.createQuerySearchTerms(terms)
+
+    if (result.failure) {
+      throw new Error(`[protect]: ${result.failure.message}`)
+    }
+
+    expect(result.data).toHaveLength(1)
+    // ste_vec with default queryOp returns encrypted structure
+    expect(result.data[0]).toBeDefined()
   })
 })
 
