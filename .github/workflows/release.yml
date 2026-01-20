@@ -4,7 +4,8 @@ name: Release JS
 # See https://docs.npmjs.com/trusted-publishers#supported-cicd-providers
 permissions:
   id-token: write  # Required for OIDC
-  contents: read
+  contents: write  # Required for changesets to commit and push
+  pull-requests: write  # Required for changesets to check existing PRs
 
 on:
   push:
@@ -29,7 +30,7 @@ jobs:
       - name: Install Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'pnpm'
 
       - name: Install dependencies
