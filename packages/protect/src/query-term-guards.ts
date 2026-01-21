@@ -46,7 +46,7 @@ export function isJsonContainedByQueryTerm(
  * from JsPlaintext[] which can also be an array of objects.
  */
 export function isQueryTermArray(
-  arr: unknown[],
+  arr: readonly unknown[],
 ): arr is readonly QueryTerm[] {
   return (
     arr.length > 0 &&
