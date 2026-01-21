@@ -1,6 +1,6 @@
 {
 	"name": "@cipherstash/protect-dynamodb",
-	"version": "6.0.1",
+	"version": "7.0.0",
 	"description": "Protect.js DynamoDB Helpers",
 	"keywords": [
 		"dynamodb",

@@ -1,5 +1,15 @@
 # @cipherstash/protect
 
+## 10.3.0
+
+### Minor Changes
+
+- a1fce2b: Add Stash interface and CLI tool.
+
+### Patch Changes
+
+- 622b684: Update @cipherstash/protect-ffi to 0.19.0
+
 ## 10.2.1
 
 ### Patch Changes
