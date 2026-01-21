@@ -14,71 +14,15 @@ import type {
   Encrypted,
   EncryptedSearchTerm,
   JsPlaintext,
-  JsonPath,
   QueryOpName,
   QueryTerm,
 } from '../../types'
 import { noClientError } from '../index'
+import { buildNestedObject, flattenJson, pathToSelector } from './json-path-utils'
 import { ProtectOperation } from './base-operation'
-
-/**
- * Converts a path to SteVec selector format: prefix/path/to/key
- */
-function pathToSelector(path: JsonPath, prefix: string): string {
-  const pathArray = Array.isArray(path) ? path : path.split('.')
-  return `${prefix}/${pathArray.join('/')}`
-}
-
-/**
- * Build a nested JSON object from a path array and a leaf value.
- */
-function buildNestedObject(
-  path: string[],
-  value: unknown,
-): Record<string, unknown> {
-  if (path.length === 0) {
-    return value as Record<string, unknown>
-  }
-  if (path.length === 1) {
-    return { [path[0]]: value }
-  }
-  const [first, ...rest] = path
-  return { [first]: buildNestedObject(rest, value) }
-}
-
-/**
- * Flattens nested JSON into path-value pairs for containment queries.
- */
-function flattenJson(
-  obj: Record<string, unknown>,
-  prefix: string,
-  currentPath: string[] = [],
-): Array<{ selector: string; value: Record<string, unknown> }> {
-  const results: Array<{ selector: string; value: Record<string, unknown> }> =
-    []
-
-  for (const [key, value] of Object.entries(obj)) {
-    const newPath = [...currentPath, key]
-
-    if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
-      results.push(
-        ...flattenJson(value as Record<string, unknown>, prefix, newPath),
-      )
-    } else {
-      const wrappedValue = buildNestedObject(newPath, value)
-      results.push({
-        selector: `${prefix}/${newPath.join('/')}`,
-        value: wrappedValue,
-      })
-    }
-  }
-
-  return results
-}
 
 /** Tracks which items belong to which term for reassembly */
 type JsonEncryptionItem = {
-  termIndex: number
   selector: string
   isContainment: boolean
   plaintext: JsPlaintext
@@ -122,7 +66,6 @@ async function encryptBatchQueryTermsHelper(
       const pairs = flattenJson(term.contains, prefix)
       for (const pair of pairs) {
         jsonItemsWithIndex.push({
-          termIndex: i,
           selector: pair.selector,
           isContainment: true,
           plaintext: pair.value,
@@ -144,7 +87,6 @@ async function encryptBatchQueryTermsHelper(
       const pairs = flattenJson(term.containedBy, prefix)
       for (const pair of pairs) {
         jsonItemsWithIndex.push({
-          termIndex: i,
           selector: pair.selector,
           isContainment: true,
           plaintext: pair.value,
@@ -170,7 +112,6 @@ async function encryptBatchQueryTermsHelper(
           : term.path.split('.')
         const wrappedValue = buildNestedObject(pathArray, term.value)
         jsonItemsWithIndex.push({
-          termIndex: i,
           selector: pathToSelector(term.path, prefix),
           isContainment: false,
           plaintext: wrappedValue,

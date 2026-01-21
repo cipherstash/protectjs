@@ -1,7 +1,7 @@
 import 'dotenv/config'
 import { csColumn, csTable } from '@cipherstash/schema'
 import { beforeAll, describe, expect, it } from 'vitest'
-import { type QueryTerm, protect } from '../src'
+import { LockContext, type QueryTerm, protect } from '../src'
 
 const users = csTable('users', {
   email: csColumn('email').freeTextSearch().equality().orderAndRange(),
@@ -194,6 +194,43 @@ describe('encryptQuery batch - readonly/as const support', () => {
     ] as const
 
     const result = await protectClient.encryptQuery(terms)
+
+    if (result.failure) {
+      throw new Error(`[protect]: ${result.failure.message}`)
+    }
+
+    expect(result.data).toHaveLength(1)
+  })
+})
+
+describe('encryptQuery batch - Lock context integration', () => {
+  it('should encrypt batch with lock context', async () => {
+    const userJwt = process.env.USER_JWT
+
+    if (!userJwt) {
+      console.log('Skipping lock context test - no USER_JWT provided')
+      return
+    }
+
+    const lc = new LockContext()
+    const lockContext = await lc.identify(userJwt)
+
+    if (lockContext.failure) {
+      throw new Error(`[protect]: ${lockContext.failure.message}`)
+    }
+
+    const terms: QueryTerm[] = [
+      {
+        value: 'test@example.com',
+        column: users.email,
+        table: users,
+        indexType: 'unique',
+      },
+    ]
+
+    const result = await protectClient
+      .encryptQuery(terms)
+      .withLockContext(lockContext.data)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)

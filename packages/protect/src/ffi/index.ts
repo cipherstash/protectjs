@@ -23,6 +23,7 @@ import type {
   QueryTerm,
   SearchTerm,
 } from '../types'
+import { isQueryTermArray } from '../query-term-guards'
 import { BatchEncryptQueryOperation } from './operations/batch-encrypt-query'
 import { BulkDecryptOperation } from './operations/bulk-decrypt'
 import { BulkDecryptModelsOperation } from './operations/bulk-decrypt-models'
@@ -371,6 +372,11 @@ export class ProtectClient {
    *   { contains: { role: 'admin' }, column: jsonSchema.metadata, table: jsonSchema },
    * ])
    * ```
+   *
+   * @remarks
+   * Note: Empty arrays `[]` are treated as scalar plaintext values for backward
+   * compatibility with the single-value overload. Pass a non-empty array to use
+   * batch encryption.
    */
   encryptQuery(terms: readonly QueryTerm[]): BatchEncryptQueryOperation
 
@@ -381,16 +387,10 @@ export class ProtectClient {
   ): EncryptQueryOperation | BatchEncryptQueryOperation {
     // Check if this is a QueryTerm array by looking for QueryTerm-specific properties
     // This is needed because JsPlaintext includes JsPlaintext[] which overlaps with QueryTerm[]
-    if (
-      Array.isArray(plaintextOrTerms) &&
-      plaintextOrTerms.length > 0 &&
-      typeof plaintextOrTerms[0] === 'object' &&
-      plaintextOrTerms[0] !== null &&
-      ('column' in plaintextOrTerms[0] || 'table' in plaintextOrTerms[0])
-    ) {
+    if (Array.isArray(plaintextOrTerms) && isQueryTermArray(plaintextOrTerms)) {
       return new BatchEncryptQueryOperation(
         this.client,
-        plaintextOrTerms as unknown as readonly QueryTerm[],
+        plaintextOrTerms,
       )
     }
     // Empty arrays are treated as JsPlaintext (backward compat)

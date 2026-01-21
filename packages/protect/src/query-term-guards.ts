@@ -39,3 +39,19 @@ export function isJsonContainedByQueryTerm(
 ): term is JsonContainedByQueryTerm {
   return 'containedBy' in term
 }
+
+/**
+ * Type guard to check if an array contains QueryTerm objects.
+ * Checks for QueryTerm-specific properties (column/table) to distinguish
+ * from JsPlaintext[] which can also be an array of objects.
+ */
+export function isQueryTermArray(
+  arr: unknown[],
+): arr is readonly QueryTerm[] {
+  return (
+    arr.length > 0 &&
+    typeof arr[0] === 'object' &&
+    arr[0] !== null &&
+    ('column' in arr[0] || 'table' in arr[0])
+  )
+}

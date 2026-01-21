@@ -135,6 +135,16 @@ export type JsonQueryTermBase = {
 /**
  * Scalar query term with explicit index type control.
  * Use for standard column queries (unique, ore, match indexes).
+ *
+ * @example
+ * ```typescript
+ * const term: ScalarQueryTerm = {
+ *   value: 'admin@example.com',
+ *   column: users.email,
+ *   table: users,
+ *   indexType: 'unique',
+ * }
+ * ```
  */
 export type ScalarQueryTerm = ScalarQueryTermBase & {
   /** The value to encrypt for querying */
@@ -149,6 +159,16 @@ export type ScalarQueryTerm = ScalarQueryTermBase & {
  * JSON path query term for ste_vec indexed columns.
  * Index type is implicitly 'ste_vec'.
  * Column must be defined with .searchableJson().
+ *
+ * @example
+ * ```typescript
+ * const term: JsonPathQueryTerm = {
+ *   path: 'user.email',
+ *   value: 'admin@example.com',
+ *   column: metadata,
+ *   table: documents,
+ * }
+ * ```
  */
 export type JsonPathQueryTerm = JsonQueryTermBase & {
   /** The path to navigate to in the JSON */
@@ -161,6 +181,15 @@ export type JsonPathQueryTerm = JsonQueryTermBase & {
  * JSON containment query term for @> operator.
  * Index type is implicitly 'ste_vec'.
  * Column must be defined with .searchableJson().
+ *
+ * @example
+ * ```typescript
+ * const term: JsonContainsQueryTerm = {
+ *   contains: { status: 'active', role: 'admin' },
+ *   column: metadata,
+ *   table: documents,
+ * }
+ * ```
  */
 export type JsonContainsQueryTerm = JsonQueryTermBase & {
   /** The JSON object to search for (PostgreSQL @> operator) */
@@ -171,6 +200,15 @@ export type JsonContainsQueryTerm = JsonQueryTermBase & {
  * JSON containment query term for <@ operator.
  * Index type is implicitly 'ste_vec'.
  * Column must be defined with .searchableJson().
+ *
+ * @example
+ * ```typescript
+ * const term: JsonContainedByQueryTerm = {
+ *   containedBy: { permissions: ['read', 'write', 'admin'] },
+ *   column: metadata,
+ *   table: documents,
+ * }
+ * ```
  */
 export type JsonContainedByQueryTerm = JsonQueryTermBase & {
   /** The JSON object to be contained by (PostgreSQL <@ operator) */
