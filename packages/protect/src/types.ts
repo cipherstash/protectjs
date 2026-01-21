@@ -107,6 +107,79 @@ export type QuerySearchTerm = {
 }
 
 /**
+ * Base type for scalar query terms (accepts ProtectColumn | ProtectValue)
+ */
+export type ScalarQueryTermBase = {
+  /** The column definition (can be ProtectColumn or ProtectValue) */
+  column: ProtectColumn | ProtectValue
+  /** The table definition */
+  table: ProtectTable<ProtectTableColumn>
+  /** Return format for the encrypted result */
+  returnType?: 'eql' | 'composite-literal' | 'escaped-composite-literal'
+}
+
+/**
+ * Base type for JSON query terms (requires ProtectColumn for .build() access)
+ * Note: returnType is not supported for JSON terms as they return structured objects
+ */
+export type JsonQueryTermBase = {
+  /** The column definition (must be ProtectColumn with .searchableJson()) */
+  column: ProtectColumn
+  /** The table definition */
+  table: ProtectTable<ProtectTableColumn>
+}
+
+/**
+ * Scalar query term with explicit index type control.
+ * Use for standard column queries (unique, ore, match indexes).
+ */
+export type ScalarQueryTerm = ScalarQueryTermBase & {
+  /** The value to encrypt for querying */
+  value: FfiJsPlaintext
+  /** Which index type to use */
+  indexType: IndexTypeName
+  /** Query operation (optional, defaults to 'default') */
+  queryOp?: QueryOpName
+}
+
+/**
+ * JSON path query term for ste_vec indexed columns.
+ * Index type is implicitly 'ste_vec'.
+ * Column must be defined with .searchableJson().
+ */
+export type JsonPathQueryTerm = JsonQueryTermBase & {
+  /** The path to navigate to in the JSON */
+  path: JsonPath
+  /** The value to compare at the path (optional, for WHERE clauses) */
+  value?: FfiJsPlaintext
+}
+
+/**
+ * JSON containment query term for @> operator.
+ * Index type is implicitly 'ste_vec'.
+ * Column must be defined with .searchableJson().
+ */
+export type JsonContainsQueryTerm = JsonQueryTermBase & {
+  /** The JSON object to search for (PostgreSQL @> operator) */
+  contains: Record<string, unknown>
+}
+
+/**
+ * JSON containment query term for <@ operator.
+ * Index type is implicitly 'ste_vec'.
+ * Column must be defined with .searchableJson().
+ */
+export type JsonContainedByQueryTerm = JsonQueryTermBase & {
+  /** The JSON object to be contained by (PostgreSQL <@ operator) */
+  containedBy: Record<string, unknown>
+}
+
+/**
+ * Union type for all query term variants in batch encryptQuery operations.
+ */
+export type QueryTerm = ScalarQueryTerm | JsonPathQueryTerm | JsonContainsQueryTerm | JsonContainedByQueryTerm
+
+/**
  * JSON path - either dot-notation string ('user.email') or array of keys (['user', 'email'])
  */
 export type JsonPath = string | string[]
