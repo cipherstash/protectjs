@@ -12,27 +12,9 @@ import { noClientError } from '../index'
 import { ProtectOperation } from './base-operation'
 
 /**
+ * @internal
  * Operation for encrypting multiple query terms with explicit index type control.
- *
- * This is the query-mode equivalent of `SearchTermsOperation`, but provides
- * explicit control over which index type and query operation to use for each term.
- * Produces SEM-only payloads optimized for database queries.
- *
- * @example
- * const terms = await protectClient.createQuerySearchTerms([
- *   {
- *     value: 'admin@example.com',
- *     column: usersSchema.email,
- *     table: usersSchema,
- *     indexType: 'unique',
- *   },
- *   {
- *     value: 100,
- *     column: usersSchema.score,
- *     table: usersSchema,
- *     indexType: 'ore',
- *   },
- * ])
+ * See {@link ProtectClient.createQuerySearchTerms} for the public interface and documentation.
  */
 export class QuerySearchTermsOperation extends ProtectOperation<
   EncryptedSearchTerm[]

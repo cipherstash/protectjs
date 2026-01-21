@@ -23,27 +23,9 @@ import { noClientError } from '../index'
 import { ProtectOperation } from './base-operation'
 
 /**
+ * @internal
  * Operation for encrypting a single query term with explicit index type control.
- *
- * Unlike `EncryptOperation`, this produces SEM-only (Searchable Encrypted Metadata)
- * payloads optimized for database queries - no ciphertext field is included.
- *
- * @example
- * // ORE query for range comparisons
- * const term = await protectClient.encryptQuery(100, {
- *   column: usersSchema.score,
- *   table: usersSchema,
- *   indexType: 'ore',
- * })
- *
- * @example
- * // SteVec query for JSON containment
- * const term = await protectClient.encryptQuery({ role: 'admin' }, {
- *   column: usersSchema.metadata,
- *   table: usersSchema,
- *   indexType: 'ste_vec',
- *   queryOp: 'ste_vec_term',
- * })
+ * See {@link ProtectClient.encryptQuery} for the public interface and documentation.
  */
 export class EncryptQueryOperation extends ProtectOperation<Encrypted> {
   private client: Client

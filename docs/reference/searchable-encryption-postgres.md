@@ -176,7 +176,7 @@ const terms = await protectClient.createSearchTerms([{
 // The generated term contains a selector and the encrypted term
 const term = terms.data[0]
 
-// SQL: metadata->(term.s) = term.c
+// EQL function equivalent to: metadata->'user'->>'email' = 'alice@example.com'
 const query = `
   SELECT * FROM users
   WHERE eql_ste_vec_u64_8_128_access(metadata, $1) = $2
@@ -199,7 +199,7 @@ const terms = await protectClient.createSearchTerms([{
 // Containment terms return a vector of terms to match
 const termVector = terms.data[0].sv
 
-// SQL: metadata @> termVector
+// EQL function equivalent to: metadata @> '{"tags": ["premium"]}'
 const query = `
   SELECT * FROM users
   WHERE eql_ste_vec_u64_8_128_contains(metadata, $1)
