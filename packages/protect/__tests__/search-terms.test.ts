@@ -115,7 +115,9 @@ describe('create search terms - JSON support', () => {
 
     expect(result.data).toHaveLength(1)
     expect(result.data[0]).toHaveProperty('s')
-    expect((result.data[0] as { s: string }).s).toBe('json_users/metadata/user/email')
+    expect((result.data[0] as { s: string }).s).toBe(
+      'json_users/metadata/user/email',
+    )
   }, 30000)
 
   it('should create JSON containment search term via createSearchTerms', async () => {
@@ -181,7 +183,9 @@ describe('create search terms - JSON support', () => {
 
     // Second: JSON path term has 's' property
     expect(result.data[1]).toHaveProperty('s')
-    expect((result.data[1] as { s: string }).s).toBe('json_users/metadata/user/name')
+    expect((result.data[1] as { s: string }).s).toBe(
+      'json_users/metadata/user/name',
+    )
 
     // Third: JSON containment term has 'sv' property
     expect(result.data[2]).toHaveProperty('sv')
@@ -257,7 +261,9 @@ describe('create search terms - JSON comprehensive', () => {
       expect(result.data).toHaveLength(1)
       expect(result.data[0]).toHaveProperty('s')
       // Verify selector format: prefix/path/segments
-      expect((result.data[0] as { s: string }).s).toBe('test_json_search/metadata/user/email')
+      expect((result.data[0] as { s: string }).s).toBe(
+        'test_json_search/metadata/user/email',
+      )
       // Verify there's encrypted content (not just the selector)
       expect(Object.keys(result.data[0]).length).toBeGreaterThan(1)
     }, 30000)
@@ -280,7 +286,9 @@ describe('create search terms - JSON comprehensive', () => {
 
       expect(result.data).toHaveLength(1)
       expect(result.data[0]).toHaveProperty('s')
-      expect((result.data[0] as { s: string }).s).toBe('test_json_search/metadata/user/email')
+      expect((result.data[0] as { s: string }).s).toBe(
+        'test_json_search/metadata/user/email',
+      )
     }, 30000)
 
     it('should create search term with deep path', async () => {
@@ -323,7 +331,9 @@ describe('create search terms - JSON comprehensive', () => {
       expect(result.data).toHaveLength(1)
       // Path-only returns selector without encrypted content
       expect(result.data[0]).toHaveProperty('s')
-      expect((result.data[0] as { s: string }).s).toBe('test_json_search/metadata/user/email')
+      expect((result.data[0] as { s: string }).s).toBe(
+        'test_json_search/metadata/user/email',
+      )
       // No encrypted content for path-only queries
       expect(result.data[0]).not.toHaveProperty('c')
     }, 30000)
@@ -345,7 +355,9 @@ describe('create search terms - JSON comprehensive', () => {
       }
 
       expect(result.data).toHaveLength(1)
-      expect((result.data[0] as { s: string }).s).toBe('test_json_search/metadata/status')
+      expect((result.data[0] as { s: string }).s).toBe(
+        'test_json_search/metadata/status',
+      )
     }, 30000)
   })
 
@@ -501,9 +513,15 @@ describe('create search terms - JSON comprehensive', () => {
       }
 
       expect(result.data).toHaveLength(3)
-      expect((result.data[0] as { s: string }).s).toBe('test_json_search/metadata/user/email')
-      expect((result.data[1] as { s: string }).s).toBe('test_json_search/metadata/user/name')
-      expect((result.data[2] as { s: string }).s).toBe('test_json_search/metadata/status')
+      expect((result.data[0] as { s: string }).s).toBe(
+        'test_json_search/metadata/user/email',
+      )
+      expect((result.data[1] as { s: string }).s).toBe(
+        'test_json_search/metadata/user/name',
+      )
+      expect((result.data[2] as { s: string }).s).toBe(
+        'test_json_search/metadata/status',
+      )
     }, 30000)
 
     it('should handle multiple containment queries in single call', async () => {
@@ -568,7 +586,9 @@ describe('create search terms - JSON comprehensive', () => {
 
       // First: path query with value
       expect(result.data[0]).toHaveProperty('s')
-      expect((result.data[0] as { s: string }).s).toBe('test_json_search/metadata/user/email')
+      expect((result.data[0] as { s: string }).s).toBe(
+        'test_json_search/metadata/user/email',
+      )
       // Verify there's encrypted content (more than just selector)
       expect(Object.keys(result.data[0]).length).toBeGreaterThan(1)
 
@@ -603,8 +623,12 @@ describe('create search terms - JSON comprehensive', () => {
       }
 
       expect(result.data).toHaveLength(2)
-      expect((result.data[0] as { s: string }).s).toBe('test_json_search/metadata/user/id')
-      expect((result.data[1] as { s: string }).s).toBe('test_json_search/config/feature/enabled')
+      expect((result.data[0] as { s: string }).s).toBe(
+        'test_json_search/metadata/user/id',
+      )
+      expect((result.data[1] as { s: string }).s).toBe(
+        'test_json_search/config/feature/enabled',
+      )
     }, 30000)
   })
 
@@ -660,7 +684,9 @@ describe('create search terms - JSON comprehensive', () => {
       }
 
       expect(result.data).toHaveLength(1)
-      expect((result.data[0] as { s: string }).s).toBe('test_json_search/metadata/用户/电子邮件')
+      expect((result.data[0] as { s: string }).s).toBe(
+        'test_json_search/metadata/用户/电子邮件',
+      )
     }, 30000)
 
     it('should handle unicode in values', async () => {
@@ -708,7 +734,9 @@ describe('create search terms - JSON comprehensive', () => {
 
       const selectors = svResult.sv.map((entry) => entry.s)
       expect(selectors).toContain('test_json_search/metadata/key-with-dash')
-      expect(selectors).toContain('test_json_search/metadata/key_with_underscore')
+      expect(selectors).toContain(
+        'test_json_search/metadata/key_with_underscore',
+      )
     }, 30000)
 
     it('should handle null values in containment queries', async () => {
@@ -933,7 +961,9 @@ describe('create search terms - JSON comprehensive', () => {
       const encrypted = result.data[0]
       // Should have selector
       expect(encrypted).toHaveProperty('s')
-      expect((encrypted as { s: string }).s).toBe('test_json_search/metadata/key')
+      expect((encrypted as { s: string }).s).toBe(
+        'test_json_search/metadata/key',
+      )
       // Should have additional encrypted content (more than just selector)
       const keys = Object.keys(encrypted)
       expect(keys.length).toBeGreaterThan(1)
@@ -995,7 +1025,9 @@ describe('create search terms - JSON comprehensive', () => {
         },
       ] as SearchTerm[]
 
-      const result = await protectClient.createSearchTerms(terms).withLockContext(lockContext.data)
+      const result = await protectClient
+        .createSearchTerms(terms)
+        .withLockContext(lockContext.data)
 
       if (result.failure) {
         throw new Error(`[protect]: ${result.failure.message}`)
@@ -1029,7 +1061,9 @@ describe('create search terms - JSON comprehensive', () => {
         },
       ] as SearchTerm[]
 
-      const result = await protectClient.createSearchTerms(terms).withLockContext(lockContext.data)
+      const result = await protectClient
+        .createSearchTerms(terms)
+        .withLockContext(lockContext.data)
 
       if (result.failure) {
         throw new Error(`[protect]: ${result.failure.message}`)
@@ -1071,7 +1105,9 @@ describe('create search terms - JSON comprehensive', () => {
         },
       ] as SearchTerm[]
 
-      const result = await protectClient.createSearchTerms(terms).withLockContext(lockContext.data)
+      const result = await protectClient
+        .createSearchTerms(terms)
+        .withLockContext(lockContext.data)
 
       if (result.failure) {
         throw new Error(`[protect]: ${result.failure.message}`)
@@ -1081,7 +1117,9 @@ describe('create search terms - JSON comprehensive', () => {
 
       // First: path query with value
       expect(result.data[0]).toHaveProperty('s')
-      expect((result.data[0] as { s: string }).s).toBe('test_json_search/metadata/user/email')
+      expect((result.data[0] as { s: string }).s).toBe(
+        'test_json_search/metadata/user/email',
+      )
       expect(Object.keys(result.data[0]).length).toBeGreaterThan(1)
 
       // Second: containment query

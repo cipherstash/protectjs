@@ -1,9 +1,9 @@
 import type {
+  JsonContainedByQueryTerm,
+  JsonContainsQueryTerm,
+  JsonPathQueryTerm,
   QueryTerm,
   ScalarQueryTerm,
-  JsonPathQueryTerm,
-  JsonContainsQueryTerm,
-  JsonContainedByQueryTerm,
 } from './types'
 
 /**
@@ -16,20 +16,26 @@ export function isScalarQueryTerm(term: QueryTerm): term is ScalarQueryTerm {
 /**
  * Type guard for JSON path query terms (have path)
  */
-export function isJsonPathQueryTerm(term: QueryTerm): term is JsonPathQueryTerm {
+export function isJsonPathQueryTerm(
+  term: QueryTerm,
+): term is JsonPathQueryTerm {
   return 'path' in term
 }
 
 /**
  * Type guard for JSON contains query terms (have contains)
  */
-export function isJsonContainsQueryTerm(term: QueryTerm): term is JsonContainsQueryTerm {
+export function isJsonContainsQueryTerm(
+  term: QueryTerm,
+): term is JsonContainsQueryTerm {
   return 'contains' in term
 }
 
 /**
  * Type guard for JSON containedBy query terms (have containedBy)
  */
-export function isJsonContainedByQueryTerm(term: QueryTerm): term is JsonContainedByQueryTerm {
+export function isJsonContainedByQueryTerm(
+  term: QueryTerm,
+): term is JsonContainedByQueryTerm {
   return 'containedBy' in term
 }

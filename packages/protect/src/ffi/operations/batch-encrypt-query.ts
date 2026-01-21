@@ -2,22 +2,22 @@ import { type Result, withResult } from '@byteslice/result'
 import { encryptQueryBulk } from '@cipherstash/protect-ffi'
 import { type ProtectError, ProtectErrorTypes } from '../..'
 import { logger } from '../../../../utils/logger'
-import type { LockContext, Context, CtsToken } from '../../identify'
+import type { Context, CtsToken, LockContext } from '../../identify'
+import {
+  isJsonContainedByQueryTerm,
+  isJsonContainsQueryTerm,
+  isJsonPathQueryTerm,
+  isScalarQueryTerm,
+} from '../../query-term-guards'
 import type {
   Client,
   Encrypted,
   EncryptedSearchTerm,
-  QueryTerm,
-  JsonPath,
   JsPlaintext,
+  JsonPath,
   QueryOpName,
+  QueryTerm,
 } from '../../types'
-import {
-  isScalarQueryTerm,
-  isJsonPathQueryTerm,
-  isJsonContainsQueryTerm,
-  isJsonContainedByQueryTerm,
-} from '../../query-term-guards'
 import { noClientError } from '../index'
 import { ProtectOperation } from './base-operation'
 
@@ -54,7 +54,8 @@ function flattenJson(
   prefix: string,
   currentPath: string[] = [],
 ): Array<{ selector: string; value: Record<string, unknown> }> {
-  const results: Array<{ selector: string; value: Record<string, unknown> }> = []
+  const results: Array<{ selector: string; value: Record<string, unknown> }> =
+    []
 
   for (const [key, value] of Object.entries(obj)) {
     const newPath = [...currentPath, key]
@@ -113,8 +114,7 @@ async function encryptBatchQueryTermsHelper(
       const columnConfig = term.column.build()
       if (!columnConfig.indexes.ste_vec) {
         throw new Error(
-          `Column "${term.column.getName()}" does not have ste_vec index configured. ` +
-            `Use .searchableJson() when defining the column.`,
+          `Column "${term.column.getName()}" does not have ste_vec index configured. Use .searchableJson() when defining the column.`,
         )
       }
 
@@ -136,8 +136,7 @@ async function encryptBatchQueryTermsHelper(
       const columnConfig = term.column.build()
       if (!columnConfig.indexes.ste_vec) {
         throw new Error(
-          `Column "${term.column.getName()}" does not have ste_vec index configured. ` +
-            `Use .searchableJson() when defining the column.`,
+          `Column "${term.column.getName()}" does not have ste_vec index configured. Use .searchableJson() when defining the column.`,
         )
       }
 
@@ -159,8 +158,7 @@ async function encryptBatchQueryTermsHelper(
       const columnConfig = term.column.build()
       if (!columnConfig.indexes.ste_vec) {
         throw new Error(
-          `Column "${term.column.getName()}" does not have ste_vec index configured. ` +
-            `Use .searchableJson() when defining the column.`,
+          `Column "${term.column.getName()}" does not have ste_vec index configured. Use .searchableJson() when defining the column.`,
         )
       }
 
@@ -190,7 +188,8 @@ async function encryptBatchQueryTermsHelper(
     scalarTermsWithIndex.length > 0
       ? await encryptQueryBulk(client, {
           queries: scalarTermsWithIndex.map(({ term }) => {
-            if (!isScalarQueryTerm(term)) throw new Error('Expected scalar term')
+            if (!isScalarQueryTerm(term))
+              throw new Error('Expected scalar term')
             const query = {
               plaintext: term.value,
               column: term.column.getName(),
@@ -245,7 +244,8 @@ async function encryptBatchQueryTermsHelper(
       if (term.returnType === 'composite-literal') {
         results[i] = `(${JSON.stringify(JSON.stringify(encrypted))})`
       } else if (term.returnType === 'escaped-composite-literal') {
-        results[i] = `${JSON.stringify(`(${JSON.stringify(JSON.stringify(encrypted))})`)}`
+        results[i] =
+          `${JSON.stringify(`(${JSON.stringify(JSON.stringify(encrypted))})`)}`
       } else {
         results[i] = encrypted
       }
@@ -353,10 +353,7 @@ export class BatchEncryptQueryOperationWithLockContext extends ProtectOperation<
   private operation: BatchEncryptQueryOperation
   private lockContext: LockContext
 
-  constructor(
-    operation: BatchEncryptQueryOperation,
-    lockContext: LockContext,
-  ) {
+  constructor(operation: BatchEncryptQueryOperation, lockContext: LockContext) {
     super()
     this.operation = operation
     this.lockContext = lockContext
@@ -378,12 +375,10 @@ export class BatchEncryptQueryOperationWithLockContext extends ProtectOperation<
           throw new Error(`[protect]: ${context.failure.message}`)
         }
 
-        return await encryptBatchQueryTermsHelper(
-          client,
-          terms,
-          metadata,
-          { context: context.data.context, ctsToken: context.data.ctsToken },
-        )
+        return await encryptBatchQueryTermsHelper(client, terms, metadata, {
+          context: context.data.context,
+          ctsToken: context.data.ctsToken,
+        })
       },
       (error) => ({
         type: ProtectErrorTypes.EncryptionError,

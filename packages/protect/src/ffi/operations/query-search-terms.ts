@@ -3,11 +3,7 @@ import { encryptQueryBulk } from '@cipherstash/protect-ffi'
 import { type ProtectError, ProtectErrorTypes } from '../..'
 import { logger } from '../../../../utils/logger'
 import type { LockContext } from '../../identify'
-import type {
-  Client,
-  EncryptedSearchTerm,
-  QuerySearchTerm,
-} from '../../types'
+import type { Client, EncryptedSearchTerm, QuerySearchTerm } from '../../types'
 import { noClientError } from '../index'
 import { ProtectOperation } from './base-operation'
 
@@ -88,10 +84,7 @@ export class QuerySearchTermsOperationWithLockContext extends ProtectOperation<
   private operation: QuerySearchTermsOperation
   private lockContext: LockContext
 
-  constructor(
-    operation: QuerySearchTermsOperation,
-    lockContext: LockContext,
-  ) {
+  constructor(operation: QuerySearchTermsOperation, lockContext: LockContext) {
     super()
     this.operation = operation
     this.lockContext = lockContext

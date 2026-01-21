@@ -395,10 +395,15 @@ export class ProtectClient {
     }
     // Empty arrays are treated as JsPlaintext (backward compat)
     // Non-array values pass through to single-value encryption
+    if (!opts) {
+      throw new Error(
+        'encryptQuery requires options when called with a single value',
+      )
+    }
     return new EncryptQueryOperation(
       this.client,
       plaintextOrTerms as JsPlaintext | null,
-      opts!,
+      opts,
     )
   }
 

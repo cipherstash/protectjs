@@ -1,7 +1,7 @@
 import 'dotenv/config'
 import { csColumn, csTable } from '@cipherstash/schema'
 import { beforeAll, describe, expect, it } from 'vitest'
-import { protect, type QueryTerm } from '../src'
+import { type QueryTerm, protect } from '../src'
 
 const users = csTable('users', {
   email: csColumn('email').freeTextSearch().equality().orderAndRange(),
@@ -21,7 +21,12 @@ beforeAll(async () => {
 describe('encryptQuery batch overload', () => {
   it('should encrypt batch of scalar terms', async () => {
     const terms: QueryTerm[] = [
-      { value: 'test@example.com', column: users.email, table: users, indexType: 'unique' },
+      {
+        value: 'test@example.com',
+        column: users.email,
+        table: users,
+        indexType: 'unique',
+      },
       { value: 100, column: users.score, table: users, indexType: 'ore' },
     ]
 
@@ -39,7 +44,12 @@ describe('encryptQuery batch overload', () => {
 describe('encryptQuery batch - JSON path queries', () => {
   it('should encrypt JSON path query with value', async () => {
     const terms: QueryTerm[] = [
-      { path: 'user.email', value: 'test@example.com', column: jsonSchema.metadata, table: jsonSchema },
+      {
+        path: 'user.email',
+        value: 'test@example.com',
+        column: jsonSchema.metadata,
+        table: jsonSchema,
+      },
     ]
 
     const result = await protectClient.encryptQuery(terms)
@@ -71,7 +81,11 @@ describe('encryptQuery batch - JSON path queries', () => {
 describe('encryptQuery batch - JSON containment queries', () => {
   it('should encrypt JSON contains query', async () => {
     const terms: QueryTerm[] = [
-      { contains: { role: 'admin' }, column: jsonSchema.metadata, table: jsonSchema },
+      {
+        contains: { role: 'admin' },
+        column: jsonSchema.metadata,
+        table: jsonSchema,
+      },
     ]
 
     const result = await protectClient.encryptQuery(terms)
@@ -89,7 +103,11 @@ describe('encryptQuery batch - JSON containment queries', () => {
 
   it('should encrypt JSON containedBy query', async () => {
     const terms: QueryTerm[] = [
-      { containedBy: { status: 'active' }, column: jsonSchema.metadata, table: jsonSchema },
+      {
+        containedBy: { status: 'active' },
+        column: jsonSchema.metadata,
+        table: jsonSchema,
+      },
     ]
 
     const result = await protectClient.encryptQuery(terms)
@@ -106,9 +124,23 @@ describe('encryptQuery batch - JSON containment queries', () => {
 describe('encryptQuery batch - mixed term types', () => {
   it('should encrypt mixed batch of scalar and JSON terms', async () => {
     const terms: QueryTerm[] = [
-      { value: 'test@example.com', column: users.email, table: users, indexType: 'unique' },
-      { path: 'user.email', value: 'json@example.com', column: jsonSchema.metadata, table: jsonSchema },
-      { contains: { role: 'admin' }, column: jsonSchema.metadata, table: jsonSchema },
+      {
+        value: 'test@example.com',
+        column: users.email,
+        table: users,
+        indexType: 'unique',
+      },
+      {
+        path: 'user.email',
+        value: 'json@example.com',
+        column: jsonSchema.metadata,
+        table: jsonSchema,
+      },
+      {
+        contains: { role: 'admin' },
+        column: jsonSchema.metadata,
+        table: jsonSchema,
+      },
     ]
 
     const result = await protectClient.encryptQuery(terms)
@@ -130,7 +162,13 @@ describe('encryptQuery batch - mixed term types', () => {
 describe('encryptQuery batch - return type formatting', () => {
   it('should format as composite-literal', async () => {
     const terms: QueryTerm[] = [
-      { value: 'test@example.com', column: users.email, table: users, indexType: 'unique', returnType: 'composite-literal' },
+      {
+        value: 'test@example.com',
+        column: users.email,
+        table: users,
+        indexType: 'unique',
+        returnType: 'composite-literal',
+      },
     ]
 
     const result = await protectClient.encryptQuery(terms)
@@ -147,7 +185,12 @@ describe('encryptQuery batch - return type formatting', () => {
 describe('encryptQuery batch - readonly/as const support', () => {
   it('should accept readonly array (as const)', async () => {
     const terms = [
-      { value: 'test@example.com', column: users.email, table: users, indexType: 'unique' as const },
+      {
+        value: 'test@example.com',
+        column: users.email,
+        table: users,
+        indexType: 'unique' as const,
+      },
     ] as const
 
     const result = await protectClient.encryptQuery(terms)

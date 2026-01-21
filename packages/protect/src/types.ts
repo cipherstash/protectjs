@@ -70,7 +70,10 @@ export type SimpleSearchTerm = {
  * Represents a value that will be encrypted and used in a search.
  * Can be a simple value search, JSON path search, or JSON containment search.
  */
-export type SearchTerm = SimpleSearchTerm | JsonPathSearchTerm | JsonContainmentSearchTerm
+export type SearchTerm =
+  | SimpleSearchTerm
+  | JsonPathSearchTerm
+  | JsonContainmentSearchTerm
 
 /**
  * Options for encrypting a query term with explicit index type control.
@@ -177,7 +180,11 @@ export type JsonContainedByQueryTerm = JsonQueryTermBase & {
 /**
  * Union type for all query term variants in batch encryptQuery operations.
  */
-export type QueryTerm = ScalarQueryTerm | JsonPathQueryTerm | JsonContainsQueryTerm | JsonContainedByQueryTerm
+export type QueryTerm =
+  | ScalarQueryTerm
+  | JsonPathQueryTerm
+  | JsonContainsQueryTerm
+  | JsonContainedByQueryTerm
 
 /**
  * JSON path - either dot-notation string ('user.email') or array of keys (['user', 'email'])

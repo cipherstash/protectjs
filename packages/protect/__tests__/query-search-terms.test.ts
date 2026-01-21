@@ -1,7 +1,7 @@
 import 'dotenv/config'
 import { csColumn, csTable } from '@cipherstash/schema'
 import { beforeAll, describe, expect, it } from 'vitest'
-import { type QuerySearchTerm, LockContext, protect } from '../src'
+import { LockContext, type QuerySearchTerm, protect } from '../src'
 
 const users = csTable('users', {
   email: csColumn('email').freeTextSearch().equality().orderAndRange(),
@@ -48,7 +48,7 @@ describe('encryptQuery', () => {
 
     // Check for some metadata keys besides identifier 'i' and version 'v'
     const keys = Object.keys(result.data || {})
-    const metaKeys = keys.filter(k => k !== 'i' && k !== 'v')
+    const metaKeys = keys.filter((k) => k !== 'i' && k !== 'v')
     expect(metaKeys.length).toBeGreaterThan(0)
   })
 
@@ -64,7 +64,7 @@ describe('encryptQuery', () => {
     }
 
     const keys = Object.keys(result.data || {})
-    const metaKeys = keys.filter(k => k !== 'i' && k !== 'v')
+    const metaKeys = keys.filter((k) => k !== 'i' && k !== 'v')
     expect(metaKeys.length).toBeGreaterThan(0)
   })
 
@@ -108,12 +108,14 @@ describe('createQuerySearchTerms', () => {
     }
 
     expect(result.data).toHaveLength(2)
-    
+
     // Check first term (unique) has hm
     expect(result.data[0]).toHaveProperty('hm')
-    
+
     // Check second term (ore) has some metadata
-    const oreKeys = Object.keys(result.data[1] || {}).filter(k => k !== 'i' && k !== 'v')
+    const oreKeys = Object.keys(result.data[1] || {}).filter(
+      (k) => k !== 'i' && k !== 'v',
+    )
     expect(oreKeys.length).toBeGreaterThan(0)
   })
 

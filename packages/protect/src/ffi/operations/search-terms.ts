@@ -2,21 +2,21 @@ import { type Result, withResult } from '@byteslice/result'
 import { encryptBulk, encryptQueryBulk } from '@cipherstash/protect-ffi'
 import { type ProtectError, ProtectErrorTypes } from '../..'
 import { logger } from '../../../../utils/logger'
+import type { Context, CtsToken, LockContext } from '../../identify'
 import type {
   Client,
   Encrypted,
   EncryptedSearchTerm,
+  JsPlaintext,
   JsonContainmentSearchTerm,
   JsonPath,
   JsonPathSearchTerm,
-  JsPlaintext,
   QueryOpName,
   SearchTerm,
   SimpleSearchTerm,
 } from '../../types'
 import { noClientError } from '../index'
 import { ProtectOperation } from './base-operation'
-import type { LockContext, Context, CtsToken } from '../../identify'
 
 /**
  * Type guard to check if a search term is a JSON path search term
@@ -28,7 +28,9 @@ function isJsonPathTerm(term: SearchTerm): term is JsonPathSearchTerm {
 /**
  * Type guard to check if a search term is a JSON containment search term
  */
-function isJsonContainmentTerm(term: SearchTerm): term is JsonContainmentSearchTerm {
+function isJsonContainmentTerm(
+  term: SearchTerm,
+): term is JsonContainmentSearchTerm {
   return 'containmentType' in term
 }
 
@@ -74,7 +76,8 @@ function flattenJson(
   prefix: string,
   currentPath: string[] = [],
 ): Array<{ selector: string; value: Record<string, unknown> }> {
-  const results: Array<{ selector: string; value: Record<string, unknown> }> = []
+  const results: Array<{ selector: string; value: Record<string, unknown> }> =
+    []
 
   for (const [key, value] of Object.entries(obj)) {
     const newPath = [...currentPath, key]
@@ -127,7 +130,8 @@ async function encryptSearchTermsHelper(
   }
 
   // Partition terms by type
-  const simpleTermsWithIndex: Array<{ term: SimpleSearchTerm; index: number }> = []
+  const simpleTermsWithIndex: Array<{ term: SimpleSearchTerm; index: number }> =
+    []
   const jsonItemsWithIndex: JsonEncryptionItem[] = []
 
   for (let i = 0; i < terms.length; i++) {
@@ -141,8 +145,7 @@ async function encryptSearchTermsHelper(
 
       if (!columnConfig.indexes.ste_vec) {
         throw new Error(
-          `Column "${term.column.getName()}" does not have ste_vec index configured. ` +
-            `Use .searchableJson() when defining the column.`,
+          `Column "${term.column.getName()}" does not have ste_vec index configured. Use .searchableJson() when defining the column.`,
         )
       }
 
@@ -168,8 +171,7 @@ async function encryptSearchTermsHelper(
 
       if (!columnConfig.indexes.ste_vec) {
         throw new Error(
-          `Column "${term.column.getName()}" does not have ste_vec index configured. ` +
-            `Use .searchableJson() when defining the column.`,
+          `Column "${term.column.getName()}" does not have ste_vec index configured. Use .searchableJson() when defining the column.`,
         )
       }
 
@@ -256,7 +258,8 @@ async function encryptSearchTermsHelper(
       if (term.returnType === 'composite-literal') {
         results[i] = `(${JSON.stringify(JSON.stringify(encrypted))})`
       } else if (term.returnType === 'escaped-composite-literal') {
-        results[i] = `${JSON.stringify(`(${JSON.stringify(JSON.stringify(encrypted))})`)}`
+        results[i] =
+          `${JSON.stringify(`(${JSON.stringify(JSON.stringify(encrypted))})`)}`
       } else {
         results[i] = encrypted
       }
@@ -354,10 +357,7 @@ export class SearchTermsOperationWithLockContext extends ProtectOperation<
   private operation: SearchTermsOperation
   private lockContext: LockContext
 
-  constructor(
-    operation: SearchTermsOperation,
-    lockContext: LockContext,
-  ) {
+  constructor(operation: SearchTermsOperation, lockContext: LockContext) {
     super()
     this.operation = operation
     this.lockContext = lockContext
