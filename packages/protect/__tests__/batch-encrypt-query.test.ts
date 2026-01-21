@@ -19,6 +19,16 @@ beforeAll(async () => {
 })
 
 describe('encryptQuery batch overload', () => {
+  it('should return empty array for empty input', async () => {
+    const result = await protectClient.encryptQuery([])
+
+    if (result.failure) {
+      throw new Error(`[protect]: ${result.failure.message}`)
+    }
+
+    expect(result.data).toEqual([])
+  })
+
   it('should encrypt batch of scalar terms', async () => {
     const terms: QueryTerm[] = [
       {
