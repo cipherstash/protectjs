@@ -324,7 +324,7 @@ export class ProtectClient {
    * Encrypt a single value for query operations with explicit index type control.
    *
    * This method produces SEM-only payloads optimized for database queries,
-   * allowing you to specify which index type (ore, match, unique, ste_vec) to use.
+   * allowing you to specify which index type to use.
    *
    * @param plaintext - The value to encrypt for querying
    * @param opts - Options specifying the column, table, index type, and optional query operation
@@ -332,12 +332,21 @@ export class ProtectClient {
    *
    * @example
    * ```typescript
+   * // Encrypt for ORE range query
    * const term = await protectClient.encryptQuery(100, {
    *   column: usersSchema.score,
    *   table: usersSchema,
    *   indexType: 'ore',
    * })
+   *
+   * // Use in PostgreSQL query
+   * const result = await db.query(
+   *   `SELECT * FROM users WHERE cs_ore_64_8_v1(score) > $1`,
+   *   [term.data]
+   * )
    * ```
+   *
+   * @see {@link https://cipherstash.com/docs/platform/searchable-encryption/supported-queries | Supported Query Types}
    */
   encryptQuery(
     plaintext: JsPlaintext | null,
@@ -371,7 +380,17 @@ export class ProtectClient {
    *     indexType: 'ore',
    *   },
    * ])
+   *
+   * // Use in PostgreSQL query
+   * const result = await db.query(
+   *   `SELECT * FROM users
+   *    WHERE cs_unique_v1(email) = $1
+   *    AND cs_ore_64_8_v1(score) > $2`,
+   *   [terms.data[0], terms.data[1]]
+   * )
    * ```
+   *
+   * @see {@link https://cipherstash.com/docs/platform/searchable-encryption/supported-queries | Supported Query Types}
    */
   createQuerySearchTerms(terms: QuerySearchTerm[]): QuerySearchTermsOperation {
     return new QuerySearchTermsOperation(this.client, terms)

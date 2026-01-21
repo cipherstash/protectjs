@@ -8,10 +8,15 @@ export type { JsPlaintext } from '@cipherstash/protect-ffi'
 
 /**
  * Index type for query encryption.
- * - 'ore': Order-Revealing Encryption for range queries (<, >, BETWEEN)
- * - 'match': Fuzzy/substring search
- * - 'unique': Exact equality matching
- * - 'ste_vec': Structured Text Encryption Vector for JSON path/containment queries
+ *
+ * - `'ore'`: Order-Revealing Encryption for range queries (<, >, BETWEEN)
+ *   {@link https://cipherstash.com/docs/platform/searchable-encryption/supported-queries/range | Range Queries}
+ * - `'match'`: Fuzzy/substring search
+ *   {@link https://cipherstash.com/docs/platform/searchable-encryption/supported-queries/match | Match Queries}
+ * - `'unique'`: Exact equality matching
+ *   {@link https://cipherstash.com/docs/platform/searchable-encryption/supported-queries/exact | Exact Queries}
+ * - `'ste_vec'`: Structured Text Encryption Vector for JSON path/containment queries
+ *   {@link https://cipherstash.com/docs/platform/searchable-encryption/supported-queries/json | JSON Queries}
  */
 export type IndexTypeName = 'ore' | 'match' | 'unique' | 'ste_vec'
 

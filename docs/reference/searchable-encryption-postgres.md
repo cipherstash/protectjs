@@ -7,6 +7,10 @@ This reference guide outlines the different query patterns you can use to search
 - [Prerequisites](#prerequisites)
 - [What is EQL?](#what-is-eql)
 - [Setting up your schema](#setting-up-your-schema)
+- [The createSearchTerms function](#the-createsearchterms-function)
+- [JSON Search](#json-search)
+  - [Creating JSON Search Terms](#creating-json-search-terms)
+  - [Using JSON Search Terms in PostgreSQL](#using-json-search-terms-in-postgresql)
 - [Search capabilities](#search-capabilities)
   - [Exact matching](#exact-matching)
   - [Free text search](#free-text-search)
@@ -15,7 +19,6 @@ This reference guide outlines the different query patterns you can use to search
   - [Using Raw PostgreSQL Client (pg)](#using-raw-postgresql-client-pg)
   - [Using Supabase SDK](#using-supabase-sdk)
 - [Best practices](#best-practices)
-- [Common use cases](#common-use-cases)
 
 ## Prerequisites
 
@@ -104,50 +107,104 @@ console.log(term.data) // array of search terms
 > [!NOTE]
 > As a developer, you must track the index of the search term in the array when using the `createSearchTerms` function.
 
-## JSON Search Terms
+## JSON Search
 
-The `createSearchTerms` function also supports querying encrypted JSON data. This requires columns to be configured with `.searchableJson()` in the schema.
+For querying encrypted JSON columns configured with `.searchableJson()`, use the `createSearchTerms` function with JSON-specific term types.
 
-The function accepts JSON search terms in addition to simple value terms.
+### Creating JSON Search Terms
 
-### Path Queries
+#### Path Queries
+
 Used for finding records where a specific path in the JSON equals a value.
 
 | Property | Description |
 |----------|-------------|
 | `path` | The path to the field (e.g., `'user.email'` or `['user', 'email']`) |
-| `value` | The value to match exactly |
-| `column` | The column definition |
+| `value` | The value to match at that path |
+| `column` | The column definition from the schema |
 | `table` | The table definition |
-
-### Containment Queries
-Used for finding records where the JSON column contains a specific JSON structure (subset).
-
-| Property | Description |
-|----------|-------------|
-| `value` | The JSON object/array structure to search for |
-| `containmentType` | Must be `'contains'` (for `@>`) or `'contained_by'` (for `<@`) |
-| `column` | The column definition |
-| `table` | The table definition |
-
-Example:
+| `returnType` | (Optional) `'eql'`, `'composite-literal'`, or `'escaped-composite-literal'` |
 
 ```typescript
-// Path query
+// Path query - SQL equivalent: WHERE metadata->'user'->>'email' = 'alice@example.com'
 const pathTerms = await protectClient.createSearchTerms([{
   path: 'user.email',
   value: 'alice@example.com',
   column: schema.metadata,
   table: schema
 }])
+```
 
-// Containment query
+#### Containment Queries
+
+Used for finding records where the JSON column contains a specific JSON structure (subset).
+
+| Property | Description |
+|----------|-------------|
+| `value` | The JSON object/array structure to search for |
+| `containmentType` | `'contains'` (for `@>`) or `'contained_by'` (for `<@`) |
+| `column` | The column definition from the schema |
+| `table` | The table definition |
+| `returnType` | (Optional) `'eql'`, `'composite-literal'`, or `'escaped-composite-literal'` |
+
+```typescript
+// Containment query - SQL equivalent: WHERE metadata @> '{"roles": ["admin"]}'
 const containmentTerms = await protectClient.createSearchTerms([{
   value: { roles: ['admin'] },
   containmentType: 'contains',
   column: schema.metadata,
   table: schema
 }])
+```
+
+### Using JSON Search Terms in PostgreSQL
+
+When searching encrypted JSON columns, you use the `ste_vec` index type which supports both path access and containment operators.
+
+#### Path Search (Access Operator)
+
+Equivalent to `data->'path'->>'field' = 'value'`.
+
+```typescript
+const terms = await protectClient.createSearchTerms([{
+  path: 'user.email',
+  value: 'alice@example.com',
+  column: schema.metadata,
+  table: schema
+}])
+
+// The generated term contains a selector and the encrypted term
+const term = terms.data[0]
+
+// SQL: metadata->(term.s) = term.c
+const query = `
+  SELECT * FROM users
+  WHERE eql_ste_vec_u64_8_128_access(metadata, $1) = $2
+`
+// Bind parameters: [term.s, term.c]
+```
+
+#### Containment Search
+
+Equivalent to `data @> '{"key": "value"}'`.
+
+```typescript
+const terms = await protectClient.createSearchTerms([{
+  value: { tags: ['premium'] },
+  containmentType: 'contains',
+  column: schema.metadata,
+  table: schema
+}])
+
+// Containment terms return a vector of terms to match
+const termVector = terms.data[0].sv
+
+// SQL: metadata @> termVector
+const query = `
+  SELECT * FROM users
+  WHERE eql_ste_vec_u64_8_128_contains(metadata, $1)
+`
+// Bind parameter: [JSON.stringify(termVector)]
 ```
 
 ## Search capabilities
@@ -212,54 +269,6 @@ Use `.orderAndRange()` for sorting and range operations:
 const result = await client.query(
   'SELECT * FROM users ORDER BY eql_v2.ore_block_u64_8_256(age_encrypted) ASC'
 )
-```
-
-### JSON Search
-
-When searching encrypted JSON columns, you use the `ste_vec` index type which supports both path access and containment operators.
-
-#### Path Search (Access Operator)
-Equivalent to `data->'path'->>'field' = 'value'`.
-
-```typescript
-const terms = await protectClient.createSearchTerms([{
-  path: 'user.email',
-  value: 'alice@example.com',
-  column: schema.metadata,
-  table: schema
-}])
-
-// The generated term contains a selector and the encrypted term
-const term = terms.data[0]
-
-// SQL: metadata->(term.s) = term.c
-const query = `
-  SELECT * FROM users
-  WHERE eql_ste_vec_u64_8_128_access(metadata, $1) = $2
-`
-// Bind parameters: [term.s, term.c]
-```
-
-#### Containment Search
-Equivalent to `data @> '{"key": "value"}'`.
-
-```typescript
-const terms = await protectClient.createSearchTerms([{
-  value: { tags: ['premium'] },
-  containmentType: 'contains',
-  column: schema.metadata,
-  table: schema
-}])
-
-// Containment terms return a vector of terms to match
-const termVector = terms.data[0].sv
-
-// SQL: metadata @> termVector
-const query = `
-  SELECT * FROM users
-  WHERE eql_ste_vec_u64_8_128_contains(metadata, $1)
-`
-// Bind parameter: [JSON.stringify(termVector)]
 ```
 
 ## Implementation examples
