@@ -242,7 +242,6 @@ Used for finding records where a specific path in the JSON equals a value.
 | `value` | The value to match at that path |
 | `column` | The column definition from the schema |
 | `table` | The table definition |
-| `returnType` | (Optional) `'eql'`, `'composite-literal'`, or `'escaped-composite-literal'` |
 
 ```typescript
 // Path query - SQL equivalent: WHERE metadata->'user'->>'email' = 'alice@example.com'
@@ -269,7 +268,6 @@ Used for finding records where the JSON column contains a specific JSON structur
 | `contains` | The JSON object/array structure to search for |
 | `column` | The column definition from the schema |
 | `table` | The table definition |
-| `returnType` | (Optional) `'eql'`, `'composite-literal'`, or `'escaped-composite-literal'` |
 
 ```typescript
 // Containment query - SQL equivalent: WHERE metadata @> '{"roles": ["admin"]}'
@@ -291,7 +289,6 @@ if (containmentTerms.failure) {
 | `containedBy` | The JSON superset to check against |
 | `column` | The column definition from the schema |
 | `table` | The table definition |
-| `returnType` | (Optional) `'eql'`, `'composite-literal'`, or `'escaped-composite-literal'` |
 
 ```typescript
 // Contained-by query - SQL equivalent: WHERE metadata <@ '{"permissions": ["read", "write", "admin"]}'
