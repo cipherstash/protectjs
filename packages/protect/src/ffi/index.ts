@@ -313,6 +313,8 @@ export class ProtectClient {
   }
 
   /**
+   * @deprecated Use `encryptQuery(terms)` instead with QueryTerm types. Will be removed in v2.0.
+   *
    * Create search terms to use in a query searching encrypted data
    * Usage:
    *    await eqlClient.createSearchTerms(searchTerms)
