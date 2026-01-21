@@ -1,5 +1,5 @@
 import { type Result, withResult } from '@byteslice/result'
-import { encryptQueryBulk } from '@cipherstash/protect-ffi'
+import { encryptBulk, encryptQueryBulk } from '@cipherstash/protect-ffi'
 import { type ProtectError, ProtectErrorTypes } from '../..'
 import { logger } from '../../../../utils/logger'
 import type { Context, CtsToken, LockContext } from '../../identify'
@@ -13,6 +13,7 @@ import type {
   Client,
   Encrypted,
   EncryptedSearchTerm,
+  IndexTypeName,
   JsPlaintext,
   QueryOpName,
   QueryTerm,
@@ -32,6 +33,15 @@ type JsonEncryptionItem = {
 }
 
 /**
+ * Helper to check if a scalar term has an explicit indexType
+ */
+function hasExplicitIndexType(
+  term: QueryTerm,
+): term is QueryTerm & { indexType: IndexTypeName } {
+  return 'indexType' in term && term.indexType !== undefined
+}
+
+/**
  * Helper function to encrypt batch query terms
  */
 async function encryptBatchQueryTermsHelper(
@@ -45,14 +55,21 @@ async function encryptBatchQueryTermsHelper(
   }
 
   // Partition terms by type
-  const scalarTermsWithIndex: Array<{ term: QueryTerm; index: number }> = []
+  // Scalar terms WITH indexType → encryptQueryBulk (explicit control)
+  const scalarWithIndexType: Array<{ term: QueryTerm; index: number }> = []
+  // Scalar terms WITHOUT indexType → encryptBulk (auto-infer)
+  const scalarAutoInfer: Array<{ term: QueryTerm; index: number }> = []
   const jsonItemsWithIndex: JsonEncryptionItem[] = []
 
   for (let i = 0; i < terms.length; i++) {
     const term = terms[i]
 
     if (isScalarQueryTerm(term)) {
-      scalarTermsWithIndex.push({ term, index: i })
+      if (hasExplicitIndexType(term)) {
+        scalarWithIndexType.push({ term, index: i })
+      } else {
+        scalarAutoInfer.push({ term, index: i })
+      }
     } else if (isJsonContainsQueryTerm(term)) {
       // Validate ste_vec index
       const columnConfig = term.column.build()
@@ -124,24 +141,46 @@ async function encryptBatchQueryTermsHelper(
     }
   }
 
-  // Encrypt scalar terms with encryptQueryBulk (explicit index type)
-  const scalarEncrypted =
-    scalarTermsWithIndex.length > 0
+  // Encrypt scalar terms WITH explicit indexType using encryptQueryBulk
+  const scalarExplicitEncrypted =
+    scalarWithIndexType.length > 0
       ? await encryptQueryBulk(client, {
-          queries: scalarTermsWithIndex.map(({ term }) => {
+          queries: scalarWithIndexType.map(({ term }) => {
             if (!isScalarQueryTerm(term))
               throw new Error('Expected scalar term')
             const query = {
               plaintext: term.value,
               column: term.column.getName(),
               table: term.table.tableName,
-              indexType: term.indexType,
+              indexType: term.indexType!,
               queryOp: term.queryOp,
             }
             if (lockContextData) {
               return { ...query, lockContext: lockContextData.context }
             }
             return query
+          }),
+          ...(lockContextData && { serviceToken: lockContextData.ctsToken }),
+          unverifiedContext: metadata,
+        })
+      : []
+
+  // Encrypt scalar terms WITHOUT indexType using encryptBulk (auto-infer)
+  const scalarAutoInferEncrypted =
+    scalarAutoInfer.length > 0
+      ? await encryptBulk(client, {
+          plaintexts: scalarAutoInfer.map(({ term }) => {
+            if (!isScalarQueryTerm(term))
+              throw new Error('Expected scalar term')
+            const plaintext = {
+              plaintext: term.value,
+              column: term.column.getName(),
+              table: term.table.tableName,
+            }
+            if (lockContextData) {
+              return { ...plaintext, lockContext: lockContextData.context }
+            }
+            return plaintext
           }),
           ...(lockContextData && { serviceToken: lockContextData.ctsToken }),
           unverifiedContext: metadata,
@@ -172,15 +211,23 @@ async function encryptBatchQueryTermsHelper(
 
   // Reassemble results in original order
   const results: EncryptedSearchTerm[] = new Array(terms.length)
-  let scalarIdx = 0
+  let scalarExplicitIdx = 0
+  let scalarAutoInferIdx = 0
   let jsonIdx = 0
 
   for (let i = 0; i < terms.length; i++) {
     const term = terms[i]
 
     if (isScalarQueryTerm(term)) {
-      const encrypted = scalarEncrypted[scalarIdx]
-      scalarIdx++
+      // Determine which result array to pull from based on whether term had explicit indexType
+      let encrypted: Encrypted
+      if (hasExplicitIndexType(term)) {
+        encrypted = scalarExplicitEncrypted[scalarExplicitIdx]
+        scalarExplicitIdx++
+      } else {
+        encrypted = scalarAutoInferEncrypted[scalarAutoInferIdx]
+        scalarAutoInferIdx++
+      }
 
       if (term.returnType === 'composite-literal') {
         results[i] = `(${JSON.stringify(JSON.stringify(encrypted))})`

@@ -388,11 +388,13 @@ export class ProtectClient {
     // Check if this is a QueryTerm array by looking for QueryTerm-specific properties
     // This is needed because JsPlaintext includes JsPlaintext[] which overlaps with QueryTerm[]
     // Empty arrays are explicitly handled as batch operations (return empty result)
-    if (Array.isArray(plaintextOrTerms) && (plaintextOrTerms.length === 0 || isQueryTermArray(plaintextOrTerms))) {
-      return new BatchEncryptQueryOperation(
-        this.client,
-        plaintextOrTerms,
-      )
+    if (Array.isArray(plaintextOrTerms)) {
+      if (plaintextOrTerms.length === 0 || isQueryTermArray(plaintextOrTerms)) {
+        return new BatchEncryptQueryOperation(
+          this.client,
+          plaintextOrTerms as unknown as readonly QueryTerm[],
+        )
+      }
     }
     // Non-array values pass through to single-value encryption
     if (!opts) {

@@ -1,6 +1,7 @@
 import { type Result, withResult } from '@byteslice/result'
 import {
   type JsPlaintext,
+  encryptBulk,
   encryptQuery as ffiEncryptQuery,
 } from '@cipherstash/protect-ffi'
 import type {
@@ -24,7 +25,9 @@ import { ProtectOperation } from './base-operation'
 
 /**
  * @internal
- * Operation for encrypting a single query term with explicit index type control.
+ * Operation for encrypting a single query term.
+ * When indexType is provided, uses explicit index type control via ffiEncryptQuery.
+ * When indexType is omitted, auto-infers from column config via encryptBulk.
  * See {@link ProtectClient.encryptQuery} for the public interface and documentation.
  */
 export class EncryptQueryOperation extends ProtectOperation<Encrypted> {
@@ -32,7 +35,7 @@ export class EncryptQueryOperation extends ProtectOperation<Encrypted> {
   private plaintext: JsPlaintext | null
   private column: ProtectColumn | ProtectValue
   private table: ProtectTable<ProtectTableColumn>
-  private indexType: IndexTypeName
+  private indexType?: IndexTypeName
   private queryOp?: QueryOpName
 
   constructor(
@@ -75,14 +78,30 @@ export class EncryptQueryOperation extends ProtectOperation<Encrypted> {
 
         const { metadata } = this.getAuditData()
 
-        return await ffiEncryptQuery(this.client, {
-          plaintext: this.plaintext,
-          column: this.column.getName(),
-          table: this.table.tableName,
-          indexType: this.indexType,
-          queryOp: this.queryOp,
+        // Use explicit index type if provided, otherwise auto-infer via encryptBulk
+        if (this.indexType !== undefined) {
+          return await ffiEncryptQuery(this.client, {
+            plaintext: this.plaintext,
+            column: this.column.getName(),
+            table: this.table.tableName,
+            indexType: this.indexType,
+            queryOp: this.queryOp,
+            unverifiedContext: metadata,
+          })
+        }
+
+        // Auto-infer index type via encryptBulk
+        const results = await encryptBulk(this.client, {
+          plaintexts: [
+            {
+              plaintext: this.plaintext,
+              column: this.column.getName(),
+              table: this.table.tableName,
+            },
+          ],
           unverifiedContext: metadata,
         })
+        return results[0]
       },
       (error) => ({
         type: ProtectErrorTypes.EncryptionError,
@@ -96,7 +115,7 @@ export class EncryptQueryOperation extends ProtectOperation<Encrypted> {
     plaintext: JsPlaintext | null
     column: ProtectColumn | ProtectValue
     table: ProtectTable<ProtectTableColumn>
-    indexType: IndexTypeName
+    indexType?: IndexTypeName
     queryOp?: QueryOpName
   } {
     return {
@@ -148,16 +167,34 @@ export class EncryptQueryOperationWithLockContext extends ProtectOperation<Encry
           throw new Error(`[protect]: ${context.failure.message}`)
         }
 
-        return await ffiEncryptQuery(client, {
-          plaintext,
-          column: column.getName(),
-          table: table.tableName,
-          indexType,
-          queryOp,
-          lockContext: context.data.context,
+        // Use explicit index type if provided, otherwise auto-infer via encryptBulk
+        if (indexType !== undefined) {
+          return await ffiEncryptQuery(client, {
+            plaintext,
+            column: column.getName(),
+            table: table.tableName,
+            indexType,
+            queryOp,
+            lockContext: context.data.context,
+            serviceToken: context.data.ctsToken,
+            unverifiedContext: metadata,
+          })
+        }
+
+        // Auto-infer index type via encryptBulk with lock context
+        const results = await encryptBulk(client, {
+          plaintexts: [
+            {
+              plaintext,
+              column: column.getName(),
+              table: table.tableName,
+              lockContext: context.data.context,
+            },
+          ],
           serviceToken: context.data.ctsToken,
           unverifiedContext: metadata,
         })
+        return results[0]
       },
       (error) => ({
         type: ProtectErrorTypes.EncryptionError,

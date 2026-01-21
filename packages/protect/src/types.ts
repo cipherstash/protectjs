@@ -76,16 +76,18 @@ export type SearchTerm =
   | JsonContainmentSearchTerm
 
 /**
- * Options for encrypting a query term with explicit index type control.
- * Used with encryptQuery() for single-value query encryption.
+ * Options for encrypting a query term with encryptQuery().
+ *
+ * When indexType is omitted, the index type is auto-inferred from the column configuration.
+ * When indexType is provided, it explicitly controls which index to use.
  */
 export type EncryptQueryOptions = {
   /** The column definition from the schema */
   column: ProtectColumn | ProtectValue
   /** The table definition from the schema */
   table: ProtectTable<ProtectTableColumn>
-  /** Which index type to use for the query */
-  indexType: IndexTypeName
+  /** Which index type to use for the query (optional - auto-inferred if omitted) */
+  indexType?: IndexTypeName
   /** Query operation (defaults to 'default') */
   queryOp?: QueryOpName
 }
@@ -133,11 +135,21 @@ export type JsonQueryTermBase = {
 }
 
 /**
- * Scalar query term with explicit index type control.
- * Use for standard column queries (unique, ore, match indexes).
+ * Scalar query term for standard column queries (unique, ore, match indexes).
+ *
+ * When indexType is omitted, the index type is auto-inferred from the column configuration.
+ * When indexType is provided, it explicitly controls which index to use.
  *
  * @example
  * ```typescript
+ * // Auto-infer index type from column config
+ * const term: ScalarQueryTerm = {
+ *   value: 'admin@example.com',
+ *   column: users.email,
+ *   table: users,
+ * }
+ *
+ * // Explicit index type control
  * const term: ScalarQueryTerm = {
  *   value: 'admin@example.com',
  *   column: users.email,
@@ -149,8 +161,8 @@ export type JsonQueryTermBase = {
 export type ScalarQueryTerm = ScalarQueryTermBase & {
   /** The value to encrypt for querying */
   value: FfiJsPlaintext
-  /** Which index type to use */
-  indexType: IndexTypeName
+  /** Which index type to use (optional - auto-inferred if omitted) */
+  indexType?: IndexTypeName
   /** Query operation (optional, defaults to 'default') */
   queryOp?: QueryOpName
 }

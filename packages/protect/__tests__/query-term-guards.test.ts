@@ -39,13 +39,14 @@ describe('query-term-guards', () => {
       expect(isScalarQueryTerm(term)).toBe(false)
     })
 
-    it('should return false when indexType is missing', () => {
+    it('should return true when indexType is missing (optional - auto-inferred)', () => {
       const term = {
         value: 'test',
         column: {},
         table: {},
       }
-      expect(isScalarQueryTerm(term)).toBe(false)
+      // indexType is now optional - terms without it use auto-inference
+      expect(isScalarQueryTerm(term)).toBe(true)
     })
 
     it('should return false when both value and indexType are missing', () => {

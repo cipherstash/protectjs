@@ -213,6 +213,73 @@ describe('encryptQuery batch - readonly/as const support', () => {
   })
 })
 
+describe('encryptQuery batch - auto-infer index type', () => {
+  it('should auto-infer index type when not specified', async () => {
+    const result = await protectClient.encryptQuery([
+      { value: 'test@example.com', column: users.email, table: users },
+      // No indexType - should auto-infer from column config
+    ])
+
+    if (result.failure) {
+      throw new Error(`[protect]: ${result.failure.message}`)
+    }
+
+    expect(result.data).toHaveLength(1)
+    // Auto-inferred result should be a valid encrypted payload
+    expect(result.data[0]).not.toBeNull()
+    expect(typeof result.data[0]).toBe('object')
+    expect(result.data[0]).toHaveProperty('c')
+  })
+
+  it('should use explicit index type when specified', async () => {
+    const result = await protectClient.encryptQuery([
+      {
+        value: 'test@example.com',
+        column: users.email,
+        table: users,
+        indexType: 'unique',
+      },
+    ])
+
+    if (result.failure) {
+      throw new Error(`[protect]: ${result.failure.message}`)
+    }
+
+    expect(result.data).toHaveLength(1)
+    expect(result.data[0]).toHaveProperty('hm') // unique returns HMAC
+  })
+
+  it('should handle mixed batch with and without indexType', async () => {
+    const result = await protectClient.encryptQuery([
+      // Explicit indexType
+      {
+        value: 'explicit@example.com',
+        column: users.email,
+        table: users,
+        indexType: 'unique',
+      },
+      // Auto-infer indexType
+      { value: 'auto@example.com', column: users.email, table: users },
+      // Another explicit indexType
+      { value: 100, column: users.score, table: users, indexType: 'ore' },
+    ])
+
+    if (result.failure) {
+      throw new Error(`[protect]: ${result.failure.message}`)
+    }
+
+    expect(result.data).toHaveLength(3)
+    // First term: explicit unique should have hm
+    expect(result.data[0]).toHaveProperty('hm')
+    // Second term: auto-inferred should be valid encrypted payload
+    expect(result.data[1]).not.toBeNull()
+    expect(typeof result.data[1]).toBe('object')
+    expect(result.data[1]).toHaveProperty('c')
+    // Third term: explicit ore should have valid encryption
+    expect(result.data[2]).not.toBeNull()
+  })
+})
+
 describe('encryptQuery batch - Lock context integration', () => {
   it('should encrypt batch with lock context', async () => {
     const userJwt = process.env.USER_JWT
@@ -247,5 +314,52 @@ describe('encryptQuery batch - Lock context integration', () => {
     }
 
     expect(result.data).toHaveLength(1)
+  })
+})
+
+describe('encryptQuery single-value - auto-infer index type', () => {
+  it('should auto-infer index type for single value when not specified', async () => {
+    const result = await protectClient.encryptQuery('test@example.com', {
+      column: users.email,
+      table: users,
+      // No indexType - should auto-infer from column config
+    })
+
+    if (result.failure) {
+      throw new Error(`[protect]: ${result.failure.message}`)
+    }
+
+    // Auto-inferred result should be a valid encrypted payload
+    expect(result.data).not.toBeNull()
+    expect(typeof result.data).toBe('object')
+    expect(result.data).toHaveProperty('c')
+  })
+
+  it('should use explicit index type for single value when specified', async () => {
+    const result = await protectClient.encryptQuery('test@example.com', {
+      column: users.email,
+      table: users,
+      indexType: 'unique',
+    })
+
+    if (result.failure) {
+      throw new Error(`[protect]: ${result.failure.message}`)
+    }
+
+    expect(result.data).toHaveProperty('hm') // unique returns HMAC
+  })
+
+  it('should handle null value with auto-infer', async () => {
+    const result = await protectClient.encryptQuery(null, {
+      column: users.email,
+      table: users,
+      // No indexType
+    })
+
+    if (result.failure) {
+      throw new Error(`[protect]: ${result.failure.message}`)
+    }
+
+    expect(result.data).toBeNull()
   })
 })
