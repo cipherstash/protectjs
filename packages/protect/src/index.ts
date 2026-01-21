@@ -147,5 +147,21 @@ export type {
   JsonPath,
   JsonPathSearchTerm,
   JsonContainmentSearchTerm,
+  // New unified QueryTerm types
+  QueryTerm,
+  ScalarQueryTermBase,
+  JsonQueryTermBase,
+  ScalarQueryTerm,
+  JsonPathQueryTerm,
+  JsonContainsQueryTerm,
+  JsonContainedByQueryTerm,
 } from './types'
+
+// Export type guards
+export {
+  isScalarQueryTerm,
+  isJsonPathQueryTerm,
+  isJsonContainsQueryTerm,
+  isJsonContainedByQueryTerm,
+} from './query-term-guards'
 export type { JsPlaintext } from '@cipherstash/protect-ffi'
