@@ -384,6 +384,8 @@ export class ProtectClient {
   }
 
   /**
+   * @deprecated Use `encryptQuery(terms)` instead. Will be removed in v2.0.
+   *
    * Create multiple encrypted query terms with explicit index type control.
    *
    * This method produces SEM-only payloads optimized for database queries,
