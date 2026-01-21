@@ -7,7 +7,8 @@ This reference guide outlines the different query patterns you can use to search
 - [Prerequisites](#prerequisites)
 - [What is EQL?](#what-is-eql)
 - [Setting up your schema](#setting-up-your-schema)
-- [The createSearchTerms function](#the-createsearchterms-function)
+- [The createSearchTerms function (deprecated)](#the-createsearchterms-function-deprecated)
+- [Unified Query Encryption API](#unified-query-encryption-api)
 - [JSON Search](#json-search)
   - [Creating JSON Search Terms](#creating-json-search-terms)
   - [Using JSON Search Terms in PostgreSQL](#using-json-search-terms-in-postgresql)
@@ -63,7 +64,10 @@ const schema = csTable('users', {
 })
 ```
 
-## The `createSearchTerms` function
+## The `createSearchTerms` function (deprecated)
+
+> [!WARNING]
+> The `createSearchTerms` function is deprecated. Use the unified `encryptQuery` function instead. See [Unified Query Encryption API](#unified-query-encryption-api).
 
 The `createSearchTerms` function is used to create search terms used in the SQL query.
 
@@ -85,7 +89,7 @@ The function takes an array of objects, each with the following properties:
 Example:
 
 ```typescript
-const term = await protectClient.createSearchTerms([{
+const term = await protectClient.encryptQuery([{
   value: 'user@example.com',
   column: schema.email,
   table: schema,
@@ -107,9 +111,48 @@ console.log(term.data) // array of search terms
 > [!NOTE]
 > As a developer, you must track the index of the search term in the array when using the `createSearchTerms` function.
 
+## Unified Query Encryption API
+
+The `encryptQuery` function handles both single values and batch operations:
+
+### Single Value
+
+```typescript
+// Encrypt a single value with explicit index type
+const term = await protectClient.encryptQuery('admin@example.com', {
+  column: usersSchema.email,
+  table: usersSchema,
+  indexType: 'unique',
+})
+```
+
+### Batch Operations
+
+```typescript
+// Encrypt multiple terms in one call
+const terms = await protectClient.encryptQuery([
+  // Scalar term with explicit index type
+  { value: 'admin@example.com', column: users.email, table: users, indexType: 'unique' },
+
+  // JSON path query (ste_vec implicit)
+  { path: 'user.email', value: 'test@example.com', column: jsonSchema.metadata, table: jsonSchema },
+
+  // JSON containment query (ste_vec implicit)
+  { contains: { role: 'admin' }, column: jsonSchema.metadata, table: jsonSchema },
+])
+```
+
+### Migration from Deprecated Functions
+
+| Old API | New API |
+|---------|---------|
+| `createQuerySearchTerms([...])` | `encryptQuery([...])` with `ScalarQueryTerm` |
+| `createSearchTerms([{ path, value, ... }])` | `encryptQuery([...])` with `JsonPathQueryTerm` |
+| `createSearchTerms([{ containmentType: 'contains', ... }])` | `encryptQuery([...])` with `JsonContainsQueryTerm` |
+
 ## JSON Search
 
-For querying encrypted JSON columns configured with `.searchableJson()`, use the `createSearchTerms` function with JSON-specific term types.
+For querying encrypted JSON columns configured with `.searchableJson()`, use the `encryptQuery` function with JSON-specific term types.
 
 ### Creating JSON Search Terms
 
@@ -127,7 +170,7 @@ Used for finding records where a specific path in the JSON equals a value.
 
 ```typescript
 // Path query - SQL equivalent: WHERE metadata->'user'->>'email' = 'alice@example.com'
-const pathTerms = await protectClient.createSearchTerms([{
+const pathTerms = await protectClient.encryptQuery([{
   path: 'user.email',
   value: 'alice@example.com',
   column: schema.metadata,
@@ -149,7 +192,7 @@ Used for finding records where the JSON column contains a specific JSON structur
 
 ```typescript
 // Containment query - SQL equivalent: WHERE metadata @> '{"roles": ["admin"]}'
-const containmentTerms = await protectClient.createSearchTerms([{
+const containmentTerms = await protectClient.encryptQuery([{
   value: { roles: ['admin'] },
   containmentType: 'contains',
   column: schema.metadata,
@@ -166,7 +209,7 @@ When searching encrypted JSON columns, you use the `ste_vec` index type which su
 Equivalent to `data->'path'->>'field' = 'value'`.
 
 ```typescript
-const terms = await protectClient.createSearchTerms([{
+const terms = await protectClient.encryptQuery([{
   path: 'user.email',
   value: 'alice@example.com',
   column: schema.metadata,
@@ -189,7 +232,7 @@ const query = `
 Equivalent to `data @> '{"key": "value"}'`.
 
 ```typescript
-const terms = await protectClient.createSearchTerms([{
+const terms = await protectClient.encryptQuery([{
   value: { tags: ['premium'] },
   containmentType: 'contains',
   column: schema.metadata,
@@ -215,7 +258,7 @@ Use `.equality()` when you need to find exact matches:
 
 ```typescript
 // Find user with specific email
-const term = await protectClient.createSearchTerms([{
+const term = await protectClient.encryptQuery([{
   value: 'user@example.com',
   column: schema.email,
   table: schema,
@@ -239,7 +282,7 @@ Use `.freeTextSearch()` for text-based searches:
 
 ```typescript
 // Search for users with emails containing "example"
-const term = await protectClient.createSearchTerms([{
+const term = await protectClient.encryptQuery([{
   value: 'example',
   column: schema.email,
   table: schema,
@@ -309,7 +352,7 @@ await client.query(
 )
 
 // Search encrypted data
-const searchTerm = await protectClient.createSearchTerms([{
+const searchTerm = await protectClient.encryptQuery([{
   value: 'example.com',
   column: schema.email,
   table: schema,

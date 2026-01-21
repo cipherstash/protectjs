@@ -1064,7 +1064,7 @@ Then generate search terms for your queries:
 ```ts
 // index.ts
 // Path query: find users with metadata.role = 'admin'
-const searchTerms = await protectClient.createSearchTerms([
+const searchTerms = await protectClient.encryptQuery([
   {
     path: "role", // or "user.role" or ["user", "role"]
     value: "admin",
@@ -1074,7 +1074,7 @@ const searchTerms = await protectClient.createSearchTerms([
 ]);
 
 // Containment query: find users where metadata contains { tags: ['premium'] }
-const containmentTerms = await protectClient.createSearchTerms([
+const containmentTerms = await protectClient.encryptQuery([
   {
     value: { tags: ["premium"] },
     column: users.metadata,

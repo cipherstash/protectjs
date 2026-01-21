@@ -69,7 +69,7 @@ CipherStash uses [EQL](https://github.com/cipherstash/encrypt-query-language) to
 // 1) Encrypt the search term
 const searchTerm = 'alice.johnson@example.com'
 
-const encryptedParam = await protectClient.createSearchTerms([{
+const encryptedParam = await protectClient.encryptQuery([{
   value: searchTerm,
   table: protectedUsers,        // Reference to the Protect table schema
   column: protectedUsers.email, // Your Protect column definition
