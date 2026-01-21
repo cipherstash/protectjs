@@ -73,10 +73,12 @@ const encryptedParam = await protectClient.encryptQuery([{
   value: searchTerm,
   table: protectedUsers,        // Reference to the Protect table schema
   column: protectedUsers.email, // Your Protect column definition
+  indexType: 'unique',          // Use 'unique' for equality queries
 }])
 
 if (encryptedParam.failure) {
   // Handle the failure
+  throw new Error(encryptedParam.failure.message)
 }
 
 // 2) Build an equality query noting that EQL must be installed in order for the operation to work successfully
@@ -86,10 +88,9 @@ const equalitySQL = `
   WHERE email = $1
 `
 
-// 3) Execute the query, passing in the Postgres column name
-//    and the encrypted search term as the second parameter
+// 3) Execute the query, passing in the encrypted search term
 //    (client is an arbitrary Postgres client)
-const result = await client.query(equalitySQL, [ protectedUser.email.getName(), encryptedParam.data ])
+const result = await client.query(equalitySQL, [encryptedParam.data[0]])
 ```
 
 Using the above approach, Protect.js is generating the EQL payloads and which means you never have to drop down to writing complex SQL queries.

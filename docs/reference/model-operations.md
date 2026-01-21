@@ -75,7 +75,7 @@ For better performance when working with multiple models, use these bulk encrypt
 ### Bulk encryption
 
 ```typescript
-const users = [
+const usersList = [
   {
     id: "1",
     email: "user1@example.com",
@@ -88,7 +88,7 @@ const users = [
   },
 ];
 
-const encryptedResult = await protectClient.bulkEncryptModels(users, users);
+const encryptedResult = await protectClient.bulkEncryptModels(usersList, usersSchema);
 
 if (encryptedResult.failure) {
   console.error("Bulk encryption failed:", encryptedResult.failure.message);

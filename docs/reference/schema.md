@@ -132,8 +132,8 @@ When working with nested objects:
 - Optional nested objects are supported
 
 > [!WARNING]
-> TODO: The schema builder does not validate the values you supply to the `csValue` or `csColumn` functions.
-> These values are meant to be unique, and and cause unexpected behavior if they are not defined correctly.
+> The schema builder does not currently validate the values you supply to the `csValue` or `csColumn` functions.
+> These values must be unique within your schema - duplicate values may cause unexpected behavior.
 
 ## Available index options
 
@@ -146,7 +146,10 @@ The following index options are available for your schema:
 | orderAndRange   | Enables an sorting and range queries index. | `ORDER BY price ASC` |
 | searchableJson | Enables searching inside JSON columns. | `WHERE data->'user'->>'email' = '...'` |
 
-You can chain these methods to your column to configure them in any combination.
+You can chain `equality()`, `freeTextSearch()`, and `orderAndRange()` methods in any combination.
+
+> [!WARNING]
+> `searchableJson()` is **mutually exclusive** with other index types. Do not combine `searchableJson()` with `equality()`, `freeTextSearch()`, or `orderAndRange()` on the same column.
 
 ## Initializing the Protect client
 

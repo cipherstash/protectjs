@@ -7,7 +7,7 @@ This reference guide outlines the different query patterns you can use to search
 - [Prerequisites](#prerequisites)
 - [What is EQL?](#what-is-eql)
 - [Setting up your schema](#setting-up-your-schema)
-- [The createSearchTerms function (deprecated)](#the-createsearchterms-function-deprecated)
+- [Deprecated Functions](#deprecated-functions)
 - [Unified Query Encryption API](#unified-query-encryption-api)
 - [JSON Search](#json-search)
   - [Creating JSON Search Terms](#creating-json-search-terms)
@@ -64,52 +64,57 @@ const schema = csTable('users', {
 })
 ```
 
-## The `createSearchTerms` function (deprecated)
+## Deprecated Functions
 
 > [!WARNING]
-> The `createSearchTerms` function is deprecated. Use the unified `encryptQuery` function instead. See [Unified Query Encryption API](#unified-query-encryption-api).
+> The `createSearchTerms` and `createQuerySearchTerms` functions are deprecated and will be removed in v2.0. Use the unified `encryptQuery` function instead. See [Unified Query Encryption API](#unified-query-encryption-api).
 
-The `createSearchTerms` function is used to create search terms used in the SQL query.
+### `createSearchTerms` (deprecated)
 
-The function takes an array of objects, each with the following properties:
-
-| Property | Description |
-|----------|-------------|
-| `value` | The value to search for |
-| `column` | The column to search in |
-| `table` | The table to search in |
-| `returnType` | The type of return value to expect from the SQL query. Required for PostgreSQL composite types. |
-
-**Return types:**
-
-- `eql` (default) - EQL encrypted payload
-- `composite-literal` - EQL encrypted payload wrapped in a composite literal
-- `escaped-composite-literal` - EQL encrypted payload wrapped in an escaped composite literal
-
-Example:
+The `createSearchTerms` function was the original API for creating search terms. It has been superseded by `encryptQuery`.
 
 ```typescript
-const term = await protectClient.encryptQuery([{
+// DEPRECATED - use encryptQuery instead
+const term = await protectClient.createSearchTerms([{
   value: 'user@example.com',
   column: schema.email,
   table: schema,
   returnType: 'composite-literal'
-}, {
-  value: '18',
-  column: schema.age,
-  table: schema,
-  returnType: 'composite-literal'
 }])
 
-if (term.failure) {
-  // Handle the error
-}
-
-console.log(term.data) // array of search terms
+// NEW - use encryptQuery with indexType
+const term = await protectClient.encryptQuery([{
+  value: 'user@example.com',
+  column: schema.email,
+  table: schema,
+  indexType: 'unique',
+  returnType: 'composite-literal'
+}])
 ```
 
-> [!NOTE]
-> As a developer, you must track the index of the search term in the array when using the `createSearchTerms` function.
+### `createQuerySearchTerms` (deprecated)
+
+The `createQuerySearchTerms` function provided explicit index type control. It has been superseded by `encryptQuery`.
+
+```typescript
+// DEPRECATED - use encryptQuery instead
+const term = await protectClient.createQuerySearchTerms([{
+  value: 'user@example.com',
+  column: schema.email,
+  table: schema,
+  indexType: 'unique'
+}])
+
+// NEW - identical API with encryptQuery
+const term = await protectClient.encryptQuery([{
+  value: 'user@example.com',
+  column: schema.email,
+  table: schema,
+  indexType: 'unique'
+}])
+```
+
+See [Migration from Deprecated Functions](#migration-from-deprecated-functions) for a complete migration guide.
 
 ## Unified Query Encryption API
 
@@ -124,6 +129,13 @@ const term = await protectClient.encryptQuery('admin@example.com', {
   table: usersSchema,
   indexType: 'unique',
 })
+
+if (term.failure) {
+  // Handle the error
+}
+
+// Use the encrypted term in your query
+console.log(term.data) // encrypted search term
 ```
 
 ### Batch Operations
@@ -140,15 +152,79 @@ const terms = await protectClient.encryptQuery([
   // JSON containment query (ste_vec implicit)
   { contains: { role: 'admin' }, column: jsonSchema.metadata, table: jsonSchema },
 ])
+
+if (terms.failure) {
+  // Handle the error
+}
+
+// Access encrypted terms
+console.log(terms.data) // array of encrypted terms
 ```
 
 ### Migration from Deprecated Functions
 
 | Old API | New API |
 |---------|---------|
-| `createQuerySearchTerms([...])` | `encryptQuery([...])` with `ScalarQueryTerm` |
-| `createSearchTerms([{ path, value, ... }])` | `encryptQuery([...])` with `JsonPathQueryTerm` |
-| `createSearchTerms([{ containmentType: 'contains', ... }])` | `encryptQuery([...])` with `JsonContainsQueryTerm` |
+| `createSearchTerms([{ value, column, table }])` | `encryptQuery([{ value, column, table, indexType }])` with `ScalarQueryTerm` |
+| `createQuerySearchTerms([{ value, column, table, indexType }])` | `encryptQuery([{ value, column, table, indexType }])` with `ScalarQueryTerm` |
+| `createSearchTerms([{ path, value, column, table }])` | `encryptQuery([{ path, value, column, table }])` with `JsonPathQueryTerm` |
+| `createSearchTerms([{ containmentType: 'contains', value, ... }])` | `encryptQuery([{ contains: {...}, column, table }])` with `JsonContainsQueryTerm` |
+| `createSearchTerms([{ containmentType: 'contained_by', value, ... }])` | `encryptQuery([{ containedBy: {...}, column, table }])` with `JsonContainedByQueryTerm` |
+
+> [!NOTE]
+> Both `createSearchTerms` and `createQuerySearchTerms` are deprecated. Use `encryptQuery` for all query encryption needs.
+
+### Query Term Types
+
+The `encryptQuery` function accepts different query term types. These types are exported from `@cipherstash/protect`:
+
+```typescript
+import {
+  // Query term types
+  type QueryTerm,
+  type ScalarQueryTerm,
+  type JsonPathQueryTerm,
+  type JsonContainsQueryTerm,
+  type JsonContainedByQueryTerm,
+  // Type guards for runtime type checking
+  isScalarQueryTerm,
+  isJsonPathQueryTerm,
+  isJsonContainsQueryTerm,
+  isJsonContainedByQueryTerm,
+} from '@cipherstash/protect'
+```
+
+**Type definitions:**
+
+| Type | Properties | Use Case |
+|------|------------|----------|
+| `ScalarQueryTerm` | `value`, `column`, `table`, `indexType`, `queryOp?` | Scalar value queries (equality, match, ore) |
+| `JsonPathQueryTerm` | `path`, `value?`, `column`, `table` | JSON path access queries |
+| `JsonContainsQueryTerm` | `contains`, `column`, `table` | JSON containment (`@>`) queries |
+| `JsonContainedByQueryTerm` | `containedBy`, `column`, `table` | JSON contained-by (`<@`) queries |
+
+**Type guards:**
+
+Type guards are useful when working with mixed query results:
+
+```typescript
+const terms = await protectClient.encryptQuery([
+  { value: 'user@example.com', column: schema.email, table: schema, indexType: 'unique' },
+  { contains: { role: 'admin' }, column: schema.metadata, table: schema },
+])
+
+if (terms.failure) {
+  // Handle error
+}
+
+for (const term of terms.data) {
+  if (isScalarQueryTerm(term)) {
+    // Handle scalar term
+  } else if (isJsonContainsQueryTerm(term)) {
+    // Handle containment term - access term.sv
+  }
+}
+```
 
 ## JSON Search
 
@@ -176,16 +252,21 @@ const pathTerms = await protectClient.encryptQuery([{
   column: schema.metadata,
   table: schema
 }])
+
+if (pathTerms.failure) {
+  // Handle the error
+}
 ```
 
 #### Containment Queries
 
 Used for finding records where the JSON column contains a specific JSON structure (subset).
 
+**Contains Query (`@>` operator)** - Find records where JSON contains the specified structure:
+
 | Property | Description |
 |----------|-------------|
-| `value` | The JSON object/array structure to search for |
-| `containmentType` | `'contains'` (for `@>`) or `'contained_by'` (for `<@`) |
+| `contains` | The JSON object/array structure to search for |
 | `column` | The column definition from the schema |
 | `table` | The table definition |
 | `returnType` | (Optional) `'eql'`, `'composite-literal'`, or `'escaped-composite-literal'` |
@@ -193,11 +274,36 @@ Used for finding records where the JSON column contains a specific JSON structur
 ```typescript
 // Containment query - SQL equivalent: WHERE metadata @> '{"roles": ["admin"]}'
 const containmentTerms = await protectClient.encryptQuery([{
-  value: { roles: ['admin'] },
-  containmentType: 'contains',
+  contains: { roles: ['admin'] },
   column: schema.metadata,
   table: schema
 }])
+
+if (containmentTerms.failure) {
+  // Handle the error
+}
+```
+
+**Contained-By Query (`<@` operator)** - Find records where JSON is contained by the specified structure:
+
+| Property | Description |
+|----------|-------------|
+| `containedBy` | The JSON superset to check against |
+| `column` | The column definition from the schema |
+| `table` | The table definition |
+| `returnType` | (Optional) `'eql'`, `'composite-literal'`, or `'escaped-composite-literal'` |
+
+```typescript
+// Contained-by query - SQL equivalent: WHERE metadata <@ '{"permissions": ["read", "write", "admin"]}'
+const containedByTerms = await protectClient.encryptQuery([{
+  containedBy: { permissions: ['read', 'write', 'admin'] },
+  column: schema.metadata,
+  table: schema
+}])
+
+if (containedByTerms.failure) {
+  // Handle the error
+}
 ```
 
 ### Using JSON Search Terms in PostgreSQL
@@ -216,6 +322,10 @@ const terms = await protectClient.encryptQuery([{
   table: schema
 }])
 
+if (terms.failure) {
+  // Handle the error
+}
+
 // The generated term contains a selector and the encrypted term
 const term = terms.data[0]
 
@@ -233,11 +343,14 @@ Equivalent to `data @> '{"key": "value"}'`.
 
 ```typescript
 const terms = await protectClient.encryptQuery([{
-  value: { tags: ['premium'] },
-  containmentType: 'contains',
+  contains: { tags: ['premium'] },
   column: schema.metadata,
   table: schema
 }])
+
+if (terms.failure) {
+  // Handle the error
+}
 
 // Containment terms return a vector of terms to match
 const termVector = terms.data[0].sv
@@ -262,6 +375,7 @@ const term = await protectClient.encryptQuery([{
   value: 'user@example.com',
   column: schema.email,
   table: schema,
+  indexType: 'unique',  // Use 'unique' for equality queries
   returnType: 'composite-literal' // Required for PostgreSQL composite types
 }])
 
@@ -286,6 +400,7 @@ const term = await protectClient.encryptQuery([{
   value: 'example',
   column: schema.email,
   table: schema,
+  indexType: 'match',  // Use 'match' for text search queries
   returnType: 'composite-literal'
 }])
 
@@ -356,6 +471,7 @@ const searchTerm = await protectClient.encryptQuery([{
   value: 'example.com',
   column: schema.email,
   table: schema,
+  indexType: 'match',  // Use 'match' for text search
   returnType: 'composite-literal'
 }])
 
@@ -405,7 +521,8 @@ For Supabase users, we provide a specific implementation guide. [Read more about
 
 ## Performance optimization
 
-TODO: make docs for creating Postgres Indexes on columns that require searches. At the moment EQL v2 doesn't support creating indexes while also using the out-of-the-box operator and operator families. The solution is to create an index using the EQL functions and then using the EQL functions directly in your SQL statments, which isn't the best experience.
+> [!NOTE]
+> Documentation for creating PostgreSQL indexes on encrypted columns is coming soon. Currently, EQL v2 requires using EQL functions directly in SQL statements when creating indexes.
 
 ### Didn't find what you wanted?
 
