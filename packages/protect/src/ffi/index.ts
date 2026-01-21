@@ -379,10 +379,27 @@ export class ProtectClient {
     plaintextOrTerms: JsPlaintext | null | readonly QueryTerm[],
     opts?: EncryptQueryOptions,
   ): EncryptQueryOperation | BatchEncryptQueryOperation {
-    if (Array.isArray(plaintextOrTerms)) {
-      return new BatchEncryptQueryOperation(this.client, plaintextOrTerms)
+    // Check if this is a QueryTerm array by looking for QueryTerm-specific properties
+    // This is needed because JsPlaintext includes JsPlaintext[] which overlaps with QueryTerm[]
+    if (
+      Array.isArray(plaintextOrTerms) &&
+      plaintextOrTerms.length > 0 &&
+      typeof plaintextOrTerms[0] === 'object' &&
+      plaintextOrTerms[0] !== null &&
+      ('column' in plaintextOrTerms[0] || 'table' in plaintextOrTerms[0])
+    ) {
+      return new BatchEncryptQueryOperation(
+        this.client,
+        plaintextOrTerms as unknown as readonly QueryTerm[],
+      )
     }
-    return new EncryptQueryOperation(this.client, plaintextOrTerms, opts!)
+    // Empty arrays are treated as JsPlaintext (backward compat)
+    // Non-array values pass through to single-value encryption
+    return new EncryptQueryOperation(
+      this.client,
+      plaintextOrTerms as JsPlaintext | null,
+      opts!,
+    )
   }
 
   /**
