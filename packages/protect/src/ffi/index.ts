@@ -20,8 +20,10 @@ import type {
   Encrypted,
   KeysetIdentifier,
   QuerySearchTerm,
+  QueryTerm,
   SearchTerm,
 } from '../types'
+import { BatchEncryptQueryOperation } from './operations/batch-encrypt-query'
 import { BulkDecryptOperation } from './operations/bulk-decrypt'
 import { BulkDecryptModelsOperation } from './operations/bulk-decrypt-models'
 import { BulkEncryptOperation } from './operations/bulk-encrypt'
@@ -338,12 +340,6 @@ export class ProtectClient {
    *   table: usersSchema,
    *   indexType: 'ore',
    * })
-   *
-   * // Use in PostgreSQL query
-   * const result = await db.query(
-   *   `SELECT * FROM users WHERE cs_ore_64_8_v1(score) > $1`,
-   *   [term.data]
-   * )
    * ```
    *
    * @see {@link https://cipherstash.com/docs/platform/searchable-encryption/supported-queries | Supported Query Types}
@@ -351,8 +347,40 @@ export class ProtectClient {
   encryptQuery(
     plaintext: JsPlaintext | null,
     opts: EncryptQueryOptions,
-  ): EncryptQueryOperation {
-    return new EncryptQueryOperation(this.client, plaintext, opts)
+  ): EncryptQueryOperation
+
+  /**
+   * Encrypt multiple query terms in batch with explicit control over each term.
+   *
+   * Supports scalar terms (with explicit indexType), JSON path queries, and JSON containment queries.
+   * JSON queries implicitly use ste_vec index type.
+   *
+   * @param terms - Array of query terms to encrypt
+   * @returns A BatchEncryptQueryOperation that can be awaited or chained with withLockContext
+   *
+   * @example
+   * ```typescript
+   * const terms = await protectClient.encryptQuery([
+   *   // Scalar term with explicit index
+   *   { value: 'admin@example.com', column: users.email, table: users, indexType: 'unique' },
+   *   // JSON path query (ste_vec implicit)
+   *   { path: 'user.email', value: 'test@example.com', column: jsonSchema.metadata, table: jsonSchema },
+   *   // JSON containment query (ste_vec implicit)
+   *   { contains: { role: 'admin' }, column: jsonSchema.metadata, table: jsonSchema },
+   * ])
+   * ```
+   */
+  encryptQuery(terms: readonly QueryTerm[]): BatchEncryptQueryOperation
+
+  // Implementation
+  encryptQuery(
+    plaintextOrTerms: JsPlaintext | null | readonly QueryTerm[],
+    opts?: EncryptQueryOptions,
+  ): EncryptQueryOperation | BatchEncryptQueryOperation {
+    if (Array.isArray(plaintextOrTerms)) {
+      return new BatchEncryptQueryOperation(this.client, plaintextOrTerms)
+    }
+    return new EncryptQueryOperation(this.client, plaintextOrTerms, opts!)
   }
 
   /**
