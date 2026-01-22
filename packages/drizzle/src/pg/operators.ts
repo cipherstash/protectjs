@@ -38,7 +38,7 @@ import type { PgTable } from 'drizzle-orm/pg-core'
 import type { EncryptedColumnConfig } from './index.js'
 import { getEncryptedColumnConfig } from './index.js'
 import { extractProtectSchema } from './schema-extraction.js'
-import { JsonPathBuilder, normalizePath } from './json-operators.js'
+import { JsonPathBuilder, normalizePath, isLazyJsonOperator, type LazyJsonOperator, encryptSingleJsonOperator } from './json-operators.js'
 
 // ============================================================================
 // Type Definitions and Type Guards
@@ -1449,8 +1449,9 @@ export function createProtectOperators(protectClient: ProtectClient): {
   const protectAnd = async (
     ...conditions: (SQL | SQLWrapper | Promise<SQL> | undefined)[]
   ): Promise<SQL> => {
-    // Single pass: separate lazy operators from regular conditions
+    // Collect all operator types for batched processing
     const lazyOperators: LazyOperator[] = []
+    const lazyJsonOperators: LazyJsonOperator[] = []
     const regularConditions: (SQL | SQLWrapper | undefined)[] = []
     const regularPromises: Promise<SQL>[] = []
 
@@ -1459,11 +1460,16 @@ export function createProtectOperators(protectClient: ProtectClient): {
         continue
       }
 
-      if (isLazyOperator(condition)) {
+      // Check for JSON operators FIRST (they are also LazyOperators)
+      if (isLazyJsonOperator(condition)) {
+        lazyJsonOperators.push(condition)
+      } else if (isLazyOperator(condition)) {
         lazyOperators.push(condition)
       } else if (condition instanceof Promise) {
-        // Check if promise is also a lazy operator
-        if (isLazyOperator(condition)) {
+        // Check if the promise is also a lazy operator
+        if (isLazyJsonOperator(condition)) {
+          lazyJsonOperators.push(condition)
+        } else if (isLazyOperator(condition)) {
           lazyOperators.push(condition)
         } else {
           regularPromises.push(condition)
@@ -1473,10 +1479,26 @@ export function createProtectOperators(protectClient: ProtectClient): {
       }
     }
 
+    // Process JSON operators - they have different encryption logic
+    const jsonSqlConditions: SQL[] = []
+    for (const jsonOp of lazyJsonOperators) {
+      try {
+        // JSON operators use their own encryption via encryptSingleJsonOperator
+        const encrypted = await encryptSingleJsonOperator(protectClient, jsonOp)
+        const sqlResult = jsonOp.execute(encrypted)
+        jsonSqlConditions.push(sqlResult)
+      } catch (error) {
+        // Log and continue - individual operator errors shouldn't fail all
+        console.error(`Error processing JSON operator: ${error}`)
+        throw error
+      }
+    }
+
     // If there are no lazy operators, just use Drizzle's and()
     if (lazyOperators.length === 0) {
       const allConditions: (SQL | SQLWrapper | undefined)[] = [
         ...regularConditions,
+        ...jsonSqlConditions,
         ...(await Promise.all(regularPromises)),
       ]
       return and(...allConditions) ?? sql`true`
@@ -1592,6 +1614,7 @@ export function createProtectOperators(protectClient: ProtectClient): {
     // Combine all conditions
     const allConditions: (SQL | SQLWrapper | undefined)[] = [
       ...regularConditions,
+      ...jsonSqlConditions,
       ...sqlConditions,
       ...regularPromisesResults,
     ]
@@ -1605,7 +1628,9 @@ export function createProtectOperators(protectClient: ProtectClient): {
   const protectOr = async (
     ...conditions: (SQL | SQLWrapper | Promise<SQL> | undefined)[]
   ): Promise<SQL> => {
+    // Collect all operator types for batched processing
     const lazyOperators: LazyOperator[] = []
+    const lazyJsonOperators: LazyJsonOperator[] = []
     const regularConditions: (SQL | SQLWrapper | undefined)[] = []
     const regularPromises: Promise<SQL>[] = []
 
@@ -1614,10 +1639,16 @@ export function createProtectOperators(protectClient: ProtectClient): {
         continue
       }
 
-      if (isLazyOperator(condition)) {
+      // Check for JSON operators FIRST (they are also LazyOperators)
+      if (isLazyJsonOperator(condition)) {
+        lazyJsonOperators.push(condition)
+      } else if (isLazyOperator(condition)) {
         lazyOperators.push(condition)
       } else if (condition instanceof Promise) {
-        if (isLazyOperator(condition)) {
+        // Check if the promise is also a lazy operator
+        if (isLazyJsonOperator(condition)) {
+          lazyJsonOperators.push(condition)
+        } else if (isLazyOperator(condition)) {
           lazyOperators.push(condition)
         } else {
           regularPromises.push(condition)
@@ -1627,9 +1658,26 @@ export function createProtectOperators(protectClient: ProtectClient): {
       }
     }
 
+    // Process JSON operators - they have different encryption logic
+    const jsonSqlConditions: SQL[] = []
+    for (const jsonOp of lazyJsonOperators) {
+      try {
+        // JSON operators use their own encryption via encryptSingleJsonOperator
+        const encrypted = await encryptSingleJsonOperator(protectClient, jsonOp)
+        const sqlResult = jsonOp.execute(encrypted)
+        jsonSqlConditions.push(sqlResult)
+      } catch (error) {
+        // Log and continue - individual operator errors shouldn't fail all
+        console.error(`Error processing JSON operator: ${error}`)
+        throw error
+      }
+    }
+
+    // If there are no lazy operators, just use Drizzle's or()
     if (lazyOperators.length === 0) {
       const allConditions: (SQL | SQLWrapper | undefined)[] = [
         ...regularConditions,
+        ...jsonSqlConditions,
         ...(await Promise.all(regularPromises)),
       ]
       return or(...allConditions) ?? sql`false`
