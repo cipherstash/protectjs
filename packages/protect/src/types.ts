@@ -177,21 +177,21 @@ export type JsonQueryTermBase = {
  * When queryType is provided, it explicitly controls which index to use.
  *
  * @example
+ * **Explicit Equality Match**
  * ```typescript
- * // Auto-infer query type from column config
- * const term: ScalarQueryTerm = {
- *   value: 'admin@example.com',
- *   column: users.email,
- *   table: users,
- * }
- *
- * // Explicit query type control
  * const term: ScalarQueryTerm = {
  *   value: 'admin@example.com',
  *   column: users.email,
  *   table: users,
  *   queryType: 'equality',
+ *   returnType: 'composite-literal' // Required for PostgreSQL composite types
  * }
+ * ```
+ *
+ * **PostgreSQL Integration**
+ * ```sql
+ * SELECT * FROM users WHERE email = $1
+ * -- Binds: [term]
  * ```
  */
 export type ScalarQueryTerm = ScalarQueryTermBase & {
@@ -205,17 +205,25 @@ export type ScalarQueryTerm = ScalarQueryTermBase & {
 
 /**
  * JSON path query term for searchableJson indexed columns.
- * Query type is implicitly 'searchableJson'.
- * Column must be defined with .searchableJson().
+ *
+ * Used for finding records where a specific path in the JSON matches a value.
+ * Equivalent to `WHERE data->'user'->>'email' = 'alice@example.com'`.
  *
  * @example
  * ```typescript
  * const term: JsonPathQueryTerm = {
  *   path: 'user.email',
- *   value: 'admin@example.com',
+ *   value: 'alice@example.com',
  *   column: metadata,
  *   table: documents,
  * }
+ * ```
+ *
+ * **PostgreSQL Integration**
+ * ```sql
+ * SELECT * FROM users
+ * WHERE eql_ste_vec_u64_8_128_access(metadata, $1) = $2
+ * -- Binds: [term.s, term.c]
  * ```
  */
 export type JsonPathQueryTerm = JsonQueryTermBase & {
@@ -226,17 +234,25 @@ export type JsonPathQueryTerm = JsonQueryTermBase & {
 }
 
 /**
- * JSON containment query term for @> operator.
- * Query type is implicitly 'searchableJson'.
- * Column must be defined with .searchableJson().
+ * JSON containment query term for PostgreSQL `@>` operator.
+ *
+ * Find records where the JSON column contains the specified structure.
+ * Equivalent to `WHERE metadata @> '{"roles": ["admin"]}'`.
  *
  * @example
  * ```typescript
  * const term: JsonContainsQueryTerm = {
- *   contains: { status: 'active', role: 'admin' },
+ *   contains: { roles: ['admin'] },
  *   column: metadata,
  *   table: documents,
  * }
+ * ```
+ *
+ * **PostgreSQL Integration**
+ * ```sql
+ * SELECT * FROM users
+ * WHERE eql_ste_vec_u64_8_128_contains(metadata, $1)
+ * -- Binds: [JSON.stringify(term.sv)]
  * ```
  */
 export type JsonContainsQueryTerm = JsonQueryTermBase & {
@@ -245,9 +261,10 @@ export type JsonContainsQueryTerm = JsonQueryTermBase & {
 }
 
 /**
- * JSON containment query term for <@ operator.
- * Query type is implicitly 'searchableJson'.
- * Column must be defined with .searchableJson().
+ * JSON containment query term for PostgreSQL `<@` operator.
+ *
+ * Find records where the JSON column is contained by the specified structure.
+ * Equivalent to `WHERE metadata <@ '{"permissions": ["read", "write"]}'`.
  *
  * @example
  * ```typescript
@@ -256,6 +273,13 @@ export type JsonContainsQueryTerm = JsonQueryTermBase & {
  *   column: metadata,
  *   table: documents,
  * }
+ * ```
+ *
+ * **PostgreSQL Integration**
+ * ```sql
+ * SELECT * FROM users
+ * WHERE eql_ste_vec_u64_8_128_contained_by(metadata, $1)
+ * -- Binds: [JSON.stringify(term.sv)]
  * ```
  */
 export type JsonContainedByQueryTerm = JsonQueryTermBase & {

@@ -189,8 +189,9 @@ describe('createQuerySearchTerms', () => {
     }
 
     expect(result.data).toHaveLength(1)
-    // ste_vec with default queryOp returns encrypted structure
-    expect(result.data[0]).toBeDefined()
+    // ste_vec with default queryOp returns encrypted structure with index info
+    expect(result.data[0]).toHaveProperty('i')
+    expect(result.data[0]).toHaveProperty('v')
   })
 })
 

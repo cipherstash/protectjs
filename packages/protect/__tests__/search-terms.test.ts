@@ -2,6 +2,14 @@ import 'dotenv/config'
 import { csColumn, csTable } from '@cipherstash/schema'
 import { beforeAll, describe, expect, it } from 'vitest'
 import { LockContext, type SearchTerm, protect } from '../src'
+import {
+  expectMatchIndex,
+  expectJsonPathWithValue,
+  expectJsonPathSelectorOnly,
+  expectSteVecArray,
+  expectCompositeLiteralWithEncryption,
+  parseCompositeLiteral,
+} from './test-utils/query-terms'
 
 const users = csTable('users', {
   email: csColumn('email').freeTextSearch().equality().orderAndRange(),
@@ -64,8 +72,10 @@ describe('create search terms', () => {
     }
 
     const result = searchTermsResult.data[0] as string
-    expect(result).toMatch(/^\(.*\)$/)
-    expect(() => JSON.parse(result.slice(1, -1))).not.toThrow()
+    expectCompositeLiteralWithEncryption(
+      result,
+      (parsed) => expectMatchIndex(parsed as { bf?: unknown[] })
+    )
   }, 30000)
 
   it('should create search terms with escaped-composite-literal return type', async () => {
@@ -89,8 +99,10 @@ describe('create search terms', () => {
     const result = searchTermsResult.data[0] as string
     expect(result).toMatch(/^".*"$/)
     const unescaped = JSON.parse(result)
-    expect(unescaped).toMatch(/^\(.*\)$/)
-    expect(() => JSON.parse(unescaped.slice(1, -1))).not.toThrow()
+    expectCompositeLiteralWithEncryption(
+      unescaped,
+      (parsed) => expectMatchIndex(parsed as { bf?: unknown[] })
+    )
   }, 30000)
 })
 
@@ -114,8 +126,7 @@ describe('create search terms - JSON support', () => {
     }
 
     expect(result.data).toHaveLength(1)
-    expect(result.data[0]).toHaveProperty('s')
-    expect((result.data[0] as any).s).toMatch(/^[0-9a-f]+$/)
+    expectJsonPathWithValue(result.data[0] as Record<string, unknown>)
   }, 30000)
 
   it('should create JSON containment search term via createSearchTerms', async () => {
@@ -253,11 +264,7 @@ describe('create search terms - JSON comprehensive', () => {
       }
 
       expect(result.data).toHaveLength(1)
-      expect(result.data[0]).toHaveProperty('s')
-      // Verify selector is encrypted
-      expect((result.data[0] as any).s).toMatch(/^[0-9a-f]+$/)
-      // Verify there's encrypted content (not just the selector)
-      expect(Object.keys(result.data[0]).length).toBeGreaterThan(1)
+      expectJsonPathWithValue(result.data[0] as Record<string, unknown>)
     }, 30000)
 
     it('should create search term with path as array', async () => {
@@ -317,11 +324,7 @@ describe('create search terms - JSON comprehensive', () => {
       }
 
       expect(result.data).toHaveLength(1)
-      // Path-only returns selector without encrypted content
-      expect(result.data[0]).toHaveProperty('s')
-      expect((result.data[0] as any).s).toMatch(/^[0-9a-f]+$/)
-      // No encrypted content for path-only queries
-      expect(result.data[0]).not.toHaveProperty('c')
+      expectJsonPathSelectorOnly(result.data[0] as Record<string, unknown>)
     }, 30000)
 
     it('should handle single-segment path', async () => {
@@ -562,17 +565,13 @@ describe('create search terms - JSON comprehensive', () => {
       expect(result.data).toHaveLength(3)
 
       // First: path query with value
-      expect(result.data[0]).toHaveProperty('s')
-      expect((result.data[0] as any).s).toMatch(/^[0-9a-f]+$/)
-      // Verify there's encrypted content (more than just selector)
-      expect(Object.keys(result.data[0]).length).toBeGreaterThan(1)
+      expectJsonPathWithValue(result.data[0] as Record<string, unknown>)
 
       // Second: containment query
-      expect(result.data[1]).toHaveProperty('sv')
+      expectSteVecArray(result.data[1] as { sv: Array<Record<string, unknown>> })
 
       // Third: path-only query
-      expect(result.data[2]).toHaveProperty('s')
-      expect(result.data[2]).not.toHaveProperty('c')
+      expectJsonPathSelectorOnly(result.data[2] as Record<string, unknown>)
     }, 30000)
 
     it('should handle queries across multiple columns', async () => {
@@ -673,9 +672,7 @@ describe('create search terms - JSON comprehensive', () => {
       }
 
       expect(result.data).toHaveLength(1)
-      expect(result.data[0]).toHaveProperty('s')
-      // Verify there's encrypted content
-      expect(Object.keys(result.data[0]).length).toBeGreaterThan(1)
+      expectJsonPathWithValue(result.data[0] as Record<string, unknown>)
     }, 30000)
 
     it('should handle special characters in keys', async () => {
@@ -746,11 +743,8 @@ describe('create search terms - JSON comprehensive', () => {
       }
 
       expect(result.data).toHaveLength(2)
-      // Both should have selector and encrypted content
-      expect(result.data[0]).toHaveProperty('s')
-      expect(result.data[1]).toHaveProperty('s')
-      expect(Object.keys(result.data[0]).length).toBeGreaterThan(1)
-      expect(Object.keys(result.data[1]).length).toBeGreaterThan(1)
+      expectJsonPathWithValue(result.data[0] as Record<string, unknown>)
+      expectJsonPathWithValue(result.data[1] as Record<string, unknown>)
     }, 30000)
 
     it('should handle numeric values', async () => {
@@ -783,10 +777,7 @@ describe('create search terms - JSON comprehensive', () => {
 
       expect(result.data).toHaveLength(3)
       for (const item of result.data) {
-        expect(item).toHaveProperty('s')
-        expect((item as any).s).toMatch(/^[0-9a-f]+$/)
-        // Verify there's encrypted content
-        expect(Object.keys(item).length).toBeGreaterThan(1)
+        expectJsonPathWithValue(item as Record<string, unknown>)
       }
     }, 30000)
 
@@ -812,10 +803,7 @@ describe('create search terms - JSON comprehensive', () => {
       }
 
       expect(result.data).toHaveLength(1)
-      expect(result.data[0]).toHaveProperty('sv')
-      const svResult = result.data[0] as { sv: Array<{ s: any }> }
-      expect(svResult.sv).toHaveLength(50)
-      expect(svResult.sv[0].s).toMatch(/^[0-9a-f]+$/)
+      expectSteVecArray(result.data[0] as { sv: Array<Record<string, unknown>> }, 50)
     }, 30000)
   })
 
@@ -924,12 +912,7 @@ describe('create search terms - JSON comprehensive', () => {
       }
 
       const encrypted = result.data[0]
-      // Should have selector
-      expect(encrypted).toHaveProperty('s')
-      expect((encrypted as any).s).toMatch(/^[0-9a-f]+$/)
-      // Should have additional encrypted content (more than just selector)
-      const keys = Object.keys(encrypted)
-      expect(keys.length).toBeGreaterThan(1)
+      expectJsonPathWithValue(encrypted as Record<string, unknown>)
     }, 30000)
 
     it('should verify encrypted content structure in containment query', async () => {
@@ -949,19 +932,7 @@ describe('create search terms - JSON comprehensive', () => {
       }
 
       const encrypted = result.data[0]
-      // Containment should have sv array
-      expect(encrypted).toHaveProperty('sv')
-      const svResult = encrypted as { sv: Array<{ s: string }> }
-      expect(Array.isArray(svResult.sv)).toBe(true)
-
-      // Each entry in sv should have selector and encrypted content
-      for (const entry of svResult.sv) {
-        expect(entry).toHaveProperty('s')
-        expect(entry.s).toMatch(/^[0-9a-f]+$/)
-        // Should have additional encrypted properties
-        const keys = Object.keys(entry)
-        expect(keys.length).toBeGreaterThan(1)
-      }
+      expectSteVecArray(encrypted as { sv: Array<Record<string, unknown>> })
     }, 30000)
   })
 

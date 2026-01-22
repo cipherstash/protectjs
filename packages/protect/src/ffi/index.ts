@@ -222,29 +222,29 @@ export class ProtectClient {
   }
 
   /**
-   * Encrypt a model based on its encryptConfig.
+   * Encrypt an entire object (model) based on its table schema.
+   *
+   * This method automatically encrypts fields defined in the schema while
+   * preserving other fields (like IDs, timestamps, or nested structures).
+   *
+   * @param input - The model with plaintext values.
+   * @param table - The table definition from your schema.
+   * @returns An EncryptModelOperation that can be awaited or chained with .withLockContext().
    *
    * @example
    * ```typescript
    * type User = {
    *   id: string;
    *   email: string; // encrypted
+   *   createdAt: Date; // unchanged
    * }
    *
-   * // Define the schema for the users table
-   * const usersSchema = csTable('users', {
-   *   email: csColumn('email').freeTextSearch().equality().orderAndRange(),
-   * })
-   *
-   * // Initialize the Protect client
-   * const protectClient = await protect({ schemas: [usersSchema] })
-   *
-   * // Encrypt a user model
-   * const encryptedModel = await protectClient.encryptModel<User>(
-   *   { id: 'user_123', email: 'person@example.com' },
-   *   usersSchema,
-   * )
+   * const user = { id: '1', email: 'alice@example.com', createdAt: new Date() };
+   * const encryptedResult = await protectClient.encryptModel<User>(user, usersTable);
    * ```
+   *
+   * @see {@link Result}
+   * @see {@link csTable}
    */
   encryptModel<T extends Record<string, unknown>>(
     input: Decrypted<T>,
@@ -254,10 +254,17 @@ export class ProtectClient {
   }
 
   /**
-   * Decrypt a model with encrypted values
-   * Usage:
-   *    await eqlClient.decryptModel(encryptedModel)
-   *    await eqlClient.decryptModel(encryptedModel).withLockContext(lockContext)
+   * Decrypt an entire object (model) containing encrypted values.
+   *
+   * This method automatically detects and decrypts any encrypted fields in your model.
+   *
+   * @param input - The model containing encrypted values.
+   * @returns A DecryptModelOperation that can be awaited or chained with .withLockContext().
+   *
+   * @example
+   * ```typescript
+   * const decryptedResult = await protectClient.decryptModel<User>(encryptedUser);
+   * ```
    */
   decryptModel<T extends Record<string, unknown>>(
     input: T,
@@ -266,10 +273,11 @@ export class ProtectClient {
   }
 
   /**
-   * Bulk encrypt models with decrypted values
-   * Usage:
-   *    await eqlClient.bulkEncryptModels(decryptedModels, table)
-   *    await eqlClient.bulkEncryptModels(decryptedModels, table).withLockContext(lockContext)
+   * Bulk encrypt multiple objects (models) for better performance.
+   *
+   * @param input - Array of models with plaintext values.
+   * @param table - The table definition from your schema.
+   * @returns A BulkEncryptModelsOperation that can be awaited or chained with .withLockContext().
    */
   bulkEncryptModels<T extends Record<string, unknown>>(
     input: Array<Decrypted<T>>,
@@ -279,10 +287,10 @@ export class ProtectClient {
   }
 
   /**
-   * Bulk decrypt models with encrypted values
-   * Usage:
-   *    await eqlClient.bulkDecryptModels(encryptedModels)
-   *    await eqlClient.bulkDecryptModels(encryptedModels).withLockContext(lockContext)
+   * Bulk decrypt multiple objects (models).
+   *
+   * @param input - Array of models containing encrypted values.
+   * @returns A BulkDecryptModelsOperation that can be awaited or chained with .withLockContext().
    */
   bulkDecryptModels<T extends Record<string, unknown>>(
     input: Array<T>,
@@ -291,10 +299,11 @@ export class ProtectClient {
   }
 
   /**
-   * Bulk encryption - returns a thenable object.
-   * Usage:
-   *    await eqlClient.bulkEncrypt(plaintexts, { column, table })
-   *    await eqlClient.bulkEncrypt(plaintexts, { column, table }).withLockContext(lockContext)
+   * Bulk encryption - returns a promise which resolves to an array of encrypted values.
+   *
+   * @param plaintexts - Array of plaintext values to be encrypted.
+   * @param opts - Options specifying the column and table for encryption.
+   * @returns A BulkEncryptOperation that can be awaited or chained with .withLockContext().
    */
   bulkEncrypt(
     plaintexts: BulkEncryptPayload,
@@ -304,10 +313,10 @@ export class ProtectClient {
   }
 
   /**
-   * Bulk decryption - returns a thenable object.
-   * Usage:
-   *    await eqlClient.bulkDecrypt(encryptedPayloads)
-   *    await eqlClient.bulkDecrypt(encryptedPayloads).withLockContext(lockContext)
+   * Bulk decryption - returns a promise which resolves to an array of decrypted values.
+   *
+   * @param encryptedPayloads - Array of encrypted payloads to be decrypted.
+   * @returns A BulkDecryptOperation that can be awaited or chained with .withLockContext().
    */
   bulkDecrypt(encryptedPayloads: BulkDecryptPayload): BulkDecryptOperation {
     return new BulkDecryptOperation(this.client, encryptedPayloads)

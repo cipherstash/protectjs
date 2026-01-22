@@ -20,3 +20,62 @@ export const expectOreIndex = (term: { ob?: unknown[] }) => {
 export const expectHasHm = (term: { hm?: string }) => {
   expect(term).toHaveProperty('hm')
 }
+
+/** Validates encrypted selector field */
+export const expectSteVecSelector = (term: { s?: string }) => {
+  expect(term).toHaveProperty('s')
+  expect(typeof term.s).toBe('string')
+  expect(term.s).toMatch(/^[0-9a-f]+$/)
+}
+
+/** Validates an sv array entry has selector and additional content */
+export const expectSteVecEntry = (entry: Record<string, unknown>) => {
+  expectSteVecSelector(entry as { s?: string })
+  // Entry should have more than just the selector
+  expect(Object.keys(entry).length).toBeGreaterThan(1)
+}
+
+/** Validates sv array structure with proper entries */
+export const expectSteVecArray = (
+  term: { sv?: Array<Record<string, unknown>> },
+  expectedLength?: number
+) => {
+  expect(term).toHaveProperty('sv')
+  expect(Array.isArray(term.sv)).toBe(true)
+  if (expectedLength !== undefined) {
+    expect(term.sv).toHaveLength(expectedLength)
+  } else {
+    expect(term.sv!.length).toBeGreaterThan(0)
+  }
+  for (const entry of term.sv!) {
+    expectSteVecEntry(entry)
+  }
+}
+
+/** Validates path query with value has selector field */
+export const expectJsonPathWithValue = (term: Record<string, unknown>) => {
+  // Validate selector exists
+  expectSteVecSelector(term as { s?: string })
+  // Verify there's encrypted content (more than just selector)
+  expect(Object.keys(term).length).toBeGreaterThan(1)
+}
+
+/** Validates path-only query has only selector, no additional content */
+export const expectJsonPathSelectorOnly = (term: Record<string, unknown>) => {
+  expectSteVecSelector(term as { s?: string })
+  // No encrypted content for path-only queries
+  expect(term).not.toHaveProperty('c')
+}
+
+/** Validates composite literal is parseable and contains encrypted structure */
+export const expectCompositeLiteralWithEncryption = (
+  term: string,
+  validateContent?: (parsed: Record<string, unknown>) => void
+) => {
+  expect(typeof term).toBe('string')
+  expect(term).toMatch(/^\(.*\)$/)
+  const parsed = parseCompositeLiteral(term)
+  if (validateContent) {
+    validateContent(parsed)
+  }
+}

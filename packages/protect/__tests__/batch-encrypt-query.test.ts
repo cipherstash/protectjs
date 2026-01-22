@@ -2,6 +2,13 @@ import 'dotenv/config'
 import { csColumn, csTable } from '@cipherstash/schema'
 import { beforeAll, describe, expect, it } from 'vitest'
 import { LockContext, type QueryTerm, protect } from '../src'
+import {
+  expectHasHm,
+  expectSteVecArray,
+  expectJsonPathWithValue,
+  expectJsonPathSelectorOnly,
+  expectCompositeLiteralWithEncryption,
+} from './test-utils/query-terms'
 
 const users = csTable('users', {
   email: csColumn('email').freeTextSearch().equality().orderAndRange(),
@@ -69,8 +76,7 @@ describe('encryptQuery batch - JSON path queries', () => {
     }
 
     expect(result.data).toHaveLength(1)
-    // s should be an encrypted selector (string token)
-    expect((result.data[0] as any).s).toMatch(/^[0-9a-f]+$/)
+    expectJsonPathWithValue(result.data[0] as Record<string, unknown>)
   })
 
   it('should encrypt JSON path query without value (selector only)', async () => {
@@ -85,7 +91,7 @@ describe('encryptQuery batch - JSON path queries', () => {
     }
 
     expect(result.data).toHaveLength(1)
-    expect((result.data[0] as any).s).toMatch(/^[0-9a-f]+$/)
+    expectJsonPathSelectorOnly(result.data[0] as Record<string, unknown>)
   })
 })
 
@@ -106,11 +112,7 @@ describe('encryptQuery batch - JSON containment queries', () => {
     }
 
     expect(result.data).toHaveLength(1)
-    expect(result.data[0]).toHaveProperty('sv')
-    const sv = (result.data[0] as any).sv
-    expect(sv).toHaveLength(1)
-    // s should be an encrypted selector (string token)
-    expect(sv[0].s).toMatch(/^[0-9a-f]+$/)
+    expectSteVecArray(result.data[0] as { sv: Array<Record<string, unknown>> }, 1)
   })
 
   it('should encrypt JSON containedBy query', async () => {
@@ -129,7 +131,7 @@ describe('encryptQuery batch - JSON containment queries', () => {
     }
 
     expect(result.data).toHaveLength(1)
-    expect(result.data[0]).toHaveProperty('sv')
+    expectSteVecArray(result.data[0] as { sv: Array<Record<string, unknown>> })
   })
 })
 
@@ -162,12 +164,14 @@ describe('encryptQuery batch - mixed term types', () => {
     }
 
     expect(result.data).toHaveLength(3)
-    // First term: scalar unique
-    expect(result.data[0]).toHaveProperty('hm')
-    // Second term: JSON path with selector
-    expect(result.data[1]).toHaveProperty('s')
+    // First term: scalar unique - should have HMAC
+    expectHasHm(result.data[0] as { hm?: string })
+
+    // Second term: JSON path with value - should have selector and encrypted content
+    expectJsonPathWithValue(result.data[1] as Record<string, unknown>)
+
     // Third term: JSON containment with sv array
-    expect(result.data[2]).toHaveProperty('sv')
+    expectSteVecArray(result.data[2] as { sv: Array<Record<string, unknown>> })
   })
 })
 
@@ -189,8 +193,10 @@ describe('encryptQuery batch - return type formatting', () => {
       throw new Error(`[protect]: ${result.failure.message}`)
     }
 
-    expect(typeof result.data[0]).toBe('string')
-    expect(result.data[0]).toMatch(/^\(.*\)$/)
+    expectCompositeLiteralWithEncryption(
+      result.data[0] as string,
+      (parsed) => expectHasHm(parsed as { hm?: string })
+    )
   })
 })
 
