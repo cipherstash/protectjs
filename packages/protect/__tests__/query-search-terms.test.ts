@@ -2,6 +2,12 @@ import 'dotenv/config'
 import { csColumn, csTable } from '@cipherstash/schema'
 import { beforeAll, describe, expect, it } from 'vitest'
 import { LockContext, type QuerySearchTerm, protect } from '../src'
+import {
+  expectHasHm,
+  expectMatchIndex,
+  expectOreIndex,
+  parseCompositeLiteral,
+} from './test-utils/query-terms'
 
 const users = csTable('users', {
   email: csColumn('email').freeTextSearch().equality().orderAndRange(),
@@ -46,10 +52,8 @@ describe('encryptQuery', () => {
       throw new Error(`[protect]: ${result.failure.message}`)
     }
 
-    // Check for some metadata keys besides identifier 'i' and version 'v'
-    const keys = Object.keys(result.data || {})
-    const metaKeys = keys.filter((k) => k !== 'i' && k !== 'v')
-    expect(metaKeys.length).toBeGreaterThan(0)
+    // ORE index uses ob (ore blocks)
+    expectOreIndex(result.data)
   })
 
   it('should encrypt query with match index', async () => {
@@ -63,9 +67,8 @@ describe('encryptQuery', () => {
       throw new Error(`[protect]: ${result.failure.message}`)
     }
 
-    const keys = Object.keys(result.data || {})
-    const metaKeys = keys.filter((k) => k !== 'i' && k !== 'v')
-    expect(metaKeys.length).toBeGreaterThan(0)
+    // Match index uses bf (bloom filter)
+    expectMatchIndex(result.data)
   })
 
   it('should handle null value in encryptQuery', async () => {
@@ -112,11 +115,9 @@ describe('createQuerySearchTerms', () => {
     // Check first term (unique) has hm
     expect(result.data[0]).toHaveProperty('hm')
 
-    // Check second term (ore) has some metadata
-    const oreKeys = Object.keys(result.data[1] || {}).filter(
-      (k) => k !== 'i' && k !== 'v',
-    )
-    expect(oreKeys.length).toBeGreaterThan(0)
+    // Check second term (ore) has ob
+    const oreTerm = result.data[1] as { ob?: unknown[] }
+    expectOreIndex(oreTerm)
   })
 
   it('should handle composite-literal return type', async () => {
@@ -138,8 +139,8 @@ describe('createQuerySearchTerms', () => {
 
     const term = result.data[0] as string
     expect(term).toMatch(/^\(.*\)$/)
-    // Check for the presence of the HMAC key in the JSON string
-    expect(term.toLowerCase()).toContain('hm')
+    const parsed = parseCompositeLiteral(term) as { hm?: string }
+    expectHasHm(parsed)
   })
 
   it('should handle escaped-composite-literal return type', async () => {
@@ -162,8 +163,10 @@ describe('createQuerySearchTerms', () => {
     const term = result.data[0] as string
     // escaped-composite-literal wraps in quotes
     expect(term).toMatch(/^".*"$/)
-    const unescaped = JSON.parse(term)
+    const unescaped = JSON.parse(term) as string
     expect(unescaped).toMatch(/^\(.*\)$/)
+    const parsed = parseCompositeLiteral(unescaped) as { hm?: string }
+    expectHasHm(parsed)
   })
 
   it('should handle ste_vec index with default queryOp', async () => {
