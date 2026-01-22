@@ -180,7 +180,7 @@ function getProtectColumn(
 /**
  * Column metadata extracted from a Drizzle column
  */
-interface ColumnInfo {
+export interface ColumnInfo {
   readonly protectColumn: ProtectColumn | undefined
   readonly config: (EncryptedColumnConfig & { name: string }) | undefined
   readonly protectTable: ProtectTable<ProtectTableColumn> | undefined
