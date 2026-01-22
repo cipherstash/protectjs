@@ -439,3 +439,166 @@ describe('createProtectOperators.jsonPath()', () => {
     )
   })
 })
+
+describe('or() with JSON operators', () => {
+  it('should batch JSON operators with regular operators', async () => {
+    const testTable = pgTable('or_test', {
+      metadata: encryptedType<{ user: { email: string; role: string } }>('metadata', {
+        dataType: 'json',
+        searchableJson: true,
+      }),
+      name: encryptedType<string>('name', {
+        equality: true,
+      }),
+    })
+
+    const schema = extractProtectSchema(testTable)
+    const { createProtectOperators } = await import('../src/pg/operators.js')
+    const protectClient = { schemas: [schema] } as any
+    const ops = createProtectOperators(protectClient)
+
+    // Mix of regular and JSON operators
+    const result = await ops.or(
+      ops.eq(testTable.name, 'John'),  // Regular operator
+      ops.jsonPath(testTable.metadata, '$.user.role').eq('admin'),  // JSON operator
+    )
+
+    expect(result).toBeDefined()
+    expect(typeof result.getSQL).toBe('function')
+  })
+})
+
+describe('and() with JSON operators', () => {
+  it('should batch JSON operators with regular operators', async () => {
+    const testTable = pgTable('and_test', {
+      metadata: encryptedType<{ user: { email: string; role: string } }>('metadata', {
+        dataType: 'json',
+        searchableJson: true,
+      }),
+      name: encryptedType<string>('name', {
+        equality: true,
+      }),
+    })
+
+    const schema = extractProtectSchema(testTable)
+    const { createProtectOperators } = await import('../src/pg/operators.js')
+    const protectClient = { schemas: [schema] } as any
+    const ops = createProtectOperators(protectClient)
+
+    // Mix of regular and JSON operators
+    const result = await ops.and(
+      ops.eq(testTable.name, 'John'),  // Regular operator
+      ops.jsonPath(testTable.metadata, '$.user.role').eq('admin'),  // JSON operator
+    )
+
+    expect(result).toBeDefined()
+    expect(typeof result.getSQL).toBe('function')
+  })
+})
+
+describe('package exports', () => {
+  it('should export JsonPathBuilder class', () => {
+    expect(JsonPathBuilder).toBeDefined()
+    expect(typeof JsonPathBuilder).toBe('function')
+  })
+
+  it('should export isLazyJsonOperator type guard', () => {
+    expect(isLazyJsonOperator).toBeDefined()
+    expect(typeof isLazyJsonOperator).toBe('function')
+  })
+
+  it('should export normalizePath helper', () => {
+    expect(normalizePath).toBeDefined()
+    expect(normalizePath('$.user.email')).toBe('user.email')
+  })
+})
+
+describe('LazyJsonOperator.execute()', () => {
+  it('json_eq should produce correct SQL with encrypted value', () => {
+    const { createJsonOperatorExecute } = require('../src/pg/json-operators.js')
+    const lazyOp: LazyJsonOperator = {
+      __isLazyOperator: true,
+      __isJsonOperator: true,
+      operator: 'json_eq',
+      path: 'user.email',
+      value: 'test@example.com',
+      encryptionType: 'value',
+      columnInfo: { columnName: 'metadata' } as any,
+      execute: createJsonOperatorExecute('json_eq', { name: 'metadata' } as any, 'user.email'),
+    }
+
+    // Mock encrypted value (in practice this would be from protectClient.encryptQuery)
+    const encryptedValue = { s: 'selector_hash', v: 'encrypted_value' }
+    const sqlResult = lazyOp.execute(encryptedValue)
+    const sqlString = sqlResult.getSQL()
+
+    // Should produce: eql_v2.jsonb_path_match(column, encrypted)
+    expect(sqlString).toContain('eql_v2')
+    expect(sqlString).toContain('jsonb_path_match')
+  })
+
+  it('json_contains should produce correct SQL', () => {
+    const { createJsonOperatorExecute } = require('../src/pg/json-operators.js')
+    const lazyOp: LazyJsonOperator = {
+      __isLazyOperator: true,
+      __isJsonOperator: true,
+      operator: 'json_contains',
+      path: '',
+      value: { role: 'admin' },
+      encryptionType: 'value',
+      columnInfo: { columnName: 'metadata' } as any,
+      execute: createJsonOperatorExecute('json_contains', { name: 'metadata' } as any, ''),
+    }
+
+    const encryptedValue = { o: { cs_ste_vec_index: 'encrypted_json' } }
+    const sqlResult = lazyOp.execute(encryptedValue)
+    const sqlString = sqlResult.getSQL()
+
+    expect(sqlString).toContain('eql_v2')
+    expect(sqlString).toContain('jsonb_contains')
+  })
+
+  it('json_array_length_gt on root should produce correct SQL without encryption', () => {
+    const { createJsonOperatorExecute } = require('../src/pg/json-operators.js')
+    const lazyOp: LazyJsonOperator = {
+      __isLazyOperator: true,
+      __isJsonOperator: true,
+      operator: 'json_array_length_gt',
+      path: '',  // root path
+      comparisonValue: 5,
+      encryptionType: 'none',
+      columnInfo: { columnName: 'tags' } as any,
+      execute: createJsonOperatorExecute('json_array_length_gt', { name: 'tags' } as any, ''),
+    }
+
+    const sqlResult = lazyOp.execute()  // No encrypted value needed
+    const sqlString = sqlResult.getSQL()
+
+    expect(sqlString).toContain('eql_v2')
+    expect(sqlString).toContain('jsonb_array_length')
+    expect(sqlString).toContain('> 5')
+  })
+
+  it('json_array_length_gt on nested path should use encrypted selector', () => {
+    const { createJsonOperatorExecute } = require('../src/pg/json-operators.js')
+    const lazyOp: LazyJsonOperator = {
+      __isLazyOperator: true,
+      __isJsonOperator: true,
+      operator: 'json_array_length_gt',
+      path: 'items',
+      comparisonValue: 5,
+      encryptionType: 'selector',
+      columnInfo: { columnName: 'metadata' } as any,
+      execute: createJsonOperatorExecute('json_array_length_gt', { name: 'metadata' } as any, 'items'),
+    }
+
+    const encryptedSelector = 'selector_hash_for_items'
+    const sqlResult = lazyOp.execute(encryptedSelector)
+    const sqlString = sqlResult.getSQL()
+
+    expect(sqlString).toContain('eql_v2')
+    expect(sqlString).toContain('jsonb_array_length')
+    expect(sqlString).toContain('jsonb_path_query_first')  // For nested path extraction
+    expect(sqlString).toContain('> 5')
+  })
+})

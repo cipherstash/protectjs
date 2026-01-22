@@ -193,3 +193,13 @@ export { extractProtectSchema } from './schema-extraction.js'
 
 // Re-export operators
 export { createProtectOperators } from './operators.js'
+
+// Re-export JSON operator utilities
+export {
+  JsonPathBuilder,
+  isLazyJsonOperator,
+  normalizePath,
+  type LazyJsonOperator,
+  type JsonOperatorType,
+  type JsonEncryptionType,
+} from './json-operators.js'
