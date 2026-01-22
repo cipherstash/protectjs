@@ -441,7 +441,7 @@ describe('createProtectOperators.jsonPath()', () => {
 })
 
 describe('or() with JSON operators', () => {
-  it('should batch JSON operators with regular operators', async () => {
+  it('should accept JSON operators in condition list', async () => {
     const testTable = pgTable('or_test', {
       metadata: encryptedType<{ user: { email: string; role: string } }>('metadata', {
         dataType: 'json',
@@ -454,10 +454,22 @@ describe('or() with JSON operators', () => {
 
     const schema = extractProtectSchema(testTable)
     const { createProtectOperators } = await import('../src/pg/operators.js')
-    const protectClient = { schemas: [schema] } as any
+
+    // Mock protectClient with encryptQuery that returns mock encrypted values
+    const protectClient = {
+      schemas: [schema],
+      encryptQuery: async () => ({
+        data: [{ s: 'mock_selector', v: 'mock_encrypted_value' }],
+        failure: null,
+      }),
+      createSearchTerms: async () => ({
+        data: ['mock_search_term'],
+        failure: null,
+      }),
+    } as any
     const ops = createProtectOperators(protectClient)
 
-    // Mix of regular and JSON operators
+    // Mix of regular and JSON operators - verifies both are properly handled
     const result = await ops.or(
       ops.eq(testTable.name, 'John'),  // Regular operator
       ops.jsonPath(testTable.metadata, '$.user.role').eq('admin'),  // JSON operator
@@ -469,7 +481,7 @@ describe('or() with JSON operators', () => {
 })
 
 describe('and() with JSON operators', () => {
-  it('should batch JSON operators with regular operators', async () => {
+  it('should accept JSON operators in condition list', async () => {
     const testTable = pgTable('and_test', {
       metadata: encryptedType<{ user: { email: string; role: string } }>('metadata', {
         dataType: 'json',
@@ -482,10 +494,22 @@ describe('and() with JSON operators', () => {
 
     const schema = extractProtectSchema(testTable)
     const { createProtectOperators } = await import('../src/pg/operators.js')
-    const protectClient = { schemas: [schema] } as any
+
+    // Mock protectClient with encryptQuery that returns mock encrypted values
+    const protectClient = {
+      schemas: [schema],
+      encryptQuery: async () => ({
+        data: [{ s: 'mock_selector', v: 'mock_encrypted_value' }],
+        failure: null,
+      }),
+      createSearchTerms: async () => ({
+        data: ['mock_search_term'],
+        failure: null,
+      }),
+    } as any
     const ops = createProtectOperators(protectClient)
 
-    // Mix of regular and JSON operators
+    // Mix of regular and JSON operators - verifies both are properly handled
     const result = await ops.and(
       ops.eq(testTable.name, 'John'),  // Regular operator
       ops.jsonPath(testTable.metadata, '$.user.role').eq('admin'),  // JSON operator
