@@ -1056,22 +1056,82 @@ export function createProtectOperators(protectClient: ProtectClient): {
   arrayOverlaps: typeof arrayOverlaps
   /**
    * Create a JSON path builder for querying encrypted JSON columns.
-   * Requires the column to have `searchableJson: true` configured.
+   *
+   * Provides a fluent API for:
+   * - Path-based comparisons: eq(), ne()
+   * - Containment checks: contains(), containedBy()
+   * - Array operations: arrayLength().gt/gte/lt/lte()
+   * - Value extraction: get(), elements(), elementsText()
+   * - Path extraction: pathExtract(), pathExtractFirst()
+   *
+   * ## Requirements
+   *
+   * The column must have both `dataType: 'json'` and `searchableJson: true` configured.
+   *
+   * ## Path Format
+   *
+   * Accepts both JSONPath format (`$.user.email`) and dot notation (`user.email`).
+   * The `$.` prefix is automatically stripped.
+   *
+   * ## Encryption Semantics
+   *
+   * Different operations have different encryption requirements:
+   * - Value operations (eq, contains, etc.): Encrypts the comparison value
+   * - Array-length on root: No encryption needed
+   * - Array-length on nested path: Encrypts the path selector
+   * - Path extraction: Encrypts the path selector
    *
    * @param column - The encrypted JSON column
-   * @param path - The JSON path (JSONPath or dot notation)
+   * @param path - The JSON path in JSONPath or dot notation format
    * @returns A JsonPathBuilder for chaining operations
    *
    * @example
+   * Equality comparison at a path:
    * ```typescript
-   * // Equality at path
-   * await ops.jsonPath(users.metadata, '$.user.email').eq('test@example.com')
+   * const result = await db
+   *   .select()
+   *   .from(users)
+   *   .where(await ops.jsonPath(users.metadata, '$.user.email').eq('test@example.com'))
+   * ```
    *
-   * // Containment check
-   * await ops.jsonPath(users.metadata, '$').contains({ role: 'admin' })
+   * @example
+   * JSON containment check:
+   * ```typescript
+   * const admins = await db
+   *   .select()
+   *   .from(users)
+   *   .where(await ops.jsonPath(users.metadata, '$').contains({ role: 'admin' }))
+   * ```
    *
-   * // Array length comparison
-   * await ops.jsonPath(users.metadata, '$.items').arrayLength().gt(5)
+   * @example
+   * Array length comparison:
+   * ```typescript
+   * const activeUsers = await db
+   *   .select()
+   *   .from(users)
+   *   .where(await ops.jsonPath(users.metadata, '$.items').arrayLength().gt(5))
+   * ```
+   *
+   * @example
+   * Value extraction in SELECT:
+   * ```typescript
+   * const emails = await db
+   *   .select({
+   *     email: await ops.jsonPath(users.metadata, '$.user.email').get()
+   *   })
+   *   .from(users)
+   * ```
+   *
+   * @example
+   * Combining with other operators:
+   * ```typescript
+   * const result = await db
+   *   .select()
+   *   .from(users)
+   *   .where(await ops.and(
+   *     ops.eq(users.status, 'active'),
+   *     ops.jsonPath(users.metadata, '$.user.role').eq('admin')
+   *   ))
    * ```
    */
   jsonPath: (column: SQLWrapper, path: string) => JsonPathBuilder
