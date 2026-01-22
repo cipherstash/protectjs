@@ -67,6 +67,12 @@ export const expectJsonPathSelectorOnly = (term: Record<string, unknown>) => {
   expect(term).not.toHaveProperty('c')
 }
 
+/** Validates basic encrypted payload structure with index info and version */
+export const expectBasicEncryptedPayload = (term: Record<string, unknown>) => {
+  expect(term).toHaveProperty('i')
+  expect(term).toHaveProperty('v')
+}
+
 /** Validates composite literal is parseable and contains encrypted structure */
 export const expectCompositeLiteralWithEncryption = (
   term: string,

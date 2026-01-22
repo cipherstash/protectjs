@@ -7,6 +7,7 @@ import {
   expectJsonPathWithValue,
   expectJsonPathSelectorOnly,
   expectSteVecArray,
+  expectSteVecSelector,
   expectCompositeLiteralWithEncryption,
   parseCompositeLiteral,
 } from './test-utils/query-terms'
@@ -148,9 +149,7 @@ describe('create search terms - JSON support', () => {
     }
 
     expect(result.data).toHaveLength(1)
-    expect(result.data[0]).toHaveProperty('sv')
-    const svResult = result.data[0] as { sv: Array<{ s: any }> }
-    expect(svResult.sv[0].s).toMatch(/^[0-9a-f]+$/)
+    expectSteVecArray(result.data[0] as { sv: Array<Record<string, unknown>> })
   }, 30000)
 
   it('should handle mixed simple and JSON search terms', async () => {
@@ -191,8 +190,7 @@ describe('create search terms - JSON support', () => {
     expect(result.data[0]).toHaveProperty('c')
 
     // Second: JSON path term has 's' property
-    expect(result.data[1]).toHaveProperty('s')
-    expect((result.data[1] as any).s).toMatch(/^[0-9a-f]+$/)
+    expectSteVecSelector(result.data[1] as { s?: string })
 
     // Third: JSON containment term has 'sv' property
     expect(result.data[2]).toHaveProperty('sv')
@@ -231,9 +229,8 @@ describe('Selector prefix resolution', () => {
       throw new Error(`[protect]: ${result.failure.message}`)
     }
 
-    const selector = (result.data[0] as any).s
     // Verify selector is encrypted
-    expect(selector).toMatch(/^[0-9a-f]+$/)
+    expectSteVecSelector(result.data[0] as { s?: string })
   }, 30000)
 })
 
@@ -305,7 +302,7 @@ describe('create search terms - JSON comprehensive', () => {
       }
 
       expect(result.data).toHaveLength(1)
-      expect((result.data[0] as any).s).toMatch(/^[0-9a-f]+$/)
+      expectSteVecSelector(result.data[0] as { s?: string })
     }, 30000)
 
     it('should create path-only search term (no value comparison)', async () => {
@@ -344,7 +341,7 @@ describe('create search terms - JSON comprehensive', () => {
       }
 
       expect(result.data).toHaveLength(1)
-      expect((result.data[0] as any).s).toMatch(/^[0-9a-f]+$/)
+      expectSteVecSelector(result.data[0] as { s?: string })
     }, 30000)
   })
 
@@ -499,9 +496,9 @@ describe('create search terms - JSON comprehensive', () => {
       }
 
       expect(result.data).toHaveLength(3)
-      expect((result.data[0] as any).s).toMatch(/^[0-9a-f]+$/)
-      expect((result.data[1] as any).s).toMatch(/^[0-9a-f]+$/)
-      expect((result.data[2] as any).s).toMatch(/^[0-9a-f]+$/)
+      expectSteVecSelector(result.data[0] as { s?: string })
+      expectSteVecSelector(result.data[1] as { s?: string })
+      expectSteVecSelector(result.data[2] as { s?: string })
     }, 30000)
 
     it('should handle multiple containment queries in single call', async () => {
@@ -527,12 +524,8 @@ describe('create search terms - JSON comprehensive', () => {
       }
 
       expect(result.data).toHaveLength(2)
-      expect(result.data[0]).toHaveProperty('sv')
-      const sv0 = result.data[0] as { sv: Array<{ s: any }> }
-      expect(sv0.sv[0].s).toMatch(/^[0-9a-f]+$/)
-      expect(result.data[1]).toHaveProperty('sv')
-      const sv1 = result.data[1] as { sv: Array<{ s: any }> }
-      expect(sv1.sv[0].s).toMatch(/^[0-9a-f]+$/)
+      expectSteVecArray(result.data[0] as { sv: Array<Record<string, unknown>> })
+      expectSteVecArray(result.data[1] as { sv: Array<Record<string, unknown>> })
     }, 30000)
 
     it('should handle mixed path and containment queries', async () => {
@@ -597,8 +590,8 @@ describe('create search terms - JSON comprehensive', () => {
       }
 
       expect(result.data).toHaveLength(2)
-      expect((result.data[0] as any).s).toMatch(/^[0-9a-f]+$/)
-      expect((result.data[1] as any).s).toMatch(/^[0-9a-f]+$/)
+      expectSteVecSelector(result.data[0] as { s?: string })
+      expectSteVecSelector(result.data[1] as { s?: string })
     }, 30000)
   })
 
@@ -632,7 +625,7 @@ describe('create search terms - JSON comprehensive', () => {
       }
 
       expect(result.data).toHaveLength(1)
-      expect((result.data[0] as any).s).toMatch(/^[0-9a-f]+$/)
+      expectSteVecSelector(result.data[0] as { s?: string })
     }, 30000)
 
     it('should handle unicode in paths', async () => {
@@ -652,7 +645,7 @@ describe('create search terms - JSON comprehensive', () => {
       }
 
       expect(result.data).toHaveLength(1)
-      expect((result.data[0] as any).s).toMatch(/^[0-9a-f]+$/)
+      expectSteVecSelector(result.data[0] as { s?: string })
     }, 30000)
 
     it('should handle unicode in values', async () => {

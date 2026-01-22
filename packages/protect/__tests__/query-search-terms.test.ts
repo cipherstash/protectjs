@@ -6,6 +6,7 @@ import {
   expectHasHm,
   expectMatchIndex,
   expectOreIndex,
+  expectBasicEncryptedPayload,
   parseCompositeLiteral,
 } from './test-utils/query-terms'
 
@@ -190,8 +191,7 @@ describe('createQuerySearchTerms', () => {
 
     expect(result.data).toHaveLength(1)
     // ste_vec with default queryOp returns encrypted structure with index info
-    expect(result.data[0]).toHaveProperty('i')
-    expect(result.data[0]).toHaveProperty('v')
+    expectBasicEncryptedPayload(result.data[0] as Record<string, unknown>)
   })
 })
 
