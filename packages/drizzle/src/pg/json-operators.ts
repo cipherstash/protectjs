@@ -148,6 +148,43 @@ export class JsonPathBuilder {
   }
 
   /**
+   * Not equal comparison at the JSON path.
+   *
+   * @param value - The value to compare against
+   * @returns A lazy JSON operator
+   */
+  ne(value: unknown): LazyJsonOperator & Promise<SQL> {
+    return this.createLazyJsonOperator('json_ne', value)
+  }
+
+  /**
+   * JSON containment check (@> operator).
+   * Checks if the JSON at this path contains the specified object.
+   *
+   * @param obj - The object to check containment for
+   * @returns A lazy JSON operator
+   *
+   * @example
+   * ```typescript
+   * await ops.jsonPath(users.metadata, '$').contains({ role: 'admin' })
+   * ```
+   */
+  contains(obj: Record<string, unknown>): LazyJsonOperator & Promise<SQL> {
+    return this.createLazyJsonOperator('json_contains', obj)
+  }
+
+  /**
+   * Reverse JSON containment check (<@ operator).
+   * Checks if the JSON at this path is contained by the specified object.
+   *
+   * @param obj - The object to check containment against
+   * @returns A lazy JSON operator
+   */
+  containedBy(obj: Record<string, unknown>): LazyJsonOperator & Promise<SQL> {
+    return this.createLazyJsonOperator('json_contained_by', obj)
+  }
+
+  /**
    * Creates a lazy JSON operator for deferred execution.
    * @internal
    */

@@ -197,3 +197,27 @@ describe('JsonPathBuilder.eq()', () => {
     expect(lazyOp.encryptionType).toBe('value')
   })
 })
+
+describe('JsonPathBuilder comparison methods', () => {
+  const builder = new JsonPathBuilder(
+    {} as any,
+    'user.role',
+    { columnName: 'metadata', config: { searchableJson: true } } as any,
+    {} as any,
+  )
+
+  it('ne() should return json_ne operator', () => {
+    const lazyOp = builder.ne('admin')
+    expect(lazyOp.operator).toBe('json_ne')
+  })
+
+  it('contains() should return json_contains operator', () => {
+    const lazyOp = builder.contains({ role: 'admin' })
+    expect(lazyOp.operator).toBe('json_contains')
+  })
+
+  it('containedBy() should return json_contained_by operator', () => {
+    const lazyOp = builder.containedBy({ permissions: ['read', 'write'] })
+    expect(lazyOp.operator).toBe('json_contained_by')
+  })
+})
