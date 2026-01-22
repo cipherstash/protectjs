@@ -179,6 +179,66 @@ describe('LazyJsonOperator', () => {
   })
 })
 
+describe('JsonPathBuilder value methods', () => {
+  const rootBuilder = new JsonPathBuilder(
+    { name: 'metadata' } as any,
+    '',  // root path
+    { columnName: 'metadata', config: { searchableJson: true } } as any,
+    {} as any,
+  )
+
+  const nestedBuilder = new JsonPathBuilder(
+    { name: 'metadata' } as any,
+    'items',  // nested path
+    { columnName: 'metadata', config: { searchableJson: true } } as any,
+    {} as any,
+  )
+
+  it('get() should return Promise resolving to SQL expression', async () => {
+    // Note: Full test requires mock protectClient for selector encryption
+    // This tests the root path case which doesn't need encryption
+    const sqlExpr = await rootBuilder.get()
+    expect(sqlExpr).toBeDefined()
+    expect(typeof sqlExpr.getSQL).toBe('function')
+  })
+
+  it('getSync() on root should return SQL expression', () => {
+    const sqlExpr = rootBuilder.getSync()
+    expect(sqlExpr).toBeDefined()
+    expect(typeof sqlExpr.getSQL).toBe('function')
+  })
+
+  it('getSync() on non-root without selector should throw', () => {
+    expect(() => nestedBuilder.getSync()).toThrow(/selector/)
+  })
+
+  it('getSync() on non-root with selector should return SQL expression', () => {
+    const selector = 'pre_encrypted_selector_hash'
+    const sqlExpr = nestedBuilder.getSync(selector)
+    expect(sqlExpr).toBeDefined()
+    expect(typeof sqlExpr.getSQL).toBe('function')
+  })
+
+  it('arrayLength() should return a new JsonPathBuilder in array-length mode', () => {
+    const lengthBuilder = nestedBuilder.arrayLength()
+    expect(lengthBuilder).toBeInstanceOf(JsonPathBuilder)
+  })
+
+  it('arrayLength().gt() on non-root path should use selector encryption', () => {
+    const lazyOp = nestedBuilder.arrayLength().gt(5)
+    expect(lazyOp.operator).toBe('json_array_length_gt')
+    expect(lazyOp.comparisonValue).toBe(5)
+    expect(lazyOp.encryptionType).toBe('selector')  // Non-root needs selector
+  })
+
+  it('arrayLength().gt() on root path should use no encryption', () => {
+    const lazyOp = rootBuilder.arrayLength().gt(5)
+    expect(lazyOp.operator).toBe('json_array_length_gt')
+    expect(lazyOp.comparisonValue).toBe(5)
+    expect(lazyOp.encryptionType).toBe('none')  // Root needs no encryption
+  })
+})
+
 describe('JsonPathBuilder.eq()', () => {
   it('should return a lazy JSON operator with value encryption', () => {
     const builder = new JsonPathBuilder(
@@ -219,5 +279,114 @@ describe('JsonPathBuilder comparison methods', () => {
   it('containedBy() should return json_contained_by operator', () => {
     const lazyOp = builder.containedBy({ permissions: ['read', 'write'] })
     expect(lazyOp.operator).toBe('json_contained_by')
+  })
+})
+
+describe('JsonPathBuilder path query methods', () => {
+  const builder = new JsonPathBuilder(
+    { name: 'metadata' } as any,
+    'items',  // dot-notation path
+    { columnName: 'metadata', config: { searchableJson: true } } as any,
+    {} as any,
+  )
+
+  const rootBuilder = new JsonPathBuilder(
+    { name: 'metadata' } as any,
+    '',  // root path
+    { columnName: 'metadata', config: { searchableJson: true } } as any,
+    {} as any,
+  )
+
+  it('pathExtract() should return SQL with encrypted selector for non-root', async () => {
+    // pathExtract() encrypts the current path to get a selector
+    // Then uses eql_v2.jsonb_path_query(column, selector)
+    const sqlExpr = await builder.pathExtract()
+    expect(sqlExpr).toBeDefined()
+    expect(typeof sqlExpr.getSQL).toBe('function')
+  })
+
+  it('pathExtractFirst() should return SQL with encrypted selector for non-root', async () => {
+    const sqlExpr = await builder.pathExtractFirst()
+    expect(sqlExpr).toBeDefined()
+    expect(typeof sqlExpr.getSQL).toBe('function')
+  })
+
+  it('pathExtract() on root should throw (SRF not applicable to root)', async () => {
+    await expect(rootBuilder.pathExtract()).rejects.toThrow(/root path/)
+  })
+
+  it('pathExtractFirst() on root should return column directly', async () => {
+    const sqlExpr = await rootBuilder.pathExtractFirst()
+    expect(sqlExpr).toBeDefined()
+  })
+
+  it('pathExtractWithSelector() should accept pre-encrypted selector', () => {
+    // For advanced users who already have an encrypted selector
+    const selector = 'pre_encrypted_selector_hash'
+    const sqlExpr = builder.pathExtractWithSelector(selector)
+    expect(sqlExpr).toBeDefined()
+    expect(typeof sqlExpr.getSQL).toBe('function')
+  })
+})
+
+describe('createProtectOperators.jsonPath()', () => {
+  it('should return JsonPathBuilder for searchableJson column', async () => {
+    const testTable = pgTable('json_test', {
+      metadata: encryptedType<{ user: { email: string } }>('metadata', {
+        dataType: 'json',
+        searchableJson: true,
+      }),
+    })
+
+    const schema = extractProtectSchema(testTable)
+    const { createProtectOperators } = await import('../src/pg/operators.js')
+    const { protect } = await import('@cipherstash/protect')
+
+    const protectClient = await protect({ schemas: [schema] })
+    const ops = createProtectOperators(protectClient)
+
+    const builder = ops.jsonPath(testTable.metadata, '$.user.email')
+    expect(builder).toBeInstanceOf(JsonPathBuilder)
+    expect(builder.getPath()).toBe('user.email')
+  })
+
+  it('should throw error for column without searchableJson', async () => {
+    const testTable = pgTable('json_test_no_search', {
+      profile: encryptedType<{ name: string }>('profile', {
+        dataType: 'json',
+      }),
+    })
+
+    const schema = extractProtectSchema(testTable)
+    const { createProtectOperators } = await import('../src/pg/operators.js')
+    const { protect } = await import('@cipherstash/protect')
+
+    const protectClient = await protect({ schemas: [schema] })
+    const ops = createProtectOperators(protectClient)
+
+    expect(() => ops.jsonPath(testTable.profile, '$.name')).toThrow(
+      /searchableJson.*required/i
+    )
+  })
+
+  it('should throw error for searchableJson without dataType json', async () => {
+    const testTable = pgTable('json_test_wrong_type', {
+      // Invalid config: searchableJson requires dataType: 'json'
+      data: encryptedType<string>('data', {
+        searchableJson: true,
+        // Missing dataType: 'json'
+      }),
+    })
+
+    const schema = extractProtectSchema(testTable)
+    const { createProtectOperators } = await import('../src/pg/operators.js')
+    const { protect } = await import('@cipherstash/protect')
+
+    const protectClient = await protect({ schemas: [schema] })
+    const ops = createProtectOperators(protectClient)
+
+    expect(() => ops.jsonPath(testTable.data, '$.path')).toThrow(
+      /searchableJson.*dataType.*json/i
+    )
   })
 })

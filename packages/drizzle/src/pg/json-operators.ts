@@ -132,6 +132,14 @@ export class JsonPathBuilder {
   }
 
   /**
+   * Check if this builder represents the root path.
+   * @internal
+   */
+  private isRootPath(): boolean {
+    return this.path === ''
+  }
+
+  /**
    * Equality comparison at the JSON path.
    * Returns a lazy operator for deferred encryption and batching.
    *
@@ -185,6 +193,77 @@ export class JsonPathBuilder {
   }
 
   /**
+   * Extract values at the current path using an encrypted selector.
+   * Encrypts the current path to get a selector, then queries with it.
+   *
+   * IMPORTANT: This is a set-returning function (SRF) - it returns multiple rows.
+   * For root path, use the column directly or pathExtractFirst() instead.
+   *
+   * @throws Error if called on root path (use column directly for root)
+   * @returns Promise resolving to SQL expression for all matching values (SRF)
+   *
+   * @example
+   * ```typescript
+   * // Extract all items (returns multiple rows)
+   * const items = await ops.jsonPath(users.metadata, '$.items').pathExtract()
+   * ```
+   */
+  async pathExtract(): Promise<SQL> {
+    if (this.isRootPath()) {
+      throw new Error(
+        `pathExtract() is not supported for root path. ` +
+        `For root, use the column directly in your query, or use pathExtractFirst() ` +
+        `which returns a single value.`
+      )
+    }
+
+    // Non-root: encrypt path to get selector, then use jsonb_path_query (SRF)
+    const selector = await encryptPathSelector(this.protectClient, this.path, this.columnInfo)
+    return sql`eql_v2.jsonb_path_query(${this.column}, ${selector})`
+  }
+
+  /**
+   * Extract the first value at the current path using an encrypted selector.
+   *
+   * For root path: returns the column directly (the whole JSON IS the first/only value)
+   * For nested path: encrypts path to selector and uses eql_v2.jsonb_path_query_first
+   *
+   * @returns Promise resolving to SQL expression for the first matching value
+   */
+  async pathExtractFirst(): Promise<SQL> {
+    if (this.isRootPath()) {
+      // Root path: the column itself is the first/only value
+      return sql`${this.column}`
+    }
+
+    // Non-root: encrypt path to get selector
+    const selector = await encryptPathSelector(this.protectClient, this.path, this.columnInfo)
+    return sql`eql_v2.jsonb_path_query_first(${this.column}, ${selector})`
+  }
+
+  /**
+   * Extract values using a pre-encrypted selector.
+   * For advanced users who already have an encrypted selector hash.
+   *
+   * @param selector - Pre-encrypted selector hash
+   * @returns SQL expression for matching values
+   */
+  pathExtractWithSelector(selector: string): SQL {
+    return sql`eql_v2.jsonb_path_query(${this.column}, ${selector})`
+  }
+
+  /**
+   * Extract first value using a pre-encrypted selector.
+   * For advanced users who already have an encrypted selector hash.
+   *
+   * @param selector - Pre-encrypted selector hash
+   * @returns SQL expression for the first matching value
+   */
+  pathExtractFirstWithSelector(selector: string): SQL {
+    return sql`eql_v2.jsonb_path_query_first(${this.column}, ${selector})`
+  }
+
+  /**
    * Creates a lazy JSON operator for deferred execution.
    * @internal
    */
@@ -234,7 +313,7 @@ export class JsonPathBuilder {
           }
         })
       }
-      
+
       // Start execution immediately - this maintains compatibility with the LazyOperator pattern
       startExecution()
     })
