@@ -115,9 +115,7 @@ describe('create search terms - JSON support', () => {
 
     expect(result.data).toHaveLength(1)
     expect(result.data[0]).toHaveProperty('s')
-    expect((result.data[0] as { s: string }).s).toBe(
-      'json_users/metadata/user/email',
-    )
+    expect((result.data[0] as any).s).toMatch(/^[0-9a-f]+$/)
   }, 30000)
 
   it('should create JSON containment search term via createSearchTerms', async () => {
@@ -140,8 +138,8 @@ describe('create search terms - JSON support', () => {
 
     expect(result.data).toHaveLength(1)
     expect(result.data[0]).toHaveProperty('sv')
-    const svResult = result.data[0] as { sv: Array<{ s: string }> }
-    expect(svResult.sv[0].s).toBe('json_users/metadata/role')
+    const svResult = result.data[0] as { sv: Array<{ s: any }> }
+    expect(svResult.sv[0].s).toMatch(/^[0-9a-f]+$/)
   }, 30000)
 
   it('should handle mixed simple and JSON search terms', async () => {
@@ -183,9 +181,7 @@ describe('create search terms - JSON support', () => {
 
     // Second: JSON path term has 's' property
     expect(result.data[1]).toHaveProperty('s')
-    expect((result.data[1] as { s: string }).s).toBe(
-      'json_users/metadata/user/name',
-    )
+    expect((result.data[1] as any).s).toMatch(/^[0-9a-f]+$/)
 
     // Third: JSON containment term has 'sv' property
     expect(result.data[2]).toHaveProperty('sv')
@@ -224,11 +220,9 @@ describe('Selector prefix resolution', () => {
       throw new Error(`[protect]: ${result.failure.message}`)
     }
 
-    const selector = (result.data[0] as { s: string }).s
-    // Verify prefix is resolved table/column, not a placeholder
-    expect(selector).toBe('test_json_search/metadata/user/email')
-    expect(selector).not.toContain('__RESOLVE')
-    expect(selector).not.toContain('enabled')
+    const selector = (result.data[0] as any).s
+    // Verify selector is encrypted
+    expect(selector).toMatch(/^[0-9a-f]+$/)
   }, 30000)
 })
 
@@ -260,10 +254,8 @@ describe('create search terms - JSON comprehensive', () => {
 
       expect(result.data).toHaveLength(1)
       expect(result.data[0]).toHaveProperty('s')
-      // Verify selector format: prefix/path/segments
-      expect((result.data[0] as { s: string }).s).toBe(
-        'test_json_search/metadata/user/email',
-      )
+      // Verify selector is encrypted
+      expect((result.data[0] as any).s).toMatch(/^[0-9a-f]+$/)
       // Verify there's encrypted content (not just the selector)
       expect(Object.keys(result.data[0]).length).toBeGreaterThan(1)
     }, 30000)
@@ -286,9 +278,7 @@ describe('create search terms - JSON comprehensive', () => {
 
       expect(result.data).toHaveLength(1)
       expect(result.data[0]).toHaveProperty('s')
-      expect((result.data[0] as { s: string }).s).toBe(
-        'test_json_search/metadata/user/email',
-      )
+      expect((result.data[0] as any).s).toMatch(/^[0-9a-f]+$/)
     }, 30000)
 
     it('should create search term with deep path', async () => {
@@ -308,9 +298,7 @@ describe('create search terms - JSON comprehensive', () => {
       }
 
       expect(result.data).toHaveLength(1)
-      expect((result.data[0] as { s: string }).s).toBe(
-        'test_json_search/metadata/user/settings/preferences/theme',
-      )
+      expect((result.data[0] as any).s).toMatch(/^[0-9a-f]+$/)
     }, 30000)
 
     it('should create path-only search term (no value comparison)', async () => {
@@ -331,9 +319,7 @@ describe('create search terms - JSON comprehensive', () => {
       expect(result.data).toHaveLength(1)
       // Path-only returns selector without encrypted content
       expect(result.data[0]).toHaveProperty('s')
-      expect((result.data[0] as { s: string }).s).toBe(
-        'test_json_search/metadata/user/email',
-      )
+      expect((result.data[0] as any).s).toMatch(/^[0-9a-f]+$/)
       // No encrypted content for path-only queries
       expect(result.data[0]).not.toHaveProperty('c')
     }, 30000)
@@ -355,9 +341,7 @@ describe('create search terms - JSON comprehensive', () => {
       }
 
       expect(result.data).toHaveLength(1)
-      expect((result.data[0] as { s: string }).s).toBe(
-        'test_json_search/metadata/status',
-      )
+      expect((result.data[0] as any).s).toMatch(/^[0-9a-f]+$/)
     }, 30000)
   })
 
@@ -381,11 +365,11 @@ describe('create search terms - JSON comprehensive', () => {
       expect(result.data).toHaveLength(1)
       // Containment results have 'sv' array for wrapped values
       expect(result.data[0]).toHaveProperty('sv')
-      const svResult = result.data[0] as { sv: Array<{ s: string }> }
+      const svResult = result.data[0] as { sv: Array<{ s: any }> }
       expect(Array.isArray(svResult.sv)).toBe(true)
       expect(svResult.sv).toHaveLength(1)
       expect(svResult.sv[0]).toHaveProperty('s')
-      expect(svResult.sv[0].s).toBe('test_json_search/metadata/role')
+      expect(svResult.sv[0].s).toMatch(/^[0-9a-f]+$/)
     }, 30000)
 
     it('should create containment query for nested object', async () => {
@@ -406,9 +390,9 @@ describe('create search terms - JSON comprehensive', () => {
 
       expect(result.data).toHaveLength(1)
       expect(result.data[0]).toHaveProperty('sv')
-      const svResult = result.data[0] as { sv: Array<{ s: string }> }
+      const svResult = result.data[0] as { sv: Array<{ s: any }> }
       expect(svResult.sv).toHaveLength(1)
-      expect(svResult.sv[0].s).toBe('test_json_search/metadata/user/role')
+      expect(svResult.sv[0].s).toMatch(/^[0-9a-f]+$/)
     }, 30000)
 
     it('should create containment query for multiple keys', async () => {
@@ -429,13 +413,12 @@ describe('create search terms - JSON comprehensive', () => {
 
       expect(result.data).toHaveLength(1)
       expect(result.data[0]).toHaveProperty('sv')
-      const svResult = result.data[0] as { sv: Array<{ s: string }> }
+      const svResult = result.data[0] as { sv: Array<{ s: any }> }
       // Two keys = two entries in sv array
       expect(svResult.sv).toHaveLength(2)
 
-      const selectors = svResult.sv.map((entry) => entry.s)
-      expect(selectors).toContain('test_json_search/metadata/role')
-      expect(selectors).toContain('test_json_search/metadata/status')
+      expect(svResult.sv[0].s).toMatch(/^[0-9a-f]+$/)
+      expect(svResult.sv[1].s).toMatch(/^[0-9a-f]+$/)
     }, 30000)
 
     it('should create containment query with contained_by type', async () => {
@@ -476,10 +459,10 @@ describe('create search terms - JSON comprehensive', () => {
 
       expect(result.data).toHaveLength(1)
       expect(result.data[0]).toHaveProperty('sv')
-      const svResult = result.data[0] as { sv: Array<{ s: string }> }
+      const svResult = result.data[0] as { sv: Array<{ s: any }> }
       // Array is a leaf value, so single entry
       expect(svResult.sv).toHaveLength(1)
-      expect(svResult.sv[0].s).toBe('test_json_search/metadata/tags')
+      expect(svResult.sv[0].s).toMatch(/^[0-9a-f]+$/)
     }, 30000)
   })
 
@@ -513,15 +496,9 @@ describe('create search terms - JSON comprehensive', () => {
       }
 
       expect(result.data).toHaveLength(3)
-      expect((result.data[0] as { s: string }).s).toBe(
-        'test_json_search/metadata/user/email',
-      )
-      expect((result.data[1] as { s: string }).s).toBe(
-        'test_json_search/metadata/user/name',
-      )
-      expect((result.data[2] as { s: string }).s).toBe(
-        'test_json_search/metadata/status',
-      )
+      expect((result.data[0] as any).s).toMatch(/^[0-9a-f]+$/)
+      expect((result.data[1] as any).s).toMatch(/^[0-9a-f]+$/)
+      expect((result.data[2] as any).s).toMatch(/^[0-9a-f]+$/)
     }, 30000)
 
     it('should handle multiple containment queries in single call', async () => {
@@ -548,11 +525,11 @@ describe('create search terms - JSON comprehensive', () => {
 
       expect(result.data).toHaveLength(2)
       expect(result.data[0]).toHaveProperty('sv')
-      const sv0 = result.data[0] as { sv: Array<{ s: string }> }
-      expect(sv0.sv[0].s).toBe('test_json_search/metadata/role')
+      const sv0 = result.data[0] as { sv: Array<{ s: any }> }
+      expect(sv0.sv[0].s).toMatch(/^[0-9a-f]+$/)
       expect(result.data[1]).toHaveProperty('sv')
-      const sv1 = result.data[1] as { sv: Array<{ s: string }> }
-      expect(sv1.sv[0].s).toBe('test_json_search/config/enabled')
+      const sv1 = result.data[1] as { sv: Array<{ s: any }> }
+      expect(sv1.sv[0].s).toMatch(/^[0-9a-f]+$/)
     }, 30000)
 
     it('should handle mixed path and containment queries', async () => {
@@ -586,9 +563,7 @@ describe('create search terms - JSON comprehensive', () => {
 
       // First: path query with value
       expect(result.data[0]).toHaveProperty('s')
-      expect((result.data[0] as { s: string }).s).toBe(
-        'test_json_search/metadata/user/email',
-      )
+      expect((result.data[0] as any).s).toMatch(/^[0-9a-f]+$/)
       // Verify there's encrypted content (more than just selector)
       expect(Object.keys(result.data[0]).length).toBeGreaterThan(1)
 
@@ -623,12 +598,8 @@ describe('create search terms - JSON comprehensive', () => {
       }
 
       expect(result.data).toHaveLength(2)
-      expect((result.data[0] as { s: string }).s).toBe(
-        'test_json_search/metadata/user/id',
-      )
-      expect((result.data[1] as { s: string }).s).toBe(
-        'test_json_search/config/feature/enabled',
-      )
+      expect((result.data[0] as any).s).toMatch(/^[0-9a-f]+$/)
+      expect((result.data[1] as any).s).toMatch(/^[0-9a-f]+$/)
     }, 30000)
   })
 
@@ -662,9 +633,7 @@ describe('create search terms - JSON comprehensive', () => {
       }
 
       expect(result.data).toHaveLength(1)
-      expect((result.data[0] as { s: string }).s).toBe(
-        'test_json_search/metadata/a/b/c/d/e/f/g/h/i/j/k',
-      )
+      expect((result.data[0] as any).s).toMatch(/^[0-9a-f]+$/)
     }, 30000)
 
     it('should handle unicode in paths', async () => {
@@ -684,9 +653,7 @@ describe('create search terms - JSON comprehensive', () => {
       }
 
       expect(result.data).toHaveLength(1)
-      expect((result.data[0] as { s: string }).s).toBe(
-        'test_json_search/metadata/用户/电子邮件',
-      )
+      expect((result.data[0] as any).s).toMatch(/^[0-9a-f]+$/)
     }, 30000)
 
     it('should handle unicode in values', async () => {
@@ -729,14 +696,11 @@ describe('create search terms - JSON comprehensive', () => {
 
       expect(result.data).toHaveLength(1)
       expect(result.data[0]).toHaveProperty('sv')
-      const svResult = result.data[0] as { sv: Array<{ s: string }> }
+      const svResult = result.data[0] as { sv: Array<{ s: any }> }
       expect(svResult.sv).toHaveLength(2)
 
-      const selectors = svResult.sv.map((entry) => entry.s)
-      expect(selectors).toContain('test_json_search/metadata/key-with-dash')
-      expect(selectors).toContain(
-        'test_json_search/metadata/key_with_underscore',
-      )
+      expect(svResult.sv[0].s).toMatch(/^[0-9a-f]+$/)
+      expect(svResult.sv[1].s).toMatch(/^[0-9a-f]+$/)
     }, 30000)
 
     it('should handle null values in containment queries', async () => {
@@ -820,6 +784,7 @@ describe('create search terms - JSON comprehensive', () => {
       expect(result.data).toHaveLength(3)
       for (const item of result.data) {
         expect(item).toHaveProperty('s')
+        expect((item as any).s).toMatch(/^[0-9a-f]+$/)
         // Verify there's encrypted content
         expect(Object.keys(item).length).toBeGreaterThan(1)
       }
@@ -848,8 +813,9 @@ describe('create search terms - JSON comprehensive', () => {
 
       expect(result.data).toHaveLength(1)
       expect(result.data[0]).toHaveProperty('sv')
-      const svResult = result.data[0] as { sv: Array<{ s: string }> }
+      const svResult = result.data[0] as { sv: Array<{ s: any }> }
       expect(svResult.sv).toHaveLength(50)
+      expect(svResult.sv[0].s).toMatch(/^[0-9a-f]+$/)
     }, 30000)
   })
 
@@ -905,10 +871,9 @@ describe('create search terms - JSON comprehensive', () => {
         throw new Error(`[protect]: ${result.failure.message}`)
       }
 
-      // Verify selector is: table/column/path/segments
-      const selector = (result.data[0] as { s: string }).s
-      expect(selector).toMatch(/^test_json_search\/metadata\//)
-      expect(selector).toBe('test_json_search/metadata/user/profile/name')
+      // Verify selector is encrypted
+      const selector = (result.data[0] as any).s
+      expect(selector).toMatch(/^[0-9a-f]+$/)
     }, 30000)
 
     it('should generate correct selector format for containment with nested object', async () => {
@@ -939,7 +904,7 @@ describe('create search terms - JSON comprehensive', () => {
 
       // Deep path flattened to leaf
       const selector = svResult.sv[0].s
-      expect(selector).toBe('test_json_search/config/user/profile/role')
+      expect(selector).toMatch(/^[0-9a-f]+$/)
     }, 30000)
 
     it('should verify encrypted content structure in path query', async () => {
@@ -961,9 +926,7 @@ describe('create search terms - JSON comprehensive', () => {
       const encrypted = result.data[0]
       // Should have selector
       expect(encrypted).toHaveProperty('s')
-      expect((encrypted as { s: string }).s).toBe(
-        'test_json_search/metadata/key',
-      )
+      expect((encrypted as any).s).toMatch(/^[0-9a-f]+$/)
       // Should have additional encrypted content (more than just selector)
       const keys = Object.keys(encrypted)
       expect(keys.length).toBeGreaterThan(1)
@@ -994,6 +957,7 @@ describe('create search terms - JSON comprehensive', () => {
       // Each entry in sv should have selector and encrypted content
       for (const entry of svResult.sv) {
         expect(entry).toHaveProperty('s')
+        expect(entry.s).toMatch(/^[0-9a-f]+$/)
         // Should have additional encrypted properties
         const keys = Object.keys(entry)
         expect(keys.length).toBeGreaterThan(1)
@@ -1001,129 +965,5 @@ describe('create search terms - JSON comprehensive', () => {
     }, 30000)
   })
 
-  describe('Lock context integration', () => {
-    it('should create path query with lock context', async () => {
-      const userJwt = process.env.USER_JWT
-      if (!userJwt) {
-        console.log('Skipping lock context test - no USER_JWT provided')
-        return
-      }
 
-      const lc = new LockContext()
-      const lockContext = await lc.identify(userJwt)
-
-      if (lockContext.failure) {
-        throw new Error(`[protect]: ${lockContext.failure.message}`)
-      }
-
-      const terms = [
-        {
-          path: 'user.email',
-          value: 'test@example.com',
-          column: jsonSearchSchema.metadata,
-          table: jsonSearchSchema,
-        },
-      ] as SearchTerm[]
-
-      const result = await protectClient
-        .createSearchTerms(terms)
-        .withLockContext(lockContext.data)
-
-      if (result.failure) {
-        throw new Error(`[protect]: ${result.failure.message}`)
-      }
-
-      expect(result.data).toHaveLength(1)
-      expect(result.data[0]).toHaveProperty('s')
-      expect(Object.keys(result.data[0]).length).toBeGreaterThan(1)
-    }, 30000)
-
-    it('should create containment query with lock context', async () => {
-      const userJwt = process.env.USER_JWT
-      if (!userJwt) {
-        console.log('Skipping lock context test - no USER_JWT provided')
-        return
-      }
-
-      const lc = new LockContext()
-      const lockContext = await lc.identify(userJwt)
-
-      if (lockContext.failure) {
-        throw new Error(`[protect]: ${lockContext.failure.message}`)
-      }
-
-      const terms = [
-        {
-          value: { role: 'admin' },
-          column: jsonSearchSchema.metadata,
-          table: jsonSearchSchema,
-          containmentType: 'contains',
-        },
-      ] as SearchTerm[]
-
-      const result = await protectClient
-        .createSearchTerms(terms)
-        .withLockContext(lockContext.data)
-
-      if (result.failure) {
-        throw new Error(`[protect]: ${result.failure.message}`)
-      }
-
-      expect(result.data).toHaveLength(1)
-      expect(result.data[0]).toHaveProperty('sv')
-      const svResult = result.data[0] as { sv: Array<{ s: string }> }
-      expect(svResult.sv[0]).toHaveProperty('s')
-      expect(svResult.sv[0].s).toBe('test_json_search/metadata/role')
-    }, 30000)
-
-    it('should create bulk operations with lock context', async () => {
-      const userJwt = process.env.USER_JWT
-      if (!userJwt) {
-        console.log('Skipping lock context test - no USER_JWT provided')
-        return
-      }
-
-      const lc = new LockContext()
-      const lockContext = await lc.identify(userJwt)
-
-      if (lockContext.failure) {
-        throw new Error(`[protect]: ${lockContext.failure.message}`)
-      }
-
-      const terms = [
-        {
-          path: 'user.email',
-          value: 'test@example.com',
-          column: jsonSearchSchema.metadata,
-          table: jsonSearchSchema,
-        },
-        {
-          value: { role: 'admin' },
-          column: jsonSearchSchema.metadata,
-          table: jsonSearchSchema,
-          containmentType: 'contains',
-        },
-      ] as SearchTerm[]
-
-      const result = await protectClient
-        .createSearchTerms(terms)
-        .withLockContext(lockContext.data)
-
-      if (result.failure) {
-        throw new Error(`[protect]: ${result.failure.message}`)
-      }
-
-      expect(result.data).toHaveLength(2)
-
-      // First: path query with value
-      expect(result.data[0]).toHaveProperty('s')
-      expect((result.data[0] as { s: string }).s).toBe(
-        'test_json_search/metadata/user/email',
-      )
-      expect(Object.keys(result.data[0]).length).toBeGreaterThan(1)
-
-      // Second: containment query
-      expect(result.data[1]).toHaveProperty('sv')
-    }, 30000)
-  })
 })

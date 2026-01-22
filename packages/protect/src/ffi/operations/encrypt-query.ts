@@ -12,7 +12,6 @@ import type {
 } from '@cipherstash/schema'
 import { type ProtectError, ProtectErrorTypes } from '../..'
 import { logger } from '../../../../utils/logger'
-import type { LockContext } from '../../identify'
 import type {
   Client,
   EncryptQueryOptions,
@@ -53,14 +52,8 @@ export class EncryptQueryOperation extends ProtectOperation<Encrypted> {
     this.queryOp = opts.queryOp
   }
 
-  public withLockContext(
-    lockContext: LockContext,
-  ): EncryptQueryOperationWithLockContext {
-    return new EncryptQueryOperationWithLockContext(this, lockContext)
-  }
-
   public async execute(): Promise<Result<Encrypted, ProtectError>> {
-    logger.debug('Encrypting query WITHOUT a lock context', {
+    logger.debug('Encrypting query', {
       column: this.column.getName(),
       table: this.table.tableName,
       queryType: this.queryType,
@@ -127,80 +120,5 @@ export class EncryptQueryOperation extends ProtectOperation<Encrypted> {
       queryType: this.queryType,
       queryOp: this.queryOp,
     }
-  }
-}
-
-export class EncryptQueryOperationWithLockContext extends ProtectOperation<Encrypted> {
-  private operation: EncryptQueryOperation
-  private lockContext: LockContext
-
-  constructor(operation: EncryptQueryOperation, lockContext: LockContext) {
-    super()
-    this.operation = operation
-    this.lockContext = lockContext
-  }
-
-  public async execute(): Promise<Result<Encrypted, ProtectError>> {
-    return await withResult(
-      async () => {
-        const { client, plaintext, column, table, queryType, queryOp } =
-          this.operation.getOperation()
-
-        logger.debug('Encrypting query WITH a lock context', {
-          column: column.getName(),
-          table: table.tableName,
-          queryType,
-          queryOp,
-        })
-
-        if (!client) {
-          throw noClientError()
-        }
-
-        if (plaintext === null) {
-          return null
-        }
-
-        const { metadata } = this.getAuditData()
-        const context = await this.lockContext.getLockContext()
-
-        if (context.failure) {
-          throw new Error(`[protect]: ${context.failure.message}`)
-        }
-
-        // Use explicit query type if provided, otherwise auto-infer via encryptBulk
-        if (queryType !== undefined) {
-          return await ffiEncryptQuery(client, {
-            plaintext,
-            column: column.getName(),
-            table: table.tableName,
-            indexType: queryTypeToFfi[queryType],
-            queryOp,
-            lockContext: context.data.context,
-            serviceToken: context.data.ctsToken,
-            unverifiedContext: metadata,
-          })
-        }
-
-        // Auto-infer query type via encryptBulk with lock context
-        const results = await encryptBulk(client, {
-          plaintexts: [
-            {
-              plaintext,
-              column: column.getName(),
-              table: table.tableName,
-              lockContext: context.data.context,
-            },
-          ],
-          serviceToken: context.data.ctsToken,
-          unverifiedContext: metadata,
-        })
-        return results[0]
-      },
-      (error) => ({
-        type: ProtectErrorTypes.EncryptionError,
-        message: error.message,
-      }),
-    )
   }
 }

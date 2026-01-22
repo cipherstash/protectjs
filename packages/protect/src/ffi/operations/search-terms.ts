@@ -2,7 +2,6 @@ import { type Result, withResult } from '@byteslice/result'
 import { encryptBulk, encryptQueryBulk } from '@cipherstash/protect-ffi'
 import { type ProtectError, ProtectErrorTypes } from '../..'
 import { logger } from '../../../../utils/logger'
-import type { Context, CtsToken, LockContext } from '../../identify'
 import type {
   Client,
   Encrypted,
@@ -16,7 +15,7 @@ import type {
 } from '../../types'
 import { queryTypeToFfi } from '../../types'
 import { noClientError } from '../index'
-import { buildNestedObject, flattenJson, pathToSelector } from './json-path-utils'
+import { buildNestedObject, flattenJson, pathToSelector, toDollarPath } from './json-path-utils'
 import { ProtectOperation } from './base-operation'
 
 /**
@@ -59,13 +58,11 @@ type JsonEncryptionItem = {
  * @param client The client to use for encryption
  * @param terms The search terms to encrypt
  * @param metadata Audit metadata for encryption
- * @param lockContextData Optional lock context data { context: Context; ctsToken: CtsToken }
  */
 async function encryptSearchTermsHelper(
   client: Client,
   terms: SearchTerm[],
   metadata: Record<string, unknown> | undefined,
-  lockContextData: { context: Context; ctsToken: CtsToken } | undefined,
 ): Promise<EncryptedSearchTerm[]> {
   if (!client) {
     throw noClientError()
@@ -75,6 +72,12 @@ async function encryptSearchTermsHelper(
   const simpleTermsWithIndex: Array<{ term: SimpleSearchTerm; index: number }> =
     []
   const jsonItemsWithIndex: JsonEncryptionItem[] = []
+  // Selector-only terms (JSON path without value)
+  const selectorOnlyItems: Array<{
+    selector: string
+    column: string
+    table: string
+  }> = []
 
   for (let i = 0; i < terms.length; i++) {
     const term = terms[i]
@@ -99,7 +102,7 @@ async function encryptSearchTermsHelper(
       for (const pair of pairs) {
         jsonItemsWithIndex.push({
           termIndex: i,
-          selector: pair.selector,
+          selector: toDollarPath(pair.path),
           isContainment: true,
           plaintext: pair.value,
           column: term.column.getName(),
@@ -128,15 +131,22 @@ async function encryptSearchTermsHelper(
         const wrappedValue = buildNestedObject(pathArray, term.value)
         jsonItemsWithIndex.push({
           termIndex: i,
-          selector: pathToSelector(term.path, prefix),
+          selector: toDollarPath(term.path),
           isContainment: false,
           plaintext: wrappedValue,
           column: term.column.getName(),
           table: term.table.tableName,
           queryOp: 'default',
         })
+      } else {
+        // Path-only terms (no value) need selector encryption
+        const selector = toDollarPath(term.path)
+        selectorOnlyItems.push({
+          selector,
+          column: term.column.getName(),
+          table: term.table.tableName,
+        })
       }
-      // Path-only terms (no value) don't need encryption
     }
   }
 
@@ -145,18 +155,46 @@ async function encryptSearchTermsHelper(
     simpleTermsWithIndex.length > 0
       ? await encryptBulk(client, {
           plaintexts: simpleTermsWithIndex.map(({ term }) => {
-            const plaintext = {
+            return {
               plaintext: term.value,
               column: term.column.getName(),
               table: term.table.tableName,
             }
-            // Add lock context if provided
-            if (lockContextData) {
-              return { ...plaintext, lockContext: lockContextData.context }
-            }
-            return plaintext
           }),
-          ...(lockContextData && { serviceToken: lockContextData.ctsToken }),
+          unverifiedContext: metadata,
+        })
+      : []
+
+  // Encrypt selectors for JSON terms with values (ste_vec_selector op)
+  const selectorsEncrypted =
+    jsonItemsWithIndex.length > 0
+      ? await encryptQueryBulk(client, {
+          queries: jsonItemsWithIndex.map((item) => {
+            return {
+              plaintext: item.selector,
+              column: item.column,
+              table: item.table,
+              indexType: queryTypeToFfi.searchableJson,
+              queryOp: 'ste_vec_selector' as QueryOpName,
+            }
+          }),
+          unverifiedContext: metadata,
+        })
+      : []
+
+  // Encrypt selectors for JSON terms without values (ste_vec_selector op)
+  const selectorOnlyEncrypted =
+    selectorOnlyItems.length > 0
+      ? await encryptQueryBulk(client, {
+          queries: selectorOnlyItems.map((item) => {
+            return {
+              plaintext: item.selector,
+              column: item.column,
+              table: item.table,
+              indexType: queryTypeToFfi.searchableJson,
+              queryOp: 'ste_vec_selector' as QueryOpName,
+            }
+          }),
           unverifiedContext: metadata,
         })
       : []
@@ -166,20 +204,14 @@ async function encryptSearchTermsHelper(
     jsonItemsWithIndex.length > 0
       ? await encryptQueryBulk(client, {
           queries: jsonItemsWithIndex.map((item) => {
-            const query = {
+            return {
               plaintext: item.plaintext,
               column: item.column,
               table: item.table,
               indexType: queryTypeToFfi.searchableJson,
               queryOp: item.queryOp,
             }
-            // Add lock context if provided
-            if (lockContextData) {
-              return { ...query, lockContext: lockContextData.context }
-            }
-            return query
           }),
-          ...(lockContextData && { serviceToken: lockContextData.ctsToken }),
           unverifiedContext: metadata,
         })
       : []
@@ -188,6 +220,7 @@ async function encryptSearchTermsHelper(
   const results: EncryptedSearchTerm[] = new Array(terms.length)
   let simpleIdx = 0
   let jsonIdx = 0
+  let selectorOnlyIdx = 0
 
   for (let i = 0; i < terms.length; i++) {
     const term = terms[i]
@@ -212,10 +245,11 @@ async function encryptSearchTermsHelper(
       const pairs = flattenJson(term.value, prefix)
       const svEntries: Array<Record<string, unknown>> = []
 
-      for (const pair of pairs) {
+      for (const _pair of pairs) {
+        const selectorEncrypted = selectorsEncrypted[jsonIdx]
         svEntries.push({
           ...jsonEncrypted[jsonIdx],
-          s: pair.selector,
+          s: selectorEncrypted ? (selectorEncrypted as any).s : undefined,
         })
         jsonIdx++
       }
@@ -227,16 +261,16 @@ async function encryptSearchTermsHelper(
 
       if (term.value !== undefined) {
         // Path query with value
-        const selector = pathToSelector(term.path, prefix)
+        const selectorEncrypted = selectorsEncrypted[jsonIdx]
         results[i] = {
           ...jsonEncrypted[jsonIdx],
-          s: selector,
+          s: selectorEncrypted ? (selectorEncrypted as any).s : undefined,
         } as Encrypted
         jsonIdx++
       } else {
         // Path-only (no value comparison)
-        const selector = pathToSelector(term.path, prefix)
-        results[i] = { s: selector } as Encrypted
+        results[i] = selectorOnlyEncrypted[selectorOnlyIdx]
+        selectorOnlyIdx++
       }
     }
   }
@@ -270,7 +304,6 @@ export class SearchTermsOperation extends ProtectOperation<
           this.client,
           this.terms,
           metadata,
-          undefined,
         )
 
         return results
@@ -280,61 +313,9 @@ export class SearchTermsOperation extends ProtectOperation<
         message: error.message,
       }),
     )
-  }
-
-  public withLockContext(
-    lockContext: LockContext,
-  ): SearchTermsOperationWithLockContext {
-    return new SearchTermsOperationWithLockContext(this, lockContext)
   }
 
   public getOperation() {
     return { client: this.client, terms: this.terms }
-  }
-}
-
-export class SearchTermsOperationWithLockContext extends ProtectOperation<
-  EncryptedSearchTerm[]
-> {
-  private operation: SearchTermsOperation
-  private lockContext: LockContext
-
-  constructor(operation: SearchTermsOperation, lockContext: LockContext) {
-    super()
-    this.operation = operation
-    this.lockContext = lockContext
-  }
-
-  public async execute(): Promise<Result<EncryptedSearchTerm[], ProtectError>> {
-    return await withResult(
-      async () => {
-        const { client, terms } = this.operation.getOperation()
-
-        logger.debug('Creating search terms WITH lock context', {
-          termCount: terms.length,
-        })
-
-        const { metadata } = this.getAuditData()
-        const context = await this.lockContext.getLockContext()
-
-        if (context.failure) {
-          throw new Error(`[protect]: ${context.failure.message}`)
-        }
-
-        // Call helper with lock context
-        const results = await encryptSearchTermsHelper(
-          client,
-          terms,
-          metadata,
-          { context: context.data.context, ctsToken: context.data.ctsToken },
-        )
-
-        return results
-      },
-      (error) => ({
-        type: ProtectErrorTypes.EncryptionError,
-        message: error.message,
-      }),
-    )
   }
 }

@@ -319,7 +319,6 @@ export class ProtectClient {
    * Create search terms to use in a query searching encrypted data
    * Usage:
    *    await eqlClient.createSearchTerms(searchTerms)
-   *    await eqlClient.createSearchTerms(searchTerms).withLockContext(lockContext)
    */
   createSearchTerms(terms: SearchTerm[]): SearchTermsOperation {
     return new SearchTermsOperation(this.client, terms)
@@ -333,7 +332,7 @@ export class ProtectClient {
    *
    * @param plaintext - The value to encrypt for querying
    * @param opts - Options specifying the column, table, index type, and optional query operation
-   * @returns An EncryptQueryOperation that can be awaited or chained with withLockContext
+   * @returns An EncryptQueryOperation that can be awaited
    *
    * @example
    * ```typescript
@@ -359,7 +358,7 @@ export class ProtectClient {
    * JSON queries implicitly use searchableJson query type.
    *
    * @param terms - Array of query terms to encrypt
-   * @returns A BatchEncryptQueryOperation that can be awaited or chained with withLockContext
+   * @returns A BatchEncryptQueryOperation that can be awaited
    *
    * @example
    * ```typescript
@@ -418,7 +417,7 @@ export class ProtectClient {
    * providing explicit control over which index type and query operation to use for each term.
    *
    * @param terms - Array of query search terms with index type specifications
-   * @returns A QuerySearchTermsOperation that can be awaited or chained with withLockContext
+   * @returns A QuerySearchTermsOperation that can be awaited
    *
    * @example
    * ```typescript

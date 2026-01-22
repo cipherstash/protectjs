@@ -69,7 +69,8 @@ describe('encryptQuery batch - JSON path queries', () => {
     }
 
     expect(result.data).toHaveLength(1)
-    expect(result.data[0]).toHaveProperty('s', 'json_users/metadata/user/email')
+    // s should be an encrypted selector (string token)
+    expect((result.data[0] as any).s).toMatch(/^[0-9a-f]+$/)
   })
 
   it('should encrypt JSON path query without value (selector only)', async () => {
@@ -84,7 +85,7 @@ describe('encryptQuery batch - JSON path queries', () => {
     }
 
     expect(result.data).toHaveLength(1)
-    expect(result.data[0]).toEqual({ s: 'json_users/metadata/user/role' })
+    expect((result.data[0] as any).s).toMatch(/^[0-9a-f]+$/)
   })
 })
 
@@ -108,7 +109,8 @@ describe('encryptQuery batch - JSON containment queries', () => {
     expect(result.data[0]).toHaveProperty('sv')
     const sv = (result.data[0] as any).sv
     expect(sv).toHaveLength(1)
-    expect(sv[0]).toHaveProperty('s', 'json_users/metadata/role')
+    // s should be an encrypted selector (string token)
+    expect(sv[0].s).toMatch(/^[0-9a-f]+$/)
   })
 
   it('should encrypt JSON containedBy query', async () => {
@@ -280,42 +282,7 @@ describe('encryptQuery batch - auto-infer index type', () => {
   })
 })
 
-describe('encryptQuery batch - Lock context integration', () => {
-  it('should encrypt batch with lock context', async () => {
-    const userJwt = process.env.USER_JWT
 
-    if (!userJwt) {
-      console.log('Skipping lock context test - no USER_JWT provided')
-      return
-    }
-
-    const lc = new LockContext()
-    const lockContext = await lc.identify(userJwt)
-
-    if (lockContext.failure) {
-      throw new Error(`[protect]: ${lockContext.failure.message}`)
-    }
-
-    const terms: QueryTerm[] = [
-      {
-        value: 'test@example.com',
-        column: users.email,
-        table: users,
-        queryType: 'equality',
-      },
-    ]
-
-    const result = await protectClient
-      .encryptQuery(terms)
-      .withLockContext(lockContext.data)
-
-    if (result.failure) {
-      throw new Error(`[protect]: ${result.failure.message}`)
-    }
-
-    expect(result.data).toHaveLength(1)
-  })
-})
 
 describe('encryptQuery single-value - auto-infer index type', () => {
   it('should auto-infer index type for single value when not specified', async () => {
