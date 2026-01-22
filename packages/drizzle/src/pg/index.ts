@@ -23,6 +23,11 @@ export type EncryptedColumnConfig = {
    * Enable order and range index for sorting and range queries.
    */
   orderAndRange?: boolean
+  /**
+   * Enable searchable JSON index for JSON path and containment queries.
+   * Requires dataType to be 'json'.
+   */
+  searchableJson?: boolean
 }
 
 /**
