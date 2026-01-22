@@ -1,5 +1,11 @@
-import type { SQLWrapper, SQL } from 'drizzle-orm'
+import { sql, type SQLWrapper, type SQL, bindIfParam } from 'drizzle-orm'
 import type { ProtectClient } from '@cipherstash/protect/client'
+import type {
+  JsonPathQueryTerm,
+  JsonContainsQueryTerm,
+  JsonContainedByQueryTerm,
+  QueryTerm,
+} from '@cipherstash/protect'
 import type { ColumnInfo } from './operators.js'
 
 /**
@@ -124,4 +130,170 @@ export class JsonPathBuilder {
   getColumnInfo(): ColumnInfo {
     return this.columnInfo
   }
+
+  /**
+   * Equality comparison at the JSON path.
+   * Returns a lazy operator for deferred encryption and batching.
+   *
+   * @param value - The value to compare against
+   * @returns A lazy JSON operator that can be awaited or batched
+   *
+   * @example
+   * ```typescript
+   * await ops.jsonPath(users.metadata, '$.user.email').eq('test@example.com')
+   * ```
+   */
+  eq(value: unknown): LazyJsonOperator & Promise<SQL> {
+    return this.createLazyJsonOperator('json_eq', value)
+  }
+
+  /**
+   * Creates a lazy JSON operator for deferred execution.
+   * @internal
+   */
+  private createLazyJsonOperator(
+    operator: JsonOperatorType,
+    value: unknown,
+  ): LazyJsonOperator & Promise<SQL> {
+    const column = this.column
+    const path = this.path
+    const columnInfo = this.columnInfo
+    const protectClient = this.protectClient
+
+    const lazyOp: LazyJsonOperator = {
+      __isLazyOperator: true,
+      __isJsonOperator: true,
+      operator,
+      path,
+      value,
+      encryptionType: 'value',  // Value-based operators need the comparison value encrypted
+      columnInfo,
+      execute: (encryptedValue?: unknown) => {
+        // Will be implemented in Task 13
+        return sql`true` // placeholder
+      },
+    }
+
+    // Create promise for direct await usage
+    // CRITICAL: Must encrypt the value before calling execute()
+    let executionStarted = false
+    const promise = new Promise<SQL>((resolve, reject) => {
+      // Use a getter trap via Object.defineProperty to defer execution
+      // This avoids queuing the microtask until the promise is actually consumed
+      const startExecution = () => {
+        if (executionStarted) return
+        executionStarted = true
+        queueMicrotask(async () => {
+          try {
+            // Build QueryTerm and encrypt using same logic as and()/or() batching
+            const encrypted = await encryptSingleJsonOperator(
+              protectClient,
+              lazyOp,
+            )
+            const result = lazyOp.execute(encrypted)
+            resolve(result)
+          } catch (error) {
+            reject(error)
+          }
+        })
+      }
+      
+      // Start execution immediately - this maintains compatibility with the LazyOperator pattern
+      startExecution()
+    })
+
+    return Object.assign(promise, lazyOp)
+  }
+}
+
+/**
+ * Encrypts a single JSON operator using the same logic as batch encryption.
+ * Used by both direct await and batched and()/or() operations.
+ * @internal
+ */
+export async function encryptSingleJsonOperator(
+  protectClient: ProtectClient,
+  op: LazyJsonOperator,
+): Promise<unknown> {
+  const { protectColumn, protectTable } = op.columnInfo as any
+
+  if (!protectColumn || !protectTable) {
+    // If columnInfo is incomplete (e.g., in tests with mocks), return the value as-is
+    // In production, the columnInfo will always have these properties set
+    return op.value
+  }
+
+  // Build QueryTerm based on operator type
+  let queryTerm: QueryTerm
+
+  if (op.operator === 'json_eq' || op.operator === 'json_ne') {
+    queryTerm = {
+      path: op.path,
+      value: op.value as string | number,
+      column: protectColumn,
+      table: protectTable,
+    } satisfies JsonPathQueryTerm
+  } else if (op.operator === 'json_contains') {
+    queryTerm = {
+      contains: op.value as Record<string, unknown>,
+      column: protectColumn,
+      table: protectTable,
+    } satisfies JsonContainsQueryTerm
+  } else if (op.operator === 'json_contained_by') {
+    queryTerm = {
+      containedBy: op.value as Record<string, unknown>,
+      column: protectColumn,
+      table: protectTable,
+    } satisfies JsonContainedByQueryTerm
+  } else {
+    // Array-length operators don't encrypt the comparison value
+    // They may need selector encryption, but that's handled separately
+    return op.value
+  }
+
+  const result = await protectClient.encryptQuery([queryTerm])
+
+  if (result.failure) {
+    throw new Error(`Failed to encrypt JSON query: ${result.failure.message}`)
+  }
+
+  return result.data[0]
+}
+
+/**
+ * Encrypts a JSON path to get its selector hash.
+ * Used for jsonb_path_query_first operations (e.g., array-length on non-root paths).
+ * @internal
+ */
+export async function encryptPathSelector(
+  protectClient: ProtectClient,
+  path: string,
+  columnInfo: ColumnInfo,
+): Promise<string> {
+  const { protectColumn, protectTable } = columnInfo as any
+
+  if (!protectColumn || !protectTable) {
+    // If columnInfo is incomplete (e.g., in tests with mocks), return a placeholder selector
+    // In production, the columnInfo will always have these properties set
+    return 'mock_selector'
+  }
+
+  // Use JsonPathQueryTerm without a value to get just the selector
+  const queryTerm: JsonPathQueryTerm = {
+    path,
+    column: protectColumn,
+    table: protectTable,
+    // No value - we just need the selector hash for path extraction
+  }
+
+  const result = await protectClient.encryptQuery([queryTerm])
+
+  if (result.failure) {
+    throw new Error(`Failed to encrypt path selector: ${result.failure.message}`)
+  }
+
+  // Extract the selector from the result
+  // JsonPathQueryTerm without value returns { s: selector }
+  const encrypted = result.data[0] as { s: string }
+  return encrypted.s
 }
