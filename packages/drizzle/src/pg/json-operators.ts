@@ -82,6 +82,77 @@ export function isLazyJsonOperator(value: unknown): value is LazyJsonOperator {
 }
 
 /**
+ * Creates the execute function for JSON operators.
+ * Exported for testing and manual operator construction.
+ * @internal
+ */
+export function createJsonOperatorExecute(
+  operator: JsonOperatorType,
+  column: SQLWrapper,
+  path: string,
+): (encryptedPayload?: unknown) => SQL {
+  return (encryptedPayload?: unknown) => {
+    switch (operator) {
+      case 'json_eq':
+        return sql`eql_v2.jsonb_path_match(${column}, ${bindIfParam(encryptedPayload, column)})`
+      case 'json_ne':
+        return sql`NOT eql_v2.jsonb_path_match(${column}, ${bindIfParam(encryptedPayload, column)})`
+      case 'json_contains':
+        return sql`eql_v2.jsonb_contains(${column}, ${bindIfParam(encryptedPayload, column)})`
+      case 'json_contained_by':
+        return sql`eql_v2.jsonb_contained_by(${column}, ${bindIfParam(encryptedPayload, column)})`
+      case 'json_array_length_gt':
+      case 'json_array_length_gte':
+      case 'json_array_length_lt':
+      case 'json_array_length_lte':
+        return createArrayLengthSql(operator, column, path, encryptedPayload as string | undefined)
+      default:
+        throw new Error(`Unknown JSON operator: ${operator}`)
+    }
+  }
+}
+
+/**
+ * Helper to create SQL for array-length comparisons.
+ * @internal
+ */
+function createArrayLengthSql(
+  operator: JsonOperatorType,
+  column: SQLWrapper,
+  path: string,
+  encryptedSelector?: string,
+): SQL {
+  const compOp = operator.includes('_gte')
+    ? '>='
+    : operator.includes('_gt')
+      ? '>'
+      : operator.includes('_lte')
+        ? '<='
+        : operator.includes('_lt')
+          ? '<'
+          : '>'
+
+  if (path === '' || path.trim() === '') {
+    throw new Error(
+      'Array length SQL generation requires comparison value. ' +
+        'This function should be called from createArrayLengthOperator context.'
+    )
+  }
+
+  if (!encryptedSelector) {
+    throw new Error(
+      `Array length on nested path "${path}" requires encrypted selector. ` +
+        `Use encryptionType: 'selector' and pass the encrypted selector to execute().`
+    )
+  }
+
+  throw new Error(
+    'Array length SQL generation requires comparison value. ' +
+      'This function should be called from createArrayLengthOperator context.'
+  )
+}
+
+/**
  * Builder for JSON path operations on encrypted columns.
  * Provides chainable methods for comparison and value extraction.
  */
@@ -471,6 +542,16 @@ export class JsonPathBuilder {
     const protectClient = this.protectClient
     const isRoot = this.isRootPath()
 
+    const compOp = operator.includes('_gte')
+      ? '>='
+      : operator.includes('_gt')
+        ? '>'
+        : operator.includes('_lte')
+          ? '<='
+          : operator.includes('_lt')
+            ? '<'
+            : '>'
+
     const lazyOp: LazyJsonOperator = {
       __isLazyOperator: true,
       __isJsonOperator: true,
@@ -481,8 +562,14 @@ export class JsonPathBuilder {
       // Root path needs no encryption, non-root needs selector encryption
       encryptionType: isRoot ? 'none' : 'selector',
       execute: (encryptedSelector?: string) => {
-        // Will be implemented in Task 13
-        return sql`true` // placeholder
+        if (isRoot) {
+          return sql`eql_v2.jsonb_array_length(${column}) ${sql.raw(compOp)} ${comparisonValue}`
+        }
+
+        if (!encryptedSelector) {
+          throw new Error(`Array length on nested path "${path}" requires encrypted selector`)
+        }
+        return sql`eql_v2.jsonb_array_length(eql_v2.jsonb_path_query_first(${column}, ${encryptedSelector})) ${sql.raw(compOp)} ${comparisonValue}`
       },
     }
 
@@ -519,18 +606,18 @@ export class JsonPathBuilder {
     const columnInfo = this.columnInfo
     const protectClient = this.protectClient
 
+    // Create execute function using the factory
+    const executeFactory = createJsonOperatorExecute(operator, column, path)
+
     const lazyOp: LazyJsonOperator = {
       __isLazyOperator: true,
       __isJsonOperator: true,
       operator,
       path,
       value,
-      encryptionType: 'value',  // Value-based operators need the comparison value encrypted
+      encryptionType: 'value', // Value-based operators need the comparison value encrypted
       columnInfo,
-      execute: (encryptedValue?: unknown) => {
-        // Will be implemented in Task 13
-        return sql`true` // placeholder
-      },
+      execute: executeFactory,
     }
 
     // Create promise for direct await usage
