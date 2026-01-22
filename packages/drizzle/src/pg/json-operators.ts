@@ -131,13 +131,6 @@ export class JsonPathBuilder {
     return this.columnInfo
   }
 
-  /**
-   * Check if this builder represents the root path.
-   * @internal
-   */
-  private isRootPath(): boolean {
-    return this.path === ''
-  }
 
   /**
    * Equality comparison at the JSON path.
@@ -312,6 +305,72 @@ export class JsonPathBuilder {
     }
 
     return sql`eql_v2.jsonb_path_query_first(${this.column}, ${selector})`
+  }
+
+  /**
+   * Expand array elements to rows.
+   * Returns a Promise resolving to SQL expression using jsonb_array_elements.
+   *
+   * For root path: eql_v2.jsonb_array_elements(column)
+   * For nested path: eql_v2.jsonb_array_elements(eql_v2.jsonb_path_query(column, selector))
+   *
+   * @returns Promise resolving to SQL expression for array expansion
+   */
+  async elements(): Promise<SQL> {
+    if (this.isRootPath()) {
+      return sql`eql_v2.jsonb_array_elements(${this.column})`
+    }
+
+    const selector = await encryptPathSelector(this.protectClient, this.path, this.columnInfo)
+    return sql`eql_v2.jsonb_array_elements(eql_v2.jsonb_path_query(${this.column}, ${selector}))`
+  }
+
+  /**
+   * Expand array elements to text rows.
+   */
+  async elementsText(): Promise<SQL> {
+    if (this.isRootPath()) {
+      return sql`eql_v2.jsonb_array_elements_text(${this.column})`
+    }
+
+    const selector = await encryptPathSelector(this.protectClient, this.path, this.columnInfo)
+    return sql`eql_v2.jsonb_array_elements_text(eql_v2.jsonb_path_query(${this.column}, ${selector}))`
+  }
+
+  /**
+   * Sync version of elements() for root paths or with pre-encrypted selector.
+   */
+  elementsSync(selector?: string): SQL {
+    if (this.isRootPath()) {
+      return sql`eql_v2.jsonb_array_elements(${this.column})`
+    }
+
+    if (!selector) {
+      throw new Error(
+        `elementsSync() requires a selector for non-root paths. Use elements() (async) instead, ` +
+        `or provide a pre-encrypted selector.`
+      )
+    }
+
+    return sql`eql_v2.jsonb_array_elements(eql_v2.jsonb_path_query(${this.column}, ${selector}))`
+  }
+
+  /**
+   * Sync version of elementsText() for root paths or with pre-encrypted selector.
+   */
+  elementsTextSync(selector?: string): SQL {
+    if (this.isRootPath()) {
+      return sql`eql_v2.jsonb_array_elements_text(${this.column})`
+    }
+
+    if (!selector) {
+      throw new Error(
+        `elementsTextSync() requires a selector for non-root paths. Use elementsText() (async) instead, ` +
+        `or provide a pre-encrypted selector.`
+      )
+    }
+
+    return sql`eql_v2.jsonb_array_elements_text(eql_v2.jsonb_path_query(${this.column}, ${selector}))`
   }
 
   /**
