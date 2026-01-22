@@ -264,6 +264,190 @@ export class JsonPathBuilder {
   }
 
   /**
+   * Extract the value at this JSON path.
+   * Returns a Promise resolving to SQL expression for use in SELECT clauses.
+   *
+   * For root path: returns the column directly
+   * For nested path: encrypts path to selector and uses eql_v2.jsonb_path_query_first
+   *
+   * @returns Promise resolving to SQL expression for the value at the path
+   *
+   * @example
+   * ```typescript
+   * db.select({
+   *   email: await ops.jsonPath(users.metadata, '$.user.email').get()
+   * }).from(users)
+   * ```
+   */
+  async get(): Promise<SQL> {
+    if (this.isRootPath()) {
+      // Root path: return column directly
+      return sql`${this.column}`
+    }
+
+    // Non-root: encrypt path to get selector, then use jsonb_path_query_first
+    const selector = await encryptPathSelector(this.protectClient, this.path, this.columnInfo)
+    return sql`eql_v2.jsonb_path_query_first(${this.column}, ${selector})`
+  }
+
+  /**
+   * Sync version of get() for use with pre-encrypted selectors.
+   * For root path, returns the column directly.
+   * For non-root paths, use get() (async) instead.
+   *
+   * @throws Error if called on non-root path without selector
+   * @param selector - Optional pre-encrypted selector for non-root paths
+   * @returns SQL expression for the value at the path
+   */
+  getSync(selector?: string): SQL {
+    if (this.isRootPath()) {
+      return sql`${this.column}`
+    }
+
+    if (!selector) {
+      throw new Error(
+        `getSync() requires a selector for non-root paths. Use get() (async) instead, ` +
+        `or provide a pre-encrypted selector.`
+      )
+    }
+
+    return sql`eql_v2.jsonb_path_query_first(${this.column}, ${selector})`
+  }
+
+  /**
+   * Get the length of the array at this JSON path.
+   * Returns a new JsonPathBuilder in "array-length mode" for comparison chaining.
+   *
+   * For root path: eql_v2.jsonb_array_length(column)
+   * For nested path: eql_v2.jsonb_array_length(eql_v2.jsonb_path_query_first(column, selector))
+   *
+   * @returns A new JsonPathBuilder for array length comparisons
+   *
+   * @example
+   * ```typescript
+   * // Root array length
+   * await ops.jsonPath(users.tags, '$').arrayLength().gt(5)
+   *
+   * // Nested array length
+   * await ops.jsonPath(users.metadata, '$.items').arrayLength().gt(5)
+   * ```
+   */
+  arrayLength(): JsonPathBuilder {
+    // Return a new builder in array-length mode
+    // The original path is preserved (NOT modified with .__length__)
+    // The mode flag changes how gt/gte/lt/lte behave
+    return new JsonPathBuilder(
+      this.column,
+      this.path,  // Keep original path
+      this.columnInfo,
+      this.protectClient,
+      true,  // isArrayLengthMode = true
+    )
+  }
+
+  /**
+   * Greater than comparison.
+   * Behavior depends on mode:
+   * - In array-length mode: compares array length against numeric value
+   * - Otherwise: throws error (use eq() for value comparisons)
+   */
+  gt(value: number): LazyJsonOperator & Promise<SQL> {
+    if (!this.isArrayLengthMode) {
+      throw new Error('gt() is only available after arrayLength(). Use eq() for value comparisons.')
+    }
+    return this.createArrayLengthOperator('json_array_length_gt', value)
+  }
+
+  /**
+   * Greater than or equal comparison (for arrayLength chaining).
+   */
+  gte(value: number): LazyJsonOperator & Promise<SQL> {
+    if (!this.isArrayLengthMode) {
+      throw new Error('gte() is only available after arrayLength(). Use eq() for value comparisons.')
+    }
+    return this.createArrayLengthOperator('json_array_length_gte', value)
+  }
+
+  /**
+   * Less than comparison (for arrayLength chaining).
+   */
+  lt(value: number): LazyJsonOperator & Promise<SQL> {
+    if (!this.isArrayLengthMode) {
+      throw new Error('lt() is only available after arrayLength(). Use eq() for value comparisons.')
+    }
+    return this.createArrayLengthOperator('json_array_length_lt', value)
+  }
+
+  /**
+   * Less than or equal comparison (for arrayLength chaining).
+   */
+  lte(value: number): LazyJsonOperator & Promise<SQL> {
+    if (!this.isArrayLengthMode) {
+      throw new Error('lte() is only available after arrayLength(). Use eq() for value comparisons.')
+    }
+    return this.createArrayLengthOperator('json_array_length_lte', value)
+  }
+
+  /**
+   * Helper to determine if path is root (empty string or just whitespace)
+   */
+  private isRootPath(): boolean {
+    return this.path === '' || this.path.trim() === ''
+  }
+
+  /**
+   * Creates a lazy JSON operator for array-length comparisons.
+   * These have different encryption semantics than value-based operators:
+   * - Root path: no encryption needed
+   * - Non-root path: path selector needs encryption (NOT the comparison value)
+   * @internal
+   */
+  private createArrayLengthOperator(
+    operator: JsonOperatorType,
+    comparisonValue: number,
+  ): LazyJsonOperator & Promise<SQL> {
+    const column = this.column
+    const path = this.path
+    const columnInfo = this.columnInfo
+    const protectClient = this.protectClient
+    const isRoot = this.isRootPath()
+
+    const lazyOp: LazyJsonOperator = {
+      __isLazyOperator: true,
+      __isJsonOperator: true,
+      operator,
+      path,
+      comparisonValue,
+      columnInfo,
+      // Root path needs no encryption, non-root needs selector encryption
+      encryptionType: isRoot ? 'none' : 'selector',
+      execute: (encryptedSelector?: string) => {
+        // Will be implemented in Task 13
+        return sql`true` // placeholder
+      },
+    }
+
+    // Create promise for direct await usage
+    const promise = new Promise<SQL>((resolve, reject) => {
+      queueMicrotask(async () => {
+        try {
+          let selector: string | undefined
+          if (!isRoot) {
+            // Encrypt the path to get selector hash
+            selector = await encryptPathSelector(protectClient, path, columnInfo)
+          }
+          const result = lazyOp.execute(selector)
+          resolve(result)
+        } catch (error) {
+          reject(error)
+        }
+      })
+    })
+
+    return Object.assign(promise, lazyOp)
+  }
+
+  /**
    * Creates a lazy JSON operator for deferred execution.
    * @internal
    */

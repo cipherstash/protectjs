@@ -258,6 +258,61 @@ describe('JsonPathBuilder.eq()', () => {
   })
 })
 
+describe('JsonPathBuilder array methods', () => {
+  const rootBuilder = new JsonPathBuilder(
+    { name: 'tags' } as any,
+    '',  // root path - column IS the array
+    { columnName: 'tags', config: { searchableJson: true } } as any,
+    {} as any,
+  )
+
+  const nestedBuilder = new JsonPathBuilder(
+    { name: 'metadata' } as any,
+    'items',  // nested path
+    { columnName: 'metadata', config: { searchableJson: true } } as any,
+    {} as any,
+  )
+
+  it('elements() on root should return Promise resolving to SQL', async () => {
+    const sqlExpr = await rootBuilder.elements()
+    expect(sqlExpr).toBeDefined()
+    expect(typeof sqlExpr.getSQL).toBe('function')
+  })
+
+  it('elementsSync() on root should return SQL directly', () => {
+    const sqlExpr = rootBuilder.elementsSync()
+    expect(sqlExpr).toBeDefined()
+    expect(typeof sqlExpr.getSQL).toBe('function')
+  })
+
+  it('elementsSync() on nested path without selector should throw', () => {
+    expect(() => nestedBuilder.elementsSync()).toThrow(/selector/)
+  })
+
+  it('elementsSync() on nested path with selector should return SQL', () => {
+    const selector = 'pre_encrypted_selector_hash'
+    const sqlExpr = nestedBuilder.elementsSync(selector)
+    expect(sqlExpr).toBeDefined()
+    expect(typeof sqlExpr.getSQL).toBe('function')
+  })
+
+  it('elementsText() on root should return Promise resolving to SQL', async () => {
+    const sqlExpr = await rootBuilder.elementsText()
+    expect(sqlExpr).toBeDefined()
+    expect(typeof sqlExpr.getSQL).toBe('function')
+  })
+
+  it('elementsTextSync() on root should return SQL directly', () => {
+    const sqlExpr = rootBuilder.elementsTextSync()
+    expect(sqlExpr).toBeDefined()
+    expect(typeof sqlExpr.getSQL).toBe('function')
+  })
+
+  it('elementsTextSync() on nested path without selector should throw', () => {
+    expect(() => nestedBuilder.elementsTextSync()).toThrow(/selector/)
+  })
+})
+
 describe('JsonPathBuilder comparison methods', () => {
   const builder = new JsonPathBuilder(
     {} as any,
@@ -338,12 +393,10 @@ describe('createProtectOperators.jsonPath()', () => {
       }),
     })
 
-    const schema = extractProtectSchema(testTable)
     const { createProtectOperators } = await import('../src/pg/operators.js')
-    const { protect } = await import('@cipherstash/protect')
+    const protectClientMock = {} as any
 
-    const protectClient = await protect({ schemas: [schema] })
-    const ops = createProtectOperators(protectClient)
+    const ops = createProtectOperators(protectClientMock)
 
     const builder = ops.jsonPath(testTable.metadata, '$.user.email')
     expect(builder).toBeInstanceOf(JsonPathBuilder)
@@ -357,12 +410,10 @@ describe('createProtectOperators.jsonPath()', () => {
       }),
     })
 
-    const schema = extractProtectSchema(testTable)
     const { createProtectOperators } = await import('../src/pg/operators.js')
-    const { protect } = await import('@cipherstash/protect')
+    const protectClientMock = {} as any
 
-    const protectClient = await protect({ schemas: [schema] })
-    const ops = createProtectOperators(protectClient)
+    const ops = createProtectOperators(protectClientMock)
 
     expect(() => ops.jsonPath(testTable.profile, '$.name')).toThrow(
       /searchableJson.*required/i
@@ -378,12 +429,10 @@ describe('createProtectOperators.jsonPath()', () => {
       }),
     })
 
-    const schema = extractProtectSchema(testTable)
     const { createProtectOperators } = await import('../src/pg/operators.js')
-    const { protect } = await import('@cipherstash/protect')
+    const protectClientMock = {} as any
 
-    const protectClient = await protect({ schemas: [schema] })
-    const ops = createProtectOperators(protectClient)
+    const ops = createProtectOperators(protectClientMock)
 
     expect(() => ops.jsonPath(testTable.data, '$.path')).toThrow(
       /searchableJson.*dataType.*json/i
