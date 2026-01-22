@@ -38,6 +38,7 @@ import type { PgTable } from 'drizzle-orm/pg-core'
 import type { EncryptedColumnConfig } from './index.js'
 import { getEncryptedColumnConfig } from './index.js'
 import { extractProtectSchema } from './schema-extraction.js'
+import { JsonPathBuilder, normalizePath } from './json-operators.js'
 
 // ============================================================================
 // Type Definitions and Type Guards
@@ -1053,6 +1054,27 @@ export function createProtectOperators(protectClient: ProtectClient): {
   arrayContains: typeof arrayContains
   arrayContained: typeof arrayContained
   arrayOverlaps: typeof arrayOverlaps
+  /**
+   * Create a JSON path builder for querying encrypted JSON columns.
+   * Requires the column to have `searchableJson: true` configured.
+   *
+   * @param column - The encrypted JSON column
+   * @param path - The JSON path (JSONPath or dot notation)
+   * @returns A JsonPathBuilder for chaining operations
+   *
+   * @example
+   * ```typescript
+   * // Equality at path
+   * await ops.jsonPath(users.metadata, '$.user.email').eq('test@example.com')
+   *
+   * // Containment check
+   * await ops.jsonPath(users.metadata, '$').contains({ role: 'admin' })
+   *
+   * // Array length comparison
+   * await ops.jsonPath(users.metadata, '$.items').arrayLength().gt(5)
+   * ```
+   */
+  jsonPath: (column: SQLWrapper, path: string) => JsonPathBuilder
 } {
   // Create a cache for protect tables keyed by table name
   const protectTableCache = new Map<string, ProtectTable<ProtectTableColumn>>()
@@ -1724,6 +1746,42 @@ export function createProtectOperators(protectClient: ProtectClient): {
     return or(...allConditions) ?? sql`false`
   }
 
+  /**
+   * JSON path builder for searchable JSON columns
+   */
+  const protectJsonPath = (column: SQLWrapper, path: string): JsonPathBuilder => {
+    const columnInfo = getColumnInfo(
+      column,
+      defaultProtectTable,
+      protectTableCache,
+    )
+
+    if (!columnInfo.config?.searchableJson) {
+      throw new ProtectConfigError(
+        `searchableJson is required for jsonPath() on column "${columnInfo.columnName}". ` +
+        `Add { searchableJson: true } to the encryptedType() config.`,
+        { columnName: columnInfo.columnName, tableName: columnInfo.tableName }
+      )
+    }
+
+    // Validate that dataType is 'json' when searchableJson is enabled
+    if (columnInfo.config.dataType !== 'json') {
+      throw new ProtectConfigError(
+        `searchableJson requires dataType: 'json' on column "${columnInfo.columnName}". ` +
+        `Add { dataType: 'json', searchableJson: true } to the encryptedType() config.`,
+        { columnName: columnInfo.columnName, tableName: columnInfo.tableName }
+      )
+    }
+
+    const normalizedPath = normalizePath(path)
+    return new JsonPathBuilder(
+      column,
+      normalizedPath,
+      columnInfo,
+      protectClient,
+    )
+  }
+
   return {
     // Comparison operators
     eq: protectEq,
@@ -1766,5 +1824,8 @@ export function createProtectOperators(protectClient: ProtectClient): {
     arrayContains,
     arrayContained,
     arrayOverlaps,
+
+    // JSON path builder
+    jsonPath: protectJsonPath,
   }
 }
