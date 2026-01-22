@@ -35,9 +35,9 @@ describe('encryptQuery batch overload', () => {
         value: 'test@example.com',
         column: users.email,
         table: users,
-        indexType: 'unique',
+        queryType: 'equality',
       },
-      { value: 100, column: users.score, table: users, indexType: 'ore' },
+      { value: 100, column: users.score, table: users, queryType: 'orderAndRange' },
     ]
 
     const result = await protectClient.encryptQuery(terms)
@@ -138,7 +138,7 @@ describe('encryptQuery batch - mixed term types', () => {
         value: 'test@example.com',
         column: users.email,
         table: users,
-        indexType: 'unique',
+        queryType: 'equality',
       },
       {
         path: 'user.email',
@@ -176,7 +176,7 @@ describe('encryptQuery batch - return type formatting', () => {
         value: 'test@example.com',
         column: users.email,
         table: users,
-        indexType: 'unique',
+        queryType: 'equality',
         returnType: 'composite-literal',
       },
     ]
@@ -199,7 +199,7 @@ describe('encryptQuery batch - readonly/as const support', () => {
         value: 'test@example.com',
         column: users.email,
         table: users,
-        indexType: 'unique' as const,
+        queryType: 'equality' as const,
       },
     ] as const
 
@@ -237,7 +237,7 @@ describe('encryptQuery batch - auto-infer index type', () => {
         value: 'test@example.com',
         column: users.email,
         table: users,
-        indexType: 'unique',
+        queryType: 'equality',
       },
     ])
 
@@ -256,12 +256,12 @@ describe('encryptQuery batch - auto-infer index type', () => {
         value: 'explicit@example.com',
         column: users.email,
         table: users,
-        indexType: 'unique',
+        queryType: 'equality',
       },
       // Auto-infer indexType
       { value: 'auto@example.com', column: users.email, table: users },
       // Another explicit indexType
-      { value: 100, column: users.score, table: users, indexType: 'ore' },
+      { value: 100, column: users.score, table: users, queryType: 'orderAndRange' },
     ])
 
     if (result.failure) {
@@ -301,7 +301,7 @@ describe('encryptQuery batch - Lock context integration', () => {
         value: 'test@example.com',
         column: users.email,
         table: users,
-        indexType: 'unique',
+        queryType: 'equality',
       },
     ]
 
@@ -339,7 +339,7 @@ describe('encryptQuery single-value - auto-infer index type', () => {
     const result = await protectClient.encryptQuery('test@example.com', {
       column: users.email,
       table: users,
-      indexType: 'unique',
+      queryType: 'equality',
     })
 
     if (result.failure) {

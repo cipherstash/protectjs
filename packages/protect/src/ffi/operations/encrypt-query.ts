@@ -17,17 +17,18 @@ import type {
   Client,
   EncryptQueryOptions,
   Encrypted,
-  IndexTypeName,
+  QueryTypeName,
   QueryOpName,
 } from '../../types'
+import { queryTypeToFfi } from '../../types'
 import { noClientError } from '../index'
 import { ProtectOperation } from './base-operation'
 
 /**
  * @internal
  * Operation for encrypting a single query term.
- * When indexType is provided, uses explicit index type control via ffiEncryptQuery.
- * When indexType is omitted, auto-infers from column config via encryptBulk.
+ * When queryType is provided, uses explicit query type control via ffiEncryptQuery.
+ * When queryType is omitted, auto-infers from column config via encryptBulk.
  * See {@link ProtectClient.encryptQuery} for the public interface and documentation.
  */
 export class EncryptQueryOperation extends ProtectOperation<Encrypted> {
@@ -35,7 +36,7 @@ export class EncryptQueryOperation extends ProtectOperation<Encrypted> {
   private plaintext: JsPlaintext | null
   private column: ProtectColumn | ProtectValue
   private table: ProtectTable<ProtectTableColumn>
-  private indexType?: IndexTypeName
+  private queryType?: QueryTypeName
   private queryOp?: QueryOpName
 
   constructor(
@@ -48,7 +49,7 @@ export class EncryptQueryOperation extends ProtectOperation<Encrypted> {
     this.plaintext = plaintext
     this.column = opts.column
     this.table = opts.table
-    this.indexType = opts.indexType
+    this.queryType = opts.queryType
     this.queryOp = opts.queryOp
   }
 
@@ -62,7 +63,7 @@ export class EncryptQueryOperation extends ProtectOperation<Encrypted> {
     logger.debug('Encrypting query WITHOUT a lock context', {
       column: this.column.getName(),
       table: this.table.tableName,
-      indexType: this.indexType,
+      queryType: this.queryType,
       queryOp: this.queryOp,
     })
 
@@ -78,19 +79,19 @@ export class EncryptQueryOperation extends ProtectOperation<Encrypted> {
 
         const { metadata } = this.getAuditData()
 
-        // Use explicit index type if provided, otherwise auto-infer via encryptBulk
-        if (this.indexType !== undefined) {
+        // Use explicit query type if provided, otherwise auto-infer via encryptBulk
+        if (this.queryType !== undefined) {
           return await ffiEncryptQuery(this.client, {
             plaintext: this.plaintext,
             column: this.column.getName(),
             table: this.table.tableName,
-            indexType: this.indexType,
+            indexType: queryTypeToFfi[this.queryType],
             queryOp: this.queryOp,
             unverifiedContext: metadata,
           })
         }
 
-        // Auto-infer index type via encryptBulk
+        // Auto-infer query type via encryptBulk
         const results = await encryptBulk(this.client, {
           plaintexts: [
             {
@@ -115,7 +116,7 @@ export class EncryptQueryOperation extends ProtectOperation<Encrypted> {
     plaintext: JsPlaintext | null
     column: ProtectColumn | ProtectValue
     table: ProtectTable<ProtectTableColumn>
-    indexType?: IndexTypeName
+    queryType?: QueryTypeName
     queryOp?: QueryOpName
   } {
     return {
@@ -123,7 +124,7 @@ export class EncryptQueryOperation extends ProtectOperation<Encrypted> {
       plaintext: this.plaintext,
       column: this.column,
       table: this.table,
-      indexType: this.indexType,
+      queryType: this.queryType,
       queryOp: this.queryOp,
     }
   }
@@ -142,13 +143,13 @@ export class EncryptQueryOperationWithLockContext extends ProtectOperation<Encry
   public async execute(): Promise<Result<Encrypted, ProtectError>> {
     return await withResult(
       async () => {
-        const { client, plaintext, column, table, indexType, queryOp } =
+        const { client, plaintext, column, table, queryType, queryOp } =
           this.operation.getOperation()
 
         logger.debug('Encrypting query WITH a lock context', {
           column: column.getName(),
           table: table.tableName,
-          indexType,
+          queryType,
           queryOp,
         })
 
@@ -167,13 +168,13 @@ export class EncryptQueryOperationWithLockContext extends ProtectOperation<Encry
           throw new Error(`[protect]: ${context.failure.message}`)
         }
 
-        // Use explicit index type if provided, otherwise auto-infer via encryptBulk
-        if (indexType !== undefined) {
+        // Use explicit query type if provided, otherwise auto-infer via encryptBulk
+        if (queryType !== undefined) {
           return await ffiEncryptQuery(client, {
             plaintext,
             column: column.getName(),
             table: table.tableName,
-            indexType,
+            indexType: queryTypeToFfi[queryType],
             queryOp,
             lockContext: context.data.context,
             serviceToken: context.data.ctsToken,
@@ -181,7 +182,7 @@ export class EncryptQueryOperationWithLockContext extends ProtectOperation<Encry
           })
         }
 
-        // Auto-infer index type via encryptBulk with lock context
+        // Auto-infer query type via encryptBulk with lock context
         const results = await encryptBulk(client, {
           plaintexts: [
             {

@@ -157,9 +157,12 @@ export type {
   JsonContainsQueryTerm,
   JsonContainedByQueryTerm,
   // Query option types (used in ScalarQueryTerm)
-  IndexTypeName,
+  QueryTypeName,
   QueryOpName,
 } from './types'
+
+// Export queryTypes constant for explicit query type selection
+export { queryTypes } from './types'
 
 // Export type guards
 export {

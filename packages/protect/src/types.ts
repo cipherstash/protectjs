@@ -7,18 +7,54 @@ import type {
 export type { JsPlaintext } from '@cipherstash/protect-ffi'
 
 /**
- * Index type for query encryption.
+ * Query type for query encryption operations.
+ * Matches the schema builder methods: .orderAndRange(), .freeTextSearch(), .equality(), .searchableJson()
  *
- * - `'ore'`: Order-Revealing Encryption for range queries (<, >, BETWEEN)
+ * - `'orderAndRange'`: Order-Revealing Encryption for range queries (<, >, BETWEEN)
  *   {@link https://cipherstash.com/docs/platform/searchable-encryption/supported-queries/range | Range Queries}
- * - `'match'`: Fuzzy/substring search
+ * - `'freeTextSearch'`: Fuzzy/substring search
  *   {@link https://cipherstash.com/docs/platform/searchable-encryption/supported-queries/match | Match Queries}
- * - `'unique'`: Exact equality matching
+ * - `'equality'`: Exact equality matching
  *   {@link https://cipherstash.com/docs/platform/searchable-encryption/supported-queries/exact | Exact Queries}
- * - `'ste_vec'`: Structured Text Encryption Vector for JSON path/containment queries
+ * - `'searchableJson'`: Structured Text Encryption Vector for JSON path/containment queries
  *   {@link https://cipherstash.com/docs/platform/searchable-encryption/supported-queries/json | JSON Queries}
  */
-export type IndexTypeName = 'ore' | 'match' | 'unique' | 'ste_vec'
+export type QueryTypeName = 'orderAndRange' | 'freeTextSearch' | 'equality' | 'searchableJson'
+
+/**
+ * Internal FFI index type names.
+ * @internal
+ */
+export type FfiIndexTypeName = 'ore' | 'match' | 'unique' | 'ste_vec'
+
+/**
+ * Query type constants for use with encryptQuery().
+ *
+ * @example
+ * import { queryTypes } from '@cipherstash/protect'
+ * await protectClient.encryptQuery('value', {
+ *   column: users.email,
+ *   table: users,
+ *   queryType: queryTypes.freeTextSearch,
+ * })
+ */
+export const queryTypes = {
+  orderAndRange: 'orderAndRange',
+  freeTextSearch: 'freeTextSearch',
+  equality: 'equality',
+  searchableJson: 'searchableJson',
+} as const satisfies Record<string, QueryTypeName>
+
+/**
+ * Maps user-friendly query type names to FFI index type names.
+ * @internal
+ */
+export const queryTypeToFfi: Record<QueryTypeName, FfiIndexTypeName> = {
+  orderAndRange: 'ore',
+  freeTextSearch: 'match',
+  equality: 'unique',
+  searchableJson: 'ste_vec',
+}
 
 /**
  * Query operation type for ste_vec index.
@@ -78,16 +114,16 @@ export type SearchTerm =
 /**
  * Options for encrypting a query term with encryptQuery().
  *
- * When indexType is omitted, the index type is auto-inferred from the column configuration.
- * When indexType is provided, it explicitly controls which index to use.
+ * When queryType is omitted, the query type is auto-inferred from the column configuration.
+ * When queryType is provided, it explicitly controls which index to use.
  */
 export type EncryptQueryOptions = {
   /** The column definition from the schema */
   column: ProtectColumn | ProtectValue
   /** The table definition from the schema */
   table: ProtectTable<ProtectTableColumn>
-  /** Which index type to use for the query (optional - auto-inferred if omitted) */
-  indexType?: IndexTypeName
+  /** Which query type to use for the query (optional - auto-inferred if omitted) */
+  queryType?: QueryTypeName
   /** Query operation (defaults to 'default') */
   queryOp?: QueryOpName
 }
@@ -103,8 +139,8 @@ export type QuerySearchTerm = {
   column: ProtectColumn | ProtectValue
   /** The table definition */
   table: ProtectTable<ProtectTableColumn>
-  /** Which index type to use */
-  indexType: IndexTypeName
+  /** Which query type to use */
+  queryType: QueryTypeName
   /** Query operation (optional, defaults to 'default') */
   queryOp?: QueryOpName
   /** Return format for the encrypted result */
@@ -135,41 +171,41 @@ export type JsonQueryTermBase = {
 }
 
 /**
- * Scalar query term for standard column queries (unique, ore, match indexes).
+ * Scalar query term for standard column queries (equality, orderAndRange, freeTextSearch indexes).
  *
- * When indexType is omitted, the index type is auto-inferred from the column configuration.
- * When indexType is provided, it explicitly controls which index to use.
+ * When queryType is omitted, the query type is auto-inferred from the column configuration.
+ * When queryType is provided, it explicitly controls which index to use.
  *
  * @example
  * ```typescript
- * // Auto-infer index type from column config
+ * // Auto-infer query type from column config
  * const term: ScalarQueryTerm = {
  *   value: 'admin@example.com',
  *   column: users.email,
  *   table: users,
  * }
  *
- * // Explicit index type control
+ * // Explicit query type control
  * const term: ScalarQueryTerm = {
  *   value: 'admin@example.com',
  *   column: users.email,
  *   table: users,
- *   indexType: 'unique',
+ *   queryType: 'equality',
  * }
  * ```
  */
 export type ScalarQueryTerm = ScalarQueryTermBase & {
   /** The value to encrypt for querying */
   value: FfiJsPlaintext
-  /** Which index type to use (optional - auto-inferred if omitted) */
-  indexType?: IndexTypeName
+  /** Which query type to use (optional - auto-inferred if omitted) */
+  queryType?: QueryTypeName
   /** Query operation (optional, defaults to 'default') */
   queryOp?: QueryOpName
 }
 
 /**
- * JSON path query term for ste_vec indexed columns.
- * Index type is implicitly 'ste_vec'.
+ * JSON path query term for searchableJson indexed columns.
+ * Query type is implicitly 'searchableJson'.
  * Column must be defined with .searchableJson().
  *
  * @example
@@ -191,7 +227,7 @@ export type JsonPathQueryTerm = JsonQueryTermBase & {
 
 /**
  * JSON containment query term for @> operator.
- * Index type is implicitly 'ste_vec'.
+ * Query type is implicitly 'searchableJson'.
  * Column must be defined with .searchableJson().
  *
  * @example
@@ -210,7 +246,7 @@ export type JsonContainsQueryTerm = JsonQueryTermBase & {
 
 /**
  * JSON containment query term for <@ operator.
- * Index type is implicitly 'ste_vec'.
+ * Query type is implicitly 'searchableJson'.
  * Column must be defined with .searchableJson().
  *
  * @example

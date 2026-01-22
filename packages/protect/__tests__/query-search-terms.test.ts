@@ -24,7 +24,7 @@ describe('encryptQuery', () => {
     const result = await protectClient.encryptQuery('test@example.com', {
       column: users.email,
       table: users,
-      indexType: 'unique',
+      queryType: 'equality',
     })
 
     if (result.failure) {
@@ -39,7 +39,7 @@ describe('encryptQuery', () => {
     const result = await protectClient.encryptQuery(100, {
       column: users.score,
       table: users,
-      indexType: 'ore',
+      queryType: 'orderAndRange',
     })
 
     if (result.failure) {
@@ -56,7 +56,7 @@ describe('encryptQuery', () => {
     const result = await protectClient.encryptQuery('test', {
       column: users.email,
       table: users,
-      indexType: 'match',
+      queryType: 'freeTextSearch',
     })
 
     if (result.failure) {
@@ -72,7 +72,7 @@ describe('encryptQuery', () => {
     const result = await protectClient.encryptQuery(null, {
       column: users.email,
       table: users,
-      indexType: 'unique',
+      queryType: 'equality',
     })
 
     if (result.failure) {
@@ -91,13 +91,13 @@ describe('createQuerySearchTerms', () => {
         value: 'test@example.com',
         column: users.email,
         table: users,
-        indexType: 'unique',
+        queryType: 'equality',
       },
       {
         value: 100,
         column: users.score,
         table: users,
-        indexType: 'ore',
+        queryType: 'orderAndRange',
       },
     ]
 
@@ -125,7 +125,7 @@ describe('createQuerySearchTerms', () => {
         value: 'test@example.com',
         column: users.email,
         table: users,
-        indexType: 'unique',
+        queryType: 'equality',
         returnType: 'composite-literal',
       },
     ]
@@ -148,7 +148,7 @@ describe('createQuerySearchTerms', () => {
         value: 'test@example.com',
         column: users.email,
         table: users,
-        indexType: 'unique',
+        queryType: 'equality',
         returnType: 'escaped-composite-literal',
       },
     ]
@@ -174,7 +174,7 @@ describe('createQuerySearchTerms', () => {
         value: { role: 'admin' },
         column: jsonSchema.metadata,
         table: jsonSchema,
-        indexType: 'ste_vec',
+        queryType: 'searchableJson',
         queryOp: 'default',
       },
     ]
@@ -211,7 +211,7 @@ describe('Lock context integration', () => {
       .encryptQuery('test@example.com', {
         column: users.email,
         table: users,
-        indexType: 'unique',
+        queryType: 'equality',
       })
       .withLockContext(lockContext.data)
 
@@ -242,7 +242,7 @@ describe('Lock context integration', () => {
         value: 'test@example.com',
         column: users.email,
         table: users,
-        indexType: 'unique',
+        queryType: 'equality',
       },
     ]
 

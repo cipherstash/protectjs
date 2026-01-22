@@ -9,7 +9,7 @@ import type {
 /**
  * Type guard for scalar query terms.
  * Scalar terms have 'value' but not JSON-specific properties (path, contains, containedBy).
- * Note: indexType is now optional for scalar terms (auto-inferred when omitted).
+ * Note: queryType is now optional for scalar terms (auto-inferred when omitted).
  */
 export function isScalarQueryTerm(term: QueryTerm): term is ScalarQueryTerm {
   return (

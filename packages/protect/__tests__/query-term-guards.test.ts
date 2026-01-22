@@ -8,10 +8,10 @@ import {
 
 describe('query-term-guards', () => {
   describe('isScalarQueryTerm', () => {
-    it('should return true when both value and indexType are present', () => {
+    it('should return true when both value and queryType are present', () => {
       const term = {
         value: 'test',
-        indexType: 'unique',
+        queryType: 'equality',
         column: {},
         table: {},
       }
@@ -21,7 +21,7 @@ describe('query-term-guards', () => {
     it('should return true with all properties including optional ones', () => {
       const term = {
         value: 'test',
-        indexType: 'ore',
+        queryType: 'orderAndRange',
         column: {},
         table: {},
         queryOp: 'default',
@@ -32,24 +32,24 @@ describe('query-term-guards', () => {
 
     it('should return false when value is missing', () => {
       const term = {
-        indexType: 'unique',
+        queryType: 'equality',
         column: {},
         table: {},
       }
       expect(isScalarQueryTerm(term)).toBe(false)
     })
 
-    it('should return true when indexType is missing (optional - auto-inferred)', () => {
+    it('should return true when queryType is missing (optional - auto-inferred)', () => {
       const term = {
         value: 'test',
         column: {},
         table: {},
       }
-      // indexType is now optional - terms without it use auto-inference
+      // queryType is now optional - terms without it use auto-inference
       expect(isScalarQueryTerm(term)).toBe(true)
     })
 
-    it('should return false when both value and indexType are missing', () => {
+    it('should return false when both value and queryType are missing', () => {
       const term = {
         column: {},
         table: {},
@@ -65,7 +65,7 @@ describe('query-term-guards', () => {
     it('should return true with extra properties present', () => {
       const term = {
         value: 'test',
-        indexType: 'match',
+        queryType: 'freeTextSearch',
         column: {},
         table: {},
         extraProp: 'extra',
@@ -77,17 +77,17 @@ describe('query-term-guards', () => {
     it('should return true even when value is null (property exists)', () => {
       const term = {
         value: null,
-        indexType: 'unique',
+        queryType: 'equality',
         column: {},
         table: {},
       }
       expect(isScalarQueryTerm(term)).toBe(true)
     })
 
-    it('should return true even when indexType is null (property exists)', () => {
+    it('should return true even when queryType is null (property exists)', () => {
       const term = {
         value: 'test',
-        indexType: null,
+        queryType: null,
         column: {},
         table: {},
       }
@@ -97,17 +97,17 @@ describe('query-term-guards', () => {
     it('should return true even when value is undefined (property exists)', () => {
       const term = {
         value: undefined,
-        indexType: 'unique',
+        queryType: 'equality',
         column: {},
         table: {},
       }
       expect(isScalarQueryTerm(term)).toBe(true)
     })
 
-    it('should return true even when indexType is undefined (property exists)', () => {
+    it('should return true even when queryType is undefined (property exists)', () => {
       const term = {
         value: 'test',
-        indexType: undefined,
+        queryType: undefined,
         column: {},
         table: {},
       }

@@ -14,6 +14,7 @@ import type {
   SearchTerm,
   SimpleSearchTerm,
 } from '../../types'
+import { queryTypeToFfi } from '../../types'
 import { noClientError } from '../index'
 import { buildNestedObject, flattenJson, pathToSelector } from './json-path-utils'
 import { ProtectOperation } from './base-operation'
@@ -160,7 +161,7 @@ async function encryptSearchTermsHelper(
         })
       : []
 
-  // Encrypt JSON terms with encryptQueryBulk
+  // Encrypt JSON terms with encryptQueryBulk (searchableJson index)
   const jsonEncrypted =
     jsonItemsWithIndex.length > 0
       ? await encryptQueryBulk(client, {
@@ -169,7 +170,7 @@ async function encryptSearchTermsHelper(
               plaintext: item.plaintext,
               column: item.column,
               table: item.table,
-              indexType: 'ste_vec' as const,
+              indexType: queryTypeToFfi.searchableJson,
               queryOp: item.queryOp,
             }
             // Add lock context if provided

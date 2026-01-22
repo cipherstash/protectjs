@@ -4,6 +4,7 @@ import { type ProtectError, ProtectErrorTypes } from '../..'
 import { logger } from '../../../../utils/logger'
 import type { LockContext } from '../../identify'
 import type { Client, EncryptedSearchTerm, QuerySearchTerm } from '../../types'
+import { queryTypeToFfi } from '../../types'
 import { noClientError } from '../index'
 import { ProtectOperation } from './base-operation'
 
@@ -52,7 +53,7 @@ export class QuerySearchTermsOperation extends ProtectOperation<
             plaintext: term.value,
             column: term.column.getName(),
             table: term.table.tableName,
-            indexType: term.indexType,
+            indexType: queryTypeToFfi[term.queryType],
             queryOp: term.queryOp,
           })),
           unverifiedContext: metadata,
@@ -115,7 +116,7 @@ export class QuerySearchTermsOperationWithLockContext extends ProtectOperation<
             plaintext: term.value,
             column: term.column.getName(),
             table: term.table.tableName,
-            indexType: term.indexType,
+            indexType: queryTypeToFfi[term.queryType],
             queryOp: term.queryOp,
             lockContext: context.data.context,
           })),

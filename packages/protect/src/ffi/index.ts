@@ -341,7 +341,7 @@ export class ProtectClient {
    * const term = await protectClient.encryptQuery(100, {
    *   column: usersSchema.score,
    *   table: usersSchema,
-   *   indexType: 'ore',
+   *   queryType: 'orderAndRange',
    * })
    * ```
    *
@@ -355,8 +355,8 @@ export class ProtectClient {
   /**
    * Encrypt multiple query terms in batch with explicit control over each term.
    *
-   * Supports scalar terms (with explicit indexType), JSON path queries, and JSON containment queries.
-   * JSON queries implicitly use ste_vec index type.
+   * Supports scalar terms (with explicit queryType), JSON path queries, and JSON containment queries.
+   * JSON queries implicitly use searchableJson query type.
    *
    * @param terms - Array of query terms to encrypt
    * @returns A BatchEncryptQueryOperation that can be awaited or chained with withLockContext
@@ -364,11 +364,11 @@ export class ProtectClient {
    * @example
    * ```typescript
    * const terms = await protectClient.encryptQuery([
-   *   // Scalar term with explicit index
-   *   { value: 'admin@example.com', column: users.email, table: users, indexType: 'unique' },
-   *   // JSON path query (ste_vec implicit)
+   *   // Scalar term with explicit queryType
+   *   { value: 'admin@example.com', column: users.email, table: users, queryType: 'equality' },
+   *   // JSON path query (searchableJson implicit)
    *   { path: 'user.email', value: 'test@example.com', column: jsonSchema.metadata, table: jsonSchema },
-   *   // JSON containment query (ste_vec implicit)
+   *   // JSON containment query (searchableJson implicit)
    *   { contains: { role: 'admin' }, column: jsonSchema.metadata, table: jsonSchema },
    * ])
    * ```
@@ -427,13 +427,13 @@ export class ProtectClient {
    *     value: 'admin@example.com',
    *     column: usersSchema.email,
    *     table: usersSchema,
-   *     indexType: 'unique',
+   *     queryType: 'equality',
    *   },
    *   {
    *     value: 100,
    *     column: usersSchema.score,
    *     table: usersSchema,
-   *     indexType: 'ore',
+   *     queryType: 'orderAndRange',
    *   },
    * ])
    *
