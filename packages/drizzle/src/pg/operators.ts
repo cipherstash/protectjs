@@ -1787,6 +1787,7 @@ export function createProtectOperators(protectClient: ProtectClient): {
 
     const allConditions: (SQL | SQLWrapper | undefined)[] = [
       ...regularConditions,
+      ...jsonSqlConditions,
       ...sqlConditions,
       ...regularPromisesResults,
     ]
