@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { pgTable } from 'drizzle-orm/pg-core'
 import { encryptedType, getEncryptedColumnConfig, extractProtectSchema } from '../src/pg'
-import { normalizePath } from '../src/pg/json-operators'
+import { normalizePath, JsonPathBuilder, isLazyJsonOperator, type LazyJsonOperator } from '../src/pg/json-operators'
 
 describe('searchableJson column config', () => {
   it('should store searchableJson config on encrypted column', () => {
@@ -84,5 +84,97 @@ describe('normalizePath', () => {
 
   it('should handle empty string', () => {
     expect(normalizePath('')).toBe('')
+  })
+})
+
+describe('JsonPathBuilder', () => {
+  const testTable = pgTable('test_builder', {
+    metadata: encryptedType<{ user: { email: string } }>('metadata', {
+      dataType: 'json',
+      searchableJson: true,
+    }),
+  })
+
+  it('should be instantiable with column and path', () => {
+    const builder = new JsonPathBuilder(
+      testTable.metadata,
+      'user.email',
+      { columnName: 'metadata', config: { searchableJson: true } } as any,
+      {} as any, // protectClient mock
+    )
+
+    expect(builder).toBeDefined()
+    expect(builder.getPath()).toBe('user.email')
+  })
+})
+
+describe('LazyJsonOperator', () => {
+  it('should identify lazy JSON operators with value encryption', () => {
+    const lazyOp: LazyJsonOperator = {
+      __isLazyOperator: true,
+      __isJsonOperator: true,
+      operator: 'json_eq',
+      path: 'user.email',
+      value: 'test@example.com',
+      encryptionType: 'value',
+      columnInfo: {} as any,
+      execute: () => ({} as any),
+    }
+
+    expect(isLazyJsonOperator(lazyOp)).toBe(true)
+  })
+
+  it('should identify lazy JSON operators with selector encryption', () => {
+    const lazyOp: LazyJsonOperator = {
+      __isLazyOperator: true,
+      __isJsonOperator: true,
+      operator: 'json_array_length_gt',
+      path: 'items',
+      comparisonValue: 5,
+      encryptionType: 'selector',
+      columnInfo: {} as any,
+      execute: () => ({} as any),
+    }
+
+    expect(isLazyJsonOperator(lazyOp)).toBe(true)
+  })
+
+  it('should identify lazy JSON operators with no encryption', () => {
+    const lazyOp: LazyJsonOperator = {
+      __isLazyOperator: true,
+      __isJsonOperator: true,
+      operator: 'json_array_length_gt',
+      path: '',  // root path
+      comparisonValue: 5,
+      encryptionType: 'none',
+      columnInfo: {} as any,
+      execute: () => ({} as any),
+    }
+
+    expect(isLazyJsonOperator(lazyOp)).toBe(true)
+  })
+
+  it('should return false for regular lazy operators', () => {
+    // Note: This tests that isLazyJsonOperator correctly distinguishes JSON operators
+    // from regular lazy operators. The `needsEncryption` field is used by regular
+    // lazy operators (in operators.ts), NOT by JSON operators.
+    // JSON operators use `encryptionType: 'value' | 'selector' | 'none'` instead.
+    const regularLazyOp = {
+      __isLazyOperator: true,
+      operator: 'eq',
+      left: {},
+      right: 'value',
+      needsEncryption: true,  // Regular lazy operator field - NOT used for JSON operators
+      columnInfo: {},
+      execute: () => ({}),
+    }
+
+    expect(isLazyJsonOperator(regularLazyOp)).toBe(false)
+  })
+
+  it('should return false for non-objects', () => {
+    expect(isLazyJsonOperator(null)).toBe(false)
+    expect(isLazyJsonOperator(undefined)).toBe(false)
+    expect(isLazyJsonOperator('string')).toBe(false)
   })
 })
