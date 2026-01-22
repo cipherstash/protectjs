@@ -178,3 +178,22 @@ describe('LazyJsonOperator', () => {
     expect(isLazyJsonOperator('string')).toBe(false)
   })
 })
+
+describe('JsonPathBuilder.eq()', () => {
+  it('should return a lazy JSON operator with value encryption', () => {
+    const builder = new JsonPathBuilder(
+      {} as any, // column mock
+      'user.email',
+      { columnName: 'metadata', config: { searchableJson: true } } as any,
+      {} as any, // protectClient mock
+    )
+
+    const lazyOp = builder.eq('test@example.com')
+
+    expect(isLazyJsonOperator(lazyOp)).toBe(true)
+    expect(lazyOp.operator).toBe('json_eq')
+    expect(lazyOp.path).toBe('user.email')
+    expect(lazyOp.value).toBe('test@example.com')
+    expect(lazyOp.encryptionType).toBe('value')
+  })
+})

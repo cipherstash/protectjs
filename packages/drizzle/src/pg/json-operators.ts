@@ -1,14 +1,6 @@
-import type { SQLWrapper } from 'drizzle-orm'
+import type { SQLWrapper, SQL } from 'drizzle-orm'
 import type { ProtectClient } from '@cipherstash/protect/client'
-
-/**
- * Information about an encrypted column.
- * @internal
- */
-export interface ColumnInfo {
-  columnName: string
-  config: Record<string, any>
-}
+import type { ColumnInfo } from './operators.js'
 
 /**
  * Normalizes a JSON path to dot notation format.
@@ -25,6 +17,62 @@ export function normalizePath(path: string): string {
     return path.slice(2)
   }
   return path
+}
+
+/**
+ * JSON operator types for lazy evaluation.
+ * Array-length operators are separate to distinguish their encryption semantics.
+ */
+export type JsonOperatorType =
+  | 'json_eq'
+  | 'json_ne'
+  | 'json_contains'
+  | 'json_contained_by'
+  | 'json_array_length_gt'
+  | 'json_array_length_gte'
+  | 'json_array_length_lt'
+  | 'json_array_length_lte'
+
+/**
+ * Encryption type for JSON operators:
+ * - 'value': Encrypt the comparison value (eq, ne, contains, containedBy)
+ * - 'selector': Encrypt the path to get selector hash (array-length on non-root)
+ * - 'none': No encryption needed (array-length on root path)
+ */
+export type JsonEncryptionType = 'value' | 'selector' | 'none'
+
+/**
+ * Lazy JSON operator that defers encryption until awaited or batched.
+ * Extends the lazy operator pattern to work with JSON path queries.
+ */
+export interface LazyJsonOperator {
+  readonly __isLazyOperator: true
+  readonly __isJsonOperator: true
+  readonly operator: JsonOperatorType
+  readonly path: string
+  readonly columnInfo: ColumnInfo
+  /** What type of encryption is needed for this operator */
+  readonly encryptionType: JsonEncryptionType
+  /** For value-based operators (eq, contains, etc.) - the value to encrypt */
+  readonly value?: unknown
+  /** For array-length operators - the plain numeric comparison value (NOT encrypted) */
+  readonly comparisonValue?: number
+  /** Execute with encrypted payload (encrypted value OR selector depending on encryptionType) */
+  execute(encryptedPayload?: unknown): SQL
+}
+
+/**
+ * Type guard for lazy JSON operators
+ */
+export function isLazyJsonOperator(value: unknown): value is LazyJsonOperator {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    '__isLazyOperator' in value &&
+    '__isJsonOperator' in value &&
+    (value as LazyJsonOperator).__isLazyOperator === true &&
+    (value as LazyJsonOperator).__isJsonOperator === true
+  )
 }
 
 /**
