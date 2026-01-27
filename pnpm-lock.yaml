@@ -520,6 +520,9 @@ importers:
       '@stricli/core':
         specifier: ^1.2.5
         version: 1.2.5
+      dotenv:
+        specifier: 16.4.7
+        version: 16.4.7
       zod:
         specifier: ^3.24.2
         version: 3.25.76
@@ -527,9 +530,6 @@ importers:
       '@supabase/supabase-js':
         specifier: ^2.47.10
         version: 2.89.0
-      dotenv:
-        specifier: ^16.4.7
-        version: 16.6.1
       execa:
         specifier: ^9.5.2
         version: 9.6.1
@@ -3928,6 +3928,10 @@ packages:
 
   dotenv@16.4.5:
     resolution: {integrity: sha512-ZmdL2rui+eB2YwhsWzjInR8LldtZHGDoQ1ugH85ppHKwpUHL7j7rN0Ti9NCnGiQbhaZ11FpR+7ao1dNsmduNUg==}
+    engines: {node: '>=12'}
+
+  dotenv@16.4.7:
+    resolution: {integrity: sha512-47qPchRCykZC03FhkYAhrvwU4xDBFIj1QPqaarj6mdM/hgUzfPHcpkHJOn3mJAufFeeAxAzeGsr5X0M4k6fLZQ==}
     engines: {node: '>=12'}
 
   dotenv@16.6.1:
@@ -10204,6 +10208,8 @@ snapshots:
   dotenv-expand@10.0.0: {}
 
   dotenv@16.4.5: {}
+
+  dotenv@16.4.7: {}
 
   dotenv@16.6.1: {}
 

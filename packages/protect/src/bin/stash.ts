@@ -1,11 +1,12 @@
+import { config } from 'dotenv'
+config()
+import readline from 'node:readline'
 import {
-  type CommandContext,
   buildApplication,
   buildCommand,
   buildRouteMap,
   run,
 } from '@stricli/core'
-import readline from 'node:readline'
 import { Stash } from '../stash/index.js'
 
 // ANSI color codes for beautiful terminal output
