@@ -130,7 +130,8 @@ export type EncryptQueryOptions = {
 
 /**
  * Individual query payload for bulk query operations.
- * Used with createQuerySearchTerms() for batch query encryption.
+ * Used internally for query encryption operations.
+ * @deprecated This type is not directly used in the public API. Use QueryTerm types with encryptQuery() instead.
  */
 export type QuerySearchTerm = {
   /** The value to encrypt for querying */

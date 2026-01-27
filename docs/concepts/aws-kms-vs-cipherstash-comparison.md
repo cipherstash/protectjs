@@ -165,11 +165,12 @@ const encryptResult = await protectClient.encrypt(
 );
 
 // Create search terms and query directly in PostgreSQL
-const searchTerms = await protectClient.createSearchTerms({
-  terms: ['secret'],
+const searchTerms = await protectClient.encryptQuery([{
+  value: 'secret',
   column: users.email,
   table: users,
-});
+  queryType: queryTypes.freeTextSearch,
+}]);
 
 // Use with your ORM (Drizzle integration included)
 ```

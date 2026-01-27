@@ -34,7 +34,6 @@ import { DecryptModelOperation } from './operations/decrypt-model'
 import { EncryptOperation } from './operations/encrypt'
 import { EncryptModelOperation } from './operations/encrypt-model'
 import { EncryptQueryOperation } from './operations/encrypt-query'
-import { QuerySearchTermsOperation } from './operations/query-search-terms'
 import { SearchTermsOperation } from './operations/search-terms'
 
 export const noClientError = () =>
@@ -314,7 +313,7 @@ export class ProtectClient {
   }
 
   /**
-   * @deprecated Use `encryptQuery(terms)` instead with QueryTerm types. Will be removed in v2.0.
+   * @deprecated Use `encryptQuery(terms)` instead with QueryTerm types.
    *
    * Create search terms to use in a query searching encrypted data
    * Usage:
@@ -407,49 +406,6 @@ export class ProtectClient {
       plaintextOrTerms as JsPlaintext | null,
       opts,
     )
-  }
-
-  /**
-   * @deprecated Use `encryptQuery(terms)` instead. Will be removed in v2.0.
-   *
-   * Create multiple encrypted query terms with explicit index type control.
-   *
-   * This method produces SEM-only payloads optimized for database queries,
-   * providing explicit control over which index type and query operation to use for each term.
-   *
-   * @param terms - Array of query search terms with index type specifications
-   * @returns A QuerySearchTermsOperation that can be awaited or chained with withLockContext
-   *
-   * @example
-   * ```typescript
-   * const terms = await protectClient.createQuerySearchTerms([
-   *   {
-   *     value: 'admin@example.com',
-   *     column: usersSchema.email,
-   *     table: usersSchema,
-   *     queryType: 'equality',
-   *   },
-   *   {
-   *     value: 100,
-   *     column: usersSchema.score,
-   *     table: usersSchema,
-   *     queryType: 'orderAndRange',
-   *   },
-   * ])
-   *
-   * // Use in PostgreSQL query
-   * const result = await db.query(
-   *   `SELECT * FROM users
-   *    WHERE cs_unique_v1(email) = $1
-   *    AND cs_ore_64_8_v1(score) > $2`,
-   *   [terms.data[0], terms.data[1]]
-   * )
-   * ```
-   *
-   * @see {@link https://cipherstash.com/docs/platform/searchable-encryption/supported-queries | Supported Query Types}
-   */
-  createQuerySearchTerms(terms: QuerySearchTerm[]): QuerySearchTermsOperation {
-    return new QuerySearchTermsOperation(this.client, terms)
   }
 
   /** e.g., debugging or environment info */

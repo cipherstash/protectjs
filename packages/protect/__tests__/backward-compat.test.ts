@@ -2,6 +2,7 @@ import 'dotenv/config'
 import { csColumn, csTable } from '@cipherstash/schema'
 import { beforeAll, describe, expect, it } from 'vitest'
 import { protect } from '../src'
+import type { Encrypted } from '../src/types'
 
 const users = csTable('users', {
   email: csColumn('email'),
@@ -53,7 +54,7 @@ describe('k-field backward compatibility', () => {
     }
 
     // Decrypt should succeed even with legacy k field present
-    const result = await protectClient.decrypt(legacyPayload)
+    const result = await protectClient.decrypt(legacyPayload as Encrypted)
 
     if (result.failure) {
       throw new Error(`Decryption failed: ${result.failure.message}`)

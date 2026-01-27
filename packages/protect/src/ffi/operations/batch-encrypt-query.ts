@@ -20,7 +20,11 @@ import type {
 } from '../../types'
 import { queryTypeToFfi } from '../../types'
 import { noClientError } from '../index'
-import { buildNestedObject, flattenJson, pathToSelector } from './json-path-utils'
+import {
+  buildNestedObject,
+  flattenJson,
+  pathToSelector,
+} from './json-path-utils'
 import { ProtectOperation } from './base-operation'
 
 /** Tracks which items belong to which term for reassembly */
@@ -303,16 +307,6 @@ export class BatchEncryptQueryOperation extends ProtectOperation<
     this.terms = terms
   }
 
-  public withLockContext(
-    lockContext: LockContext,
-  ): BatchEncryptQueryOperationWithLockContext {
-    return new BatchEncryptQueryOperationWithLockContext(this, lockContext)
-  }
-
-  public getOperation(): { client: Client; terms: readonly QueryTerm[] } {
-    return { client: this.client, terms: this.terms }
-  }
-
   public async execute(): Promise<Result<EncryptedSearchTerm[], ProtectError>> {
     logger.debug('Encrypting batch query terms', {
       termCount: this.terms.length,
@@ -327,47 +321,6 @@ export class BatchEncryptQueryOperation extends ProtectOperation<
           metadata,
           undefined,
         )
-      },
-      (error) => ({
-        type: ProtectErrorTypes.EncryptionError,
-        message: error.message,
-      }),
-    )
-  }
-}
-
-export class BatchEncryptQueryOperationWithLockContext extends ProtectOperation<
-  EncryptedSearchTerm[]
-> {
-  private operation: BatchEncryptQueryOperation
-  private lockContext: LockContext
-
-  constructor(operation: BatchEncryptQueryOperation, lockContext: LockContext) {
-    super()
-    this.operation = operation
-    this.lockContext = lockContext
-  }
-
-  public async execute(): Promise<Result<EncryptedSearchTerm[], ProtectError>> {
-    return await withResult(
-      async () => {
-        const { client, terms } = this.operation.getOperation()
-
-        logger.debug('Encrypting batch query terms WITH lock context', {
-          termCount: terms.length,
-        })
-
-        const { metadata } = this.getAuditData()
-        const context = await this.lockContext.getLockContext()
-
-        if (context.failure) {
-          throw new Error(`[protect]: ${context.failure.message}`)
-        }
-
-        return await encryptBatchQueryTermsHelper(client, terms, metadata, {
-          context: context.data.context,
-          ctsToken: context.data.ctsToken,
-        })
       },
       (error) => ({
         type: ProtectErrorTypes.EncryptionError,

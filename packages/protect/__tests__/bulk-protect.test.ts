@@ -1,7 +1,8 @@
 import 'dotenv/config'
 import { csColumn, csTable } from '@cipherstash/schema'
 import { beforeAll, describe, expect, it } from 'vitest'
-import { type EncryptedPayload, LockContext, protect } from '../src'
+import { type EncryptedPayload, protect } from '../src'
+import { LockContext } from '../src/identify'
 
 const users = csTable('users', {
   email: csColumn('email').freeTextSearch().equality().orderAndRange(),

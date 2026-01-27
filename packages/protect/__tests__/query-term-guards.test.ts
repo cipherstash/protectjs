@@ -1,19 +1,24 @@
+import { csColumn, csTable } from '@cipherstash/schema'
 import { describe, expect, it } from 'vitest'
 import {
-  isScalarQueryTerm,
-  isJsonPathQueryTerm,
-  isJsonContainsQueryTerm,
   isJsonContainedByQueryTerm,
+  isJsonContainsQueryTerm,
+  isJsonPathQueryTerm,
+  isScalarQueryTerm,
 } from '../src/query-term-guards'
+import { queryTypes } from '../src/types'
+const users = csTable('users', {
+  email: csColumn('email').freeTextSearch().equality().orderAndRange(),
+})
 
 describe('query-term-guards', () => {
   describe('isScalarQueryTerm', () => {
     it('should return true when both value and queryType are present', () => {
       const term = {
         value: 'test',
-        queryType: 'equality',
-        column: {},
-        table: {},
+        queryType: queryTypes.equality,
+        column: users.email,
+        table: users,
       }
       expect(isScalarQueryTerm(term)).toBe(true)
     })
@@ -21,29 +26,28 @@ describe('query-term-guards', () => {
     it('should return true with all properties including optional ones', () => {
       const term = {
         value: 'test',
-        queryType: 'orderAndRange',
-        column: {},
-        table: {},
-        queryOp: 'default',
-        returnType: 'eql',
+        queryType: queryTypes.orderAndRange,
+        column: users.email,
+        table: users,
       }
       expect(isScalarQueryTerm(term)).toBe(true)
     })
 
     it('should return false when value is missing', () => {
       const term = {
-        queryType: 'equality',
-        column: {},
-        table: {},
+        queryType: queryTypes.equality,
+        column: users.email,
+        table: users,
       }
+      // @ts-expect-error - value is missing
       expect(isScalarQueryTerm(term)).toBe(false)
     })
 
     it('should return true when queryType is missing (optional - auto-inferred)', () => {
       const term = {
         value: 'test',
-        column: {},
-        table: {},
+        column: users.email,
+        table: users,
       }
       // queryType is now optional - terms without it use auto-inference
       expect(isScalarQueryTerm(term)).toBe(true)
@@ -51,35 +55,28 @@ describe('query-term-guards', () => {
 
     it('should return false when both value and queryType are missing', () => {
       const term = {
-        column: {},
-        table: {},
+        column: users.email,
+        table: users,
       }
+      // @ts-expect-error - value is missing
       expect(isScalarQueryTerm(term)).toBe(false)
     })
 
     it('should return false for empty object', () => {
       const term = {}
+
+      // @ts-expect-error - empty object is not a valid query term
       expect(isScalarQueryTerm(term)).toBe(false)
     })
 
     it('should return true with extra properties present', () => {
       const term = {
         value: 'test',
-        queryType: 'freeTextSearch',
-        column: {},
-        table: {},
+        queryType: queryTypes.freeTextSearch,
+        column: users.email,
+        table: users,
         extraProp: 'extra',
         anotherProp: 123,
-      }
-      expect(isScalarQueryTerm(term)).toBe(true)
-    })
-
-    it('should return true even when value is null (property exists)', () => {
-      const term = {
-        value: null,
-        queryType: 'equality',
-        column: {},
-        table: {},
       }
       expect(isScalarQueryTerm(term)).toBe(true)
     })
@@ -88,19 +85,23 @@ describe('query-term-guards', () => {
       const term = {
         value: 'test',
         queryType: null,
-        column: {},
-        table: {},
+        column: users.email,
+        table: users,
       }
+
+      // @ts-expect-error - queryType is null
       expect(isScalarQueryTerm(term)).toBe(true)
     })
 
     it('should return true even when value is undefined (property exists)', () => {
       const term = {
         value: undefined,
-        queryType: 'equality',
-        column: {},
-        table: {},
+        queryType: queryTypes.equality,
+        column: users.email,
+        table: users,
       }
+
+      // @ts-expect-error - value is undefined
       expect(isScalarQueryTerm(term)).toBe(true)
     })
 
@@ -108,9 +109,10 @@ describe('query-term-guards', () => {
       const term = {
         value: 'test',
         queryType: undefined,
-        column: {},
-        table: {},
+        column: users.email,
+        table: users,
       }
+
       expect(isScalarQueryTerm(term)).toBe(true)
     })
   })
@@ -119,9 +121,10 @@ describe('query-term-guards', () => {
     it('should return true when path property exists', () => {
       const term = {
         path: 'user.email',
-        column: {},
-        table: {},
+        column: users.email,
+        table: users,
       }
+
       expect(isJsonPathQueryTerm(term)).toBe(true)
     })
 
@@ -129,17 +132,18 @@ describe('query-term-guards', () => {
       const term = {
         path: 'user.name',
         value: 'John',
-        column: {},
-        table: {},
+        column: users.email,
+        table: users,
       }
+
       expect(isJsonPathQueryTerm(term)).toBe(true)
     })
 
     it('should return true with extra properties', () => {
       const term = {
         path: 'data.nested.field',
-        column: {},
-        table: {},
+        column: users.email,
+        table: users,
         extraProp: 'extra',
         anotherField: 42,
       }
@@ -148,42 +152,51 @@ describe('query-term-guards', () => {
 
     it('should return false when path property is missing', () => {
       const term = {
-        column: {},
-        table: {},
+        column: users.email,
+        table: users,
         value: 'test',
       }
+
       expect(isJsonPathQueryTerm(term)).toBe(false)
     })
 
     it('should return false for empty object', () => {
       const term = {}
+
+      // @ts-expect-error - empty object is not a valid query term
       expect(isJsonPathQueryTerm(term)).toBe(false)
     })
 
     it('should return true even when path is null', () => {
       const term = {
         path: null,
-        column: {},
-        table: {},
+        column: users.email,
+        table: users,
       }
+
+      // @ts-expect-error - path is missing
       expect(isJsonPathQueryTerm(term)).toBe(true)
     })
 
     it('should return true even when path is undefined', () => {
       const term = {
         path: undefined,
-        column: {},
-        table: {},
+        column: users.email,
+        table: users,
       }
+
+      // @ts-expect-error - path is undefined
       expect(isJsonPathQueryTerm(term)).toBe(true)
     })
 
     it('should return false when path-like property with different name', () => {
       const term = {
         pathName: 'user.email',
-        column: {},
-        table: {},
+        column: users.email,
+        table: users,
       }
+
+      // @ts-expect-error - pathName is not a valid property
       expect(isJsonPathQueryTerm(term)).toBe(false)
     })
   })
@@ -192,8 +205,8 @@ describe('query-term-guards', () => {
     it('should return true when contains property exists', () => {
       const term = {
         contains: { key: 'value' },
-        column: {},
-        table: {},
+        column: users.email,
+        table: users,
       }
       expect(isJsonContainsQueryTerm(term)).toBe(true)
     })
@@ -201,8 +214,8 @@ describe('query-term-guards', () => {
     it('should return true with empty object as contains', () => {
       const term = {
         contains: {},
-        column: {},
-        table: {},
+        column: users.email,
+        table: users,
       }
       expect(isJsonContainsQueryTerm(term)).toBe(true)
     })
@@ -215,8 +228,8 @@ describe('query-term-guards', () => {
             roles: ['admin', 'user'],
           },
         },
-        column: {},
-        table: {},
+        column: users.email,
+        table: users,
       }
       expect(isJsonContainsQueryTerm(term)).toBe(true)
     })
@@ -224,52 +237,63 @@ describe('query-term-guards', () => {
     it('should return true with extra properties', () => {
       const term = {
         contains: { status: 'active' },
-        column: {},
-        table: {},
+        column: users.email,
+        table: users,
         extraProp: 'extra',
         anotherField: 42,
       }
+
       expect(isJsonContainsQueryTerm(term)).toBe(true)
     })
 
     it('should return false when contains property is missing', () => {
       const term = {
-        column: {},
-        table: {},
+        column: users.email,
+        table: users,
         data: { key: 'value' },
       }
+
+      // @ts-expect-error - contains is missing
       expect(isJsonContainsQueryTerm(term)).toBe(false)
     })
 
     it('should return false for empty object', () => {
       const term = {}
+
+      // @ts-expect-error - empty object is not a valid query term
       expect(isJsonContainsQueryTerm(term)).toBe(false)
     })
 
     it('should return true even when contains is null', () => {
       const term = {
         contains: null,
-        column: {},
-        table: {},
+        column: users.email,
+        table: users,
       }
+
+      // @ts-expect-error - contains is null
       expect(isJsonContainsQueryTerm(term)).toBe(true)
     })
 
     it('should return true even when contains is undefined', () => {
       const term = {
         contains: undefined,
-        column: {},
-        table: {},
+        column: users.email,
+        table: users,
       }
+
+      // @ts-expect-error - contains is undefined
       expect(isJsonContainsQueryTerm(term)).toBe(true)
     })
 
     it('should return false when contains-like property with different name', () => {
       const term = {
         containsData: { key: 'value' },
-        column: {},
-        table: {},
+        column: users.email,
+        table: users,
       }
+
+      // @ts-expect-error - containsData is not a valid property
       expect(isJsonContainsQueryTerm(term)).toBe(false)
     })
   })
@@ -278,8 +302,8 @@ describe('query-term-guards', () => {
     it('should return true when containedBy property exists', () => {
       const term = {
         containedBy: { key: 'value' },
-        column: {},
-        table: {},
+        column: users.email,
+        table: users,
       }
       expect(isJsonContainedByQueryTerm(term)).toBe(true)
     })
@@ -287,8 +311,8 @@ describe('query-term-guards', () => {
     it('should return true with empty object as containedBy', () => {
       const term = {
         containedBy: {},
-        column: {},
-        table: {},
+        column: users.email,
+        table: users,
       }
       expect(isJsonContainedByQueryTerm(term)).toBe(true)
     })
@@ -302,8 +326,8 @@ describe('query-term-guards', () => {
             admin: true,
           },
         },
-        column: {},
-        table: {},
+        column: users.email,
+        table: users,
       }
       expect(isJsonContainedByQueryTerm(term)).toBe(true)
     })
@@ -311,8 +335,8 @@ describe('query-term-guards', () => {
     it('should return true with extra properties', () => {
       const term = {
         containedBy: { status: 'active' },
-        column: {},
-        table: {},
+        column: users.email,
+        table: users,
         extraProp: 'extra',
         anotherField: 42,
       }
@@ -321,42 +345,52 @@ describe('query-term-guards', () => {
 
     it('should return false when containedBy property is missing', () => {
       const term = {
-        column: {},
-        table: {},
+        column: users.email,
+        table: users,
         data: { key: 'value' },
       }
+
+      // @ts-expect-error - containedBy is missing
       expect(isJsonContainedByQueryTerm(term)).toBe(false)
     })
 
     it('should return false for empty object', () => {
       const term = {}
+
+      // @ts-expect-error - empty object is not a valid query term
       expect(isJsonContainedByQueryTerm(term)).toBe(false)
     })
 
     it('should return true even when containedBy is null', () => {
       const term = {
         containedBy: null,
-        column: {},
-        table: {},
+        column: users.email,
+        table: users,
       }
+
+      // @ts-expect-error - containedBy is null
       expect(isJsonContainedByQueryTerm(term)).toBe(true)
     })
 
     it('should return true even when containedBy is undefined', () => {
       const term = {
         containedBy: undefined,
-        column: {},
-        table: {},
+        column: users.email,
+        table: users,
       }
+
+      // @ts-expect-error - containedBy is undefined
       expect(isJsonContainedByQueryTerm(term)).toBe(true)
     })
 
     it('should return false when containedBy-like property with different name', () => {
       const term = {
         containedByData: { key: 'value' },
-        column: {},
-        table: {},
+        column: users.email,
+        table: users,
       }
+
+      // @ts-expect-error - containedByData is not a valid property
       expect(isJsonContainedByQueryTerm(term)).toBe(false)
     })
   })

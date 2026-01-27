@@ -105,7 +105,12 @@ export function createJsonOperatorExecute(
       case 'json_array_length_gte':
       case 'json_array_length_lt':
       case 'json_array_length_lte':
-        return createArrayLengthSql(operator, column, path, encryptedPayload as string | undefined)
+        return createArrayLengthSql(
+          operator,
+          column,
+          path,
+          encryptedPayload as string | undefined,
+        )
       default:
         throw new Error(`Unknown JSON operator: ${operator}`)
     }
@@ -135,20 +140,19 @@ function createArrayLengthSql(
   if (path === '' || path.trim() === '') {
     throw new Error(
       'Array length SQL generation requires comparison value. ' +
-        'This function should be called from createArrayLengthOperator context.'
+        'This function should be called from createArrayLengthOperator context.',
     )
   }
 
   if (!encryptedSelector) {
     throw new Error(
-      `Array length on nested path "${path}" requires encrypted selector. ` +
-        `Use encryptionType: 'selector' and pass the encrypted selector to execute().`
+      `Array length on nested path "${path}" requires encrypted selector. Use encryptionType: 'selector' and pass the encrypted selector to execute().`,
     )
   }
 
   throw new Error(
     'Array length SQL generation requires comparison value. ' +
-      'This function should be called from createArrayLengthOperator context.'
+      'This function should be called from createArrayLengthOperator context.',
   )
 }
 
@@ -169,7 +173,7 @@ export class JsonPathBuilder {
     path: string,
     columnInfo: ColumnInfo,
     protectClient: ProtectClient,
-    isArrayLengthMode: boolean = false,
+    isArrayLengthMode = false,
   ) {
     this.column = column
     this.path = path
@@ -201,7 +205,6 @@ export class JsonPathBuilder {
   getColumnInfo(): ColumnInfo {
     return this.columnInfo
   }
-
 
   /**
    * Equality comparison at the JSON path.
@@ -275,14 +278,16 @@ export class JsonPathBuilder {
   async pathExtract(): Promise<SQL> {
     if (this.isRootPath()) {
       throw new Error(
-        `pathExtract() is not supported for root path. ` +
-        `For root, use the column directly in your query, or use pathExtractFirst() ` +
-        `which returns a single value.`
+        'pathExtract() is not supported for root path. For root, use the column directly in your query, or use pathExtractFirst() which returns a single value.',
       )
     }
 
     // Non-root: encrypt path to get selector, then use jsonb_path_query (SRF)
-    const selector = await encryptPathSelector(this.protectClient, this.path, this.columnInfo)
+    const selector = await encryptPathSelector(
+      this.protectClient,
+      this.path,
+      this.columnInfo,
+    )
     return sql`eql_v2.jsonb_path_query(${this.column}, ${selector})`
   }
 
@@ -301,7 +306,11 @@ export class JsonPathBuilder {
     }
 
     // Non-root: encrypt path to get selector
-    const selector = await encryptPathSelector(this.protectClient, this.path, this.columnInfo)
+    const selector = await encryptPathSelector(
+      this.protectClient,
+      this.path,
+      this.columnInfo,
+    )
     return sql`eql_v2.jsonb_path_query_first(${this.column}, ${selector})`
   }
 
@@ -350,7 +359,11 @@ export class JsonPathBuilder {
     }
 
     // Non-root: encrypt path to get selector, then use jsonb_path_query_first
-    const selector = await encryptPathSelector(this.protectClient, this.path, this.columnInfo)
+    const selector = await encryptPathSelector(
+      this.protectClient,
+      this.path,
+      this.columnInfo,
+    )
     return sql`eql_v2.jsonb_path_query_first(${this.column}, ${selector})`
   }
 
@@ -370,8 +383,7 @@ export class JsonPathBuilder {
 
     if (!selector) {
       throw new Error(
-        `getSync() requires a selector for non-root paths. Use get() (async) instead, ` +
-        `or provide a pre-encrypted selector.`
+        'getSync() requires a selector for non-root paths. Use get() (async) instead, or provide a pre-encrypted selector.',
       )
     }
 
@@ -392,7 +404,11 @@ export class JsonPathBuilder {
       return sql`eql_v2.jsonb_array_elements(${this.column})`
     }
 
-    const selector = await encryptPathSelector(this.protectClient, this.path, this.columnInfo)
+    const selector = await encryptPathSelector(
+      this.protectClient,
+      this.path,
+      this.columnInfo,
+    )
     return sql`eql_v2.jsonb_array_elements(eql_v2.jsonb_path_query(${this.column}, ${selector}))`
   }
 
@@ -404,7 +420,11 @@ export class JsonPathBuilder {
       return sql`eql_v2.jsonb_array_elements_text(${this.column})`
     }
 
-    const selector = await encryptPathSelector(this.protectClient, this.path, this.columnInfo)
+    const selector = await encryptPathSelector(
+      this.protectClient,
+      this.path,
+      this.columnInfo,
+    )
     return sql`eql_v2.jsonb_array_elements_text(eql_v2.jsonb_path_query(${this.column}, ${selector}))`
   }
 
@@ -418,8 +438,7 @@ export class JsonPathBuilder {
 
     if (!selector) {
       throw new Error(
-        `elementsSync() requires a selector for non-root paths. Use elements() (async) instead, ` +
-        `or provide a pre-encrypted selector.`
+        'elementsSync() requires a selector for non-root paths. Use elements() (async) instead, or provide a pre-encrypted selector.',
       )
     }
 
@@ -436,8 +455,7 @@ export class JsonPathBuilder {
 
     if (!selector) {
       throw new Error(
-        `elementsTextSync() requires a selector for non-root paths. Use elementsText() (async) instead, ` +
-        `or provide a pre-encrypted selector.`
+        'elementsTextSync() requires a selector for non-root paths. Use elementsText() (async) instead, or provide a pre-encrypted selector.',
       )
     }
 
@@ -468,10 +486,10 @@ export class JsonPathBuilder {
     // The mode flag changes how gt/gte/lt/lte behave
     return new JsonPathBuilder(
       this.column,
-      this.path,  // Keep original path
+      this.path, // Keep original path
       this.columnInfo,
       this.protectClient,
-      true,  // isArrayLengthMode = true
+      true, // isArrayLengthMode = true
     )
   }
 
@@ -483,7 +501,9 @@ export class JsonPathBuilder {
    */
   gt(value: number): LazyJsonOperator & Promise<SQL> {
     if (!this.isArrayLengthMode) {
-      throw new Error('gt() is only available after arrayLength(). Use eq() for value comparisons.')
+      throw new Error(
+        'gt() is only available after arrayLength(). Use eq() for value comparisons.',
+      )
     }
     return this.createArrayLengthOperator('json_array_length_gt', value)
   }
@@ -493,7 +513,9 @@ export class JsonPathBuilder {
    */
   gte(value: number): LazyJsonOperator & Promise<SQL> {
     if (!this.isArrayLengthMode) {
-      throw new Error('gte() is only available after arrayLength(). Use eq() for value comparisons.')
+      throw new Error(
+        'gte() is only available after arrayLength(). Use eq() for value comparisons.',
+      )
     }
     return this.createArrayLengthOperator('json_array_length_gte', value)
   }
@@ -503,7 +525,9 @@ export class JsonPathBuilder {
    */
   lt(value: number): LazyJsonOperator & Promise<SQL> {
     if (!this.isArrayLengthMode) {
-      throw new Error('lt() is only available after arrayLength(). Use eq() for value comparisons.')
+      throw new Error(
+        'lt() is only available after arrayLength(). Use eq() for value comparisons.',
+      )
     }
     return this.createArrayLengthOperator('json_array_length_lt', value)
   }
@@ -513,7 +537,9 @@ export class JsonPathBuilder {
    */
   lte(value: number): LazyJsonOperator & Promise<SQL> {
     if (!this.isArrayLengthMode) {
-      throw new Error('lte() is only available after arrayLength(). Use eq() for value comparisons.')
+      throw new Error(
+        'lte() is only available after arrayLength(). Use eq() for value comparisons.',
+      )
     }
     return this.createArrayLengthOperator('json_array_length_lte', value)
   }
@@ -567,7 +593,9 @@ export class JsonPathBuilder {
         }
 
         if (!encryptedSelector) {
-          throw new Error(`Array length on nested path "${path}" requires encrypted selector`)
+          throw new Error(
+            `Array length on nested path "${path}" requires encrypted selector`,
+          )
         }
         return sql`eql_v2.jsonb_array_length(eql_v2.jsonb_path_query_first(${column}, ${encryptedSelector})) ${sql.raw(compOp)} ${comparisonValue}`
       },
@@ -580,7 +608,11 @@ export class JsonPathBuilder {
           let selector: string | undefined
           if (!isRoot) {
             // Encrypt the path to get selector hash
-            selector = await encryptPathSelector(protectClient, path, columnInfo)
+            selector = await encryptPathSelector(
+              protectClient,
+              path,
+              columnInfo,
+            )
           }
           const result = lazyOp.execute(selector)
           resolve(result)
@@ -661,7 +693,7 @@ export async function encryptSingleJsonOperator(
   protectClient: ProtectClient,
   op: LazyJsonOperator,
 ): Promise<unknown> {
-  const { protectColumn, protectTable } = op.columnInfo as any
+  const { protectColumn, protectTable } = op.columnInfo
 
   if (!protectColumn || !protectTable) {
     // If columnInfo is incomplete (e.g., in tests with mocks), return the value as-is
@@ -716,7 +748,7 @@ export async function encryptPathSelector(
   path: string,
   columnInfo: ColumnInfo,
 ): Promise<string> {
-  const { protectColumn, protectTable } = columnInfo as any
+  const { protectColumn, protectTable } = columnInfo
 
   if (!protectColumn || !protectTable) {
     // If columnInfo is incomplete (e.g., in tests with mocks), return a placeholder selector
@@ -735,7 +767,9 @@ export async function encryptPathSelector(
   const result = await protectClient.encryptQuery([queryTerm])
 
   if (result.failure) {
-    throw new Error(`Failed to encrypt path selector: ${result.failure.message}`)
+    throw new Error(
+      `Failed to encrypt path selector: ${result.failure.message}`,
+    )
   }
 
   // Extract the selector from the result

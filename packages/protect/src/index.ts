@@ -100,7 +100,6 @@ export type { EncryptModelOperation } from './ffi/operations/encrypt-model'
 export type { EncryptOperation } from './ffi/operations/encrypt'
 export type { SearchTermsOperation } from './ffi/operations/search-terms'
 export type { EncryptQueryOperation } from './ffi/operations/encrypt-query'
-export type { QuerySearchTermsOperation } from './ffi/operations/query-search-terms'
 export type { BatchEncryptQueryOperation } from './ffi/operations/batch-encrypt-query'
 
 export { csTable, csColumn, csValue } from '@cipherstash/schema'

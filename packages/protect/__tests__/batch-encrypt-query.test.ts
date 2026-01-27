@@ -1,7 +1,8 @@
 import 'dotenv/config'
 import { csColumn, csTable } from '@cipherstash/schema'
 import { beforeAll, describe, expect, it } from 'vitest'
-import { LockContext, type QueryTerm, protect } from '../src'
+import { type QueryTerm, protect } from '../src'
+import { queryTypes } from '../src/types'
 
 const users = csTable('users', {
   email: csColumn('email').freeTextSearch().equality().orderAndRange(),
@@ -35,9 +36,14 @@ describe('encryptQuery batch overload', () => {
         value: 'test@example.com',
         column: users.email,
         table: users,
-        queryType: 'equality',
+        queryType: queryTypes.equality,
       },
-      { value: 100, column: users.score, table: users, queryType: 'orderAndRange' },
+      {
+        value: 100,
+        column: users.score,
+        table: users,
+        queryType: queryTypes.orderAndRange,
+      },
     ]
 
     const result = await protectClient.encryptQuery(terms)
@@ -106,9 +112,9 @@ describe('encryptQuery batch - JSON containment queries', () => {
 
     expect(result.data).toHaveLength(1)
     expect(result.data[0]).toHaveProperty('sv')
-    const sv = (result.data[0] as any).sv
-    expect(sv).toHaveLength(1)
-    expect(sv[0]).toHaveProperty('s', 'json_users/metadata/role')
+    const svResult = result.data[0] as { sv: Array<{ s: string }> }
+    expect(svResult.sv).toHaveLength(1)
+    expect(svResult.sv[0]).toHaveProperty('s', 'json_users/metadata/role')
   })
 
   it('should encrypt JSON containedBy query', async () => {
@@ -138,7 +144,7 @@ describe('encryptQuery batch - mixed term types', () => {
         value: 'test@example.com',
         column: users.email,
         table: users,
-        queryType: 'equality',
+        queryType: queryTypes.equality,
       },
       {
         path: 'user.email',
@@ -176,7 +182,7 @@ describe('encryptQuery batch - return type formatting', () => {
         value: 'test@example.com',
         column: users.email,
         table: users,
-        queryType: 'equality',
+        queryType: queryTypes.equality,
         returnType: 'composite-literal',
       },
     ]
@@ -199,7 +205,7 @@ describe('encryptQuery batch - readonly/as const support', () => {
         value: 'test@example.com',
         column: users.email,
         table: users,
-        queryType: 'equality' as const,
+        queryType: queryTypes.equality,
       },
     ] as const
 
@@ -237,7 +243,7 @@ describe('encryptQuery batch - auto-infer index type', () => {
         value: 'test@example.com',
         column: users.email,
         table: users,
-        queryType: 'equality',
+        queryType: queryTypes.equality,
       },
     ])
 
@@ -256,12 +262,17 @@ describe('encryptQuery batch - auto-infer index type', () => {
         value: 'explicit@example.com',
         column: users.email,
         table: users,
-        queryType: 'equality',
+        queryType: queryTypes.equality,
       },
       // Auto-infer indexType
       { value: 'auto@example.com', column: users.email, table: users },
       // Another explicit indexType
-      { value: 100, column: users.score, table: users, queryType: 'orderAndRange' },
+      {
+        value: 100,
+        column: users.score,
+        table: users,
+        queryType: queryTypes.orderAndRange,
+      },
     ])
 
     if (result.failure) {
@@ -277,43 +288,6 @@ describe('encryptQuery batch - auto-infer index type', () => {
     expect(result.data[1]).toHaveProperty('c')
     // Third term: explicit ore should have valid encryption
     expect(result.data[2]).not.toBeNull()
-  })
-})
-
-describe('encryptQuery batch - Lock context integration', () => {
-  it('should encrypt batch with lock context', async () => {
-    const userJwt = process.env.USER_JWT
-
-    if (!userJwt) {
-      console.log('Skipping lock context test - no USER_JWT provided')
-      return
-    }
-
-    const lc = new LockContext()
-    const lockContext = await lc.identify(userJwt)
-
-    if (lockContext.failure) {
-      throw new Error(`[protect]: ${lockContext.failure.message}`)
-    }
-
-    const terms: QueryTerm[] = [
-      {
-        value: 'test@example.com',
-        column: users.email,
-        table: users,
-        queryType: 'equality',
-      },
-    ]
-
-    const result = await protectClient
-      .encryptQuery(terms)
-      .withLockContext(lockContext.data)
-
-    if (result.failure) {
-      throw new Error(`[protect]: ${result.failure.message}`)
-    }
-
-    expect(result.data).toHaveLength(1)
   })
 })
 
@@ -339,7 +313,7 @@ describe('encryptQuery single-value - auto-infer index type', () => {
     const result = await protectClient.encryptQuery('test@example.com', {
       column: users.email,
       table: users,
-      queryType: 'equality',
+      queryType: queryTypes.equality,
     })
 
     if (result.failure) {
@@ -353,7 +327,6 @@ describe('encryptQuery single-value - auto-infer index type', () => {
     const result = await protectClient.encryptQuery(null, {
       column: users.email,
       table: users,
-      // No indexType
     })
 
     if (result.failure) {

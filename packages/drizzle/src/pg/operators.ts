@@ -38,7 +38,13 @@ import type { PgTable } from 'drizzle-orm/pg-core'
 import type { EncryptedColumnConfig } from './index.js'
 import { getEncryptedColumnConfig } from './index.js'
 import { extractProtectSchema } from './schema-extraction.js'
-import { JsonPathBuilder, normalizePath, isLazyJsonOperator, type LazyJsonOperator, encryptSingleJsonOperator } from './json-operators.js'
+import {
+  JsonPathBuilder,
+  normalizePath,
+  isLazyJsonOperator,
+  type LazyJsonOperator,
+  encryptSingleJsonOperator,
+} from './json-operators.js'
 
 // ============================================================================
 // Type Definitions and Type Guards
@@ -1858,7 +1864,10 @@ export function createProtectOperators(protectClient: ProtectClient): {
   /**
    * JSON path builder for searchable JSON columns
    */
-  const protectJsonPath = (column: SQLWrapper, path: string): JsonPathBuilder => {
+  const protectJsonPath = (
+    column: SQLWrapper,
+    path: string,
+  ): JsonPathBuilder => {
     const columnInfo = getColumnInfo(
       column,
       defaultProtectTable,
@@ -1867,18 +1876,16 @@ export function createProtectOperators(protectClient: ProtectClient): {
 
     if (!columnInfo.config?.searchableJson) {
       throw new ProtectConfigError(
-        `searchableJson is required for jsonPath() on column "${columnInfo.columnName}". ` +
-        `Add { searchableJson: true } to the encryptedType() config.`,
-        { columnName: columnInfo.columnName, tableName: columnInfo.tableName }
+        `searchableJson is required for jsonPath() on column "${columnInfo.columnName}". Add { searchableJson: true } to the encryptedType() config.`,
+        { columnName: columnInfo.columnName, tableName: columnInfo.tableName },
       )
     }
 
     // Validate that dataType is 'json' when searchableJson is enabled
     if (columnInfo.config.dataType !== 'json') {
       throw new ProtectConfigError(
-        `searchableJson requires dataType: 'json' on column "${columnInfo.columnName}". ` +
-        `Add { dataType: 'json', searchableJson: true } to the encryptedType() config.`,
-        { columnName: columnInfo.columnName, tableName: columnInfo.tableName }
+        `searchableJson requires dataType: 'json' on column "${columnInfo.columnName}". Add { dataType: 'json', searchableJson: true } to the encryptedType() config.`,
+        { columnName: columnInfo.columnName, tableName: columnInfo.tableName },
       )
     }
 
