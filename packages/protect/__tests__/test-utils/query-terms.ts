@@ -52,12 +52,10 @@ export const expectSteVecArray = (
   }
 }
 
-/** Validates path query with value has selector field */
+/** Validates path query with value returns sv array structure (same as containment) */
 export const expectJsonPathWithValue = (term: Record<string, unknown>) => {
-  // Validate selector exists
-  expectSteVecSelector(term as { s?: string })
-  // Verify there's encrypted content (more than just selector)
-  expect(Object.keys(term).length).toBeGreaterThan(1)
+  // Path queries with value now return { sv: [...] } format (same as containment)
+  expectSteVecArray(term as { sv?: Array<Record<string, unknown>> })
 }
 
 /** Validates path-only query has only selector, no additional content */

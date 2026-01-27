@@ -15,7 +15,7 @@ import type {
 } from '../../types'
 import { queryTypeToFfi } from '../../types'
 import { noClientError } from '../index'
-import { buildNestedObject, flattenJson, pathToSelector, toDollarPath } from './json-path-utils'
+import { buildNestedObject, toDollarPath } from './json-path-utils'
 import { ProtectOperation } from './base-operation'
 
 /**
@@ -41,15 +41,19 @@ function isSimpleSearchTerm(term: SearchTerm): term is SimpleSearchTerm {
   return !isJsonPathTerm(term) && !isJsonContainmentTerm(term)
 }
 
-/** Tracks which items belong to which term for reassembly */
-type JsonEncryptionItem = {
+/** Tracks JSON containment items - pass raw JSON to FFI */
+type JsonContainmentItem = {
   termIndex: number
-  selector: string
-  isContainment: boolean
   plaintext: JsPlaintext
   column: string
   table: string
-  queryOp: QueryOpName
+}
+
+/** Tracks JSON path items that need value encryption */
+type JsonPathEncryptionItem = {
+  plaintext: JsPlaintext
+  column: string
+  table: string
 }
 
 /**
@@ -71,7 +75,10 @@ async function encryptSearchTermsHelper(
   // Partition terms by type
   const simpleTermsWithIndex: Array<{ term: SimpleSearchTerm; index: number }> =
     []
-  const jsonItemsWithIndex: JsonEncryptionItem[] = []
+  // JSON containment items - pass raw JSON to FFI
+  const jsonContainmentItems: JsonContainmentItem[] = []
+  // JSON path items that need value encryption
+  const jsonPathItems: JsonPathEncryptionItem[] = []
   // Selector-only terms (JSON path without value)
   const selectorOnlyItems: Array<{
     selector: string
@@ -94,22 +101,13 @@ async function encryptSearchTermsHelper(
         )
       }
 
-      // Always use full table/column prefix
-      const prefix = `${term.table.tableName}/${term.column.getName()}`
-
-      // Flatten and add all leaf values
-      const pairs = flattenJson(term.value, prefix)
-      for (const pair of pairs) {
-        jsonItemsWithIndex.push({
-          termIndex: i,
-          selector: toDollarPath(pair.path),
-          isContainment: true,
-          plaintext: pair.value,
-          column: term.column.getName(),
-          table: term.table.tableName,
-          queryOp: 'default',
-        })
-      }
+      // Pass raw JSON directly - FFI handles flattening internally
+      jsonContainmentItems.push({
+        termIndex: i,
+        plaintext: term.value,
+        column: term.column.getName(),
+        table: term.table.tableName,
+      })
     } else if (isJsonPathTerm(term)) {
       // Path query - validate ste_vec index
       const columnConfig = term.column.build()
@@ -120,23 +118,16 @@ async function encryptSearchTermsHelper(
         )
       }
 
-      // Always use full table/column prefix
-      const prefix = `${term.table.tableName}/${term.column.getName()}`
-
       if (term.value !== undefined) {
         // Path query with value - wrap in nested object
         const pathArray = Array.isArray(term.path)
           ? term.path
           : term.path.split('.')
         const wrappedValue = buildNestedObject(pathArray, term.value)
-        jsonItemsWithIndex.push({
-          termIndex: i,
-          selector: toDollarPath(term.path),
-          isContainment: false,
+        jsonPathItems.push({
           plaintext: wrappedValue,
           column: term.column.getName(),
           table: term.table.tableName,
-          queryOp: 'default',
         })
       } else {
         // Path-only terms (no value) need selector encryption
@@ -165,19 +156,17 @@ async function encryptSearchTermsHelper(
         })
       : []
 
-  // Encrypt selectors for JSON terms with values (ste_vec_selector op)
-  const selectorsEncrypted =
-    jsonItemsWithIndex.length > 0
+  // Encrypt JSON containment terms - pass raw JSON, FFI handles flattening
+  const jsonContainmentEncrypted =
+    jsonContainmentItems.length > 0
       ? await encryptQueryBulk(client, {
-          queries: jsonItemsWithIndex.map((item) => {
-            return {
-              plaintext: item.selector,
-              column: item.column,
-              table: item.table,
-              indexType: queryTypeToFfi.searchableJson,
-              queryOp: 'ste_vec_selector' as QueryOpName,
-            }
-          }),
+          queries: jsonContainmentItems.map((item) => ({
+            plaintext: item.plaintext,
+            column: item.column,
+            table: item.table,
+            indexType: queryTypeToFfi.searchableJson,
+            queryOp: 'default' as QueryOpName,
+          })),
           unverifiedContext: metadata,
         })
       : []
@@ -186,32 +175,28 @@ async function encryptSearchTermsHelper(
   const selectorOnlyEncrypted =
     selectorOnlyItems.length > 0
       ? await encryptQueryBulk(client, {
-          queries: selectorOnlyItems.map((item) => {
-            return {
-              plaintext: item.selector,
-              column: item.column,
-              table: item.table,
-              indexType: queryTypeToFfi.searchableJson,
-              queryOp: 'ste_vec_selector' as QueryOpName,
-            }
-          }),
+          queries: selectorOnlyItems.map((item) => ({
+            plaintext: item.selector,
+            column: item.column,
+            table: item.table,
+            indexType: queryTypeToFfi.searchableJson,
+            queryOp: 'ste_vec_selector' as QueryOpName,
+          })),
           unverifiedContext: metadata,
         })
       : []
 
-  // Encrypt JSON terms with encryptQueryBulk (searchableJson index)
-  const jsonEncrypted =
-    jsonItemsWithIndex.length > 0
+  // Encrypt JSON path terms with values
+  const jsonPathEncrypted =
+    jsonPathItems.length > 0
       ? await encryptQueryBulk(client, {
-          queries: jsonItemsWithIndex.map((item) => {
-            return {
-              plaintext: item.plaintext,
-              column: item.column,
-              table: item.table,
-              indexType: queryTypeToFfi.searchableJson,
-              queryOp: item.queryOp,
-            }
-          }),
+          queries: jsonPathItems.map((item) => ({
+            plaintext: item.plaintext,
+            column: item.column,
+            table: item.table,
+            indexType: queryTypeToFfi.searchableJson,
+            queryOp: 'default' as QueryOpName,
+          })),
           unverifiedContext: metadata,
         })
       : []
@@ -219,7 +204,8 @@ async function encryptSearchTermsHelper(
   // Reassemble results in original order
   const results: EncryptedSearchTerm[] = new Array(terms.length)
   let simpleIdx = 0
-  let jsonIdx = 0
+  let containmentIdx = 0
+  let pathIdx = 0
   let selectorOnlyIdx = 0
 
   for (let i = 0; i < terms.length; i++) {
@@ -239,34 +225,14 @@ async function encryptSearchTermsHelper(
         results[i] = encrypted
       }
     } else if (isJsonContainmentTerm(term)) {
-      // Gather all encrypted values for this containment term
-      // Always use full table/column prefix
-      const prefix = `${term.table.tableName}/${term.column.getName()}`
-      const pairs = flattenJson(term.value, prefix)
-      const svEntries: Array<Record<string, unknown>> = []
-
-      for (const _pair of pairs) {
-        const selectorEncrypted = selectorsEncrypted[jsonIdx]
-        svEntries.push({
-          ...jsonEncrypted[jsonIdx],
-          s: selectorEncrypted ? (selectorEncrypted as any).s : undefined,
-        })
-        jsonIdx++
-      }
-
-      results[i] = { sv: svEntries } as Encrypted
+      // FFI returns complete { sv: [...] } structure - use directly
+      results[i] = jsonContainmentEncrypted[containmentIdx] as Encrypted
+      containmentIdx++
     } else if (isJsonPathTerm(term)) {
-      // Always use full table/column prefix
-      const prefix = `${term.table.tableName}/${term.column.getName()}`
-
       if (term.value !== undefined) {
-        // Path query with value
-        const selectorEncrypted = selectorsEncrypted[jsonIdx]
-        results[i] = {
-          ...jsonEncrypted[jsonIdx],
-          s: selectorEncrypted ? (selectorEncrypted as any).s : undefined,
-        } as Encrypted
-        jsonIdx++
+        // FFI returns complete { sv: [...] } structure for path+value queries
+        results[i] = jsonPathEncrypted[pathIdx] as Encrypted
+        pathIdx++
       } else {
         // Path-only (no value comparison)
         results[i] = selectorOnlyEncrypted[selectorOnlyIdx]
