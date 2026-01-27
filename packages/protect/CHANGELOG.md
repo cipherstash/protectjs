@@ -1,5 +1,11 @@
 # @cipherstash/protect
 
+## 10.4.0
+
+### Minor Changes
+
+- 9ccaf68: Allow stash cli tool to read env files from .env.\*.
+
 ## 10.3.0
 
 ### Minor Changes

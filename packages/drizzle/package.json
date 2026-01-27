@@ -1,6 +1,6 @@
 {
 	"name": "@cipherstash/drizzle",
-	"version": "2.2.0",
+	"version": "2.3.0",
 	"description": "CipherStash Protect.js Drizzle ORM integration for TypeScript",
 	"keywords": [
 		"encrypted",
