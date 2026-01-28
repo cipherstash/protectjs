@@ -803,6 +803,162 @@ describe('create search terms - JSON comprehensive', () => {
     }, 30000)
   })
 
+  describe('Array path notation', () => {
+    it('should handle array wildcard [@] notation', async () => {
+      const terms = [
+        {
+          path: 'items[@]',
+          column: jsonSearchSchema.metadata,
+          table: jsonSearchSchema,
+        },
+      ] as SearchTerm[]
+
+      const result = await protectClient.createSearchTerms(terms)
+
+      if (result.failure) {
+        throw new Error(`[protect]: ${result.failure.message}`)
+      }
+
+      expect(result.data).toHaveLength(1)
+      expectJsonPathSelectorOnly(result.data[0] as Record<string, unknown>)
+    }, 30000)
+
+    it('should handle array wildcard [*] notation', async () => {
+      const terms = [
+        {
+          path: 'items[*]',
+          column: jsonSearchSchema.metadata,
+          table: jsonSearchSchema,
+        },
+      ] as SearchTerm[]
+
+      const result = await protectClient.createSearchTerms(terms)
+
+      if (result.failure) {
+        throw new Error(`[protect]: ${result.failure.message}`)
+      }
+
+      expect(result.data).toHaveLength(1)
+      expectJsonPathSelectorOnly(result.data[0] as Record<string, unknown>)
+    }, 30000)
+
+    it('should handle array index [0] notation', async () => {
+      const terms = [
+        {
+          path: 'items[0]',
+          column: jsonSearchSchema.metadata,
+          table: jsonSearchSchema,
+        },
+      ] as SearchTerm[]
+
+      const result = await protectClient.createSearchTerms(terms)
+
+      if (result.failure) {
+        throw new Error(`[protect]: ${result.failure.message}`)
+      }
+
+      expect(result.data).toHaveLength(1)
+      expectJsonPathSelectorOnly(result.data[0] as Record<string, unknown>)
+    }, 30000)
+
+    it('should handle nested array path users[@].email', async () => {
+      const terms = [
+        {
+          path: 'users[@].email',
+          column: jsonSearchSchema.metadata,
+          table: jsonSearchSchema,
+        },
+      ] as SearchTerm[]
+
+      const result = await protectClient.createSearchTerms(terms)
+
+      if (result.failure) {
+        throw new Error(`[protect]: ${result.failure.message}`)
+      }
+
+      expect(result.data).toHaveLength(1)
+      expectJsonPathSelectorOnly(result.data[0] as Record<string, unknown>)
+    }, 30000)
+
+    it('should handle array path with value comparison', async () => {
+      const terms = [
+        {
+          path: 'tags[@]',
+          value: 'premium',
+          column: jsonSearchSchema.metadata,
+          table: jsonSearchSchema,
+        },
+      ] as SearchTerm[]
+
+      const result = await protectClient.createSearchTerms(terms)
+
+      if (result.failure) {
+        throw new Error(`[protect]: ${result.failure.message}`)
+      }
+
+      expect(result.data).toHaveLength(1)
+      expectJsonPathWithValue(result.data[0] as Record<string, unknown>)
+    }, 30000)
+
+    it('should handle deeply nested array path', async () => {
+      const terms = [
+        {
+          path: 'data.users[@].profile.tags[0]',
+          value: 'admin',
+          column: jsonSearchSchema.metadata,
+          table: jsonSearchSchema,
+        },
+      ] as SearchTerm[]
+
+      const result = await protectClient.createSearchTerms(terms)
+
+      if (result.failure) {
+        throw new Error(`[protect]: ${result.failure.message}`)
+      }
+
+      expect(result.data).toHaveLength(1)
+      expectJsonPathWithValue(result.data[0] as Record<string, unknown>)
+    }, 30000)
+
+    it('should handle path array format with array notation', async () => {
+      const terms = [
+        {
+          path: ['users', '[@]', 'email'],
+          column: jsonSearchSchema.metadata,
+          table: jsonSearchSchema,
+        },
+      ] as SearchTerm[]
+
+      const result = await protectClient.createSearchTerms(terms)
+
+      if (result.failure) {
+        throw new Error(`[protect]: ${result.failure.message}`)
+      }
+
+      expect(result.data).toHaveLength(1)
+      expectJsonPathSelectorOnly(result.data[0] as Record<string, unknown>)
+    }, 30000)
+
+    it('should handle multiple array wildcards in path', async () => {
+      const terms = [
+        {
+          path: 'matrix[@][@]',
+          column: jsonSearchSchema.metadata,
+          table: jsonSearchSchema,
+        },
+      ] as SearchTerm[]
+
+      const result = await protectClient.createSearchTerms(terms)
+
+      if (result.failure) {
+        throw new Error(`[protect]: ${result.failure.message}`)
+      }
+
+      expect(result.data).toHaveLength(1)
+      expectJsonPathSelectorOnly(result.data[0] as Record<string, unknown>)
+    }, 30000)
+  })
+
   describe('Error handling', () => {
     it('should throw error for column without ste_vec index configured', async () => {
       const terms = [

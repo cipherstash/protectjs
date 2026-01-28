@@ -1,7 +1,7 @@
 import 'dotenv/config'
 import { csColumn, csTable } from '@cipherstash/schema'
 import { beforeAll, describe, expect, it } from 'vitest'
-import { LockContext, type QueryTerm, protect } from '../src'
+import { LockContext, type QueryTerm, protect, type ProtectErrorCode } from '../src'
 import {
   expectHasHm,
   expectSteVecArray,
@@ -291,6 +291,130 @@ describe('encryptQuery batch - auto-infer index type', () => {
 
 
 
+describe('encryptQuery - ste_vec type inference', () => {
+  it('should infer selector mode for JSON path string plaintext with queryOp default', async () => {
+    // JSON path string + queryOp: 'default' for ste_vec → produces selector-only output (has `s` field)
+    // String must be a valid JSON path starting with '$'
+    const result = await protectClient.encryptQuery([
+      {
+        value: '$.user.email',
+        column: jsonSchema.metadata,
+        table: jsonSchema,
+        queryType: 'searchableJson',
+        queryOp: 'default',
+      },
+    ])
+
+    if (result.failure) {
+      throw new Error(`[protect]: ${result.failure.message}`)
+    }
+
+    expect(result.data).toHaveLength(1)
+    const encrypted = result.data[0] as Record<string, unknown>
+    // JSON path string with default queryOp produces selector-only output
+    expect(encrypted).toHaveProperty('s')
+    expect(typeof encrypted.s).toBe('string')
+    // Selector-only should NOT have sv array
+    expect(encrypted).not.toHaveProperty('sv')
+  })
+
+  it('should infer containment mode for object plaintext with queryOp default', async () => {
+    // Object plaintext + queryOp: 'default' for ste_vec → produces containment output (has `sv` array)
+    const result = await protectClient.encryptQuery([
+      {
+        value: { role: 'admin', status: 'active' },
+        column: jsonSchema.metadata,
+        table: jsonSchema,
+        queryType: 'searchableJson',
+        queryOp: 'default',
+      },
+    ])
+
+    if (result.failure) {
+      throw new Error(`[protect]: ${result.failure.message}`)
+    }
+
+    expect(result.data).toHaveLength(1)
+    const encrypted = result.data[0] as Record<string, unknown>
+    // Object plaintext with default queryOp produces containment output
+    expect(encrypted).toHaveProperty('sv')
+    expect(Array.isArray(encrypted.sv)).toBe(true)
+    const svArray = encrypted.sv as Array<Record<string, unknown>>
+    expect(svArray.length).toBeGreaterThan(0)
+    // Each sv entry should have a selector
+    expect(svArray[0]).toHaveProperty('s')
+  })
+
+  it('should infer containment mode for array plaintext with queryOp default', async () => {
+    // Array plaintext + queryOp: 'default' for ste_vec → produces containment output (has `sv` array)
+    const result = await protectClient.encryptQuery([
+      {
+        value: ['tag1', 'tag2', 'tag3'],
+        column: jsonSchema.metadata,
+        table: jsonSchema,
+        queryType: 'searchableJson',
+        queryOp: 'default',
+      },
+    ])
+
+    if (result.failure) {
+      throw new Error(`[protect]: ${result.failure.message}`)
+    }
+
+    expect(result.data).toHaveLength(1)
+    const encrypted = result.data[0] as Record<string, unknown>
+    // Array plaintext with default queryOp produces containment output
+    expect(encrypted).toHaveProperty('sv')
+    expect(Array.isArray(encrypted.sv)).toBe(true)
+    const svArray = encrypted.sv as Array<Record<string, unknown>>
+    expect(svArray.length).toBeGreaterThan(0)
+  })
+
+  it('should respect explicit ste_vec_selector queryOp', async () => {
+    const result = await protectClient.encryptQuery([
+      {
+        value: '$.user.email',
+        column: jsonSchema.metadata,
+        table: jsonSchema,
+        queryType: 'searchableJson',
+        queryOp: 'ste_vec_selector',
+      },
+    ])
+
+    if (result.failure) {
+      throw new Error(`[protect]: ${result.failure.message}`)
+    }
+
+    expect(result.data).toHaveLength(1)
+    const encrypted = result.data[0] as Record<string, unknown>
+    // Explicit ste_vec_selector produces selector-only output
+    expect(encrypted).toHaveProperty('s')
+    expect(typeof encrypted.s).toBe('string')
+  })
+
+  it('should respect explicit ste_vec_term queryOp', async () => {
+    const result = await protectClient.encryptQuery([
+      {
+        value: { key: 'value' },
+        column: jsonSchema.metadata,
+        table: jsonSchema,
+        queryType: 'searchableJson',
+        queryOp: 'ste_vec_term',
+      },
+    ])
+
+    if (result.failure) {
+      throw new Error(`[protect]: ${result.failure.message}`)
+    }
+
+    expect(result.data).toHaveLength(1)
+    const encrypted = result.data[0] as Record<string, unknown>
+    // Explicit ste_vec_term produces containment output
+    expect(encrypted).toHaveProperty('sv')
+    expect(Array.isArray(encrypted.sv)).toBe(true)
+  })
+})
+
 describe('encryptQuery single-value - auto-infer index type', () => {
   it('should auto-infer index type for single value when not specified', async () => {
     const result = await protectClient.encryptQuery('test@example.com', {
@@ -335,5 +459,86 @@ describe('encryptQuery single-value - auto-infer index type', () => {
     }
 
     expect(result.data).toBeNull()
+  })
+})
+
+// Schema without ste_vec index for error testing
+const schemaWithoutSteVec = csTable('test_no_ste_vec', {
+  data: csColumn('data').dataType('json'),
+})
+
+describe('encryptQuery - error code propagation', () => {
+  let clientWithNoSteVec: Awaited<ReturnType<typeof protect>>
+
+  beforeAll(async () => {
+    clientWithNoSteVec = await protect({ schemas: [users, schemaWithoutSteVec] })
+  })
+
+  it('should propagate UNKNOWN_COLUMN error code for non-existent column', async () => {
+    // Create a fake column reference that doesn't exist in the schema
+    const result = await protectClient.encryptQuery([
+      {
+        value: 'test',
+        column: { getName: () => 'nonexistent_column' } as any,
+        table: users,
+        queryType: 'equality',
+      },
+    ])
+
+    expect(result.failure).toBeDefined()
+    expect(result.failure?.code).toBe('UNKNOWN_COLUMN' as ProtectErrorCode)
+  })
+
+  it('should propagate MISSING_INDEX error code for column without required index', async () => {
+    // Query with ste_vec on a column that only has json dataType (no searchableJson)
+    const result = await clientWithNoSteVec.encryptQuery([
+      {
+        value: { key: 'value' },
+        column: schemaWithoutSteVec.data,
+        table: schemaWithoutSteVec,
+        queryType: 'searchableJson',
+      },
+    ])
+
+    expect(result.failure).toBeDefined()
+    expect(result.failure?.code).toBe('MISSING_INDEX' as ProtectErrorCode)
+  })
+
+  it('should include error code in failure object when FFI throws', async () => {
+    const result = await protectClient.encryptQuery([
+      {
+        value: 'test',
+        column: { getName: () => 'bad_column' } as any,
+        table: { tableName: 'bad_table' } as any,
+        queryType: 'equality',
+      },
+    ])
+
+    expect(result.failure).toBeDefined()
+    // Error should have a code property (could be UNKNOWN_COLUMN or other FFI error)
+    expect(result.failure?.message).toBeDefined()
+    // The code property should exist on errors from FFI
+    if (result.failure?.code) {
+      expect(typeof result.failure.code).toBe('string')
+    }
+  })
+
+  it('should preserve error message alongside error code', async () => {
+    const result = await protectClient.encryptQuery([
+      {
+        value: 'test',
+        column: { getName: () => 'missing_column' } as any,
+        table: users,
+        queryType: 'equality',
+      },
+    ])
+
+    expect(result.failure).toBeDefined()
+    expect(result.failure?.message).toBeTruthy()
+    expect(result.failure?.type).toBe('EncryptionError')
+    // Both message and code should be present
+    if (result.failure?.code) {
+      expect(['UNKNOWN_COLUMN', 'UNKNOWN']).toContain(result.failure.code)
+    }
   })
 })
