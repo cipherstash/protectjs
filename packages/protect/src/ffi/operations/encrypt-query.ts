@@ -3,6 +3,7 @@ import {
   type JsPlaintext,
   encryptBulk,
   encryptQuery as ffiEncryptQuery,
+  ProtectError as FfiProtectError,
 } from '@cipherstash/protect-ffi'
 import type {
   ProtectColumn,
@@ -100,6 +101,7 @@ export class EncryptQueryOperation extends ProtectOperation<Encrypted> {
       (error) => ({
         type: ProtectErrorTypes.EncryptionError,
         message: error.message,
+        code: error instanceof FfiProtectError ? error.code : undefined,
       }),
     )
   }

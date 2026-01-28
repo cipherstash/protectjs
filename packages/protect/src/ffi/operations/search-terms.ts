@@ -1,5 +1,9 @@
 import { type Result, withResult } from '@byteslice/result'
-import { encryptBulk, encryptQueryBulk } from '@cipherstash/protect-ffi'
+import {
+  encryptBulk,
+  encryptQueryBulk,
+  ProtectError as FfiProtectError,
+} from '@cipherstash/protect-ffi'
 import { type ProtectError, ProtectErrorTypes } from '../..'
 import { logger } from '../../../../utils/logger'
 import type {
@@ -277,6 +281,7 @@ export class SearchTermsOperation extends ProtectOperation<
       (error) => ({
         type: ProtectErrorTypes.EncryptionError,
         message: error.message,
+        code: error instanceof FfiProtectError ? error.code : undefined,
       }),
     )
   }

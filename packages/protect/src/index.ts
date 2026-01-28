@@ -11,6 +11,12 @@ export const ProtectErrorTypes = {
   CtsTokenError: 'CtsTokenError',
 }
 
+// Re-export FFI error types for programmatic error handling
+export {
+  ProtectError as FfiProtectError,
+  type ProtectErrorCode,
+} from '@cipherstash/protect-ffi'
+
 /**
  * Error object returned by Protect.js operations.
  */
@@ -19,6 +25,8 @@ export interface ProtectError {
   type: (typeof ProtectErrorTypes)[keyof typeof ProtectErrorTypes]
   /** A human-readable description of the error. */
   message: string
+  /** The FFI error code, if available. Useful for programmatic error handling. */
+  code?: import('@cipherstash/protect-ffi').ProtectErrorCode
 }
 
 type AtLeastOneCsTable<T> = [T, ...T[]]
