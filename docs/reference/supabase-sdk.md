@@ -174,7 +174,7 @@ ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA eql_v2 GRANT ALL ON SEQUENC
 When searching encrypted data, you need to convert the encrypted payload into a format that PostgreSQL and the Supabase SDK can understand. The encrypted payload needs to be converted to a raw composite type format by double stringifying the JSON:
 
 ```typescript
-const searchTerms = await protectClient.createSearchTerms([
+const searchTerms = await protectClient.encryptQuery([
   {
     value: 'billy@example.com',
     column: users.email,
@@ -189,7 +189,7 @@ const searchTerm = searchTerms.data[0]
 For certain queries, when including the encrypted search term with an operator that uses the string logic syntax, you need to use the 'escaped-composite-literal' return type:
 
 ```typescript
-const searchTerms = await protectClient.createSearchTerms([
+const searchTerms = await protectClient.encryptQuery([
   {
     value: 'billy@example.com',
     column: users.email,
@@ -208,7 +208,7 @@ Here are examples of different ways to search encrypted data using the Supabase 
 ### Equality Search
 
 ```typescript
-const searchTerms = await protectClient.createSearchTerms([
+const searchTerms = await protectClient.encryptQuery([
   {
     value: 'billy@example.com',
     column: users.email,
@@ -226,7 +226,7 @@ const { data, error } = await supabase
 ### Pattern Matching Search
 
 ```typescript
-const searchTerms = await protectClient.createSearchTerms([
+const searchTerms = await protectClient.encryptQuery([
   {
     value: 'example.com',
     column: users.email,
@@ -247,7 +247,7 @@ When you need to search for multiple encrypted values, you can use the IN operat
 
 ```typescript
 // Encrypt multiple search terms
-const searchTerms = await protectClient.createSearchTerms([
+const searchTerms = await protectClient.encryptQuery([
   {
     value: 'value1',
     column: users.name,
@@ -275,7 +275,7 @@ You can combine multiple encrypted search conditions using the `.or()` syntax. T
 
 ```typescript
 // Encrypt search terms for different columns
-const searchTerms = await protectClient.createSearchTerms([
+const searchTerms = await protectClient.encryptQuery([
   {
     value: 'user@example.com',
     column: users.email,

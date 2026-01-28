@@ -98,6 +98,9 @@ export type { DecryptOperation } from './ffi/operations/decrypt'
 export type { DecryptModelOperation } from './ffi/operations/decrypt-model'
 export type { EncryptModelOperation } from './ffi/operations/encrypt-model'
 export type { EncryptOperation } from './ffi/operations/encrypt'
+export type { SearchTermsOperation } from './ffi/operations/search-terms'
+export type { EncryptQueryOperation } from './ffi/operations/encrypt-query'
+export type { BatchEncryptQueryOperation } from './ffi/operations/batch-encrypt-query'
 
 export { csTable, csColumn, csValue } from '@cipherstash/schema'
 export type {
@@ -116,4 +119,55 @@ export type {
   GetLockContextResponse,
 } from './identify'
 export * from './helpers'
-export * from './types'
+
+// Explicitly export only the public types (not internal query types)
+export type {
+  Client,
+  Encrypted,
+  EncryptedPayload,
+  EncryptedData,
+  SearchTerm,
+  SimpleSearchTerm,
+  KeysetIdentifier,
+  EncryptedSearchTerm,
+  EncryptPayload,
+  EncryptOptions,
+  EncryptQueryOptions,
+  EncryptedFields,
+  OtherFields,
+  DecryptedFields,
+  Decrypted,
+  BulkEncryptPayload,
+  BulkEncryptedData,
+  BulkDecryptPayload,
+  BulkDecryptedData,
+  DecryptionResult,
+  QuerySearchTerm,
+  JsonSearchTerm,
+  JsonPath,
+  JsonPathSearchTerm,
+  JsonContainmentSearchTerm,
+  // New unified QueryTerm types
+  QueryTerm,
+  ScalarQueryTermBase,
+  JsonQueryTermBase,
+  ScalarQueryTerm,
+  JsonPathQueryTerm,
+  JsonContainsQueryTerm,
+  JsonContainedByQueryTerm,
+  // Query option types (used in ScalarQueryTerm)
+  QueryTypeName,
+  QueryOpName,
+} from './types'
+
+// Export queryTypes constant for explicit query type selection
+export { queryTypes } from './types'
+
+// Export type guards
+export {
+  isScalarQueryTerm,
+  isJsonPathQueryTerm,
+  isJsonContainsQueryTerm,
+  isJsonContainedByQueryTerm,
+} from './query-term-guards'
+export type { JsPlaintext } from '@cipherstash/protect-ffi'

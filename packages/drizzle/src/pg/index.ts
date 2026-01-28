@@ -23,6 +23,11 @@ export type EncryptedColumnConfig = {
    * Enable order and range index for sorting and range queries.
    */
   orderAndRange?: boolean
+  /**
+   * Enable searchable JSON index for JSON path and containment queries.
+   * Requires dataType to be 'json'.
+   */
+  searchableJson?: boolean
 }
 
 /**
@@ -188,3 +193,13 @@ export { extractProtectSchema } from './schema-extraction.js'
 
 // Re-export operators
 export { createProtectOperators } from './operators.js'
+
+// Re-export JSON operator utilities
+export {
+  JsonPathBuilder,
+  isLazyJsonOperator,
+  normalizePath,
+  type LazyJsonOperator,
+  type JsonOperatorType,
+  type JsonEncryptionType,
+} from './json-operators.js'

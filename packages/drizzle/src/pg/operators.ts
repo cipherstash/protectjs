@@ -38,6 +38,13 @@ import type { PgTable } from 'drizzle-orm/pg-core'
 import type { EncryptedColumnConfig } from './index.js'
 import { getEncryptedColumnConfig } from './index.js'
 import { extractProtectSchema } from './schema-extraction.js'
+import {
+  JsonPathBuilder,
+  normalizePath,
+  isLazyJsonOperator,
+  type LazyJsonOperator,
+  encryptSingleJsonOperator,
+} from './json-operators.js'
 
 // ============================================================================
 // Type Definitions and Type Guards
@@ -180,7 +187,7 @@ function getProtectColumn(
 /**
  * Column metadata extracted from a Drizzle column
  */
-interface ColumnInfo {
+export interface ColumnInfo {
   readonly protectColumn: ProtectColumn | undefined
   readonly config: (EncryptedColumnConfig & { name: string }) | undefined
   readonly protectTable: ProtectTable<ProtectTableColumn> | undefined
@@ -1053,6 +1060,87 @@ export function createProtectOperators(protectClient: ProtectClient): {
   arrayContains: typeof arrayContains
   arrayContained: typeof arrayContained
   arrayOverlaps: typeof arrayOverlaps
+  /**
+   * Create a JSON path builder for querying encrypted JSON columns.
+   *
+   * Provides a fluent API for:
+   * - Path-based comparisons: eq(), ne()
+   * - Containment checks: contains(), containedBy()
+   * - Array operations: arrayLength().gt/gte/lt/lte()
+   * - Value extraction: get(), elements(), elementsText()
+   * - Path extraction: pathExtract(), pathExtractFirst()
+   *
+   * ## Requirements
+   *
+   * The column must have both `dataType: 'json'` and `searchableJson: true` configured.
+   *
+   * ## Path Format
+   *
+   * Accepts both JSONPath format (`$.user.email`) and dot notation (`user.email`).
+   * The `$.` prefix is automatically stripped.
+   *
+   * ## Encryption Semantics
+   *
+   * Different operations have different encryption requirements:
+   * - Value operations (eq, contains, etc.): Encrypts the comparison value
+   * - Array-length on root: No encryption needed
+   * - Array-length on nested path: Encrypts the path selector
+   * - Path extraction: Encrypts the path selector
+   *
+   * @param column - The encrypted JSON column
+   * @param path - The JSON path in JSONPath or dot notation format
+   * @returns A JsonPathBuilder for chaining operations
+   *
+   * @example
+   * Equality comparison at a path:
+   * ```typescript
+   * const result = await db
+   *   .select()
+   *   .from(users)
+   *   .where(await ops.jsonPath(users.metadata, '$.user.email').eq('test@example.com'))
+   * ```
+   *
+   * @example
+   * JSON containment check:
+   * ```typescript
+   * const admins = await db
+   *   .select()
+   *   .from(users)
+   *   .where(await ops.jsonPath(users.metadata, '$').contains({ role: 'admin' }))
+   * ```
+   *
+   * @example
+   * Array length comparison:
+   * ```typescript
+   * const activeUsers = await db
+   *   .select()
+   *   .from(users)
+   *   .where(await ops.jsonPath(users.metadata, '$.items').arrayLength().gt(5))
+   * ```
+   *
+   * @example
+   * Value extraction in SELECT:
+   * ```typescript
+   * const emails = await db
+   *   .select({
+   *     email: await ops.jsonPath(users.metadata, '$.user.email').get()
+   *   })
+   *   .from(users)
+   * ```
+   *
+   * @example
+   * Combining with other operators:
+   * ```typescript
+   * const result = await db
+   *   .select()
+   *   .from(users)
+   *   .where(await ops.and(
+   *     ops.eq(users.status, 'active'),
+   *     ops.jsonPath(users.metadata, '$.user.role').eq('admin')
+   *   ))
+   * ```
+   */
+  jsonPath: (column: SQLWrapper, path: string) => JsonPathBuilder
 } {
   // Create a cache for protect tables keyed by table name
   const protectTableCache = new Map<string, ProtectTable<ProtectTableColumn>>()
@@ -1427,8 +1515,9 @@ export function createProtectOperators(protectClient: ProtectClient): {
   const protectAnd = async (
     ...conditions: (SQL | SQLWrapper | Promise<SQL> | undefined)[]
   ): Promise<SQL> => {
-    // Single pass: separate lazy operators from regular conditions
+    // Collect all operator types for batched processing
     const lazyOperators: LazyOperator[] = []
+    const lazyJsonOperators: LazyJsonOperator[] = []
     const regularConditions: (SQL | SQLWrapper | undefined)[] = []
     const regularPromises: Promise<SQL>[] = []
 
@@ -1437,11 +1526,16 @@ export function createProtectOperators(protectClient: ProtectClient): {
         continue
       }
 
-      if (isLazyOperator(condition)) {
+      // Check for JSON operators FIRST (they are also LazyOperators)
+      if (isLazyJsonOperator(condition)) {
+        lazyJsonOperators.push(condition)
+      } else if (isLazyOperator(condition)) {
         lazyOperators.push(condition)
       } else if (condition instanceof Promise) {
-        // Check if promise is also a lazy operator
-        if (isLazyOperator(condition)) {
+        // Check if the promise is also a lazy operator
+        if (isLazyJsonOperator(condition)) {
+          lazyJsonOperators.push(condition)
+        } else if (isLazyOperator(condition)) {
           lazyOperators.push(condition)
         } else {
           regularPromises.push(condition)
@@ -1451,10 +1545,26 @@ export function createProtectOperators(protectClient: ProtectClient): {
       }
     }
 
+    // Process JSON operators - they have different encryption logic
+    const jsonSqlConditions: SQL[] = []
+    for (const jsonOp of lazyJsonOperators) {
+      try {
+        // JSON operators use their own encryption via encryptSingleJsonOperator
+        const encrypted = await encryptSingleJsonOperator(protectClient, jsonOp)
+        const sqlResult = jsonOp.execute(encrypted)
+        jsonSqlConditions.push(sqlResult)
+      } catch (error) {
+        // Log and continue - individual operator errors shouldn't fail all
+        console.error(`Error processing JSON operator: ${error}`)
+        throw error
+      }
+    }
+
     // If there are no lazy operators, just use Drizzle's and()
     if (lazyOperators.length === 0) {
       const allConditions: (SQL | SQLWrapper | undefined)[] = [
         ...regularConditions,
+        ...jsonSqlConditions,
         ...(await Promise.all(regularPromises)),
       ]
       return and(...allConditions) ?? sql`true`
@@ -1570,6 +1680,7 @@ export function createProtectOperators(protectClient: ProtectClient): {
     // Combine all conditions
     const allConditions: (SQL | SQLWrapper | undefined)[] = [
       ...regularConditions,
+      ...jsonSqlConditions,
       ...sqlConditions,
       ...regularPromisesResults,
     ]
@@ -1583,7 +1694,9 @@ export function createProtectOperators(protectClient: ProtectClient): {
   const protectOr = async (
     ...conditions: (SQL | SQLWrapper | Promise<SQL> | undefined)[]
   ): Promise<SQL> => {
+    // Collect all operator types for batched processing
     const lazyOperators: LazyOperator[] = []
+    const lazyJsonOperators: LazyJsonOperator[] = []
     const regularConditions: (SQL | SQLWrapper | undefined)[] = []
     const regularPromises: Promise<SQL>[] = []
 
@@ -1592,10 +1705,16 @@ export function createProtectOperators(protectClient: ProtectClient): {
         continue
       }
 
-      if (isLazyOperator(condition)) {
+      // Check for JSON operators FIRST (they are also LazyOperators)
+      if (isLazyJsonOperator(condition)) {
+        lazyJsonOperators.push(condition)
+      } else if (isLazyOperator(condition)) {
         lazyOperators.push(condition)
       } else if (condition instanceof Promise) {
-        if (isLazyOperator(condition)) {
+        // Check if the promise is also a lazy operator
+        if (isLazyJsonOperator(condition)) {
+          lazyJsonOperators.push(condition)
+        } else if (isLazyOperator(condition)) {
           lazyOperators.push(condition)
         } else {
           regularPromises.push(condition)
@@ -1605,9 +1724,26 @@ export function createProtectOperators(protectClient: ProtectClient): {
       }
     }
 
+    // Process JSON operators - they have different encryption logic
+    const jsonSqlConditions: SQL[] = []
+    for (const jsonOp of lazyJsonOperators) {
+      try {
+        // JSON operators use their own encryption via encryptSingleJsonOperator
+        const encrypted = await encryptSingleJsonOperator(protectClient, jsonOp)
+        const sqlResult = jsonOp.execute(encrypted)
+        jsonSqlConditions.push(sqlResult)
+      } catch (error) {
+        // Log and continue - individual operator errors shouldn't fail all
+        console.error(`Error processing JSON operator: ${error}`)
+        throw error
+      }
+    }
+
+    // If there are no lazy operators, just use Drizzle's or()
     if (lazyOperators.length === 0) {
       const allConditions: (SQL | SQLWrapper | undefined)[] = [
         ...regularConditions,
+        ...jsonSqlConditions,
         ...(await Promise.all(regularPromises)),
       ]
       return or(...allConditions) ?? sql`false`
@@ -1717,11 +1853,49 @@ export function createProtectOperators(protectClient: ProtectClient): {
 
     const allConditions: (SQL | SQLWrapper | undefined)[] = [
       ...regularConditions,
+      ...jsonSqlConditions,
       ...sqlConditions,
       ...regularPromisesResults,
     ]
 
     return or(...allConditions) ?? sql`false`
+  }
+
+  /**
+   * JSON path builder for searchable JSON columns
+   */
+  const protectJsonPath = (
+    column: SQLWrapper,
+    path: string,
+  ): JsonPathBuilder => {
+    const columnInfo = getColumnInfo(
+      column,
+      defaultProtectTable,
+      protectTableCache,
+    )
+
+    if (!columnInfo.config?.searchableJson) {
+      throw new ProtectConfigError(
+        `searchableJson is required for jsonPath() on column "${columnInfo.columnName}". Add { searchableJson: true } to the encryptedType() config.`,
+        { columnName: columnInfo.columnName, tableName: columnInfo.tableName },
+      )
+    }
+
+    // Validate that dataType is 'json' when searchableJson is enabled
+    if (columnInfo.config.dataType !== 'json') {
+      throw new ProtectConfigError(
+        `searchableJson requires dataType: 'json' on column "${columnInfo.columnName}". Add { dataType: 'json', searchableJson: true } to the encryptedType() config.`,
+        { columnName: columnInfo.columnName, tableName: columnInfo.tableName },
+      )
+    }
+
+    const normalizedPath = normalizePath(path)
+    return new JsonPathBuilder(
+      column,
+      normalizedPath,
+      columnInfo,
+      protectClient,
+    )
   }
 
   return {
@@ -1766,5 +1940,8 @@ export function createProtectOperators(protectClient: ProtectClient): {
     arrayContains,
     arrayContained,
     arrayOverlaps,
+
+    // JSON path builder
+    jsonPath: protectJsonPath,
   }
 }

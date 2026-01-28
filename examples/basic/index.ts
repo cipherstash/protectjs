@@ -1,6 +1,7 @@
 import 'dotenv/config'
 import readline from 'node:readline'
 import { protectClient, users } from './protect'
+import { queryTypes } from '@cipherstash/protect'
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -68,6 +69,54 @@ async function main() {
   }
 
   console.log('Bulk encrypted data:', bulkEncryptResult.data)
+
+  const queryData = await protectClient.encryptQuery('test', {
+    column: users.name,
+    table: users,
+    queryType: queryTypes.equality,
+  })
+
+  if (queryData.failure) {
+    throw new Error(`[protect]: ${queryData.failure.message}`)
+  }
+
+  console.log('Query data:', queryData.data)
+
+  const queryData1 = await protectClient.encryptQuery('test', {
+    column: users.name,
+    table: users,
+    queryType: queryTypes.freeTextSearch,
+  })
+
+  if (queryData1.failure) {
+    throw new Error(`[protect]: ${queryData1.failure.message}`)
+  }
+
+  console.log('Query data:', queryData1.data)
+
+  const queryData2 = await protectClient.encryptQuery('test', {
+    column: users.name,
+    table: users,
+    queryType: queryTypes.orderAndRange,
+  })
+
+  if (queryData2.failure) {
+    throw new Error(`[protect]: ${queryData2.failure.message}`)
+  }
+
+  console.log('Query data:', queryData2.data)
+
+  // const queryData3 = await protectClient.encryptQuery('test', {
+  //   path: '$.name',
+  //   column: users.data,
+  //   table: users,
+  // })
+
+  // if (queryData3.failure) {
+  //   throw new Error(`[protect]: ${queryData3.failure.message}`)
+  // }
+
+  // console.log('Query data:', queryData3.data)
 
   rl.close()
 }

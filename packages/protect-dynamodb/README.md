@@ -55,7 +55,7 @@ await docClient.send(new PutCommand({
 }))
 
 // Create search terms for querying
-const searchTermsResult = await protectDynamo.createSearchTerms([
+const searchTermsResult = await protectDynamo.encryptQuery([
   {
     value: 'user@example.com',
     column: users.email,
@@ -119,10 +119,10 @@ if (result.failure) {
 
 Create search terms for querying encrypted data:
 
-- `createSearchTerms`: Creates search terms for one or more columns
+- `encryptQuery`: Creates search terms for one or more columns
 
 ```typescript
-const searchTermsResult = await protectDynamo.createSearchTerms([
+const searchTermsResult = await protectDynamo.encryptQuery([
   {
     value: 'user@example.com',
     column: users.email,
@@ -165,7 +165,7 @@ if (encryptResult.failure) {
 }
 
 // Query using search terms
-const searchTermsResult = await protectDynamo.createSearchTerms([
+const searchTermsResult = await protectDynamo.encryptQuery([
   {
     value: 'user@example.com',
     column: users.email,
@@ -199,7 +199,7 @@ const table = {
 }
 
 // Create search terms for querying
-const searchTermsResult = await protectDynamo.createSearchTerms([
+const searchTermsResult = await protectDynamo.encryptQuery([
   {
     value: 'user@example.com',
     column: users.email,
@@ -243,7 +243,7 @@ const table = {
 }
 
 // Create search terms for querying
-const searchTermsResult = await protectDynamo.createSearchTerms([
+const searchTermsResult = await protectDynamo.encryptQuery([
   {
     value: 'user@example.com',
     column: users.email,
@@ -298,7 +298,7 @@ const table = {
 }
 
 // Create search terms for querying
-const searchTermsResult = await protectDynamo.createSearchTerms([
+const searchTermsResult = await protectDynamo.encryptQuery([
   {
     value: 'user@example.com',
     column: users.email,

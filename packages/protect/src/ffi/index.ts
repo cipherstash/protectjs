@@ -16,10 +16,15 @@ import type {
   Client,
   Decrypted,
   EncryptOptions,
+  EncryptQueryOptions,
   Encrypted,
   KeysetIdentifier,
+  QuerySearchTerm,
+  QueryTerm,
   SearchTerm,
 } from '../types'
+import { isQueryTermArray } from '../query-term-guards'
+import { BatchEncryptQueryOperation } from './operations/batch-encrypt-query'
 import { BulkDecryptOperation } from './operations/bulk-decrypt'
 import { BulkDecryptModelsOperation } from './operations/bulk-decrypt-models'
 import { BulkEncryptOperation } from './operations/bulk-encrypt'
@@ -28,6 +33,7 @@ import { DecryptOperation } from './operations/decrypt'
 import { DecryptModelOperation } from './operations/decrypt-model'
 import { EncryptOperation } from './operations/encrypt'
 import { EncryptModelOperation } from './operations/encrypt-model'
+import { EncryptQueryOperation } from './operations/encrypt-query'
 import { SearchTermsOperation } from './operations/search-terms'
 
 export const noClientError = () =>
@@ -307,6 +313,8 @@ export class ProtectClient {
   }
 
   /**
+   * @deprecated Use `encryptQuery(terms)` instead with QueryTerm types.
+   *
    * Create search terms to use in a query searching encrypted data
    * Usage:
    *    await eqlClient.createSearchTerms(searchTerms)
@@ -314,6 +322,90 @@ export class ProtectClient {
    */
   createSearchTerms(terms: SearchTerm[]): SearchTermsOperation {
     return new SearchTermsOperation(this.client, terms)
+  }
+
+  /**
+   * Encrypt a single value for query operations with explicit index type control.
+   *
+   * This method produces SEM-only payloads optimized for database queries,
+   * allowing you to specify which index type to use.
+   *
+   * @param plaintext - The value to encrypt for querying
+   * @param opts - Options specifying the column, table, index type, and optional query operation
+   * @returns An EncryptQueryOperation that can be awaited or chained with withLockContext
+   *
+   * @example
+   * ```typescript
+   * // Encrypt for ORE range query
+   * const term = await protectClient.encryptQuery(100, {
+   *   column: usersSchema.score,
+   *   table: usersSchema,
+   *   queryType: 'orderAndRange',
+   * })
+   * ```
+   *
+   * @see {@link https://cipherstash.com/docs/platform/searchable-encryption/supported-queries | Supported Query Types}
+   */
+  encryptQuery(
+    plaintext: JsPlaintext | null,
+    opts: EncryptQueryOptions,
+  ): EncryptQueryOperation
+
+  /**
+   * Encrypt multiple query terms in batch with explicit control over each term.
+   *
+   * Supports scalar terms (with explicit queryType), JSON path queries, and JSON containment queries.
+   * JSON queries implicitly use searchableJson query type.
+   *
+   * @param terms - Array of query terms to encrypt
+   * @returns A BatchEncryptQueryOperation that can be awaited or chained with withLockContext
+   *
+   * @example
+   * ```typescript
+   * const terms = await protectClient.encryptQuery([
+   *   // Scalar term with explicit queryType
+   *   { value: 'admin@example.com', column: users.email, table: users, queryType: 'equality' },
+   *   // JSON path query (searchableJson implicit)
+   *   { path: 'user.email', value: 'test@example.com', column: jsonSchema.metadata, table: jsonSchema },
+   *   // JSON containment query (searchableJson implicit)
+   *   { contains: { role: 'admin' }, column: jsonSchema.metadata, table: jsonSchema },
+   * ])
+   * ```
+   *
+   * @remarks
+   * Note: Empty arrays `[]` are treated as scalar plaintext values for backward
+   * compatibility with the single-value overload. Pass a non-empty array to use
+   * batch encryption.
+   */
+  encryptQuery(terms: readonly QueryTerm[]): BatchEncryptQueryOperation
+
+  // Implementation
+  encryptQuery(
+    plaintextOrTerms: JsPlaintext | null | readonly QueryTerm[],
+    opts?: EncryptQueryOptions,
+  ): EncryptQueryOperation | BatchEncryptQueryOperation {
+    // Check if this is a QueryTerm array by looking for QueryTerm-specific properties
+    // This is needed because JsPlaintext includes JsPlaintext[] which overlaps with QueryTerm[]
+    // Empty arrays are explicitly handled as batch operations (return empty result)
+    if (Array.isArray(plaintextOrTerms)) {
+      if (plaintextOrTerms.length === 0 || isQueryTermArray(plaintextOrTerms)) {
+        return new BatchEncryptQueryOperation(
+          this.client,
+          plaintextOrTerms as unknown as readonly QueryTerm[],
+        )
+      }
+    }
+    // Non-array values pass through to single-value encryption
+    if (!opts) {
+      throw new Error(
+        'encryptQuery requires options when called with a single value',
+      )
+    }
+    return new EncryptQueryOperation(
+      this.client,
+      plaintextOrTerms as JsPlaintext | null,
+      opts,
+    )
   }
 
   /** e.g., debugging or environment info */
