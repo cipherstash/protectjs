@@ -82,12 +82,12 @@ const term = await protectClient.createSearchTerms([{
   returnType: 'composite-literal'
 }])
 
-// NEW - use encryptQuery with indexType
+// NEW - use encryptQuery with queryType
 const term = await protectClient.encryptQuery([{
   value: 'user@example.com',
   column: schema.email,
   table: schema,
-  indexType: 'unique',
+  queryType: 'equality',
   returnType: 'composite-literal'
 }])
 ```
@@ -105,12 +105,12 @@ const term = await protectClient.createQuerySearchTerms([{
   indexType: 'unique'
 }])
 
-// NEW - identical API with encryptQuery
+// NEW - similar API with encryptQuery
 const term = await protectClient.encryptQuery([{
   value: 'user@example.com',
   column: schema.email,
   table: schema,
-  indexType: 'unique'
+  queryType: 'equality'
 }])
 ```
 
@@ -123,11 +123,11 @@ The `encryptQuery` function handles both single values and batch operations:
 ### Single Value
 
 ```typescript
-// Encrypt a single value with explicit index type
+// Encrypt a single value with explicit query type
 const term = await protectClient.encryptQuery('admin@example.com', {
   column: usersSchema.email,
   table: usersSchema,
-  indexType: 'unique',
+  queryType: 'equality',
 })
 
 if (term.failure) {
@@ -143,8 +143,8 @@ console.log(term.data) // encrypted search term
 ```typescript
 // Encrypt multiple terms in one call
 const terms = await protectClient.encryptQuery([
-  // Scalar term with explicit index type
-  { value: 'admin@example.com', column: users.email, table: users, indexType: 'unique' },
+  // Scalar term with explicit query type
+  { value: 'admin@example.com', column: users.email, table: users, queryType: 'equality' },
 
   // JSON path query (ste_vec implicit)
   { path: 'user.email', value: 'test@example.com', column: jsonSchema.metadata, table: jsonSchema },
@@ -165,8 +165,8 @@ console.log(terms.data) // array of encrypted terms
 
 | Old API | New API |
 |---------|---------|
-| `createSearchTerms([{ value, column, table }])` | `encryptQuery([{ value, column, table, indexType }])` with `ScalarQueryTerm` |
-| `createQuerySearchTerms([{ value, column, table, indexType }])` | `encryptQuery([{ value, column, table, indexType }])` with `ScalarQueryTerm` |
+| `createSearchTerms([{ value, column, table }])` | `encryptQuery([{ value, column, table, queryType }])` with `ScalarQueryTerm` |
+| `createQuerySearchTerms([{ value, column, table, indexType }])` | `encryptQuery([{ value, column, table, queryType }])` with `ScalarQueryTerm` |
 | `createSearchTerms([{ path, value, column, table }])` | `encryptQuery([{ path, value, column, table }])` with `JsonPathQueryTerm` |
 | `createSearchTerms([{ containmentType: 'contains', value, ... }])` | `encryptQuery([{ contains: {...}, column, table }])` with `JsonContainsQueryTerm` |
 | `createSearchTerms([{ containmentType: 'contained_by', value, ... }])` | `encryptQuery([{ containedBy: {...}, column, table }])` with `JsonContainedByQueryTerm` |
@@ -198,7 +198,7 @@ import {
 
 | Type | Properties | Use Case |
 |------|------------|----------|
-| `ScalarQueryTerm` | `value`, `column`, `table`, `indexType`, `queryOp?` | Scalar value queries (equality, match, ore) |
+| `ScalarQueryTerm` | `value`, `column`, `table`, `queryType`, `queryOp?` | Scalar value queries (equality, freeTextSearch, orderAndRange) |
 | `JsonPathQueryTerm` | `path`, `value?`, `column`, `table` | JSON path access queries |
 | `JsonContainsQueryTerm` | `contains`, `column`, `table` | JSON containment (`@>`) queries |
 | `JsonContainedByQueryTerm` | `containedBy`, `column`, `table` | JSON contained-by (`<@`) queries |
@@ -209,7 +209,7 @@ Type guards are useful when working with mixed query results:
 
 ```typescript
 const terms = await protectClient.encryptQuery([
-  { value: 'user@example.com', column: schema.email, table: schema, indexType: 'unique' },
+  { value: 'user@example.com', column: schema.email, table: schema, queryType: 'equality' },
   { contains: { role: 'admin' }, column: schema.metadata, table: schema },
 ])
 
@@ -372,7 +372,7 @@ const term = await protectClient.encryptQuery([{
   value: 'user@example.com',
   column: schema.email,
   table: schema,
-  indexType: 'unique',  // Use 'unique' for equality queries
+  queryType: 'equality',  // Use 'equality' for exact match queries
   returnType: 'composite-literal' // Required for PostgreSQL composite types
 }])
 
@@ -397,7 +397,7 @@ const term = await protectClient.encryptQuery([{
   value: 'example',
   column: schema.email,
   table: schema,
-  indexType: 'match',  // Use 'match' for text search queries
+  queryType: 'freeTextSearch',  // Use 'freeTextSearch' for text search queries
   returnType: 'composite-literal'
 }])
 
@@ -468,7 +468,7 @@ const searchTerm = await protectClient.encryptQuery([{
   value: 'example.com',
   column: schema.email,
   table: schema,
-  indexType: 'match',  // Use 'match' for text search
+  queryType: 'freeTextSearch',  // Use 'freeTextSearch' for text search
   returnType: 'composite-literal'
 }])
 
