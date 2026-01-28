@@ -102,7 +102,7 @@ const term = await protectClient.createQuerySearchTerms([{
   value: 'user@example.com',
   column: schema.email,
   table: schema,
-  indexType: 'unique'
+  indexType: 'unique'  // Note: indexType was the old parameter name, now use queryType
 }])
 
 // NEW - similar API with encryptQuery

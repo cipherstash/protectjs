@@ -73,7 +73,7 @@ const encryptedParam = await protectClient.encryptQuery([{
   value: searchTerm,
   table: protectedUsers,        // Reference to the Protect table schema
   column: protectedUsers.email, // Your Protect column definition
-  indexType: 'unique',          // Use 'unique' for equality queries
+  queryType: 'equality',        // Use 'equality' for exact match queries
 }])
 
 if (encryptedParam.failure) {

@@ -846,7 +846,7 @@ CREATE TABLE users (
 
 > [!WARNING]
 > The `eql_v2_encrypted` type is a [composite type](https://www.postgresql.org/docs/current/rowtypes.html) and each ORM/client has a different way of handling inserts and selects.
-> We've documented how to handle inserts and selects for the different ORMs/clients in the [docs](./docs/reference/working-with-composite-types.md).
+> Handling inserts and selects varies by ORM/client. See the [Drizzle integration guide](./docs/reference/drizzle/drizzle.md) for examples.
 
 Read more about [how to search encrypted data](./docs/reference/searchable-encryption-postgres.md) in the docs.
 
@@ -1076,10 +1076,9 @@ const searchTerms = await protectClient.encryptQuery([
 // Containment query: find users where metadata contains { tags: ['premium'] }
 const containmentTerms = await protectClient.encryptQuery([
   {
-    value: { tags: ["premium"] },
+    contains: { tags: ["premium"] },
     column: users.metadata,
     table: users,
-    containmentType: "contains",
   }
 ]);
 ```
@@ -1165,7 +1164,7 @@ Here are a few resources to help based on your tool set:
 - [SST and AWS serverless functions](./docs/how-to/sst-external-packages.md).
   
 > [!TIP]
-> Deploying to Linux (e.g., AWS Lambda) with npm lockfile v3 and seeing runtime module load errors? See the troubleshooting guide: [`docs/how-to/npm-lockfile-v3`](./docs/how-to/npm-lockfile-v3-linux-deployments.md).
+> Deploying to Linux (e.g., AWS Lambda) with npm lockfile v3 and seeing runtime module load errors? See the troubleshooting guide: [`docs/how-to/npm-lockfile-v3.md`](./docs/how-to/npm-lockfile-v3.md).
 
 ## Contributing
 
