@@ -174,6 +174,9 @@ console.log(terms.data) // array of encrypted terms
 > [!NOTE]
 > Both `createSearchTerms` and `createQuerySearchTerms` are deprecated. Use `encryptQuery` for all query encryption needs.
 
+> [!TIP]
+> The `queryType` parameter is optional when the column has only one index type configured.
+
 ### Query Term Types
 
 The `encryptQuery` function accepts different query term types. These types are exported from `@cipherstash/protect`:
@@ -198,7 +201,7 @@ import {
 
 | Type | Properties | Use Case |
 |------|------------|----------|
-| `ScalarQueryTerm` | `value`, `column`, `table`, `queryType`, `queryOp?` | Scalar value queries (equality, freeTextSearch, orderAndRange) |
+| `ScalarQueryTerm` | `value`, `column`, `table`, `queryType`, `queryOp?` | Scalar value queries using queryType: 'equality', 'freeTextSearch', or 'orderAndRange' |
 | `JsonPathQueryTerm` | `path`, `value?`, `column`, `table` | JSON path access queries |
 | `JsonContainsQueryTerm` | `contains`, `column`, `table` | JSON containment (`@>`) queries |
 | `JsonContainedByQueryTerm` | `containedBy`, `column`, `table` | JSON contained-by (`<@`) queries |
