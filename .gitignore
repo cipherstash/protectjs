@@ -66,3 +66,10 @@ mise.local.toml
 cipherstash.toml
 cipherstash.secret.toml
 sql/cipherstash-*.sql
+
+# work files
+.claude/
+.serena/
+.work/
+**/.work/
+PR_REVIEW.md

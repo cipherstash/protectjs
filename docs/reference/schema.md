@@ -76,9 +76,29 @@ export const protectedUsers = csTable("users", {
 });
 ```
 
+### Searchable JSON
+
+To enable searching within JSON columns, use the `searchableJson()` method. This automatically sets the column data type to `json` and configures the necessary indexes for path and containment queries.
+
+```ts
+import { csTable, csColumn } from "@cipherstash/protect";
+
+export const protectedUsers = csTable("users", {
+  metadata: csColumn("metadata").searchableJson(),
+});
+```
+
+> [!WARNING]
+> `searchableJson()` is mutually exclusive with other index types (`equality()`, `freeTextSearch()`, `orderAndRange()`) on the same column. Combining them will result in runtime errors. This is enforced by the encryption backend, not at the TypeScript type level.
+
+
 ### Nested objects
 
-Protect.js supports nested objects in your schema, allowing you to encrypt **but not search on** nested properties. You can define nested objects up to 3 levels deep.
+Protect.js supports nested objects in your schema, allowing you to encrypt nested properties. You can define nested objects up to 3 levels deep using `csValue`. For **searchable** JSON data, use `.searchableJson()` on a JSON column instead.
+
+> [!TIP]
+> If you need to search within JSON data, use `.searchableJson()` on the column instead of nested `csValue` definitions. See [Searchable JSON](#searchable-json) above.
+
 This is useful for data stores that have less structured data, like NoSQL databases.
 
 You can define nested objects by using the `csValue` function to define a value in a nested object. The value naming convention of the `csValue` function is a dot-separated string of the nested object path, e.g. `profile.name` or `profile.address.street`.
@@ -105,15 +125,15 @@ export const protectedUsers = csTable("users", {
 ```
 
 When working with nested objects:
-- Searchable encryption is not supported on nested objects
+- Searchable encryption is not supported on nested `csValue` objects (use `.searchableJson()` for searchable JSON)
 - Each level can have its own encrypted fields
 - The maximum nesting depth is 3 levels
 - Null and undefined values are supported at any level
 - Optional nested objects are supported
 
 > [!WARNING]
-> TODO: The schema builder does not validate the values you supply to the `csValue` or `csColumn` functions.
-> These values are meant to be unique, and and cause unexpected behavior if they are not defined correctly.
+> The schema builder does not currently validate the values you supply to the `csValue` or `csColumn` functions.
+> These values must be unique within your schema - duplicate values may cause unexpected behavior.
 
 ## Available index options
 
@@ -124,8 +144,12 @@ The following index options are available for your schema:
 | equality   | Enables a exact index for equality queries. | `WHERE email = 'example@example.com'` |
 | freeTextSearch   | Enables a match index for free text queries. | `WHERE description LIKE '%example%'` |
 | orderAndRange   | Enables an sorting and range queries index. | `ORDER BY price ASC` |
+| searchableJson | Enables searching inside JSON columns. | `WHERE data->'user'->>'email' = '...'` |
 
-You can chain these methods to your column to configure them in any combination.
+You can chain `equality()`, `freeTextSearch()`, and `orderAndRange()` methods in any combination.
+
+> [!WARNING]
+> `searchableJson()` is **mutually exclusive** with other index types. Do not combine `searchableJson()` with `equality()`, `freeTextSearch()`, or `orderAndRange()` on the same column.
 
 ## Initializing the Protect client
 

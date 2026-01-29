@@ -93,7 +93,7 @@ If these variables are missing, tests that require live encryption will fail or 
   - `encryptModel(model, table)` / `decryptModel(model)`
   - `bulkEncrypt(plaintexts[], { table, column })` / `bulkDecrypt(encrypted[])`
   - `bulkEncryptModels(models[], table)` / `bulkDecryptModels(models[])`
-  - `createSearchTerms(terms)` for searchable queries
+  - `encryptQuery(terms)` for searchable queries (note: `createSearchTerms` is deprecated, use `encryptQuery` instead)
 - **Identity-aware encryption**: Use `LockContext` from `@cipherstash/protect/identify` and chain `.withLockContext()` on operations. Same context must be used for both encrypt and decrypt.
 
 ## Critical Gotchas (read before coding)

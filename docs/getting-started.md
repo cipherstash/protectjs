@@ -254,6 +254,14 @@ CREATE TABLE users (
 );
 ```
 
+## Next steps
+
+Now that you have the basics working, explore these advanced features:
+
+- **[Searchable Encryption](./reference/searchable-encryption-postgres.md)** - Learn how to search encrypted data using `encryptQuery()` with PostgreSQL and EQL
+- **[Model Operations](./reference/model-operations.md)** - Encrypt and decrypt entire objects with bulk operations
+- **[Schema Configuration](./reference/schema.md)** - Configure indexes for equality, free text search, range queries, and JSON search
+
 ---
 
 ### Didn't find what you wanted?

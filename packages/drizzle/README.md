@@ -248,7 +248,7 @@ const results = await db
 ```
 
 > [!TIP]
-> **Performance Tip**: Using `protectOps.and()` batches all encryption operations into a single `createSearchTerms` call, which is more efficient than awaiting each operator individually.
+> **Performance Tip**: Using `protectOps.and()` batches all encryption operations into a single `encryptQuery` call, which is more efficient than awaiting each operator individually.
 
 ## Available Operators
 
