@@ -78,6 +78,9 @@ const tableSchema = z.record(columnSchema).default({})
 
 const tablesSchema = z.record(tableSchema).default({})
 
+/**
+ * Schema for the full encryption configuration object.
+ */
 export const encryptConfigSchema = z.object({
   v: z.number(),
   tables: tablesSchema,
@@ -101,6 +104,9 @@ export type UniqueIndexOpts = z.infer<typeof uniqueIndexOptsSchema>
 export type OreIndexOpts = z.infer<typeof oreIndexOptsSchema>
 export type ColumnSchema = z.infer<typeof columnSchema>
 
+/**
+ * Represents the structure of columns in a table, supporting both flat columns and nested objects.
+ */
 export type ProtectTableColumn = {
   [key: string]:
     | ProtectColumn
@@ -121,6 +127,28 @@ export type EncryptConfig = z.infer<typeof encryptConfigSchema>
 // ------------------------
 // Interface definitions
 // ------------------------
+
+/**
+ * Represents a value in a nested object within a Protect.js schema.
+ *
+ * Nested objects are useful for data stores with less structure, like NoSQL databases.
+ * Use {@link csValue} to define these.
+ *
+ * @remarks
+ * - Searchable encryption is **not supported** on nested `csValue` objects.
+ * - For searchable JSON data in SQL databases, use `.searchableJson()` on a {@link ProtectColumn} instead.
+ * - Maximum nesting depth is 3 levels.
+ *
+ * @example
+ * ```typescript
+ * profile: {
+ *   name: csValue("profile.name"),
+ *   address: {
+ *     street: csValue("profile.address.street"),
+ *   }
+ * }
+ * ```
+ */
 export class ProtectValue {
   private valueName: string
   private castAsValue: CastAs
@@ -131,13 +159,17 @@ export class ProtectValue {
   }
 
   /**
-   * Set or override the cast_as value.
+   * Set or override the unencrypted data type for this value.
+   * Defaults to `'string'`.
    */
   dataType(castAs: CastAs) {
     this.castAsValue = castAs
     return this
   }
 
+  /**
+   * @internal
+   */
   build() {
     return {
       cast_as: this.castAsValue,
@@ -145,11 +177,25 @@ export class ProtectValue {
     }
   }
 
+  /**
+   * Get the internal name of the value.
+   */
   getName() {
     return this.valueName
   }
 }
 
+/**
+ * Represents a database column in a Protect.js schema.
+ * Use {@link csColumn} to define these.
+ *
+ * Chaining index methods enables searchable encryption for this column.
+ *
+ * @example
+ * ```typescript
+ * email: csColumn("email").equality().freeTextSearch()
+ * ```
+ */
 export class ProtectColumn {
   private columnName: string
   private castAsValue: CastAs
@@ -166,7 +212,8 @@ export class ProtectColumn {
   }
 
   /**
-   * Set or override the cast_as value.
+   * Set or override the unencrypted data type for this column.
+   * Defaults to `'string'`.
    */
   dataType(castAs: CastAs) {
     this.castAsValue = castAs
@@ -174,7 +221,11 @@ export class ProtectColumn {
   }
 
   /**
-   * Enable ORE indexing (Order-Revealing Encryption).
+   * Enable ORE indexing (Order-Revealing Encryption) for range queries (`<`, `>`, `BETWEEN`).
+   *
+   * SQL Equivalent: `ORDER BY column ASC` or `WHERE column > 10`
+   *
+   * @see {@link https://cipherstash.com/docs/platform/searchable-encryption/supported-queries/range | Range Queries}
    */
   orderAndRange() {
     this.indexesValue.ore = {}
@@ -182,7 +233,12 @@ export class ProtectColumn {
   }
 
   /**
-   * Enable an Exact index. Optionally pass tokenFilters.
+   * Enable an Exact index for equality matching.
+   *
+   * SQL Equivalent: `WHERE column = 'value'`
+   *
+   * @param tokenFilters Optional filters like downcasing.
+   * @see {@link https://cipherstash.com/docs/platform/searchable-encryption/supported-queries/exact | Exact Queries}
    */
   equality(tokenFilters?: TokenFilter[]) {
     this.indexesValue.unique = {
@@ -192,7 +248,12 @@ export class ProtectColumn {
   }
 
   /**
-   * Enable a Match index. Allows passing of custom match options.
+   * Enable a Match index for free-text search (fuzzy/substring matching).
+   *
+   * SQL Equivalent: `WHERE column LIKE '%substring%'`
+   *
+   * @param opts Custom match options for tokenizer, k, m, etc.
+   * @see {@link https://cipherstash.com/docs/platform/searchable-encryption/supported-queries/match | Match Queries}
    */
   freeTextSearch(opts?: MatchIndexOpts) {
     // Provide defaults
@@ -211,14 +272,29 @@ export class ProtectColumn {
   }
 
   /**
-   * Enable a STE Vec index, uses the column name for the index.
+   * Enable a Structured Text Encryption Vector (STE Vec) index for searchable JSON columns.
+   *
+   * This automatically sets the column data type to `'json'` and configures the index
+   * required for path selection (`->`, `->>`) and containment (`@>`, `<@`) queries.
+   *
+   * @remarks
+   * **Mutual Exclusivity:** `searchableJson()` cannot be combined with `equality()`,
+   * `freeTextSearch()`, or `orderAndRange()` on the same column.
+   *
+   * SQL Equivalent: `WHERE data->'user'->>'email' = '...'`
+   *
+   * @see {@link https://cipherstash.com/docs/platform/searchable-encryption/supported-queries/json | JSON Queries}
    */
-  // NOTE: Leaving this commented out until stevec indexing for JSON is supported.
-  /*searchableJson() {
+  searchableJson() {
+    this.castAsValue = 'json'
+    // Use column name as temporary prefix; will be replaced with table/column during table build
     this.indexesValue.ste_vec = { prefix: this.columnName }
     return this
-  }*/
+  }
 
+  /**
+   * @internal
+   */
   build() {
     return {
       cast_as: this.castAsValue,
@@ -226,6 +302,9 @@ export class ProtectColumn {
     }
   }
 
+  /**
+   * Get the database column name.
+   */
   getName() {
     return this.columnName
   }
@@ -236,6 +315,10 @@ interface TableDefinition {
   columns: Record<string, ColumnSchema>
 }
 
+/**
+ * Represents a database table in a Protect.js schema.
+ * Collections of columns are mapped here.
+ */
 export class ProtectTable<T extends ProtectTableColumn> {
   constructor(
     public readonly tableName: string,
@@ -243,7 +326,8 @@ export class ProtectTable<T extends ProtectTableColumn> {
   ) {}
 
   /**
-   * Build a TableDefinition object: tableName + built column configs.
+   * Build the final table definition used for configuration.
+   * @internal
    */
   build(): TableDefinition {
     const builtColumns: Record<string, ColumnSchema> = {}
@@ -265,11 +349,8 @@ export class ProtectTable<T extends ProtectTableColumn> {
       if (builder instanceof ProtectColumn) {
         const builtColumn = builder.build()
 
-        // Hanlde building the ste_vec index for JSON columns so users don't have to pass the prefix.
-        if (
-          builtColumn.cast_as === 'json' &&
-          builtColumn.indexes.ste_vec?.prefix === 'enabled'
-        ) {
+        // Set ste_vec prefix to table/column (overwriting any temporary prefix)
+        if (builtColumn.indexes.ste_vec) {
           builtColumns[colName] = {
             ...builtColumn,
             indexes: {
@@ -307,6 +388,23 @@ export class ProtectTable<T extends ProtectTableColumn> {
 // ------------------------
 // User facing functions
 // ------------------------
+
+/**
+ * Define a database table and its columns for encryption and indexing.
+ *
+ * @param tableName The name of the table in your database.
+ * @param columns An object mapping TypeScript property names to database columns or nested objects.
+ *
+ * @example
+ * ```typescript
+ * export const users = csTable("users", {
+ *   email: csColumn("email").equality(),
+ *   profile: {
+ *     name: csValue("profile.name"),
+ *   }
+ * });
+ * ```
+ */
 export function csTable<T extends ProtectTableColumn>(
   tableName: string,
   columns: T,
@@ -321,10 +419,29 @@ export function csTable<T extends ProtectTableColumn>(
   return tableBuilder
 }
 
+/**
+ * Define a database column for encryption. Use method chaining to enable indexes.
+ *
+ * @param columnName The name of the column in your database.
+ *
+ * @example
+ * ```typescript
+ * csColumn("email").equality().orderAndRange()
+ * ```
+ */
 export function csColumn(columnName: string) {
   return new ProtectColumn(columnName)
 }
 
+/**
+ * Define a value within a nested object.
+ *
+ * @param valueName A dot-separated string representing the path, e.g., "profile.name".
+ *
+ * @remarks
+ * Nested objects defined with `csValue` are encrypted as part of the parent but are **not searchable**.
+ * For searchable JSON, use `.searchableJson()` on a {@link csColumn}.
+ */
 export function csValue(valueName: string) {
   return new ProtectValue(valueName)
 }
@@ -332,6 +449,13 @@ export function csValue(valueName: string) {
 // ------------------------
 // Internal functions
 // ------------------------
+
+/**
+ * Build the full encryption configuration from one or more tables.
+ * Used internally during Protect client initialization.
+ *
+ * @param protectTables One or more table definitions created with {@link csTable}.
+ */
 export function buildEncryptConfig(
   ...protectTables: Array<ProtectTable<ProtectTableColumn>>
 ): EncryptConfig {
@@ -342,7 +466,16 @@ export function buildEncryptConfig(
 
   for (const tb of protectTables) {
     const tableDef = tb.build()
-    config.tables[tableDef.tableName] = tableDef.columns
+    const tableName = tableDef.tableName
+
+    // Set ste_vec prefix to table/column (overwriting any temporary prefix)
+    for (const [columnName, columnConfig] of Object.entries(tableDef.columns)) {
+      if (columnConfig.indexes.ste_vec) {
+        columnConfig.indexes.ste_vec.prefix = `${tableName}/${columnName}`
+      }
+    }
+
+    config.tables[tableName] = tableDef.columns
   }
 
   return config
