@@ -10,7 +10,7 @@
  * - jsonb_array_length.rs
  */
 import 'dotenv/config'
-import { protect, type SearchTerm } from '@cipherstash/protect'
+import { protect, type QueryTerm } from '@cipherstash/protect'
 import { csColumn, csTable } from '@cipherstash/schema'
 import { eq, sql } from 'drizzle-orm'
 import { integer, pgTable, text, timestamp } from 'drizzle-orm/pg-core'
@@ -38,7 +38,7 @@ if (!process.env.DATABASE_URL) {
 const jsonbArrayOpsTable = pgTable('drizzle_jsonb_array_ops_test', {
   id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
   encrypted_jsonb: encryptedType<StandardJsonbData>('encrypted_jsonb', {
-    dataType: 'json',
+    searchableJson: true,
   }),
   createdAt: timestamp('created_at').defaultNow(),
   testRunId: text('test_run_id'),
@@ -135,12 +135,13 @@ function expectJsonPathSelectorOnly(term: Record<string, unknown>): void {
 
 /**
  * Verify the search term has path with value format
+ * Path+value queries return { sv: [...] } with the ste_vec entries
  */
 function expectJsonPathWithValue(term: Record<string, unknown>): void {
-  expect(term).toHaveProperty('s')
-  expect(typeof term.s).toBe('string')
   expect(term).toHaveProperty('sv')
   expect(Array.isArray(term.sv)).toBe(true)
+  const sv = term.sv as Array<Record<string, unknown>>
+  expect(sv.length).toBeGreaterThan(0)
 }
 
 // =============================================================================
@@ -150,7 +151,7 @@ function expectJsonPathWithValue(term: Record<string, unknown>): void {
 describe('JSONB Array Operations - jsonb_array_elements', () => {
   it('should generate array elements selector for string array via wildcard path', async () => {
     // SQL: jsonb_array_elements(jsonb_path_query(encrypted_jsonb, '$.array_string[@]'))
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'array_string[@]',
         column: searchableSchema.encrypted_jsonb,
@@ -158,7 +159,7 @@ describe('JSONB Array Operations - jsonb_array_elements', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`Array elements failed: ${result.failure.message}`)
@@ -170,7 +171,7 @@ describe('JSONB Array Operations - jsonb_array_elements', () => {
 
   it('should generate array elements selector for numeric array via wildcard path', async () => {
     // SQL: jsonb_array_elements(jsonb_path_query(encrypted_jsonb, '$.array_number[@]'))
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'array_number[@]',
         column: searchableSchema.encrypted_jsonb,
@@ -178,7 +179,7 @@ describe('JSONB Array Operations - jsonb_array_elements', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`Array elements failed: ${result.failure.message}`)
@@ -190,7 +191,7 @@ describe('JSONB Array Operations - jsonb_array_elements', () => {
 
   it('should generate array elements selector with [*] wildcard notation', async () => {
     // Alternative notation: $.array_string[*]
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'array_string[*]',
         column: searchableSchema.encrypted_jsonb,
@@ -198,7 +199,7 @@ describe('JSONB Array Operations - jsonb_array_elements', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`Array elements failed: ${result.failure.message}`)
@@ -210,7 +211,7 @@ describe('JSONB Array Operations - jsonb_array_elements', () => {
 
   it('should generate array elements with string value filter', async () => {
     // Check if 'hello' is in array_string
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'array_string[@]',
         value: 'hello',
@@ -219,7 +220,7 @@ describe('JSONB Array Operations - jsonb_array_elements', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`Array elements failed: ${result.failure.message}`)
@@ -231,7 +232,7 @@ describe('JSONB Array Operations - jsonb_array_elements', () => {
 
   it('should generate array elements with numeric value filter', async () => {
     // Check if 42 is in array_number
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'array_number[@]',
         value: 42,
@@ -240,7 +241,7 @@ describe('JSONB Array Operations - jsonb_array_elements', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`Array elements failed: ${result.failure.message}`)
@@ -253,7 +254,7 @@ describe('JSONB Array Operations - jsonb_array_elements', () => {
   it('should generate array elements selector for unknown field (empty result)', async () => {
     // SQL: jsonb_array_elements(encrypted_jsonb->'nonexistent_array')
     // Proxy returns empty set when field doesn't exist
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'nonexistent_array[@]',
         column: searchableSchema.encrypted_jsonb,
@@ -261,7 +262,7 @@ describe('JSONB Array Operations - jsonb_array_elements', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`Array elements failed: ${result.failure.message}`)
@@ -315,7 +316,7 @@ describe('JSONB Array Operations - jsonb_array_length', () => {
   it('should handle array_length selector for unknown field (empty result)', async () => {
     // SQL: jsonb_array_length(encrypted_jsonb->'nonexistent_array')
     // Proxy returns NULL when field doesn't exist
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'nonexistent_array',
         column: searchableSchema.encrypted_jsonb,
@@ -323,7 +324,7 @@ describe('JSONB Array Operations - jsonb_array_length', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`Array length failed: ${result.failure.message}`)
@@ -340,7 +341,7 @@ describe('JSONB Array Operations - jsonb_array_length', () => {
 
 describe('JSONB Array Operations - Batch Operations', () => {
   it('should handle batch of array element queries', async () => {
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       // String array with wildcard
       {
         path: 'array_string[@]',
@@ -369,7 +370,7 @@ describe('JSONB Array Operations - Batch Operations', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`Batch array ops failed: ${result.failure.message}`)
@@ -415,7 +416,7 @@ describe('JSONB Array Operations - Batch Operations', () => {
 
 describe('JSONB Array Operations - Wildcard Notation', () => {
   it('should handle [@] wildcard notation', async () => {
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'array_string[@]',
         column: searchableSchema.encrypted_jsonb,
@@ -423,7 +424,7 @@ describe('JSONB Array Operations - Wildcard Notation', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`Wildcard notation failed: ${result.failure.message}`)
@@ -434,7 +435,7 @@ describe('JSONB Array Operations - Wildcard Notation', () => {
   }, 30000)
 
   it('should handle [*] wildcard notation', async () => {
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'array_string[*]',
         column: searchableSchema.encrypted_jsonb,
@@ -442,7 +443,7 @@ describe('JSONB Array Operations - Wildcard Notation', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`Wildcard notation failed: ${result.failure.message}`)
@@ -454,7 +455,7 @@ describe('JSONB Array Operations - Wildcard Notation', () => {
 
   it('should handle nested arrays with wildcards', async () => {
     // SQL pattern: $.nested.items[*].values[*]
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'nested.items[@].values[@]',
         column: searchableSchema.encrypted_jsonb,
@@ -462,7 +463,7 @@ describe('JSONB Array Operations - Wildcard Notation', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`Nested wildcards failed: ${result.failure.message}`)
@@ -474,7 +475,7 @@ describe('JSONB Array Operations - Wildcard Notation', () => {
 
   it('should handle specific index access', async () => {
     // SQL: encrypted_jsonb->'array_string'->0
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'array_string[0]',
         value: 'hello',
@@ -483,7 +484,7 @@ describe('JSONB Array Operations - Wildcard Notation', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`Index access failed: ${result.failure.message}`)
@@ -495,7 +496,7 @@ describe('JSONB Array Operations - Wildcard Notation', () => {
 
   it('should handle last element access', async () => {
     // SQL: encrypted_jsonb->'array_string'->-1 (last element)
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'array_string[-1]',
         value: 'world',
@@ -504,7 +505,7 @@ describe('JSONB Array Operations - Wildcard Notation', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`Last element access failed: ${result.failure.message}`)
@@ -522,7 +523,7 @@ describe('JSONB Array Operations - Wildcard Notation', () => {
 describe('JSONB Array Operations - Edge Cases', () => {
   it('should handle empty array path', async () => {
     // Querying an empty array field
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'empty_array[@]',
         column: searchableSchema.encrypted_jsonb,
@@ -530,7 +531,7 @@ describe('JSONB Array Operations - Edge Cases', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`Empty array failed: ${result.failure.message}`)
@@ -542,7 +543,7 @@ describe('JSONB Array Operations - Edge Cases', () => {
 
   it('should handle deeply nested array access', async () => {
     // SQL pattern: $.a.b.c.d.array[*].value
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'a.b.c.d.array[@].value',
         value: 'test',
@@ -551,7 +552,7 @@ describe('JSONB Array Operations - Edge Cases', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`Deep nested array failed: ${result.failure.message}`)
@@ -563,7 +564,7 @@ describe('JSONB Array Operations - Edge Cases', () => {
 
   it('should handle mixed wildcards and indices', async () => {
     // SQL pattern: $.items[*].nested[0].value
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'items[@].nested[0].value',
         value: 'mixed',
@@ -572,7 +573,7 @@ describe('JSONB Array Operations - Edge Cases', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`Mixed wildcards failed: ${result.failure.message}`)

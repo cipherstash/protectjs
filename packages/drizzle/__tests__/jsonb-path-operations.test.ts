@@ -11,7 +11,7 @@
  * - jsonb_path_query_first.rs
  */
 import 'dotenv/config'
-import { protect, type SearchTerm } from '@cipherstash/protect'
+import { protect, type QueryTerm } from '@cipherstash/protect'
 import { csColumn, csTable } from '@cipherstash/schema'
 import { eq, sql } from 'drizzle-orm'
 import { integer, pgTable, text, timestamp } from 'drizzle-orm/pg-core'
@@ -39,7 +39,7 @@ if (!process.env.DATABASE_URL) {
 const jsonbPathOpsTable = pgTable('drizzle_jsonb_path_ops_test', {
   id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
   encrypted_jsonb: encryptedType<StandardJsonbData>('encrypted_jsonb', {
-    dataType: 'json',
+    searchableJson: true,
   }),
   createdAt: timestamp('created_at').defaultNow(),
   testRunId: text('test_run_id'),
@@ -125,12 +125,13 @@ function expectJsonPathSelectorOnly(term: Record<string, unknown>): void {
 
 /**
  * Verify the search term has path with value format
+ * Path+value queries return { sv: [...] } with the ste_vec entries
  */
 function expectJsonPathWithValue(term: Record<string, unknown>): void {
-  expect(term).toHaveProperty('s')
-  expect(typeof term.s).toBe('string')
   expect(term).toHaveProperty('sv')
   expect(Array.isArray(term.sv)).toBe(true)
+  const sv = term.sv as Array<Record<string, unknown>>
+  expect(sv.length).toBeGreaterThan(0)
 }
 
 // =============================================================================
@@ -140,7 +141,7 @@ function expectJsonPathWithValue(term: Record<string, unknown>): void {
 describe('JSONB Path Operations - jsonb_path_exists', () => {
   it('should generate path exists selector for number field', async () => {
     // SQL: jsonb_path_exists(encrypted_jsonb, '$.number')
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'number',
         column: searchableSchema.encrypted_jsonb,
@@ -148,7 +149,7 @@ describe('JSONB Path Operations - jsonb_path_exists', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`Path exists failed: ${result.failure.message}`)
@@ -160,7 +161,7 @@ describe('JSONB Path Operations - jsonb_path_exists', () => {
 
   it('should generate path exists selector for nested string', async () => {
     // SQL: jsonb_path_exists(encrypted_jsonb, '$.nested.string')
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'nested.string',
         column: searchableSchema.encrypted_jsonb,
@@ -168,7 +169,7 @@ describe('JSONB Path Operations - jsonb_path_exists', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`Path exists failed: ${result.failure.message}`)
@@ -180,7 +181,7 @@ describe('JSONB Path Operations - jsonb_path_exists', () => {
 
   it('should generate path exists selector for nested object', async () => {
     // SQL: jsonb_path_exists(encrypted_jsonb, '$.nested')
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'nested',
         column: searchableSchema.encrypted_jsonb,
@@ -188,7 +189,7 @@ describe('JSONB Path Operations - jsonb_path_exists', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`Path exists failed: ${result.failure.message}`)
@@ -201,7 +202,7 @@ describe('JSONB Path Operations - jsonb_path_exists', () => {
   it('should generate path exists selector for unknown path', async () => {
     // SQL: jsonb_path_exists(encrypted_jsonb, '$.vtha') -> false
     // Client generates selector, proxy determines existence
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'unknown_path',
         column: searchableSchema.encrypted_jsonb,
@@ -209,7 +210,7 @@ describe('JSONB Path Operations - jsonb_path_exists', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`Path exists failed: ${result.failure.message}`)
@@ -221,7 +222,7 @@ describe('JSONB Path Operations - jsonb_path_exists', () => {
 
   it('should generate path exists selector for array path', async () => {
     // SQL: jsonb_path_exists(encrypted_jsonb, '$.array_string')
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'array_string',
         column: searchableSchema.encrypted_jsonb,
@@ -229,7 +230,7 @@ describe('JSONB Path Operations - jsonb_path_exists', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`Path exists failed: ${result.failure.message}`)
@@ -247,7 +248,7 @@ describe('JSONB Path Operations - jsonb_path_exists', () => {
 describe('JSONB Path Operations - jsonb_path_query', () => {
   it('should generate path query with number value', async () => {
     // SQL: jsonb_path_query(encrypted_jsonb, '$.number')
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'number',
         value: 42,
@@ -256,7 +257,7 @@ describe('JSONB Path Operations - jsonb_path_query', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`Path query failed: ${result.failure.message}`)
@@ -268,7 +269,7 @@ describe('JSONB Path Operations - jsonb_path_query', () => {
 
   it('should generate path query with nested string value', async () => {
     // SQL: jsonb_path_query(encrypted_jsonb, '$.nested.string')
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'nested.string',
         value: 'world',
@@ -277,7 +278,7 @@ describe('JSONB Path Operations - jsonb_path_query', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`Path query failed: ${result.failure.message}`)
@@ -289,7 +290,7 @@ describe('JSONB Path Operations - jsonb_path_query', () => {
 
   it('should generate path query selector for nested object', async () => {
     // SQL: jsonb_path_query(encrypted_jsonb, '$.nested')
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'nested',
         column: searchableSchema.encrypted_jsonb,
@@ -297,7 +298,7 @@ describe('JSONB Path Operations - jsonb_path_query', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`Path query failed: ${result.failure.message}`)
@@ -310,7 +311,7 @@ describe('JSONB Path Operations - jsonb_path_query', () => {
   it('should generate path query selector for unknown path (empty set return)', async () => {
     // SQL: jsonb_path_query(encrypted_jsonb, '$.vtha')
     // Proxy returns empty set when path doesn't exist
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'unknown_deep.path.that.does.not.exist',
         column: searchableSchema.encrypted_jsonb,
@@ -318,7 +319,7 @@ describe('JSONB Path Operations - jsonb_path_query', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`Path query failed: ${result.failure.message}`)
@@ -330,7 +331,7 @@ describe('JSONB Path Operations - jsonb_path_query', () => {
 
   it('should generate path query with nested number value', async () => {
     // SQL: jsonb_path_query(encrypted_jsonb, '$.nested.number')
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'nested.number',
         value: 1815,
@@ -339,7 +340,7 @@ describe('JSONB Path Operations - jsonb_path_query', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`Path query failed: ${result.failure.message}`)
@@ -357,7 +358,7 @@ describe('JSONB Path Operations - jsonb_path_query', () => {
 describe('JSONB Path Operations - jsonb_path_query_first', () => {
   it('should generate path query first for array wildcard string', async () => {
     // SQL: jsonb_path_query_first(encrypted_jsonb, '$.array_string[*]')
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'array_string[*]',
         value: 'hello',
@@ -366,7 +367,7 @@ describe('JSONB Path Operations - jsonb_path_query_first', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`Path query first failed: ${result.failure.message}`)
@@ -378,7 +379,7 @@ describe('JSONB Path Operations - jsonb_path_query_first', () => {
 
   it('should generate path query first for array wildcard number', async () => {
     // SQL: jsonb_path_query_first(encrypted_jsonb, '$.array_number[*]')
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'array_number[*]',
         value: 42,
@@ -387,7 +388,7 @@ describe('JSONB Path Operations - jsonb_path_query_first', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`Path query first failed: ${result.failure.message}`)
@@ -399,7 +400,7 @@ describe('JSONB Path Operations - jsonb_path_query_first', () => {
 
   it('should generate path query first for nested string', async () => {
     // SQL: jsonb_path_query_first(encrypted_jsonb, '$.nested.string')
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'nested.string',
         value: 'world',
@@ -408,7 +409,7 @@ describe('JSONB Path Operations - jsonb_path_query_first', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`Path query first failed: ${result.failure.message}`)
@@ -420,7 +421,7 @@ describe('JSONB Path Operations - jsonb_path_query_first', () => {
 
   it('should generate path query first selector for nested object', async () => {
     // SQL: jsonb_path_query_first(encrypted_jsonb, '$.nested')
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'nested',
         column: searchableSchema.encrypted_jsonb,
@@ -428,7 +429,7 @@ describe('JSONB Path Operations - jsonb_path_query_first', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`Path query first failed: ${result.failure.message}`)
@@ -441,7 +442,7 @@ describe('JSONB Path Operations - jsonb_path_query_first', () => {
   it('should generate path query first for unknown path (NULL return)', async () => {
     // SQL: jsonb_path_query_first(encrypted_jsonb, '$.unknown_field')
     // Proxy returns NULL when path doesn't exist
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'nonexistent_field_for_first',
         column: searchableSchema.encrypted_jsonb,
@@ -449,7 +450,7 @@ describe('JSONB Path Operations - jsonb_path_query_first', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`Path query first failed: ${result.failure.message}`)
@@ -461,7 +462,7 @@ describe('JSONB Path Operations - jsonb_path_query_first', () => {
 
   it('should generate path query first with alternate wildcard notation', async () => {
     // SQL: jsonb_path_query_first(encrypted_jsonb, '$.array_string[@]')
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'array_string[@]',
         value: 'hello',
@@ -470,7 +471,7 @@ describe('JSONB Path Operations - jsonb_path_query_first', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`Path query first failed: ${result.failure.message}`)
@@ -497,13 +498,13 @@ describe('JSONB Path Operations - Batch Operations', () => {
       'array_number',
     ]
 
-    const terms: SearchTerm[] = paths.map((path) => ({
+    const terms: QueryTerm[] = paths.map((path) => ({
       path,
       column: searchableSchema.encrypted_jsonb,
       table: searchableSchema,
     }))
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`Batch path exists failed: ${result.failure.message}`)
@@ -516,7 +517,7 @@ describe('JSONB Path Operations - Batch Operations', () => {
   }, 30000)
 
   it('should handle batch of path queries with values', async () => {
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'string',
         value: 'hello',
@@ -555,7 +556,7 @@ describe('JSONB Path Operations - Batch Operations', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`Batch path query failed: ${result.failure.message}`)
@@ -568,7 +569,7 @@ describe('JSONB Path Operations - Batch Operations', () => {
   }, 30000)
 
   it('should handle mixed path operations in batch', async () => {
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       // Path exists (no value)
       {
         path: 'nested',
@@ -597,7 +598,7 @@ describe('JSONB Path Operations - Batch Operations', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`Mixed batch failed: ${result.failure.message}`)
@@ -619,7 +620,7 @@ describe('JSONB Path Operations - Batch Operations', () => {
 describe('JSONB Path Operations - Edge Cases', () => {
   it('should handle multiple array wildcards in path', async () => {
     // SQL pattern: $.matrix[*][*]
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'matrix[@][@]',
         column: searchableSchema.encrypted_jsonb,
@@ -627,7 +628,7 @@ describe('JSONB Path Operations - Edge Cases', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`Multiple wildcards failed: ${result.failure.message}`)
@@ -639,7 +640,7 @@ describe('JSONB Path Operations - Edge Cases', () => {
 
   it('should handle complex nested array path', async () => {
     // SQL pattern: $.users[*].orders[*].items[0].name
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'users[@].orders[@].items[0].name',
         value: 'Widget',
@@ -648,7 +649,7 @@ describe('JSONB Path Operations - Edge Cases', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`Complex path failed: ${result.failure.message}`)
@@ -659,7 +660,7 @@ describe('JSONB Path Operations - Edge Cases', () => {
   }, 30000)
 
   it('should handle very deep nesting (10+ levels)', async () => {
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'a.b.c.d.e.f.g.h.i.j.k.l',
         value: 'deep_value',
@@ -668,7 +669,7 @@ describe('JSONB Path Operations - Edge Cases', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`Deep nesting failed: ${result.failure.message}`)
@@ -680,7 +681,7 @@ describe('JSONB Path Operations - Edge Cases', () => {
 
   it('should handle array index access', async () => {
     // Access specific array index: $.array_string[0]
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'array_string[0]',
         value: 'hello',
@@ -689,7 +690,7 @@ describe('JSONB Path Operations - Edge Cases', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`Array index failed: ${result.failure.message}`)

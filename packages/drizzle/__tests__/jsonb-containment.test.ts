@@ -39,7 +39,7 @@ if (!process.env.DATABASE_URL) {
 const jsonbContainmentTable = pgTable('drizzle_jsonb_containment_test', {
   id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
   encrypted_jsonb: encryptedType<StandardJsonbData>('encrypted_jsonb', {
-    dataType: 'json',
+    searchableJson: true,
   }),
   createdAt: timestamp('created_at').defaultNow(),
   testRunId: text('test_run_id'),
@@ -111,117 +111,111 @@ afterAll(async () => {
 describe('JSONB Containment - Contains (@>) via Drizzle', () => {
   it('should generate containment search term for string value', async () => {
     // SQL: encrypted_jsonb @> '{"string": "hello"}'
-    const searchTerm = await protectClient.createSearchTerms([
+    const result = await protectClient.encryptQuery([
       {
-        value: containmentVariations.stringOnly,
+        contains: containmentVariations.stringOnly,
         column: containmentSchema.encrypted_jsonb,
         table: containmentSchema,
-        containmentType: 'contains',
       },
     ])
 
-    if (searchTerm.failure) {
-      throw new Error(`Search term creation failed: ${searchTerm.failure.message}`)
+    if (result.failure) {
+      throw new Error(`Query encryption failed: ${result.failure.message}`)
     }
 
-    expect(searchTerm.data).toHaveLength(1)
-    expect(searchTerm.data[0]).toHaveProperty('sv')
-    expect(Array.isArray((searchTerm.data[0] as { sv: unknown[] }).sv)).toBe(true)
+    expect(result.data).toHaveLength(1)
+    expect(result.data[0]).toHaveProperty('sv')
+    expect(Array.isArray((result.data[0] as { sv: unknown[] }).sv)).toBe(true)
   }, 30000)
 
   it('should generate containment search term for number value', async () => {
     // SQL: encrypted_jsonb @> '{"number": 42}'
-    const searchTerm = await protectClient.createSearchTerms([
+    const result = await protectClient.encryptQuery([
       {
-        value: containmentVariations.numberOnly,
+        contains: containmentVariations.numberOnly,
         column: containmentSchema.encrypted_jsonb,
         table: containmentSchema,
-        containmentType: 'contains',
       },
     ])
 
-    if (searchTerm.failure) {
-      throw new Error(`Search term creation failed: ${searchTerm.failure.message}`)
+    if (result.failure) {
+      throw new Error(`Query encryption failed: ${result.failure.message}`)
     }
 
-    expect(searchTerm.data).toHaveLength(1)
-    expect(searchTerm.data[0]).toHaveProperty('sv')
+    expect(result.data).toHaveLength(1)
+    expect(result.data[0]).toHaveProperty('sv')
   }, 30000)
 
   it('should generate containment search term for string array', async () => {
     // SQL: encrypted_jsonb @> '{"array_string": ["hello", "world"]}'
-    const searchTerm = await protectClient.createSearchTerms([
+    const result = await protectClient.encryptQuery([
       {
-        value: containmentVariations.stringArray,
+        contains: containmentVariations.stringArray,
         column: containmentSchema.encrypted_jsonb,
         table: containmentSchema,
-        containmentType: 'contains',
       },
     ])
 
-    if (searchTerm.failure) {
-      throw new Error(`Search term creation failed: ${searchTerm.failure.message}`)
+    if (result.failure) {
+      throw new Error(`Query encryption failed: ${result.failure.message}`)
     }
 
-    expect(searchTerm.data).toHaveLength(1)
-    expect(searchTerm.data[0]).toHaveProperty('sv')
+    expect(result.data).toHaveLength(1)
+    expect(result.data[0]).toHaveProperty('sv')
   }, 30000)
 
   it('should generate containment search term for numeric array', async () => {
     // SQL: encrypted_jsonb @> '{"array_number": [42, 84]}'
-    const searchTerm = await protectClient.createSearchTerms([
+    const result = await protectClient.encryptQuery([
       {
-        value: containmentVariations.numberArray,
+        contains: containmentVariations.numberArray,
         column: containmentSchema.encrypted_jsonb,
         table: containmentSchema,
-        containmentType: 'contains',
       },
     ])
 
-    if (searchTerm.failure) {
-      throw new Error(`Search term creation failed: ${searchTerm.failure.message}`)
+    if (result.failure) {
+      throw new Error(`Query encryption failed: ${result.failure.message}`)
     }
 
-    expect(searchTerm.data).toHaveLength(1)
-    expect(searchTerm.data[0]).toHaveProperty('sv')
+    expect(result.data).toHaveLength(1)
+    expect(result.data[0]).toHaveProperty('sv')
   }, 30000)
 
   it('should generate containment search term for nested object', async () => {
     // SQL: encrypted_jsonb @> '{"nested": {"number": 1815, "string": "world"}}'
-    const searchTerm = await protectClient.createSearchTerms([
+    const result = await protectClient.encryptQuery([
       {
-        value: containmentVariations.nestedFull,
+        contains: containmentVariations.nestedFull,
         column: containmentSchema.encrypted_jsonb,
         table: containmentSchema,
-        containmentType: 'contains',
       },
     ])
 
-    if (searchTerm.failure) {
-      throw new Error(`Search term creation failed: ${searchTerm.failure.message}`)
+    if (result.failure) {
+      throw new Error(`Query encryption failed: ${result.failure.message}`)
     }
 
-    expect(searchTerm.data).toHaveLength(1)
-    expect(searchTerm.data[0]).toHaveProperty('sv')
+    expect(result.data).toHaveLength(1)
+    expect(result.data[0]).toHaveProperty('sv')
   }, 30000)
 
   it('should generate containment search term for partial nested object', async () => {
     // SQL: encrypted_jsonb @> '{"nested": {"string": "world"}}'
-    const searchTerm = await protectClient.createSearchTerms([
+    const result = await protectClient.encryptQuery([
       {
-        value: containmentVariations.nestedPartial,
+        contains: containmentVariations.nestedPartial,
         column: containmentSchema.encrypted_jsonb,
         table: containmentSchema,
-        containmentType: 'contains',
       },
     ])
 
-    if (searchTerm.failure) {
-      throw new Error(`Search term creation failed: ${searchTerm.failure.message}`)
+    if (result.failure) {
+      throw new Error(`Query encryption failed: ${result.failure.message}`)
     }
 
-    expect(searchTerm.data).toHaveLength(1)
-    expect(searchTerm.data[0]).toHaveProperty('sv')
+    expect(result.data).toHaveLength(1)
+    expect(result.data[0]).toHaveProperty('sv')
   }, 30000)
 })
 
@@ -232,97 +226,92 @@ describe('JSONB Containment - Contains (@>) via Drizzle', () => {
 describe('JSONB Containment - Contained By (<@) via Drizzle', () => {
   it('should generate contained_by search term for string value', async () => {
     // SQL: '{"string": "hello"}' <@ encrypted_jsonb
-    const searchTerm = await protectClient.createSearchTerms([
+    const result = await protectClient.encryptQuery([
       {
-        value: containmentVariations.stringOnly,
+        containedBy: containmentVariations.stringOnly,
         column: containmentSchema.encrypted_jsonb,
         table: containmentSchema,
-        containmentType: 'contained_by',
       },
     ])
 
-    if (searchTerm.failure) {
-      throw new Error(`Search term creation failed: ${searchTerm.failure.message}`)
+    if (result.failure) {
+      throw new Error(`Query encryption failed: ${result.failure.message}`)
     }
 
-    expect(searchTerm.data).toHaveLength(1)
-    expect(searchTerm.data[0]).toHaveProperty('sv')
+    expect(result.data).toHaveLength(1)
+    expect(result.data[0]).toHaveProperty('sv')
   }, 30000)
 
   it('should generate contained_by search term for number value', async () => {
     // SQL: '{"number": 42}' <@ encrypted_jsonb
-    const searchTerm = await protectClient.createSearchTerms([
+    const result = await protectClient.encryptQuery([
       {
-        value: containmentVariations.numberOnly,
+        containedBy: containmentVariations.numberOnly,
         column: containmentSchema.encrypted_jsonb,
         table: containmentSchema,
-        containmentType: 'contained_by',
       },
     ])
 
-    if (searchTerm.failure) {
-      throw new Error(`Search term creation failed: ${searchTerm.failure.message}`)
+    if (result.failure) {
+      throw new Error(`Query encryption failed: ${result.failure.message}`)
     }
 
-    expect(searchTerm.data).toHaveLength(1)
-    expect(searchTerm.data[0]).toHaveProperty('sv')
+    expect(result.data).toHaveLength(1)
+    expect(result.data[0]).toHaveProperty('sv')
   }, 30000)
 
   it('should generate contained_by search term for string array', async () => {
     // SQL: '{"array_string": ["hello", "world"]}' <@ encrypted_jsonb
-    const searchTerm = await protectClient.createSearchTerms([
+    const result = await protectClient.encryptQuery([
       {
-        value: containmentVariations.stringArray,
+        containedBy: containmentVariations.stringArray,
         column: containmentSchema.encrypted_jsonb,
         table: containmentSchema,
-        containmentType: 'contained_by',
       },
     ])
 
-    if (searchTerm.failure) {
-      throw new Error(`Search term creation failed: ${searchTerm.failure.message}`)
+    if (result.failure) {
+      throw new Error(`Query encryption failed: ${result.failure.message}`)
     }
 
-    expect(searchTerm.data).toHaveLength(1)
-    expect(searchTerm.data[0]).toHaveProperty('sv')
+    expect(result.data).toHaveLength(1)
+    expect(result.data[0]).toHaveProperty('sv')
   }, 30000)
 
   it('should generate contained_by search term for numeric array', async () => {
     // SQL: '{"array_number": [42, 84]}' <@ encrypted_jsonb
-    const searchTerm = await protectClient.createSearchTerms([
+    const result = await protectClient.encryptQuery([
       {
-        value: containmentVariations.numberArray,
+        containedBy: containmentVariations.numberArray,
         column: containmentSchema.encrypted_jsonb,
         table: containmentSchema,
-        containmentType: 'contained_by',
       },
     ])
 
-    if (searchTerm.failure) {
-      throw new Error(`Search term creation failed: ${searchTerm.failure.message}`)
+    if (result.failure) {
+      throw new Error(`Query encryption failed: ${result.failure.message}`)
     }
 
-    expect(searchTerm.data).toHaveLength(1)
-    expect(searchTerm.data[0]).toHaveProperty('sv')
+    expect(result.data).toHaveLength(1)
+    expect(result.data[0]).toHaveProperty('sv')
   }, 30000)
 
   it('should generate contained_by search term for nested object', async () => {
     // SQL: '{"nested": {"number": 1815, "string": "world"}}' <@ encrypted_jsonb
-    const searchTerm = await protectClient.createSearchTerms([
+    const result = await protectClient.encryptQuery([
       {
-        value: containmentVariations.nestedFull,
+        containedBy: containmentVariations.nestedFull,
         column: containmentSchema.encrypted_jsonb,
         table: containmentSchema,
-        containmentType: 'contained_by',
       },
     ])
 
-    if (searchTerm.failure) {
-      throw new Error(`Search term creation failed: ${searchTerm.failure.message}`)
+    if (result.failure) {
+      throw new Error(`Query encryption failed: ${result.failure.message}`)
     }
 
-    expect(searchTerm.data).toHaveLength(1)
-    expect(searchTerm.data[0]).toHaveProperty('sv')
+    expect(result.data).toHaveLength(1)
+    expect(result.data[0]).toHaveProperty('sv')
   }, 30000)
 })
 
@@ -334,13 +323,12 @@ describe('JSONB Containment - Batch Operations', () => {
   it('should handle batch of containment queries', async () => {
     // Generate multiple containment queries similar to 500-row test pattern
     const terms = Array.from({ length: 20 }, (_, i) => ({
-      value: { [`key_${i}`]: `value_${i}` },
+      contains: { [`key_${i}`]: `value_${i}` },
       column: containmentSchema.encrypted_jsonb,
       table: containmentSchema,
-      containmentType: 'contains' as const,
     }))
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`Batch containment failed: ${result.failure.message}`)
@@ -354,20 +342,18 @@ describe('JSONB Containment - Batch Operations', () => {
 
   it('should handle mixed contains and contained_by batch', async () => {
     const containsTerms = Array.from({ length: 10 }, (_, i) => ({
-      value: { field: `contains_${i}` },
+      contains: { field: `contains_${i}` },
       column: containmentSchema.encrypted_jsonb,
       table: containmentSchema,
-      containmentType: 'contains' as const,
     }))
 
     const containedByTerms = Array.from({ length: 10 }, (_, i) => ({
-      value: { field: `contained_by_${i}` },
+      containedBy: { field: `contained_by_${i}` },
       column: containmentSchema.encrypted_jsonb,
       table: containmentSchema,
-      containmentType: 'contained_by' as const,
     }))
 
-    const result = await protectClient.createSearchTerms([
+    const result = await protectClient.encryptQuery([
       ...containsTerms,
       ...containedByTerms,
     ])
@@ -395,12 +381,11 @@ describe('JSONB Containment - Batch Operations', () => {
       },
     }
 
-    const result = await protectClient.createSearchTerms([
+    const result = await protectClient.encryptQuery([
       {
-        value: complexObject,
+        contains: complexObject,
         column: containmentSchema.encrypted_jsonb,
         table: containmentSchema,
-        containmentType: 'contains',
       },
     ])
 
@@ -419,12 +404,11 @@ describe('JSONB Containment - Batch Operations', () => {
   it('should handle array containment with many elements', async () => {
     const largeArray = Array.from({ length: 50 }, (_, i) => `item_${i}`)
 
-    const result = await protectClient.createSearchTerms([
+    const result = await protectClient.encryptQuery([
       {
-        value: { items: largeArray },
+        contains: { items: largeArray },
         column: containmentSchema.encrypted_jsonb,
         table: containmentSchema,
-        containmentType: 'contains',
       },
     ])
 
@@ -443,13 +427,12 @@ describe('JSONB Containment - Batch Operations', () => {
     const numericValues = [0, 1, -1, 42, 100, -500, 0.5, -0.5, 999999]
 
     const terms = numericValues.map((num) => ({
-      value: { count: num },
+      contains: { count: num },
       column: containmentSchema.encrypted_jsonb,
       table: containmentSchema,
-      containmentType: 'contains' as const,
     }))
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`Numeric containment failed: ${result.failure.message}`)
@@ -468,12 +451,11 @@ describe('JSONB Containment - Batch Operations', () => {
 
 describe('JSONB Containment - Edge Cases', () => {
   it('should handle empty object containment', async () => {
-    const result = await protectClient.createSearchTerms([
+    const result = await protectClient.encryptQuery([
       {
-        value: {},
+        contains: {},
         column: containmentSchema.encrypted_jsonb,
         table: containmentSchema,
-        containmentType: 'contains',
       },
     ])
 
@@ -485,12 +467,11 @@ describe('JSONB Containment - Edge Cases', () => {
   }, 30000)
 
   it('should handle null value in containment object', async () => {
-    const result = await protectClient.createSearchTerms([
+    const result = await protectClient.encryptQuery([
       {
-        value: { nullable_field: null },
+        contains: { nullable_field: null },
         column: containmentSchema.encrypted_jsonb,
         table: containmentSchema,
-        containmentType: 'contains',
       },
     ])
 
@@ -503,12 +484,11 @@ describe('JSONB Containment - Edge Cases', () => {
   }, 30000)
 
   it('should handle multiple field containment', async () => {
-    const result = await protectClient.createSearchTerms([
+    const result = await protectClient.encryptQuery([
       {
-        value: containmentVariations.multipleFields,
+        contains: containmentVariations.multipleFields,
         column: containmentSchema.encrypted_jsonb,
         table: containmentSchema,
-        containmentType: 'contains',
       },
     ])
 
@@ -526,12 +506,11 @@ describe('JSONB Containment - Edge Cases', () => {
       largeObject[`key${i}`] = `value${i}`
     }
 
-    const result = await protectClient.createSearchTerms([
+    const result = await protectClient.encryptQuery([
       {
-        value: largeObject,
+        contains: largeObject,
         column: containmentSchema.encrypted_jsonb,
         table: containmentSchema,
-        containmentType: 'contains',
       },
     ])
 

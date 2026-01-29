@@ -46,7 +46,7 @@ if (!process.env.DATABASE_URL) {
 const jsonbComparisonTable = pgTable('drizzle_jsonb_comparison_test', {
   id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
   encrypted_jsonb: encryptedType<ComparisonTestData>('encrypted_jsonb', {
-    dataType: 'json',
+    searchableJson: true,
   }),
   createdAt: timestamp('created_at').defaultNow(),
   testRunId: text('test_run_id'),

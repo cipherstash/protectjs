@@ -10,7 +10,7 @@
  * - jsonb_get_field_as_ciphertext.rs
  */
 import 'dotenv/config'
-import { protect, type SearchTerm } from '@cipherstash/protect'
+import { protect, type QueryTerm } from '@cipherstash/protect'
 import { csColumn, csTable } from '@cipherstash/schema'
 import { eq, sql } from 'drizzle-orm'
 import { integer, pgTable, text, timestamp } from 'drizzle-orm/pg-core'
@@ -39,7 +39,7 @@ if (!process.env.DATABASE_URL) {
 const jsonbFieldAccessTable = pgTable('drizzle_jsonb_field_access_test', {
   id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
   encrypted_jsonb: encryptedType<StandardJsonbData>('encrypted_jsonb', {
-    dataType: 'json',
+    searchableJson: true,
   }),
   createdAt: timestamp('created_at').defaultNow(),
   testRunId: text('test_run_id'),
@@ -128,12 +128,13 @@ function expectJsonPathSelectorOnly(term: Record<string, unknown>): void {
 
 /**
  * Verify the search term has path with value format
+ * Path+value queries return { sv: [...] } with the ste_vec entries
  */
 function expectJsonPathWithValue(term: Record<string, unknown>): void {
-  expect(term).toHaveProperty('s')
-  expect(typeof term.s).toBe('string')
   expect(term).toHaveProperty('sv')
   expect(Array.isArray(term.sv)).toBe(true)
+  const sv = term.sv as Array<Record<string, unknown>>
+  expect(sv.length).toBeGreaterThan(0)
 }
 
 // =============================================================================
@@ -143,7 +144,7 @@ function expectJsonPathWithValue(term: Record<string, unknown>): void {
 describe('JSONB Field Access - Direct Arrow Operator', () => {
   it('should generate selector for string field', async () => {
     // SQL: encrypted_jsonb -> 'string'
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'string',
         column: searchableSchema.encrypted_jsonb,
@@ -151,10 +152,10 @@ describe('JSONB Field Access - Direct Arrow Operator', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
-      throw new Error(`Search term creation failed: ${result.failure.message}`)
+      throw new Error(`Query encryption failed: ${result.failure.message}`)
     }
 
     expect(result.data).toHaveLength(1)
@@ -163,7 +164,7 @@ describe('JSONB Field Access - Direct Arrow Operator', () => {
 
   it('should generate selector for numeric field', async () => {
     // SQL: encrypted_jsonb -> 'number'
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'number',
         column: searchableSchema.encrypted_jsonb,
@@ -171,10 +172,10 @@ describe('JSONB Field Access - Direct Arrow Operator', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
-      throw new Error(`Search term creation failed: ${result.failure.message}`)
+      throw new Error(`Query encryption failed: ${result.failure.message}`)
     }
 
     expect(result.data).toHaveLength(1)
@@ -183,7 +184,7 @@ describe('JSONB Field Access - Direct Arrow Operator', () => {
 
   it('should generate selector for numeric array field', async () => {
     // SQL: encrypted_jsonb -> 'array_number'
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'array_number',
         column: searchableSchema.encrypted_jsonb,
@@ -191,10 +192,10 @@ describe('JSONB Field Access - Direct Arrow Operator', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
-      throw new Error(`Search term creation failed: ${result.failure.message}`)
+      throw new Error(`Query encryption failed: ${result.failure.message}`)
     }
 
     expect(result.data).toHaveLength(1)
@@ -203,7 +204,7 @@ describe('JSONB Field Access - Direct Arrow Operator', () => {
 
   it('should generate selector for string array field', async () => {
     // SQL: encrypted_jsonb -> 'array_string'
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'array_string',
         column: searchableSchema.encrypted_jsonb,
@@ -211,10 +212,10 @@ describe('JSONB Field Access - Direct Arrow Operator', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
-      throw new Error(`Search term creation failed: ${result.failure.message}`)
+      throw new Error(`Query encryption failed: ${result.failure.message}`)
     }
 
     expect(result.data).toHaveLength(1)
@@ -223,7 +224,7 @@ describe('JSONB Field Access - Direct Arrow Operator', () => {
 
   it('should generate selector for nested object field', async () => {
     // SQL: encrypted_jsonb -> 'nested'
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'nested',
         column: searchableSchema.encrypted_jsonb,
@@ -231,10 +232,10 @@ describe('JSONB Field Access - Direct Arrow Operator', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
-      throw new Error(`Search term creation failed: ${result.failure.message}`)
+      throw new Error(`Query encryption failed: ${result.failure.message}`)
     }
 
     expect(result.data).toHaveLength(1)
@@ -243,7 +244,7 @@ describe('JSONB Field Access - Direct Arrow Operator', () => {
 
   it('should generate selector for deep nested path', async () => {
     // SQL: encrypted_jsonb -> 'nested' -> 'string'
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'nested.string',
         column: searchableSchema.encrypted_jsonb,
@@ -251,10 +252,10 @@ describe('JSONB Field Access - Direct Arrow Operator', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
-      throw new Error(`Search term creation failed: ${result.failure.message}`)
+      throw new Error(`Query encryption failed: ${result.failure.message}`)
     }
 
     expect(result.data).toHaveLength(1)
@@ -263,7 +264,7 @@ describe('JSONB Field Access - Direct Arrow Operator', () => {
 
   it('should generate selector for unknown field (returns null in SQL)', async () => {
     // SQL: encrypted_jsonb -> 'blahvtha' (returns NULL)
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'unknown_field',
         column: searchableSchema.encrypted_jsonb,
@@ -271,10 +272,10 @@ describe('JSONB Field Access - Direct Arrow Operator', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
-      throw new Error(`Search term creation failed: ${result.failure.message}`)
+      throw new Error(`Query encryption failed: ${result.failure.message}`)
     }
 
     expect(result.data).toHaveLength(1)
@@ -290,7 +291,7 @@ describe('JSONB Field Access - Direct Arrow Operator', () => {
 describe('JSONB Field Access - Selector Format Flexibility', () => {
   it('should accept simple field name format', async () => {
     // Path: 'string' (no prefix)
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'string',
         value: 'hello',
@@ -299,10 +300,10 @@ describe('JSONB Field Access - Selector Format Flexibility', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
-      throw new Error(`Search term creation failed: ${result.failure.message}`)
+      throw new Error(`Query encryption failed: ${result.failure.message}`)
     }
 
     expect(result.data).toHaveLength(1)
@@ -311,7 +312,7 @@ describe('JSONB Field Access - Selector Format Flexibility', () => {
 
   it('should accept nested field dot notation', async () => {
     // Path: 'nested.string'
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'nested.string',
         value: 'world',
@@ -320,10 +321,10 @@ describe('JSONB Field Access - Selector Format Flexibility', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
-      throw new Error(`Search term creation failed: ${result.failure.message}`)
+      throw new Error(`Query encryption failed: ${result.failure.message}`)
     }
 
     expect(result.data).toHaveLength(1)
@@ -332,7 +333,7 @@ describe('JSONB Field Access - Selector Format Flexibility', () => {
 
   it('should accept path as array format', async () => {
     // Path: ['nested', 'string']
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: ['nested', 'string'],
         value: 'world',
@@ -341,10 +342,10 @@ describe('JSONB Field Access - Selector Format Flexibility', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
-      throw new Error(`Search term creation failed: ${result.failure.message}`)
+      throw new Error(`Query encryption failed: ${result.failure.message}`)
     }
 
     expect(result.data).toHaveLength(1)
@@ -353,7 +354,7 @@ describe('JSONB Field Access - Selector Format Flexibility', () => {
 
   it('should accept very deep nested paths', async () => {
     // Path: 'a.b.c.d.e.f.g.h.i.j'
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'a.b.c.d.e.f.g.h.i.j',
         value: 'deep_value',
@@ -362,10 +363,10 @@ describe('JSONB Field Access - Selector Format Flexibility', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
-      throw new Error(`Search term creation failed: ${result.failure.message}`)
+      throw new Error(`Query encryption failed: ${result.failure.message}`)
     }
 
     expect(result.data).toHaveLength(1)
@@ -379,7 +380,7 @@ describe('JSONB Field Access - Selector Format Flexibility', () => {
 
 describe('JSONB Field Access - Path with Value Matching', () => {
   it('should generate search term for string field with value', async () => {
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'string',
         value: 'hello',
@@ -388,10 +389,10 @@ describe('JSONB Field Access - Path with Value Matching', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
-      throw new Error(`Search term creation failed: ${result.failure.message}`)
+      throw new Error(`Query encryption failed: ${result.failure.message}`)
     }
 
     expect(result.data).toHaveLength(1)
@@ -399,7 +400,7 @@ describe('JSONB Field Access - Path with Value Matching', () => {
   }, 30000)
 
   it('should generate search term for numeric field with value', async () => {
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'number',
         value: 42,
@@ -408,10 +409,10 @@ describe('JSONB Field Access - Path with Value Matching', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
-      throw new Error(`Search term creation failed: ${result.failure.message}`)
+      throw new Error(`Query encryption failed: ${result.failure.message}`)
     }
 
     expect(result.data).toHaveLength(1)
@@ -419,7 +420,7 @@ describe('JSONB Field Access - Path with Value Matching', () => {
   }, 30000)
 
   it('should generate search term for nested string with value', async () => {
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'nested.string',
         value: 'world',
@@ -428,10 +429,10 @@ describe('JSONB Field Access - Path with Value Matching', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
-      throw new Error(`Search term creation failed: ${result.failure.message}`)
+      throw new Error(`Query encryption failed: ${result.failure.message}`)
     }
 
     expect(result.data).toHaveLength(1)
@@ -439,7 +440,7 @@ describe('JSONB Field Access - Path with Value Matching', () => {
   }, 30000)
 
   it('should generate search term for nested number with value', async () => {
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'nested.number',
         value: 1815,
@@ -448,10 +449,10 @@ describe('JSONB Field Access - Path with Value Matching', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
-      throw new Error(`Search term creation failed: ${result.failure.message}`)
+      throw new Error(`Query encryption failed: ${result.failure.message}`)
     }
 
     expect(result.data).toHaveLength(1)
@@ -467,13 +468,13 @@ describe('JSONB Field Access - Batch Operations', () => {
   it('should handle batch of field access queries', async () => {
     const paths = ['string', 'number', 'array_string', 'array_number', 'nested']
 
-    const terms: SearchTerm[] = paths.map((path) => ({
+    const terms: QueryTerm[] = paths.map((path) => ({
       path,
       column: searchableSchema.encrypted_jsonb,
       table: searchableSchema,
     }))
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`Batch field access failed: ${result.failure.message}`)
@@ -486,7 +487,7 @@ describe('JSONB Field Access - Batch Operations', () => {
   }, 30000)
 
   it('should handle batch of field access with values', async () => {
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'string',
         value: 'hello',
@@ -513,7 +514,7 @@ describe('JSONB Field Access - Batch Operations', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`Batch field access failed: ${result.failure.message}`)
@@ -532,7 +533,7 @@ describe('JSONB Field Access - Batch Operations', () => {
 
 describe('JSONB Field Access - Edge Cases', () => {
   it('should handle special characters in string values', async () => {
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'message',
         value: 'Hello "world" with \'quotes\' and \\backslash\\',
@@ -541,7 +542,7 @@ describe('JSONB Field Access - Edge Cases', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`Special chars failed: ${result.failure.message}`)
@@ -552,7 +553,7 @@ describe('JSONB Field Access - Edge Cases', () => {
   }, 30000)
 
   it('should handle unicode characters', async () => {
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'greeting',
         value: '你好世界 🌍 مرحبا',
@@ -561,7 +562,7 @@ describe('JSONB Field Access - Edge Cases', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`Unicode failed: ${result.failure.message}`)
@@ -572,7 +573,7 @@ describe('JSONB Field Access - Edge Cases', () => {
   }, 30000)
 
   it('should handle boolean values', async () => {
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'is_active',
         value: true,
@@ -581,7 +582,7 @@ describe('JSONB Field Access - Edge Cases', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`Boolean failed: ${result.failure.message}`)
@@ -592,7 +593,7 @@ describe('JSONB Field Access - Edge Cases', () => {
   }, 30000)
 
   it('should handle float/decimal numbers', async () => {
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'price',
         value: 99.99,
@@ -601,7 +602,7 @@ describe('JSONB Field Access - Edge Cases', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`Float failed: ${result.failure.message}`)
@@ -612,7 +613,7 @@ describe('JSONB Field Access - Edge Cases', () => {
   }, 30000)
 
   it('should handle negative numbers', async () => {
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'balance',
         value: -500,
@@ -621,7 +622,7 @@ describe('JSONB Field Access - Edge Cases', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`Negative number failed: ${result.failure.message}`)
