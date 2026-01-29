@@ -24,7 +24,5 @@ export default defineConfig([
     },
     dts: false,
     sourcemap: true,
-    external: ['dotenv'],
-    noExternal: [],
   },
 ])
