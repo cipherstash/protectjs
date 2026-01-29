@@ -74,6 +74,16 @@ beforeAll(async () => {
   const client = postgres(process.env.DATABASE_URL as string)
   db = drizzle({ client })
 
+  // Create test table if it doesn't exist
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS drizzle_jsonb_field_access_test (
+      id SERIAL PRIMARY KEY,
+      encrypted_jsonb JSONB,
+      created_at TIMESTAMP DEFAULT NOW(),
+      test_run_id TEXT
+    )
+  `)
+
   // Encrypt and insert standard test data
   const encrypted = await protectClient.encryptModel(
     { encrypted_jsonb: standardJsonbData },
