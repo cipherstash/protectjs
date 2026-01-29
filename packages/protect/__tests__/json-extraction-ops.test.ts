@@ -1,7 +1,7 @@
 import 'dotenv/config'
 import { csColumn, csTable } from '@cipherstash/schema'
 import { beforeAll, describe, expect, it } from 'vitest'
-import { protect } from '../src'
+import { type QueryTerm, protect } from '../src'
 import {
   expectJsonPathWithValue,
   expectJsonPathSelectorOnly,
@@ -28,7 +28,7 @@ describe('JSON extraction operations - Equality', () => {
 
   it('should support equality operation on field extracted via -> (single level)', async () => {
     // SQL equivalent: metadata->>'age' = '30'
-    const terms = [
+    const terms: QueryTerm[] = [
       {
         path: 'age',
         value: '30',
@@ -37,7 +37,7 @@ describe('JSON extraction operations - Equality', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -49,7 +49,7 @@ describe('JSON extraction operations - Equality', () => {
 
   it('should support equality operation on values extracted via jsonb_path_query (deep path)', async () => {
     // SQL equivalent: jsonb_path_query(metadata, '$.user.profile.id') = '"123"'
-    const terms = [
+    const terms: QueryTerm[] = [
       {
         path: 'user.profile.id',
         value: '123',
@@ -58,7 +58,7 @@ describe('JSON extraction operations - Equality', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -90,7 +90,7 @@ describe('JSON extraction operations - Equality', () => {
 
   it('should support field access via -> operator (path only)', async () => {
     // SQL equivalent: metadata->'age'
-    const terms = [
+    const terms: QueryTerm[] = [
       {
         path: 'age',
         column: jsonSchema.metadata,
@@ -98,7 +98,7 @@ describe('JSON extraction operations - Equality', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -111,7 +111,7 @@ describe('JSON extraction operations - Equality', () => {
   it('should support filtering by array elements using jsonb_array_elements equivalent (wildcard path)', async () => {
     // SQL equivalent: 'urgent' IN (SELECT jsonb_array_elements(metadata->'tags'))
     // Using ste_vec with wildcard path syntax
-    const terms = [
+    const terms: QueryTerm[] = [
       {
         path: 'tags[*]',
         value: 'urgent',
@@ -120,7 +120,7 @@ describe('JSON extraction operations - Equality', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)

@@ -17,7 +17,7 @@
 import 'dotenv/config'
 import { csColumn, csTable } from '@cipherstash/schema'
 import { beforeAll, describe, expect, it } from 'vitest'
-import { protect, type QueryTerm, type SearchTerm } from '../src'
+import { protect, type QueryTerm } from '../src'
 import {
   expectSteVecArray,
   expectJsonPathWithValue,
@@ -129,7 +129,7 @@ describe('JSONB Extraction - jsonb_array_elements', () => {
 
   it('should support array elements with string array via wildcard path', async () => {
     // Equivalent to: jsonb_array_elements(jsonb_path_query(col, '$.array_string[@]'))
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'array_string[@]',
         column: jsonbSchema.encrypted_jsonb,
@@ -137,7 +137,7 @@ describe('JSONB Extraction - jsonb_array_elements', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -149,7 +149,7 @@ describe('JSONB Extraction - jsonb_array_elements', () => {
 
   it('should support array elements with numeric array via wildcard path', async () => {
     // Equivalent to: jsonb_array_elements(jsonb_path_query(col, '$.array_number[@]'))
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'array_number[@]',
         column: jsonbSchema.encrypted_jsonb,
@@ -157,7 +157,7 @@ describe('JSONB Extraction - jsonb_array_elements', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -169,7 +169,7 @@ describe('JSONB Extraction - jsonb_array_elements', () => {
 
   it('should support array elements with [*] wildcard notation', async () => {
     // Alternative notation: $.array_string[*]
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'array_string[*]',
         column: jsonbSchema.encrypted_jsonb,
@@ -177,7 +177,7 @@ describe('JSONB Extraction - jsonb_array_elements', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -189,7 +189,7 @@ describe('JSONB Extraction - jsonb_array_elements', () => {
 
   it('should support filtering array elements by value', async () => {
     // Equivalent to checking if 'hello' is in array_string
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'array_string[@]',
         value: 'hello',
@@ -198,7 +198,7 @@ describe('JSONB Extraction - jsonb_array_elements', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -210,7 +210,7 @@ describe('JSONB Extraction - jsonb_array_elements', () => {
 
   it('should support filtering numeric array elements by value', async () => {
     // Checking if 42 is in array_number
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'array_number[@]',
         value: 42,
@@ -219,7 +219,7 @@ describe('JSONB Extraction - jsonb_array_elements', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -233,7 +233,7 @@ describe('JSONB Extraction - jsonb_array_elements', () => {
     // SQL: jsonb_array_elements(encrypted_jsonb->'nonexistent_array')
     // Proxy returns empty set when field doesn't exist
     // Client still generates valid selector - proxy handles the empty result
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'nonexistent_array[@]',
         column: jsonbSchema.encrypted_jsonb,
@@ -241,7 +241,7 @@ describe('JSONB Extraction - jsonb_array_elements', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -297,7 +297,7 @@ describe('JSONB Extraction - jsonb_array_length', () => {
     // SQL: jsonb_array_length(encrypted_jsonb->'nonexistent_array')
     // Proxy returns NULL when field doesn't exist (length of NULL is NULL)
     // Client generates valid search term - proxy handles the NULL case
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'nonexistent_array',
         column: jsonbSchema.encrypted_jsonb,
@@ -305,7 +305,7 @@ describe('JSONB Extraction - jsonb_array_length', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -326,7 +326,7 @@ describe('JSONB Field Access - Direct Arrow Operator', () => {
 
   it('should support get string field via path', async () => {
     // SQL: encrypted_jsonb -> 'string'
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'string',
         column: jsonbSchema.encrypted_jsonb,
@@ -334,7 +334,7 @@ describe('JSONB Field Access - Direct Arrow Operator', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -346,7 +346,7 @@ describe('JSONB Field Access - Direct Arrow Operator', () => {
 
   it('should support get numeric field via path', async () => {
     // SQL: encrypted_jsonb -> 'number'
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'number',
         column: jsonbSchema.encrypted_jsonb,
@@ -354,7 +354,7 @@ describe('JSONB Field Access - Direct Arrow Operator', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -366,7 +366,7 @@ describe('JSONB Field Access - Direct Arrow Operator', () => {
 
   it('should support get numeric array field via path', async () => {
     // SQL: encrypted_jsonb -> 'array_number'
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'array_number',
         column: jsonbSchema.encrypted_jsonb,
@@ -374,7 +374,7 @@ describe('JSONB Field Access - Direct Arrow Operator', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -386,7 +386,7 @@ describe('JSONB Field Access - Direct Arrow Operator', () => {
 
   it('should support get string array field via path', async () => {
     // SQL: encrypted_jsonb -> 'array_string'
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'array_string',
         column: jsonbSchema.encrypted_jsonb,
@@ -394,7 +394,7 @@ describe('JSONB Field Access - Direct Arrow Operator', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -406,7 +406,7 @@ describe('JSONB Field Access - Direct Arrow Operator', () => {
 
   it('should support get nested object field via path', async () => {
     // SQL: encrypted_jsonb -> 'nested'
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'nested',
         column: jsonbSchema.encrypted_jsonb,
@@ -414,7 +414,7 @@ describe('JSONB Field Access - Direct Arrow Operator', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -426,7 +426,7 @@ describe('JSONB Field Access - Direct Arrow Operator', () => {
 
   it('should support get nested field via deep path', async () => {
     // SQL: encrypted_jsonb -> 'nested' -> 'string'
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'nested.string',
         column: jsonbSchema.encrypted_jsonb,
@@ -434,7 +434,7 @@ describe('JSONB Field Access - Direct Arrow Operator', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -447,7 +447,7 @@ describe('JSONB Field Access - Direct Arrow Operator', () => {
   it('should handle unknown field path gracefully', async () => {
     // SQL: encrypted_jsonb -> 'blahvtha' (returns NULL in SQL)
     // Client-side still generates valid selector for unknown paths
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'nonexistent_field',
         column: jsonbSchema.encrypted_jsonb,
@@ -455,7 +455,7 @@ describe('JSONB Field Access - Direct Arrow Operator', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -471,7 +471,7 @@ describe('JSONB Field Access - Selector Flexibility', () => {
   // Both 'field' and '$.field' formats should work
 
   it('should accept simple field name format', async () => {
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'string',
         value: 'hello',
@@ -480,7 +480,7 @@ describe('JSONB Field Access - Selector Flexibility', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -491,7 +491,7 @@ describe('JSONB Field Access - Selector Flexibility', () => {
   }, 30000)
 
   it('should accept nested field dot notation', async () => {
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'nested.string',
         value: 'world',
@@ -500,7 +500,7 @@ describe('JSONB Field Access - Selector Flexibility', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -511,7 +511,7 @@ describe('JSONB Field Access - Selector Flexibility', () => {
   }, 30000)
 
   it('should accept path as array format', async () => {
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: ['nested', 'string'],
         value: 'world',
@@ -520,7 +520,7 @@ describe('JSONB Field Access - Selector Flexibility', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -540,16 +540,15 @@ describe('JSONB Containment - Contains (@>) Operator', () => {
 
   it('should support contains with string value', async () => {
     // SQL: encrypted_jsonb @> '{"string": "hello"}'
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
-        value: { string: 'hello' },
+        contains: { string: 'hello' },
         column: jsonbSchema.encrypted_jsonb,
         table: jsonbSchema,
-        containmentType: 'contains',
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -561,16 +560,15 @@ describe('JSONB Containment - Contains (@>) Operator', () => {
 
   it('should support contains with number value', async () => {
     // SQL: encrypted_jsonb @> '{"number": 42}'
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
-        value: { number: 42 },
+        contains: { number: 42 },
         column: jsonbSchema.encrypted_jsonb,
         table: jsonbSchema,
-        containmentType: 'contains',
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -582,16 +580,15 @@ describe('JSONB Containment - Contains (@>) Operator', () => {
 
   it('should support contains with numeric array', async () => {
     // SQL: encrypted_jsonb @> '{"array_number": [42, 84]}'
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
-        value: { array_number: [42, 84] },
+        contains: { array_number: [42, 84] },
         column: jsonbSchema.encrypted_jsonb,
         table: jsonbSchema,
-        containmentType: 'contains',
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -603,16 +600,15 @@ describe('JSONB Containment - Contains (@>) Operator', () => {
 
   it('should support contains with string array', async () => {
     // SQL: encrypted_jsonb @> '{"array_string": ["hello", "world"]}'
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
-        value: { array_string: ['hello', 'world'] },
+        contains: { array_string: ['hello', 'world'] },
         column: jsonbSchema.encrypted_jsonb,
         table: jsonbSchema,
-        containmentType: 'contains',
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -624,16 +620,15 @@ describe('JSONB Containment - Contains (@>) Operator', () => {
 
   it('should support contains with nested object', async () => {
     // SQL: encrypted_jsonb @> '{"nested": {"number": 1815, "string": "world"}}'
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
-        value: { nested: { number: 1815, string: 'world' } },
+        contains: { nested: { number: 1815, string: 'world' } },
         column: jsonbSchema.encrypted_jsonb,
         table: jsonbSchema,
-        containmentType: 'contains',
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -645,16 +640,15 @@ describe('JSONB Containment - Contains (@>) Operator', () => {
 
   it('should support contains with partial nested object', async () => {
     // SQL: encrypted_jsonb @> '{"nested": {"string": "world"}}'
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
-        value: { nested: { string: 'world' } },
+        contains: { nested: { string: 'world' } },
         column: jsonbSchema.encrypted_jsonb,
         table: jsonbSchema,
-        containmentType: 'contains',
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -670,16 +664,15 @@ describe('JSONB Containment - Contained By (<@) Operator', () => {
 
   it('should support contained_by with string value', async () => {
     // SQL: '{"string": "hello"}' <@ encrypted_jsonb
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
-        value: { string: 'hello' },
+        containedBy: { string: 'hello' },
         column: jsonbSchema.encrypted_jsonb,
         table: jsonbSchema,
-        containmentType: 'contained_by',
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -691,16 +684,15 @@ describe('JSONB Containment - Contained By (<@) Operator', () => {
 
   it('should support contained_by with number value', async () => {
     // SQL: '{"number": 42}' <@ encrypted_jsonb
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
-        value: { number: 42 },
+        containedBy: { number: 42 },
         column: jsonbSchema.encrypted_jsonb,
         table: jsonbSchema,
-        containmentType: 'contained_by',
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -712,16 +704,15 @@ describe('JSONB Containment - Contained By (<@) Operator', () => {
 
   it('should support contained_by with numeric array', async () => {
     // SQL: '{"array_number": [42, 84]}' <@ encrypted_jsonb
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
-        value: { array_number: [42, 84] },
+        containedBy: { array_number: [42, 84] },
         column: jsonbSchema.encrypted_jsonb,
         table: jsonbSchema,
-        containmentType: 'contained_by',
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -733,16 +724,15 @@ describe('JSONB Containment - Contained By (<@) Operator', () => {
 
   it('should support contained_by with string array', async () => {
     // SQL: '{"array_string": ["hello", "world"]}' <@ encrypted_jsonb
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
-        value: { array_string: ['hello', 'world'] },
+        containedBy: { array_string: ['hello', 'world'] },
         column: jsonbSchema.encrypted_jsonb,
         table: jsonbSchema,
-        containmentType: 'contained_by',
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -754,16 +744,15 @@ describe('JSONB Containment - Contained By (<@) Operator', () => {
 
   it('should support contained_by with nested object', async () => {
     // SQL: '{"nested": {"number": 1815, "string": "world"}}' <@ encrypted_jsonb
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
-        value: { nested: { number: 1815, string: 'world' } },
+        containedBy: { nested: { number: 1815, string: 'world' } },
         column: jsonbSchema.encrypted_jsonb,
         table: jsonbSchema,
-        containmentType: 'contained_by',
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -784,7 +773,7 @@ describe('JSONB Path Operations - jsonb_path_exists', () => {
 
   it('should support path exists for number field', async () => {
     // SQL: jsonb_path_exists(encrypted_jsonb, '$.number')
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'number',
         column: jsonbSchema.encrypted_jsonb,
@@ -792,7 +781,7 @@ describe('JSONB Path Operations - jsonb_path_exists', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -804,7 +793,7 @@ describe('JSONB Path Operations - jsonb_path_exists', () => {
 
   it('should support path exists for nested string', async () => {
     // SQL: jsonb_path_exists(encrypted_jsonb, '$.nested.string')
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'nested.string',
         column: jsonbSchema.encrypted_jsonb,
@@ -812,7 +801,7 @@ describe('JSONB Path Operations - jsonb_path_exists', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -824,7 +813,7 @@ describe('JSONB Path Operations - jsonb_path_exists', () => {
 
   it('should support path exists for nested object', async () => {
     // SQL: jsonb_path_exists(encrypted_jsonb, '$.nested')
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'nested',
         column: jsonbSchema.encrypted_jsonb,
@@ -832,7 +821,7 @@ describe('JSONB Path Operations - jsonb_path_exists', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -844,7 +833,7 @@ describe('JSONB Path Operations - jsonb_path_exists', () => {
 
   it('should handle path exists for unknown path', async () => {
     // SQL: jsonb_path_exists(encrypted_jsonb, '$.vtha') -> false
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'unknown_path',
         column: jsonbSchema.encrypted_jsonb,
@@ -852,7 +841,7 @@ describe('JSONB Path Operations - jsonb_path_exists', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -869,7 +858,7 @@ describe('JSONB Path Operations - jsonb_path_query', () => {
 
   it('should support path query for number', async () => {
     // SQL: jsonb_path_query(encrypted_jsonb, '$.number')
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'number',
         value: 42,
@@ -878,7 +867,7 @@ describe('JSONB Path Operations - jsonb_path_query', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -890,7 +879,7 @@ describe('JSONB Path Operations - jsonb_path_query', () => {
 
   it('should support path query for nested string', async () => {
     // SQL: jsonb_path_query(encrypted_jsonb, '$.nested.string')
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'nested.string',
         value: 'world',
@@ -899,7 +888,7 @@ describe('JSONB Path Operations - jsonb_path_query', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -911,7 +900,7 @@ describe('JSONB Path Operations - jsonb_path_query', () => {
 
   it('should support path query for nested object', async () => {
     // SQL: jsonb_path_query(encrypted_jsonb, '$.nested')
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'nested',
         column: jsonbSchema.encrypted_jsonb,
@@ -919,7 +908,7 @@ describe('JSONB Path Operations - jsonb_path_query', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -933,7 +922,7 @@ describe('JSONB Path Operations - jsonb_path_query', () => {
     // SQL: jsonb_path_query(encrypted_jsonb, '$.vtha')
     // Proxy returns empty set when path doesn't exist
     // Client still generates valid selector - proxy handles the empty result
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'unknown_deep.path.that.does.not.exist',
         column: jsonbSchema.encrypted_jsonb,
@@ -941,7 +930,7 @@ describe('JSONB Path Operations - jsonb_path_query', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -958,7 +947,7 @@ describe('JSONB Path Operations - jsonb_path_query_first', () => {
 
   it('should support path query first for array wildcard string', async () => {
     // SQL: jsonb_path_query_first(encrypted_jsonb, '$.array_string[*]')
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'array_string[*]',
         value: 'hello',
@@ -967,7 +956,7 @@ describe('JSONB Path Operations - jsonb_path_query_first', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -979,7 +968,7 @@ describe('JSONB Path Operations - jsonb_path_query_first', () => {
 
   it('should support path query first for array wildcard number', async () => {
     // SQL: jsonb_path_query_first(encrypted_jsonb, '$.array_number[*]')
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'array_number[*]',
         value: 42,
@@ -988,7 +977,7 @@ describe('JSONB Path Operations - jsonb_path_query_first', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -1000,7 +989,7 @@ describe('JSONB Path Operations - jsonb_path_query_first', () => {
 
   it('should support path query first for nested string', async () => {
     // SQL: jsonb_path_query_first(encrypted_jsonb, '$.nested.string')
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'nested.string',
         value: 'world',
@@ -1009,7 +998,7 @@ describe('JSONB Path Operations - jsonb_path_query_first', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -1021,7 +1010,7 @@ describe('JSONB Path Operations - jsonb_path_query_first', () => {
 
   it('should support path query first for nested object', async () => {
     // SQL: jsonb_path_query_first(encrypted_jsonb, '$.nested')
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'nested',
         column: jsonbSchema.encrypted_jsonb,
@@ -1029,7 +1018,7 @@ describe('JSONB Path Operations - jsonb_path_query_first', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -1043,7 +1032,7 @@ describe('JSONB Path Operations - jsonb_path_query_first', () => {
     // SQL: jsonb_path_query_first(encrypted_jsonb, '$.unknown_field')
     // Proxy returns NULL when path doesn't exist (vs empty set for jsonb_path_query)
     // This is the key semantic difference: path_query returns empty set, path_query_first returns NULL
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'nonexistent_field_for_first',
         column: jsonbSchema.encrypted_jsonb,
@@ -1051,7 +1040,7 @@ describe('JSONB Path Operations - jsonb_path_query_first', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -1427,7 +1416,7 @@ describe('JSONB Comparison - Less Than or Equal (<=)', () => {
 
 describe('JSONB Data Types Coverage', () => {
   it('should handle string data type in extraction', async () => {
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'string',
         value: 'test_string',
@@ -1436,7 +1425,7 @@ describe('JSONB Data Types Coverage', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -1447,7 +1436,7 @@ describe('JSONB Data Types Coverage', () => {
   }, 30000)
 
   it('should handle number/integer data type in extraction', async () => {
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'number',
         value: 12345,
@@ -1456,7 +1445,7 @@ describe('JSONB Data Types Coverage', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -1467,16 +1456,15 @@ describe('JSONB Data Types Coverage', () => {
   }, 30000)
 
   it('should handle string array in containment', async () => {
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
-        value: { array_string: ['item1', 'item2', 'item3'] },
+        contains: { array_string: ['item1', 'item2', 'item3'] },
         column: jsonbSchema.encrypted_jsonb,
         table: jsonbSchema,
-        containmentType: 'contains',
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -1487,16 +1475,15 @@ describe('JSONB Data Types Coverage', () => {
   }, 30000)
 
   it('should handle number array in containment', async () => {
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
-        value: { array_number: [1, 2, 3, 4, 5] },
+        contains: { array_number: [1, 2, 3, 4, 5] },
         column: jsonbSchema.encrypted_jsonb,
         table: jsonbSchema,
-        containmentType: 'contains',
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -1507,9 +1494,9 @@ describe('JSONB Data Types Coverage', () => {
   }, 30000)
 
   it('should handle nested object in containment', async () => {
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
-        value: {
+        contains: {
           nested: {
             level1: {
               level2: {
@@ -1520,11 +1507,10 @@ describe('JSONB Data Types Coverage', () => {
         },
         column: jsonbSchema.encrypted_jsonb,
         table: jsonbSchema,
-        containmentType: 'contains',
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -1535,16 +1521,15 @@ describe('JSONB Data Types Coverage', () => {
   }, 30000)
 
   it('should handle null value in containment', async () => {
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
-        value: { nullable_field: null },
+        contains: { nullable_field: null },
         column: jsonbSchema.encrypted_jsonb,
         table: jsonbSchema,
-        containmentType: 'contains',
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -1555,7 +1540,7 @@ describe('JSONB Data Types Coverage', () => {
   }, 30000)
 
   it('should handle boolean values in path query', async () => {
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'is_active',
         value: true,
@@ -1564,7 +1549,7 @@ describe('JSONB Data Types Coverage', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -1575,7 +1560,7 @@ describe('JSONB Data Types Coverage', () => {
   }, 30000)
 
   it('should handle float/decimal numbers', async () => {
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'price',
         value: 99.99,
@@ -1584,7 +1569,7 @@ describe('JSONB Data Types Coverage', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -1595,7 +1580,7 @@ describe('JSONB Data Types Coverage', () => {
   }, 30000)
 
   it('should handle negative numbers', async () => {
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'balance',
         value: -500,
@@ -1604,7 +1589,7 @@ describe('JSONB Data Types Coverage', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -1621,16 +1606,15 @@ describe('JSONB Data Types Coverage', () => {
 
 describe('JSONB Edge Cases', () => {
   it('should handle empty object containment', async () => {
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
-        value: {},
+        contains: {},
         column: jsonbSchema.encrypted_jsonb,
         table: jsonbSchema,
-        containmentType: 'contains',
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -1642,7 +1626,7 @@ describe('JSONB Edge Cases', () => {
   }, 30000)
 
   it('should handle deep nesting in path (10+ levels)', async () => {
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'a.b.c.d.e.f.g.h.i.j.k.l',
         value: 'deep_value',
@@ -1651,7 +1635,7 @@ describe('JSONB Edge Cases', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -1662,7 +1646,7 @@ describe('JSONB Edge Cases', () => {
   }, 30000)
 
   it('should handle special characters in string values', async () => {
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'message',
         value: 'Hello "world" with \'quotes\' and \\backslash\\',
@@ -1671,7 +1655,7 @@ describe('JSONB Edge Cases', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -1682,7 +1666,7 @@ describe('JSONB Edge Cases', () => {
   }, 30000)
 
   it('should handle unicode characters', async () => {
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'greeting',
         value: '你好世界 🌍 مرحبا',
@@ -1691,7 +1675,7 @@ describe('JSONB Edge Cases', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -1703,7 +1687,7 @@ describe('JSONB Edge Cases', () => {
 
   it('should handle multiple array wildcards in path', async () => {
     // SQL pattern: $.matrix[*][*]
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'matrix[@][@]',
         column: jsonbSchema.encrypted_jsonb,
@@ -1711,7 +1695,7 @@ describe('JSONB Edge Cases', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -1723,7 +1707,7 @@ describe('JSONB Edge Cases', () => {
 
   it('should handle complex nested array path', async () => {
     // SQL pattern: $.users[*].orders[*].items[0].name
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
         path: 'users[@].orders[@].items[0].name',
         value: 'Widget',
@@ -1732,7 +1716,7 @@ describe('JSONB Edge Cases', () => {
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -1748,16 +1732,15 @@ describe('JSONB Edge Cases', () => {
       largeObject[`key${i}`] = `value${i}`
     }
 
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
-        value: largeObject,
+        contains: largeObject,
         column: jsonbSchema.encrypted_jsonb,
         table: jsonbSchema,
-        containmentType: 'contains',
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -1885,17 +1868,16 @@ describe('JSONB Large Dataset Containment', () => {
   it('should handle large batch of containment queries (100 variations)', async () => {
     // Generate 100 different containment queries to simulate large dataset scenarios
     // This verifies the client can handle many containment terms efficiently
-    const terms: SearchTerm[] = []
+    const terms: QueryTerm[] = []
     for (let i = 0; i < 100; i++) {
       terms.push({
-        value: { [`key_${i}`]: `value_${i}` },
+        contains: { [`key_${i}`]: `value_${i}` },
         column: jsonbSchema.encrypted_jsonb,
         table: jsonbSchema,
-        containmentType: 'contains',
       })
     }
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -1927,16 +1909,15 @@ describe('JSONB Large Dataset Containment', () => {
       },
     }
 
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
-        value: complexObject,
+        contains: complexObject,
         column: jsonbSchema.encrypted_jsonb,
         table: jsonbSchema,
-        containmentType: 'contains',
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -1952,29 +1933,27 @@ describe('JSONB Large Dataset Containment', () => {
 
   it('should handle mixed containment types in large batch', async () => {
     // Mix of contains and contained_by operations, simulating varied query patterns
-    const terms: SearchTerm[] = []
+    const terms: QueryTerm[] = []
 
     // 50 contains queries
     for (let i = 0; i < 50; i++) {
       terms.push({
-        value: { field: `value_${i}` },
+        contains: { field: `value_${i}` },
         column: jsonbSchema.encrypted_jsonb,
         table: jsonbSchema,
-        containmentType: 'contains',
       })
     }
 
     // 50 contained_by queries
     for (let i = 50; i < 100; i++) {
       terms.push({
-        value: { field: `value_${i}` },
+        containedBy: { field: `value_${i}` },
         column: jsonbSchema.encrypted_jsonb,
         table: jsonbSchema,
-        containmentType: 'contained_by',
       })
     }
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -1993,16 +1972,15 @@ describe('JSONB Large Dataset Containment', () => {
     // Simulates checking if a large set of values is contained in a JSONB array
     const largeArray = Array.from({ length: 100 }, (_, i) => `item_${i}`)
 
-    const terms: SearchTerm[] = [
+    const terms: QueryTerm[] = [
       {
-        value: { items: largeArray },
+        contains: { items: largeArray },
         column: jsonbSchema.encrypted_jsonb,
         table: jsonbSchema,
-        containmentType: 'contains',
       },
     ]
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -2033,14 +2011,13 @@ describe('JSONB Large Dataset Containment', () => {
       Number.MIN_SAFE_INTEGER,
     ]
 
-    const terms: SearchTerm[] = numericValues.map((num) => ({
-      value: { count: num },
+    const terms: QueryTerm[] = numericValues.map((num) => ({
+      contains: { count: num },
       column: jsonbSchema.encrypted_jsonb,
       table: jsonbSchema,
-      containmentType: 'contains' as const,
     }))
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
@@ -2063,14 +2040,13 @@ describe('JSONB Large Dataset Containment', () => {
       { a: 1, b: 2, c: 3, d: 4, e: 5 }, // full object
     ]
 
-    const terms: SearchTerm[] = subsets.map((subset) => ({
-      value: subset,
+    const terms: QueryTerm[] = subsets.map((subset) => ({
+      contains: subset,
       column: jsonbSchema.encrypted_jsonb,
       table: jsonbSchema,
-      containmentType: 'contains' as const,
     }))
 
-    const result = await protectClient.createSearchTerms(terms)
+    const result = await protectClient.encryptQuery(terms)
 
     if (result.failure) {
       throw new Error(`[protect]: ${result.failure.message}`)
