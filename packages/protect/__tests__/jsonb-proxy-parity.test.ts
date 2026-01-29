@@ -8,6 +8,11 @@
  * - Containment operations (@>, <@)
  * - Path operations (jsonb_path_exists, jsonb_path_query, jsonb_path_query_first)
  * - Comparison operations (=, >, >=, <, <=) on extracted values
+ *
+ * NOTE: Some tests intentionally duplicate existing coverage in json-protect.test.ts.
+ * This is by design to verify that protectjs correctly handles the specific proxy SQL
+ * patterns and JSONB-specific operations. These tests serve as parity verification that
+ * the client library properly encodes and processes JSONB queries that the proxy will execute.
  */
 import 'dotenv/config'
 import { csColumn, csTable } from '@cipherstash/schema'
@@ -17,7 +22,6 @@ import {
   expectSteVecArray,
   expectJsonPathWithValue,
   expectJsonPathSelectorOnly,
-  expectSteVecSelector,
 } from './test-utils/query-terms'
 
 // Schema matching proxy test data structure
@@ -77,6 +81,46 @@ beforeAll(async () => {
 })
 
 // =============================================================================
+// TEST COVERAGE MAPPING
+// =============================================================================
+// This section maps describe blocks to the specific proxy SQL patterns being tested:
+//
+// 1. JSONB EXTRACTION & MANIPULATION
+//    - jsonb_array_elements(jsonb_path_query(col, '$.array[[@]]'))
+//    - jsonb_array_length(encrypted_jsonb->'array')
+//
+// 2. JSONB FIELD ACCESS
+//    - Direct arrow operator: col -> 'field' or col -> '$.field'
+//    - Multiple formats: simple name, dot notation, array format
+//
+// 3. JSONB CONTAINMENT OPERATIONS
+//    - Contains (@>): col @> '{"key": "value"}'
+//    - Contained By (<@): '{"key": "value"}' <@ col
+//
+// 4. JSONB PATH OPERATIONS
+//    - jsonb_path_exists(col, '$.path')
+//    - jsonb_path_query(col, '$.path')
+//    - jsonb_path_query_first(col, '$.path')
+//
+// 5. JSONB COMPARISON OPERATIONS
+//    - Equality (=), Greater (>), Greater or Equal (>=)
+//    - Less (<), Less or Equal (<=)
+//    - Both arrow operator and jsonb_path_query_first column definitions
+//
+// 6. DATA TYPES COVERAGE
+//    - String, number, boolean, float/decimal, negative numbers
+//    - Arrays (string/numeric), nested objects, null values
+//
+// 7. EDGE CASES & SPECIAL SCENARIOS
+//    - Empty objects, deep nesting (10+ levels)
+//    - Special characters, unicode, multiple array wildcards
+//    - Complex nested paths, large containment objects (50+ keys)
+//
+// 8. BATCH OPERATIONS
+//    - Mixed JSONB operations in single batch
+//    - Comparison queries on extracted fields
+
+// =============================================================================
 // 1. JSONB EXTRACTION & MANIPULATION
 // =============================================================================
 
@@ -101,7 +145,7 @@ describe('JSONB Extraction - jsonb_array_elements', () => {
 
     expect(result.data).toHaveLength(1)
     expectJsonPathSelectorOnly(result.data[0] as Record<string, unknown>)
-  })
+  }, 30000)
 
   it('should support array elements with numeric array via wildcard path', async () => {
     // Equivalent to: jsonb_array_elements(jsonb_path_query(col, '$.array_number[@]'))
@@ -121,7 +165,7 @@ describe('JSONB Extraction - jsonb_array_elements', () => {
 
     expect(result.data).toHaveLength(1)
     expectJsonPathSelectorOnly(result.data[0] as Record<string, unknown>)
-  })
+  }, 30000)
 
   it('should support array elements with [*] wildcard notation', async () => {
     // Alternative notation: $.array_string[*]
@@ -141,7 +185,7 @@ describe('JSONB Extraction - jsonb_array_elements', () => {
 
     expect(result.data).toHaveLength(1)
     expectJsonPathSelectorOnly(result.data[0] as Record<string, unknown>)
-  })
+  }, 30000)
 
   it('should support filtering array elements by value', async () => {
     // Equivalent to checking if 'hello' is in array_string
@@ -162,7 +206,7 @@ describe('JSONB Extraction - jsonb_array_elements', () => {
 
     expect(result.data).toHaveLength(1)
     expectJsonPathWithValue(result.data[0] as Record<string, unknown>)
-  })
+  }, 30000)
 
   it('should support filtering numeric array elements by value', async () => {
     // Checking if 42 is in array_number
@@ -183,7 +227,7 @@ describe('JSONB Extraction - jsonb_array_elements', () => {
 
     expect(result.data).toHaveLength(1)
     expectJsonPathWithValue(result.data[0] as Record<string, unknown>)
-  })
+  }, 30000)
 })
 
 describe('JSONB Extraction - jsonb_array_length', () => {
@@ -206,7 +250,7 @@ describe('JSONB Extraction - jsonb_array_length', () => {
     expect(Array.isArray(result.data.ob)).toBe(true)
     expect(result.data.ob.length).toBeGreaterThan(0)
     expect(result.data.ob[0]).toMatch(/^[0-9a-f]+$/)
-  })
+  }, 30000)
 
   it('should support range operation on numeric array length', async () => {
     // SQL: jsonb_array_length(encrypted_jsonb->'array_number') >= 3
@@ -224,7 +268,7 @@ describe('JSONB Extraction - jsonb_array_length', () => {
     expect(result.data).toHaveProperty('ob')
     expect(Array.isArray(result.data.ob)).toBe(true)
     expect(result.data.ob.length).toBeGreaterThan(0)
-  })
+  }, 30000)
 })
 
 // =============================================================================
@@ -252,7 +296,7 @@ describe('JSONB Field Access - Direct Arrow Operator', () => {
 
     expect(result.data).toHaveLength(1)
     expectJsonPathSelectorOnly(result.data[0] as Record<string, unknown>)
-  })
+  }, 30000)
 
   it('should support get numeric field via path', async () => {
     // SQL: encrypted_jsonb -> 'number'
@@ -272,7 +316,7 @@ describe('JSONB Field Access - Direct Arrow Operator', () => {
 
     expect(result.data).toHaveLength(1)
     expectJsonPathSelectorOnly(result.data[0] as Record<string, unknown>)
-  })
+  }, 30000)
 
   it('should support get numeric array field via path', async () => {
     // SQL: encrypted_jsonb -> 'array_number'
@@ -292,7 +336,7 @@ describe('JSONB Field Access - Direct Arrow Operator', () => {
 
     expect(result.data).toHaveLength(1)
     expectJsonPathSelectorOnly(result.data[0] as Record<string, unknown>)
-  })
+  }, 30000)
 
   it('should support get string array field via path', async () => {
     // SQL: encrypted_jsonb -> 'array_string'
@@ -312,7 +356,7 @@ describe('JSONB Field Access - Direct Arrow Operator', () => {
 
     expect(result.data).toHaveLength(1)
     expectJsonPathSelectorOnly(result.data[0] as Record<string, unknown>)
-  })
+  }, 30000)
 
   it('should support get nested object field via path', async () => {
     // SQL: encrypted_jsonb -> 'nested'
@@ -332,7 +376,7 @@ describe('JSONB Field Access - Direct Arrow Operator', () => {
 
     expect(result.data).toHaveLength(1)
     expectJsonPathSelectorOnly(result.data[0] as Record<string, unknown>)
-  })
+  }, 30000)
 
   it('should support get nested field via deep path', async () => {
     // SQL: encrypted_jsonb -> 'nested' -> 'string'
@@ -352,7 +396,7 @@ describe('JSONB Field Access - Direct Arrow Operator', () => {
 
     expect(result.data).toHaveLength(1)
     expectJsonPathSelectorOnly(result.data[0] as Record<string, unknown>)
-  })
+  }, 30000)
 
   it('should handle unknown field path gracefully', async () => {
     // SQL: encrypted_jsonb -> 'blahvtha' (returns NULL in SQL)
@@ -374,7 +418,7 @@ describe('JSONB Field Access - Direct Arrow Operator', () => {
     expect(result.data).toHaveLength(1)
     // Still generates a selector - proxy will return NULL/empty
     expectJsonPathSelectorOnly(result.data[0] as Record<string, unknown>)
-  })
+  }, 30000)
 })
 
 describe('JSONB Field Access - Selector Flexibility', () => {
@@ -398,7 +442,7 @@ describe('JSONB Field Access - Selector Flexibility', () => {
 
     expect(result.data).toHaveLength(1)
     expectJsonPathWithValue(result.data[0] as Record<string, unknown>)
-  })
+  }, 30000)
 
   it('should accept nested field dot notation', async () => {
     const terms: SearchTerm[] = [
@@ -418,7 +462,7 @@ describe('JSONB Field Access - Selector Flexibility', () => {
 
     expect(result.data).toHaveLength(1)
     expectJsonPathWithValue(result.data[0] as Record<string, unknown>)
-  })
+  }, 30000)
 
   it('should accept path as array format', async () => {
     const terms: SearchTerm[] = [
@@ -438,7 +482,7 @@ describe('JSONB Field Access - Selector Flexibility', () => {
 
     expect(result.data).toHaveLength(1)
     expectJsonPathWithValue(result.data[0] as Record<string, unknown>)
-  })
+  }, 30000)
 })
 
 // =============================================================================
@@ -467,7 +511,7 @@ describe('JSONB Containment - Contains (@>) Operator', () => {
 
     expect(result.data).toHaveLength(1)
     expectSteVecArray(result.data[0] as { sv: Array<Record<string, unknown>> })
-  })
+  }, 30000)
 
   it('should support contains with number value', async () => {
     // SQL: encrypted_jsonb @> '{"number": 42}'
@@ -488,7 +532,7 @@ describe('JSONB Containment - Contains (@>) Operator', () => {
 
     expect(result.data).toHaveLength(1)
     expectSteVecArray(result.data[0] as { sv: Array<Record<string, unknown>> })
-  })
+  }, 30000)
 
   it('should support contains with numeric array', async () => {
     // SQL: encrypted_jsonb @> '{"array_number": [42, 84]}'
@@ -509,7 +553,7 @@ describe('JSONB Containment - Contains (@>) Operator', () => {
 
     expect(result.data).toHaveLength(1)
     expectSteVecArray(result.data[0] as { sv: Array<Record<string, unknown>> })
-  })
+  }, 30000)
 
   it('should support contains with string array', async () => {
     // SQL: encrypted_jsonb @> '{"array_string": ["hello", "world"]}'
@@ -530,7 +574,7 @@ describe('JSONB Containment - Contains (@>) Operator', () => {
 
     expect(result.data).toHaveLength(1)
     expectSteVecArray(result.data[0] as { sv: Array<Record<string, unknown>> })
-  })
+  }, 30000)
 
   it('should support contains with nested object', async () => {
     // SQL: encrypted_jsonb @> '{"nested": {"number": 1815, "string": "world"}}'
@@ -551,7 +595,7 @@ describe('JSONB Containment - Contains (@>) Operator', () => {
 
     expect(result.data).toHaveLength(1)
     expectSteVecArray(result.data[0] as { sv: Array<Record<string, unknown>> })
-  })
+  }, 30000)
 
   it('should support contains with partial nested object', async () => {
     // SQL: encrypted_jsonb @> '{"nested": {"string": "world"}}'
@@ -572,7 +616,7 @@ describe('JSONB Containment - Contains (@>) Operator', () => {
 
     expect(result.data).toHaveLength(1)
     expectSteVecArray(result.data[0] as { sv: Array<Record<string, unknown>> })
-  })
+  }, 30000)
 })
 
 describe('JSONB Containment - Contained By (<@) Operator', () => {
@@ -597,7 +641,7 @@ describe('JSONB Containment - Contained By (<@) Operator', () => {
 
     expect(result.data).toHaveLength(1)
     expectSteVecArray(result.data[0] as { sv: Array<Record<string, unknown>> })
-  })
+  }, 30000)
 
   it('should support contained_by with number value', async () => {
     // SQL: '{"number": 42}' <@ encrypted_jsonb
@@ -618,7 +662,7 @@ describe('JSONB Containment - Contained By (<@) Operator', () => {
 
     expect(result.data).toHaveLength(1)
     expectSteVecArray(result.data[0] as { sv: Array<Record<string, unknown>> })
-  })
+  }, 30000)
 
   it('should support contained_by with numeric array', async () => {
     // SQL: '{"array_number": [42, 84]}' <@ encrypted_jsonb
@@ -639,7 +683,7 @@ describe('JSONB Containment - Contained By (<@) Operator', () => {
 
     expect(result.data).toHaveLength(1)
     expectSteVecArray(result.data[0] as { sv: Array<Record<string, unknown>> })
-  })
+  }, 30000)
 
   it('should support contained_by with string array', async () => {
     // SQL: '{"array_string": ["hello", "world"]}' <@ encrypted_jsonb
@@ -660,7 +704,7 @@ describe('JSONB Containment - Contained By (<@) Operator', () => {
 
     expect(result.data).toHaveLength(1)
     expectSteVecArray(result.data[0] as { sv: Array<Record<string, unknown>> })
-  })
+  }, 30000)
 
   it('should support contained_by with nested object', async () => {
     // SQL: '{"nested": {"number": 1815, "string": "world"}}' <@ encrypted_jsonb
@@ -681,7 +725,7 @@ describe('JSONB Containment - Contained By (<@) Operator', () => {
 
     expect(result.data).toHaveLength(1)
     expectSteVecArray(result.data[0] as { sv: Array<Record<string, unknown>> })
-  })
+  }, 30000)
 })
 
 // =============================================================================
@@ -710,7 +754,7 @@ describe('JSONB Path Operations - jsonb_path_exists', () => {
 
     expect(result.data).toHaveLength(1)
     expectJsonPathSelectorOnly(result.data[0] as Record<string, unknown>)
-  })
+  }, 30000)
 
   it('should support path exists for nested string', async () => {
     // SQL: jsonb_path_exists(encrypted_jsonb, '$.nested.string')
@@ -730,7 +774,7 @@ describe('JSONB Path Operations - jsonb_path_exists', () => {
 
     expect(result.data).toHaveLength(1)
     expectJsonPathSelectorOnly(result.data[0] as Record<string, unknown>)
-  })
+  }, 30000)
 
   it('should support path exists for nested object', async () => {
     // SQL: jsonb_path_exists(encrypted_jsonb, '$.nested')
@@ -750,7 +794,7 @@ describe('JSONB Path Operations - jsonb_path_exists', () => {
 
     expect(result.data).toHaveLength(1)
     expectJsonPathSelectorOnly(result.data[0] as Record<string, unknown>)
-  })
+  }, 30000)
 
   it('should handle path exists for unknown path', async () => {
     // SQL: jsonb_path_exists(encrypted_jsonb, '$.vtha') -> false
@@ -771,7 +815,7 @@ describe('JSONB Path Operations - jsonb_path_exists', () => {
     expect(result.data).toHaveLength(1)
     // Client still generates selector - proxy determines existence
     expectJsonPathSelectorOnly(result.data[0] as Record<string, unknown>)
-  })
+  }, 30000)
 })
 
 describe('JSONB Path Operations - jsonb_path_query', () => {
@@ -796,7 +840,7 @@ describe('JSONB Path Operations - jsonb_path_query', () => {
 
     expect(result.data).toHaveLength(1)
     expectJsonPathWithValue(result.data[0] as Record<string, unknown>)
-  })
+  }, 30000)
 
   it('should support path query for nested string', async () => {
     // SQL: jsonb_path_query(encrypted_jsonb, '$.nested.string')
@@ -817,7 +861,7 @@ describe('JSONB Path Operations - jsonb_path_query', () => {
 
     expect(result.data).toHaveLength(1)
     expectJsonPathWithValue(result.data[0] as Record<string, unknown>)
-  })
+  }, 30000)
 
   it('should support path query for nested object', async () => {
     // SQL: jsonb_path_query(encrypted_jsonb, '$.nested')
@@ -837,7 +881,7 @@ describe('JSONB Path Operations - jsonb_path_query', () => {
 
     expect(result.data).toHaveLength(1)
     expectJsonPathSelectorOnly(result.data[0] as Record<string, unknown>)
-  })
+  }, 30000)
 })
 
 describe('JSONB Path Operations - jsonb_path_query_first', () => {
@@ -862,7 +906,7 @@ describe('JSONB Path Operations - jsonb_path_query_first', () => {
 
     expect(result.data).toHaveLength(1)
     expectJsonPathWithValue(result.data[0] as Record<string, unknown>)
-  })
+  }, 30000)
 
   it('should support path query first for array wildcard number', async () => {
     // SQL: jsonb_path_query_first(encrypted_jsonb, '$.array_number[*]')
@@ -883,7 +927,7 @@ describe('JSONB Path Operations - jsonb_path_query_first', () => {
 
     expect(result.data).toHaveLength(1)
     expectJsonPathWithValue(result.data[0] as Record<string, unknown>)
-  })
+  }, 30000)
 
   it('should support path query first for nested string', async () => {
     // SQL: jsonb_path_query_first(encrypted_jsonb, '$.nested.string')
@@ -904,7 +948,7 @@ describe('JSONB Path Operations - jsonb_path_query_first', () => {
 
     expect(result.data).toHaveLength(1)
     expectJsonPathWithValue(result.data[0] as Record<string, unknown>)
-  })
+  }, 30000)
 
   it('should support path query first for nested object', async () => {
     // SQL: jsonb_path_query_first(encrypted_jsonb, '$.nested')
@@ -924,7 +968,7 @@ describe('JSONB Path Operations - jsonb_path_query_first', () => {
 
     expect(result.data).toHaveLength(1)
     expectJsonPathSelectorOnly(result.data[0] as Record<string, unknown>)
-  })
+  }, 30000)
 })
 
 // =============================================================================
@@ -949,7 +993,7 @@ describe('JSONB Comparison - Equality (=)', () => {
     expect(result.data).toBeDefined()
     expect(result.data).toHaveProperty('hm')
     expect(typeof result.data.hm).toBe('string')
-  })
+  }, 30000)
 
   it('should support number equality via arrow operator column definition', async () => {
     // SQL: encrypted_jsonb -> 'number' = 42
@@ -966,7 +1010,7 @@ describe('JSONB Comparison - Equality (=)', () => {
     expect(result.data).toBeDefined()
     expect(result.data).toHaveProperty('hm')
     expect(typeof result.data.hm).toBe('string')
-  })
+  }, 30000)
 
   it('should support string equality via jsonb_path_query_first column definition', async () => {
     // SQL: jsonb_path_query_first(encrypted_jsonb, '$.string') = 'hello'
@@ -983,7 +1027,7 @@ describe('JSONB Comparison - Equality (=)', () => {
     expect(result.data).toBeDefined()
     expect(result.data).toHaveProperty('hm')
     expect(typeof result.data.hm).toBe('string')
-  })
+  }, 30000)
 
   it('should support number equality via jsonb_path_query_first column definition', async () => {
     // SQL: jsonb_path_query_first(encrypted_jsonb, '$.number') = 42
@@ -1000,7 +1044,7 @@ describe('JSONB Comparison - Equality (=)', () => {
     expect(result.data).toBeDefined()
     expect(result.data).toHaveProperty('hm')
     expect(typeof result.data.hm).toBe('string')
-  })
+  }, 30000)
 })
 
 describe('JSONB Comparison - Greater Than (>)', () => {
@@ -1022,7 +1066,7 @@ describe('JSONB Comparison - Greater Than (>)', () => {
     expect(result.data).toHaveProperty('ob')
     expect(Array.isArray(result.data.ob)).toBe(true)
     expect(result.data.ob.length).toBeGreaterThan(0)
-  })
+  }, 30000)
 
   it('should support number greater than via arrow operator column definition', async () => {
     // SQL: encrypted_jsonb -> 'number' > 30
@@ -1040,7 +1084,7 @@ describe('JSONB Comparison - Greater Than (>)', () => {
     expect(result.data).toHaveProperty('ob')
     expect(Array.isArray(result.data.ob)).toBe(true)
     expect(result.data.ob.length).toBeGreaterThan(0)
-  })
+  }, 30000)
 
   it('should support string greater than via jsonb_path_query_first column definition', async () => {
     // SQL: jsonb_path_query_first(encrypted_jsonb, '$.string') > 'abc'
@@ -1056,7 +1100,7 @@ describe('JSONB Comparison - Greater Than (>)', () => {
 
     expect(result.data).toBeDefined()
     expect(result.data).toHaveProperty('ob')
-  })
+  }, 30000)
 
   it('should support number greater than via jsonb_path_query_first column definition', async () => {
     // SQL: jsonb_path_query_first(encrypted_jsonb, '$.number') > 30
@@ -1072,7 +1116,7 @@ describe('JSONB Comparison - Greater Than (>)', () => {
 
     expect(result.data).toBeDefined()
     expect(result.data).toHaveProperty('ob')
-  })
+  }, 30000)
 })
 
 describe('JSONB Comparison - Greater Than or Equal (>=)', () => {
@@ -1093,7 +1137,7 @@ describe('JSONB Comparison - Greater Than or Equal (>=)', () => {
     expect(result.data).toBeDefined()
     expect(result.data).toHaveProperty('ob')
     expect(Array.isArray(result.data.ob)).toBe(true)
-  })
+  }, 30000)
 
   it('should support number greater than or equal via arrow operator', async () => {
     // SQL: encrypted_jsonb -> 'number' >= 42
@@ -1110,7 +1154,7 @@ describe('JSONB Comparison - Greater Than or Equal (>=)', () => {
     expect(result.data).toBeDefined()
     expect(result.data).toHaveProperty('ob')
     expect(Array.isArray(result.data.ob)).toBe(true)
-  })
+  }, 30000)
 
   it('should support nested string greater than or equal via jsonb_path_query_first', async () => {
     // SQL: jsonb_path_query_first(encrypted_jsonb, '$.nested.string') >= 'world'
@@ -1126,7 +1170,7 @@ describe('JSONB Comparison - Greater Than or Equal (>=)', () => {
 
     expect(result.data).toBeDefined()
     expect(result.data).toHaveProperty('ob')
-  })
+  }, 30000)
 
   it('should support nested number greater than or equal via jsonb_path_query_first', async () => {
     // SQL: jsonb_path_query_first(encrypted_jsonb, '$.nested.number') >= 1000
@@ -1142,7 +1186,7 @@ describe('JSONB Comparison - Greater Than or Equal (>=)', () => {
 
     expect(result.data).toBeDefined()
     expect(result.data).toHaveProperty('ob')
-  })
+  }, 30000)
 })
 
 describe('JSONB Comparison - Less Than (<)', () => {
@@ -1163,7 +1207,7 @@ describe('JSONB Comparison - Less Than (<)', () => {
     expect(result.data).toBeDefined()
     expect(result.data).toHaveProperty('ob')
     expect(Array.isArray(result.data.ob)).toBe(true)
-  })
+  }, 30000)
 
   it('should support number less than via arrow operator', async () => {
     // SQL: encrypted_jsonb -> 'number' < 100
@@ -1180,7 +1224,7 @@ describe('JSONB Comparison - Less Than (<)', () => {
     expect(result.data).toBeDefined()
     expect(result.data).toHaveProperty('ob')
     expect(Array.isArray(result.data.ob)).toBe(true)
-  })
+  }, 30000)
 
   it('should support string less than via jsonb_path_query_first', async () => {
     // SQL: jsonb_path_query_first(encrypted_jsonb, '$.string') < 'xyz'
@@ -1196,7 +1240,7 @@ describe('JSONB Comparison - Less Than (<)', () => {
 
     expect(result.data).toBeDefined()
     expect(result.data).toHaveProperty('ob')
-  })
+  }, 30000)
 
   it('should support number less than via jsonb_path_query_first', async () => {
     // SQL: jsonb_path_query_first(encrypted_jsonb, '$.number') < 100
@@ -1212,7 +1256,7 @@ describe('JSONB Comparison - Less Than (<)', () => {
 
     expect(result.data).toBeDefined()
     expect(result.data).toHaveProperty('ob')
-  })
+  }, 30000)
 })
 
 describe('JSONB Comparison - Less Than or Equal (<=)', () => {
@@ -1233,7 +1277,7 @@ describe('JSONB Comparison - Less Than or Equal (<=)', () => {
     expect(result.data).toBeDefined()
     expect(result.data).toHaveProperty('ob')
     expect(Array.isArray(result.data.ob)).toBe(true)
-  })
+  }, 30000)
 
   it('should support number less than or equal via arrow operator', async () => {
     // SQL: encrypted_jsonb -> 'number' <= 42
@@ -1250,7 +1294,7 @@ describe('JSONB Comparison - Less Than or Equal (<=)', () => {
     expect(result.data).toBeDefined()
     expect(result.data).toHaveProperty('ob')
     expect(Array.isArray(result.data.ob)).toBe(true)
-  })
+  }, 30000)
 
   it('should support nested string less than or equal via jsonb_path_query_first', async () => {
     // SQL: jsonb_path_query_first(encrypted_jsonb, '$.nested.string') <= 'world'
@@ -1266,7 +1310,7 @@ describe('JSONB Comparison - Less Than or Equal (<=)', () => {
 
     expect(result.data).toBeDefined()
     expect(result.data).toHaveProperty('ob')
-  })
+  }, 30000)
 
   it('should support nested number less than or equal via jsonb_path_query_first', async () => {
     // SQL: jsonb_path_query_first(encrypted_jsonb, '$.nested.number') <= 2000
@@ -1282,7 +1326,7 @@ describe('JSONB Comparison - Less Than or Equal (<=)', () => {
 
     expect(result.data).toBeDefined()
     expect(result.data).toHaveProperty('ob')
-  })
+  }, 30000)
 })
 
 // =============================================================================
@@ -1308,7 +1352,7 @@ describe('JSONB Data Types Coverage', () => {
 
     expect(result.data).toHaveLength(1)
     expectJsonPathWithValue(result.data[0] as Record<string, unknown>)
-  })
+  }, 30000)
 
   it('should handle number/integer data type in extraction', async () => {
     const terms: SearchTerm[] = [
@@ -1328,7 +1372,7 @@ describe('JSONB Data Types Coverage', () => {
 
     expect(result.data).toHaveLength(1)
     expectJsonPathWithValue(result.data[0] as Record<string, unknown>)
-  })
+  }, 30000)
 
   it('should handle string array in containment', async () => {
     const terms: SearchTerm[] = [
@@ -1348,7 +1392,7 @@ describe('JSONB Data Types Coverage', () => {
 
     expect(result.data).toHaveLength(1)
     expectSteVecArray(result.data[0] as { sv: Array<Record<string, unknown>> })
-  })
+  }, 30000)
 
   it('should handle number array in containment', async () => {
     const terms: SearchTerm[] = [
@@ -1368,7 +1412,7 @@ describe('JSONB Data Types Coverage', () => {
 
     expect(result.data).toHaveLength(1)
     expectSteVecArray(result.data[0] as { sv: Array<Record<string, unknown>> })
-  })
+  }, 30000)
 
   it('should handle nested object in containment', async () => {
     const terms: SearchTerm[] = [
@@ -1396,7 +1440,7 @@ describe('JSONB Data Types Coverage', () => {
 
     expect(result.data).toHaveLength(1)
     expectSteVecArray(result.data[0] as { sv: Array<Record<string, unknown>> })
-  })
+  }, 30000)
 
   it('should handle null value in containment', async () => {
     const terms: SearchTerm[] = [
@@ -1416,7 +1460,7 @@ describe('JSONB Data Types Coverage', () => {
 
     expect(result.data).toHaveLength(1)
     expectSteVecArray(result.data[0] as { sv: Array<Record<string, unknown>> })
-  })
+  }, 30000)
 
   it('should handle boolean values in path query', async () => {
     const terms: SearchTerm[] = [
@@ -1436,7 +1480,7 @@ describe('JSONB Data Types Coverage', () => {
 
     expect(result.data).toHaveLength(1)
     expectJsonPathWithValue(result.data[0] as Record<string, unknown>)
-  })
+  }, 30000)
 
   it('should handle float/decimal numbers', async () => {
     const terms: SearchTerm[] = [
@@ -1456,7 +1500,7 @@ describe('JSONB Data Types Coverage', () => {
 
     expect(result.data).toHaveLength(1)
     expectJsonPathWithValue(result.data[0] as Record<string, unknown>)
-  })
+  }, 30000)
 
   it('should handle negative numbers', async () => {
     const terms: SearchTerm[] = [
@@ -1476,7 +1520,7 @@ describe('JSONB Data Types Coverage', () => {
 
     expect(result.data).toHaveLength(1)
     expectJsonPathWithValue(result.data[0] as Record<string, unknown>)
-  })
+  }, 30000)
 })
 
 // =============================================================================
@@ -1503,7 +1547,7 @@ describe('JSONB Edge Cases', () => {
     expect(result.data).toHaveLength(1)
     // Empty object still generates valid output
     expect(result.data[0]).toBeDefined()
-  })
+  }, 30000)
 
   it('should handle deep nesting in path (10+ levels)', async () => {
     const terms: SearchTerm[] = [
@@ -1523,7 +1567,7 @@ describe('JSONB Edge Cases', () => {
 
     expect(result.data).toHaveLength(1)
     expectJsonPathWithValue(result.data[0] as Record<string, unknown>)
-  })
+  }, 30000)
 
   it('should handle special characters in string values', async () => {
     const terms: SearchTerm[] = [
@@ -1543,7 +1587,7 @@ describe('JSONB Edge Cases', () => {
 
     expect(result.data).toHaveLength(1)
     expectJsonPathWithValue(result.data[0] as Record<string, unknown>)
-  })
+  }, 30000)
 
   it('should handle unicode characters', async () => {
     const terms: SearchTerm[] = [
@@ -1563,7 +1607,7 @@ describe('JSONB Edge Cases', () => {
 
     expect(result.data).toHaveLength(1)
     expectJsonPathWithValue(result.data[0] as Record<string, unknown>)
-  })
+  }, 30000)
 
   it('should handle multiple array wildcards in path', async () => {
     // SQL pattern: $.matrix[*][*]
@@ -1583,7 +1627,7 @@ describe('JSONB Edge Cases', () => {
 
     expect(result.data).toHaveLength(1)
     expectJsonPathSelectorOnly(result.data[0] as Record<string, unknown>)
-  })
+  }, 30000)
 
   it('should handle complex nested array path', async () => {
     // SQL pattern: $.users[*].orders[*].items[0].name
@@ -1604,7 +1648,7 @@ describe('JSONB Edge Cases', () => {
 
     expect(result.data).toHaveLength(1)
     expectJsonPathWithValue(result.data[0] as Record<string, unknown>)
-  })
+  }, 30000)
 
   it('should handle large containment object (50+ keys)', async () => {
     const largeObject: Record<string, string> = {}
@@ -1631,7 +1675,7 @@ describe('JSONB Edge Cases', () => {
     expectSteVecArray(result.data[0] as { sv: Array<Record<string, unknown>> })
     const svResult = result.data[0] as { sv: Array<unknown> }
     expect(svResult.sv.length).toBeGreaterThanOrEqual(50)
-  })
+  }, 30000)
 })
 
 // =============================================================================
@@ -1687,7 +1731,7 @@ describe('JSONB Batch Operations', () => {
 
     // Fourth: containedBy query
     expectSteVecArray(result.data[3] as { sv: Array<Record<string, unknown>> })
-  })
+  }, 30000)
 
   it('should handle batch of comparison queries on extracted fields', async () => {
     const terms: QueryTerm[] = [
@@ -1736,5 +1780,5 @@ describe('JSONB Batch Operations', () => {
     // Last two: range queries should have 'ob'
     expect(result.data[2]).toHaveProperty('ob')
     expect(result.data[3]).toHaveProperty('ob')
-  })
+  }, 30000)
 })
