@@ -91,6 +91,10 @@ export function extractProtectSchema<T extends PgTable<any>>(
         }
       }
 
+      if (config.searchableJson) {
+        csCol.searchableJson()
+      }
+
       columns[actualColumnName] = csCol
     }
   }
