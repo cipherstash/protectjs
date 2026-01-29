@@ -6,44 +6,25 @@ import {
 } from '@cipherstash/protect-ffi'
 import { type ProtectError, ProtectErrorTypes } from '../..'
 import { logger } from '../../../../utils/logger'
+import {
+  isJsonContainedByQueryTerm,
+  isJsonContainsQueryTerm,
+  isJsonPathQueryTerm,
+  isScalarQueryTerm,
+} from '../../query-term-guards'
 import type {
   Client,
   Encrypted,
   EncryptedSearchTerm,
+  QueryTypeName,
   JsPlaintext,
-  JsonContainmentSearchTerm,
-  JsonPathSearchTerm,
   QueryOpName,
-  SearchTerm,
-  SimpleSearchTerm,
+  QueryTerm,
 } from '../../types'
 import { queryTypeToFfi } from '../../types'
 import { noClientError } from '../index'
 import { buildNestedObject, toDollarPath } from './json-path-utils'
 import { ProtectOperation } from './base-operation'
-
-/**
- * Type guard to check if a search term is a JSON path search term
- */
-function isJsonPathTerm(term: SearchTerm): term is JsonPathSearchTerm {
-  return 'path' in term
-}
-
-/**
- * Type guard to check if a search term is a JSON containment search term
- */
-function isJsonContainmentTerm(
-  term: SearchTerm,
-): term is JsonContainmentSearchTerm {
-  return 'containmentType' in term
-}
-
-/**
- * Type guard to check if a search term is a simple value search term
- */
-function isSimpleSearchTerm(term: SearchTerm): term is SimpleSearchTerm {
-  return !isJsonPathTerm(term) && !isJsonContainmentTerm(term)
-}
 
 /** Tracks JSON containment items - pass raw JSON to FFI */
 type JsonContainmentItem = {
@@ -61,15 +42,20 @@ type JsonPathEncryptionItem = {
 }
 
 /**
- * Helper function to encrypt search terms
- * Shared logic between SearchTermsOperation and SearchTermsOperationWithLockContext
- * @param client The client to use for encryption
- * @param terms The search terms to encrypt
- * @param metadata Audit metadata for encryption
+ * Helper to check if a scalar term has an explicit queryType
  */
-async function encryptSearchTermsHelper(
+function hasExplicitQueryType(
+  term: QueryTerm,
+): term is QueryTerm & { queryType: QueryTypeName } {
+  return 'queryType' in term && term.queryType !== undefined
+}
+
+/**
+ * Helper function to encrypt batch query terms
+ */
+async function encryptBatchQueryTermsHelper(
   client: Client,
-  terms: SearchTerm[],
+  terms: readonly QueryTerm[],
   metadata: Record<string, unknown> | undefined,
 ): Promise<EncryptedSearchTerm[]> {
   if (!client) {
@@ -77,8 +63,10 @@ async function encryptSearchTermsHelper(
   }
 
   // Partition terms by type
-  const simpleTermsWithIndex: Array<{ term: SimpleSearchTerm; index: number }> =
-    []
+  // Scalar terms WITH queryType → encryptQueryBulk (explicit control)
+  const scalarWithQueryType: Array<{ term: QueryTerm; index: number }> = []
+  // Scalar terms WITHOUT queryType → encryptBulk (auto-infer)
+  const scalarAutoInfer: Array<{ term: QueryTerm; index: number }> = []
   // JSON containment items - pass raw JSON to FFI
   const jsonContainmentItems: JsonContainmentItem[] = []
   // JSON path items that need value encryption
@@ -93,12 +81,15 @@ async function encryptSearchTermsHelper(
   for (let i = 0; i < terms.length; i++) {
     const term = terms[i]
 
-    if (isSimpleSearchTerm(term)) {
-      simpleTermsWithIndex.push({ term, index: i })
-    } else if (isJsonContainmentTerm(term)) {
-      // Containment query - validate ste_vec index
+    if (isScalarQueryTerm(term)) {
+      if (hasExplicitQueryType(term)) {
+        scalarWithQueryType.push({ term, index: i })
+      } else {
+        scalarAutoInfer.push({ term, index: i })
+      }
+    } else if (isJsonContainsQueryTerm(term)) {
+      // Validate ste_vec index
       const columnConfig = term.column.build()
-
       if (!columnConfig.indexes.ste_vec) {
         throw new Error(
           `Column "${term.column.getName()}" does not have ste_vec index configured. Use .searchableJson() when defining the column.`,
@@ -108,14 +99,29 @@ async function encryptSearchTermsHelper(
       // Pass raw JSON directly - FFI handles flattening internally
       jsonContainmentItems.push({
         termIndex: i,
-        plaintext: term.value,
+        plaintext: term.contains,
         column: term.column.getName(),
         table: term.table.tableName,
       })
-    } else if (isJsonPathTerm(term)) {
-      // Path query - validate ste_vec index
+    } else if (isJsonContainedByQueryTerm(term)) {
+      // Validate ste_vec index
       const columnConfig = term.column.build()
+      if (!columnConfig.indexes.ste_vec) {
+        throw new Error(
+          `Column "${term.column.getName()}" does not have ste_vec index configured. Use .searchableJson() when defining the column.`,
+        )
+      }
 
+      // Pass raw JSON directly - FFI handles flattening internally
+      jsonContainmentItems.push({
+        termIndex: i,
+        plaintext: term.containedBy,
+        column: term.column.getName(),
+        table: term.table.tableName,
+      })
+    } else if (isJsonPathQueryTerm(term)) {
+      // Validate ste_vec index
+      const columnConfig = term.column.build()
       if (!columnConfig.indexes.ste_vec) {
         throw new Error(
           `Column "${term.column.getName()}" does not have ste_vec index configured. Use .searchableJson() when defining the column.`,
@@ -123,7 +129,6 @@ async function encryptSearchTermsHelper(
       }
 
       if (term.value !== undefined) {
-        // Path query with value - wrap in nested object
         const pathArray = Array.isArray(term.path)
           ? term.path
           : term.path.split('.')
@@ -145,11 +150,32 @@ async function encryptSearchTermsHelper(
     }
   }
 
-  // Encrypt simple terms with encryptBulk
-  const simpleEncrypted =
-    simpleTermsWithIndex.length > 0
+  // Encrypt scalar terms WITH explicit queryType using encryptQueryBulk
+  const scalarExplicitEncrypted =
+    scalarWithQueryType.length > 0
+      ? await encryptQueryBulk(client, {
+          queries: scalarWithQueryType.map(({ term }) => {
+            if (!isScalarQueryTerm(term))
+              throw new Error('Expected scalar term')
+            return {
+              plaintext: term.value,
+              column: term.column.getName(),
+              table: term.table.tableName,
+              indexType: queryTypeToFfi[term.queryType!],
+              queryOp: term.queryOp,
+            }
+          }),
+          unverifiedContext: metadata,
+        })
+      : []
+
+  // Encrypt scalar terms WITHOUT queryType using encryptBulk (auto-infer)
+  const scalarAutoInferEncrypted =
+    scalarAutoInfer.length > 0
       ? await encryptBulk(client, {
-          plaintexts: simpleTermsWithIndex.map(({ term }) => {
+          plaintexts: scalarAutoInfer.map(({ term }) => {
+            if (!isScalarQueryTerm(term))
+              throw new Error('Expected scalar term')
             return {
               plaintext: term.value,
               column: term.column.getName(),
@@ -207,7 +233,8 @@ async function encryptSearchTermsHelper(
 
   // Reassemble results in original order
   const results: EncryptedSearchTerm[] = new Array(terms.length)
-  let simpleIdx = 0
+  let scalarExplicitIdx = 0
+  let scalarAutoInferIdx = 0
   let containmentIdx = 0
   let pathIdx = 0
   let selectorOnlyIdx = 0
@@ -215,11 +242,17 @@ async function encryptSearchTermsHelper(
   for (let i = 0; i < terms.length; i++) {
     const term = terms[i]
 
-    if (isSimpleSearchTerm(term)) {
-      const encrypted = simpleEncrypted[simpleIdx]
-      simpleIdx++
+    if (isScalarQueryTerm(term)) {
+      // Determine which result array to pull from based on whether term had explicit queryType
+      let encrypted: Encrypted
+      if (hasExplicitQueryType(term)) {
+        encrypted = scalarExplicitEncrypted[scalarExplicitIdx]
+        scalarExplicitIdx++
+      } else {
+        encrypted = scalarAutoInferEncrypted[scalarAutoInferIdx]
+        scalarAutoInferIdx++
+      }
 
-      // Apply return type formatting
       if (term.returnType === 'composite-literal') {
         results[i] = `(${JSON.stringify(JSON.stringify(encrypted))})`
       } else if (term.returnType === 'escaped-composite-literal') {
@@ -228,17 +261,16 @@ async function encryptSearchTermsHelper(
       } else {
         results[i] = encrypted
       }
-    } else if (isJsonContainmentTerm(term)) {
+    } else if (isJsonContainsQueryTerm(term) || isJsonContainedByQueryTerm(term)) {
       // FFI returns complete { sv: [...] } structure - use directly
       results[i] = jsonContainmentEncrypted[containmentIdx] as Encrypted
       containmentIdx++
-    } else if (isJsonPathTerm(term)) {
+    } else if (isJsonPathQueryTerm(term)) {
       if (term.value !== undefined) {
         // FFI returns complete { sv: [...] } structure for path+value queries
         results[i] = jsonPathEncrypted[pathIdx] as Encrypted
         pathIdx++
       } else {
-        // Path-only (no value comparison)
         results[i] = selectorOnlyEncrypted[selectorOnlyIdx]
         selectorOnlyIdx++
       }
@@ -248,35 +280,40 @@ async function encryptSearchTermsHelper(
   return results
 }
 
-export class SearchTermsOperation extends ProtectOperation<
+/**
+ * @internal
+ * Operation for encrypting multiple query terms in batch.
+ * See {@link ProtectClient.encryptQuery} for the public interface.
+ */
+export class BatchEncryptQueryOperation extends ProtectOperation<
   EncryptedSearchTerm[]
 > {
   private client: Client
-  private terms: SearchTerm[]
+  private terms: readonly QueryTerm[]
 
-  constructor(client: Client, terms: SearchTerm[]) {
+  constructor(client: Client, terms: readonly QueryTerm[]) {
     super()
     this.client = client
     this.terms = terms
   }
 
+  public getOperation(): { client: Client; terms: readonly QueryTerm[] } {
+    return { client: this.client, terms: this.terms }
+  }
+
   public async execute(): Promise<Result<EncryptedSearchTerm[], ProtectError>> {
-    logger.debug('Creating search terms', {
-      terms: this.terms,
+    logger.debug('Encrypting batch query terms', {
+      termCount: this.terms.length,
     })
 
     return await withResult(
       async () => {
         const { metadata } = this.getAuditData()
-
-        // Call helper with no lock context
-        const results = await encryptSearchTermsHelper(
+        return await encryptBatchQueryTermsHelper(
           this.client,
           this.terms,
           metadata,
         )
-
-        return results
       },
       (error) => ({
         type: ProtectErrorTypes.EncryptionError,
@@ -284,9 +321,5 @@ export class SearchTermsOperation extends ProtectOperation<
         code: error instanceof FfiProtectError ? error.code : undefined,
       }),
     )
-  }
-
-  public getOperation() {
-    return { client: this.client, terms: this.terms }
   }
 }

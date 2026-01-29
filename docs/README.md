@@ -7,6 +7,7 @@ The documentation for Protect.js is organized into the following sections:
 ## Concepts
 
 - [Searchable encryption](./concepts/searchable-encryption.md)
+- [Searchable JSON](./reference/schema.md#searchable-json) - Query encrypted JSON documents
 
 ## Reference
 

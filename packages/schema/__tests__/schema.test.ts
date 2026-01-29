@@ -131,7 +131,7 @@ describe('Schema with nested columns', () => {
   })
 
   // NOTE: Leaving this test commented out until stevec indexing for JSON is supported.
-  /*it('should handle ste_vec index for JSON columns', () => {
+  it('should handle ste_vec index for JSON columns', () => {
     const users = csTable('users', {
       json: csColumn('json').dataType('jsonb').searchableJson(),
     } as const)
@@ -142,5 +142,5 @@ describe('Schema with nested columns', () => {
     expect(config.tables.users.json.indexes.ste_vec?.prefix).toEqual(
       'users/json',
     )
-  })*/
+  })
 })

@@ -16,10 +16,15 @@ import type {
   Client,
   Decrypted,
   EncryptOptions,
+  EncryptQueryOptions,
   Encrypted,
   KeysetIdentifier,
+  QuerySearchTerm,
+  QueryTerm,
   SearchTerm,
 } from '../types'
+import { isQueryTermArray } from '../query-term-guards'
+import { BatchEncryptQueryOperation } from './operations/batch-encrypt-query'
 import { BulkDecryptOperation } from './operations/bulk-decrypt'
 import { BulkDecryptModelsOperation } from './operations/bulk-decrypt-models'
 import { BulkEncryptOperation } from './operations/bulk-encrypt'
@@ -28,6 +33,8 @@ import { DecryptOperation } from './operations/decrypt'
 import { DecryptModelOperation } from './operations/decrypt-model'
 import { EncryptOperation } from './operations/encrypt'
 import { EncryptModelOperation } from './operations/encrypt-model'
+import { EncryptQueryOperation } from './operations/encrypt-query'
+import { QuerySearchTermsOperation } from './operations/query-search-terms'
 import { SearchTermsOperation } from './operations/search-terms'
 
 export const noClientError = () =>
@@ -215,29 +222,29 @@ export class ProtectClient {
   }
 
   /**
-   * Encrypt a model based on its encryptConfig.
+   * Encrypt an entire object (model) based on its table schema.
+   *
+   * This method automatically encrypts fields defined in the schema while
+   * preserving other fields (like IDs, timestamps, or nested structures).
+   *
+   * @param input - The model with plaintext values.
+   * @param table - The table definition from your schema.
+   * @returns An EncryptModelOperation that can be awaited or chained with .withLockContext().
    *
    * @example
    * ```typescript
    * type User = {
    *   id: string;
    *   email: string; // encrypted
+   *   createdAt: Date; // unchanged
    * }
    *
-   * // Define the schema for the users table
-   * const usersSchema = csTable('users', {
-   *   email: csColumn('email').freeTextSearch().equality().orderAndRange(),
-   * })
-   *
-   * // Initialize the Protect client
-   * const protectClient = await protect({ schemas: [usersSchema] })
-   *
-   * // Encrypt a user model
-   * const encryptedModel = await protectClient.encryptModel<User>(
-   *   { id: 'user_123', email: 'person@example.com' },
-   *   usersSchema,
-   * )
+   * const user = { id: '1', email: 'alice@example.com', createdAt: new Date() };
+   * const encryptedResult = await protectClient.encryptModel<User>(user, usersTable);
    * ```
+   *
+   * @see {@link Result}
+   * @see {@link csTable}
    */
   encryptModel<T extends Record<string, unknown>>(
     input: Decrypted<T>,
@@ -247,10 +254,17 @@ export class ProtectClient {
   }
 
   /**
-   * Decrypt a model with encrypted values
-   * Usage:
-   *    await eqlClient.decryptModel(encryptedModel)
-   *    await eqlClient.decryptModel(encryptedModel).withLockContext(lockContext)
+   * Decrypt an entire object (model) containing encrypted values.
+   *
+   * This method automatically detects and decrypts any encrypted fields in your model.
+   *
+   * @param input - The model containing encrypted values.
+   * @returns A DecryptModelOperation that can be awaited or chained with .withLockContext().
+   *
+   * @example
+   * ```typescript
+   * const decryptedResult = await protectClient.decryptModel<User>(encryptedUser);
+   * ```
    */
   decryptModel<T extends Record<string, unknown>>(
     input: T,
@@ -259,10 +273,11 @@ export class ProtectClient {
   }
 
   /**
-   * Bulk encrypt models with decrypted values
-   * Usage:
-   *    await eqlClient.bulkEncryptModels(decryptedModels, table)
-   *    await eqlClient.bulkEncryptModels(decryptedModels, table).withLockContext(lockContext)
+   * Bulk encrypt multiple objects (models) for better performance.
+   *
+   * @param input - Array of models with plaintext values.
+   * @param table - The table definition from your schema.
+   * @returns A BulkEncryptModelsOperation that can be awaited or chained with .withLockContext().
    */
   bulkEncryptModels<T extends Record<string, unknown>>(
     input: Array<Decrypted<T>>,
@@ -272,10 +287,10 @@ export class ProtectClient {
   }
 
   /**
-   * Bulk decrypt models with encrypted values
-   * Usage:
-   *    await eqlClient.bulkDecryptModels(encryptedModels)
-   *    await eqlClient.bulkDecryptModels(encryptedModels).withLockContext(lockContext)
+   * Bulk decrypt multiple objects (models).
+   *
+   * @param input - Array of models containing encrypted values.
+   * @returns A BulkDecryptModelsOperation that can be awaited or chained with .withLockContext().
    */
   bulkDecryptModels<T extends Record<string, unknown>>(
     input: Array<T>,
@@ -284,10 +299,11 @@ export class ProtectClient {
   }
 
   /**
-   * Bulk encryption - returns a thenable object.
-   * Usage:
-   *    await eqlClient.bulkEncrypt(plaintexts, { column, table })
-   *    await eqlClient.bulkEncrypt(plaintexts, { column, table }).withLockContext(lockContext)
+   * Bulk encryption - returns a promise which resolves to an array of encrypted values.
+   *
+   * @param plaintexts - Array of plaintext values to be encrypted.
+   * @param opts - Options specifying the column and table for encryption.
+   * @returns A BulkEncryptOperation that can be awaited or chained with .withLockContext().
    */
   bulkEncrypt(
     plaintexts: BulkEncryptPayload,
@@ -297,23 +313,151 @@ export class ProtectClient {
   }
 
   /**
-   * Bulk decryption - returns a thenable object.
-   * Usage:
-   *    await eqlClient.bulkDecrypt(encryptedPayloads)
-   *    await eqlClient.bulkDecrypt(encryptedPayloads).withLockContext(lockContext)
+   * Bulk decryption - returns a promise which resolves to an array of decrypted values.
+   *
+   * @param encryptedPayloads - Array of encrypted payloads to be decrypted.
+   * @returns A BulkDecryptOperation that can be awaited or chained with .withLockContext().
    */
   bulkDecrypt(encryptedPayloads: BulkDecryptPayload): BulkDecryptOperation {
     return new BulkDecryptOperation(this.client, encryptedPayloads)
   }
 
   /**
+   * @deprecated Use `encryptQuery(terms)` instead with QueryTerm types. Will be removed in v2.0.
+   *
    * Create search terms to use in a query searching encrypted data
    * Usage:
    *    await eqlClient.createSearchTerms(searchTerms)
-   *    await eqlClient.createSearchTerms(searchTerms).withLockContext(lockContext)
    */
   createSearchTerms(terms: SearchTerm[]): SearchTermsOperation {
     return new SearchTermsOperation(this.client, terms)
+  }
+
+  /**
+   * Encrypt a single value for query operations with explicit index type control.
+   *
+   * This method produces SEM-only payloads optimized for database queries,
+   * allowing you to specify which index type to use.
+   *
+   * @param plaintext - The value to encrypt for querying
+   * @param opts - Options specifying the column, table, index type, and optional query operation
+   * @returns An EncryptQueryOperation that can be awaited
+   *
+   * @example
+   * ```typescript
+   * // Encrypt for ORE range query
+   * const term = await protectClient.encryptQuery(100, {
+   *   column: usersSchema.score,
+   *   table: usersSchema,
+   *   queryType: 'orderAndRange',
+   * })
+   * ```
+   *
+   * @see {@link https://cipherstash.com/docs/platform/searchable-encryption/supported-queries | Supported Query Types}
+   */
+  encryptQuery(
+    plaintext: JsPlaintext | null,
+    opts: EncryptQueryOptions,
+  ): EncryptQueryOperation
+
+  /**
+   * Encrypt multiple query terms in batch with explicit control over each term.
+   *
+   * Supports scalar terms (with explicit queryType), JSON path queries, and JSON containment queries.
+   * JSON queries implicitly use searchableJson query type.
+   *
+   * @param terms - Array of query terms to encrypt
+   * @returns A BatchEncryptQueryOperation that can be awaited
+   *
+   * @example
+   * ```typescript
+   * const terms = await protectClient.encryptQuery([
+   *   // Scalar term with explicit queryType
+   *   { value: 'admin@example.com', column: users.email, table: users, queryType: 'equality' },
+   *   // JSON path query (searchableJson implicit)
+   *   { path: 'user.email', value: 'test@example.com', column: jsonSchema.metadata, table: jsonSchema },
+   *   // JSON containment query (searchableJson implicit)
+   *   { contains: { role: 'admin' }, column: jsonSchema.metadata, table: jsonSchema },
+   * ])
+   * ```
+   *
+   * @remarks
+   * Note: Empty arrays `[]` are treated as scalar plaintext values for backward
+   * compatibility with the single-value overload. Pass a non-empty array to use
+   * batch encryption.
+   */
+  encryptQuery(terms: readonly QueryTerm[]): BatchEncryptQueryOperation
+
+  // Implementation
+  encryptQuery(
+    plaintextOrTerms: JsPlaintext | null | readonly QueryTerm[],
+    opts?: EncryptQueryOptions,
+  ): EncryptQueryOperation | BatchEncryptQueryOperation {
+    // Check if this is a QueryTerm array by looking for QueryTerm-specific properties
+    // This is needed because JsPlaintext includes JsPlaintext[] which overlaps with QueryTerm[]
+    // Empty arrays are explicitly handled as batch operations (return empty result)
+    if (Array.isArray(plaintextOrTerms)) {
+      if (plaintextOrTerms.length === 0 || isQueryTermArray(plaintextOrTerms)) {
+        return new BatchEncryptQueryOperation(
+          this.client,
+          plaintextOrTerms as unknown as readonly QueryTerm[],
+        )
+      }
+    }
+    // Non-array values pass through to single-value encryption
+    if (!opts) {
+      throw new Error(
+        'encryptQuery requires options when called with a single value',
+      )
+    }
+    return new EncryptQueryOperation(
+      this.client,
+      plaintextOrTerms as JsPlaintext | null,
+      opts,
+    )
+  }
+
+  /**
+   * @deprecated Use `encryptQuery(terms)` instead. Will be removed in v2.0.
+   *
+   * Create multiple encrypted query terms with explicit index type control.
+   *
+   * This method produces SEM-only payloads optimized for database queries,
+   * providing explicit control over which index type and query operation to use for each term.
+   *
+   * @param terms - Array of query search terms with index type specifications
+   * @returns A QuerySearchTermsOperation that can be awaited
+   *
+   * @example
+   * ```typescript
+   * const terms = await protectClient.createQuerySearchTerms([
+   *   {
+   *     value: 'admin@example.com',
+   *     column: usersSchema.email,
+   *     table: usersSchema,
+   *     queryType: 'equality',
+   *   },
+   *   {
+   *     value: 100,
+   *     column: usersSchema.score,
+   *     table: usersSchema,
+   *     queryType: 'orderAndRange',
+   *   },
+   * ])
+   *
+   * // Use in PostgreSQL query
+   * const result = await db.query(
+   *   `SELECT * FROM users
+   *    WHERE cs_unique_v1(email) = $1
+   *    AND cs_ore_64_8_v1(score) > $2`,
+   *   [terms.data[0], terms.data[1]]
+   * )
+   * ```
+   *
+   * @see {@link https://cipherstash.com/docs/platform/searchable-encryption/supported-queries | Supported Query Types}
+   */
+  createQuerySearchTerms(terms: QuerySearchTerm[]): QuerySearchTermsOperation {
+    return new QuerySearchTermsOperation(this.client, terms)
   }
 
   /** e.g., debugging or environment info */
