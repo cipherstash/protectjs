@@ -228,6 +228,29 @@ describe('JSONB Extraction - jsonb_array_elements', () => {
     expect(result.data).toHaveLength(1)
     expectJsonPathWithValue(result.data[0] as Record<string, unknown>)
   }, 30000)
+
+  it('should handle array_elements with unknown field (empty result)', async () => {
+    // SQL: jsonb_array_elements(encrypted_jsonb->'nonexistent_array')
+    // Proxy returns empty set when field doesn't exist
+    // Client still generates valid selector - proxy handles the empty result
+    const terms: SearchTerm[] = [
+      {
+        path: 'nonexistent_array[@]',
+        column: jsonbSchema.encrypted_jsonb,
+        table: jsonbSchema,
+      },
+    ]
+
+    const result = await protectClient.createSearchTerms(terms)
+
+    if (result.failure) {
+      throw new Error(`[protect]: ${result.failure.message}`)
+    }
+
+    expect(result.data).toHaveLength(1)
+    // Client generates selector - proxy returns empty when field doesn't exist
+    expectJsonPathSelectorOnly(result.data[0] as Record<string, unknown>)
+  }, 30000)
 })
 
 describe('JSONB Extraction - jsonb_array_length', () => {
@@ -268,6 +291,29 @@ describe('JSONB Extraction - jsonb_array_length', () => {
     expect(result.data).toHaveProperty('ob')
     expect(Array.isArray(result.data.ob)).toBe(true)
     expect(result.data.ob.length).toBeGreaterThan(0)
+  }, 30000)
+
+  it('should handle array_length with unknown field (empty result)', async () => {
+    // SQL: jsonb_array_length(encrypted_jsonb->'nonexistent_array')
+    // Proxy returns NULL when field doesn't exist (length of NULL is NULL)
+    // Client generates valid search term - proxy handles the NULL case
+    const terms: SearchTerm[] = [
+      {
+        path: 'nonexistent_array',
+        column: jsonbSchema.encrypted_jsonb,
+        table: jsonbSchema,
+      },
+    ]
+
+    const result = await protectClient.createSearchTerms(terms)
+
+    if (result.failure) {
+      throw new Error(`[protect]: ${result.failure.message}`)
+    }
+
+    expect(result.data).toHaveLength(1)
+    // Client generates selector - proxy returns NULL for length of unknown field
+    expectJsonPathSelectorOnly(result.data[0] as Record<string, unknown>)
   }, 30000)
 })
 
@@ -882,6 +928,29 @@ describe('JSONB Path Operations - jsonb_path_query', () => {
     expect(result.data).toHaveLength(1)
     expectJsonPathSelectorOnly(result.data[0] as Record<string, unknown>)
   }, 30000)
+
+  it('should handle path_query with unknown path (empty set return)', async () => {
+    // SQL: jsonb_path_query(encrypted_jsonb, '$.vtha')
+    // Proxy returns empty set when path doesn't exist
+    // Client still generates valid selector - proxy handles the empty result
+    const terms: SearchTerm[] = [
+      {
+        path: 'unknown_deep.path.that.does.not.exist',
+        column: jsonbSchema.encrypted_jsonb,
+        table: jsonbSchema,
+      },
+    ]
+
+    const result = await protectClient.createSearchTerms(terms)
+
+    if (result.failure) {
+      throw new Error(`[protect]: ${result.failure.message}`)
+    }
+
+    expect(result.data).toHaveLength(1)
+    // Client generates selector - proxy returns empty set for unknown path
+    expectJsonPathSelectorOnly(result.data[0] as Record<string, unknown>)
+  }, 30000)
 })
 
 describe('JSONB Path Operations - jsonb_path_query_first', () => {
@@ -967,6 +1036,29 @@ describe('JSONB Path Operations - jsonb_path_query_first', () => {
     }
 
     expect(result.data).toHaveLength(1)
+    expectJsonPathSelectorOnly(result.data[0] as Record<string, unknown>)
+  }, 30000)
+
+  it('should handle path_query_first with unknown path (NULL return)', async () => {
+    // SQL: jsonb_path_query_first(encrypted_jsonb, '$.unknown_field')
+    // Proxy returns NULL when path doesn't exist (vs empty set for jsonb_path_query)
+    // This is the key semantic difference: path_query returns empty set, path_query_first returns NULL
+    const terms: SearchTerm[] = [
+      {
+        path: 'nonexistent_field_for_first',
+        column: jsonbSchema.encrypted_jsonb,
+        table: jsonbSchema,
+      },
+    ]
+
+    const result = await protectClient.createSearchTerms(terms)
+
+    if (result.failure) {
+      throw new Error(`[protect]: ${result.failure.message}`)
+    }
+
+    expect(result.data).toHaveLength(1)
+    // Client generates selector - proxy returns NULL for unknown path in path_query_first
     expectJsonPathSelectorOnly(result.data[0] as Record<string, unknown>)
   }, 30000)
 })
@@ -1780,5 +1872,216 @@ describe('JSONB Batch Operations', () => {
     // Last two: range queries should have 'ob'
     expect(result.data[2]).toHaveProperty('ob')
     expect(result.data[3]).toHaveProperty('ob')
+  }, 30000)
+})
+
+// =============================================================================
+// 9. LARGE DATASET CONTAINMENT TESTS (Index Verification)
+// =============================================================================
+// These tests verify that containment operations work correctly with large datasets
+// and generate search terms suitable for indexed lookups (matching proxy's 500-row tests)
+
+describe('JSONB Large Dataset Containment', () => {
+  it('should handle large batch of containment queries (100 variations)', async () => {
+    // Generate 100 different containment queries to simulate large dataset scenarios
+    // This verifies the client can handle many containment terms efficiently
+    const terms: SearchTerm[] = []
+    for (let i = 0; i < 100; i++) {
+      terms.push({
+        value: { [`key_${i}`]: `value_${i}` },
+        column: jsonbSchema.encrypted_jsonb,
+        table: jsonbSchema,
+        containmentType: 'contains',
+      })
+    }
+
+    const result = await protectClient.createSearchTerms(terms)
+
+    if (result.failure) {
+      throw new Error(`[protect]: ${result.failure.message}`)
+    }
+
+    expect(result.data).toHaveLength(100)
+
+    // Verify all terms generated valid ste_vec arrays
+    for (const term of result.data) {
+      expectSteVecArray(term as { sv: Array<Record<string, unknown>> })
+    }
+  }, 60000)
+
+  it('should handle large nested containment object (simulating complex document matching)', async () => {
+    // Create a complex nested object that would match documents in a large dataset
+    // This simulates the proxy's complex containment index tests
+    const complexObject: Record<string, unknown> = {
+      metadata: {
+        created_by: 'user_123',
+        tags: ['important', 'verified'],
+        settings: {
+          enabled: true,
+          level: 5,
+        },
+      },
+      attributes: {
+        category: 'premium',
+        scores: [85, 90, 95],
+      },
+    }
+
+    const terms: SearchTerm[] = [
+      {
+        value: complexObject,
+        column: jsonbSchema.encrypted_jsonb,
+        table: jsonbSchema,
+        containmentType: 'contains',
+      },
+    ]
+
+    const result = await protectClient.createSearchTerms(terms)
+
+    if (result.failure) {
+      throw new Error(`[protect]: ${result.failure.message}`)
+    }
+
+    expect(result.data).toHaveLength(1)
+    expectSteVecArray(result.data[0] as { sv: Array<Record<string, unknown>> })
+
+    // Verify the ste_vec has multiple entries for the complex nested structure
+    const svResult = result.data[0] as { sv: Array<unknown> }
+    expect(svResult.sv.length).toBeGreaterThan(5)
+  }, 30000)
+
+  it('should handle mixed containment types in large batch', async () => {
+    // Mix of contains and contained_by operations, simulating varied query patterns
+    const terms: SearchTerm[] = []
+
+    // 50 contains queries
+    for (let i = 0; i < 50; i++) {
+      terms.push({
+        value: { field: `value_${i}` },
+        column: jsonbSchema.encrypted_jsonb,
+        table: jsonbSchema,
+        containmentType: 'contains',
+      })
+    }
+
+    // 50 contained_by queries
+    for (let i = 50; i < 100; i++) {
+      terms.push({
+        value: { field: `value_${i}` },
+        column: jsonbSchema.encrypted_jsonb,
+        table: jsonbSchema,
+        containmentType: 'contained_by',
+      })
+    }
+
+    const result = await protectClient.createSearchTerms(terms)
+
+    if (result.failure) {
+      throw new Error(`[protect]: ${result.failure.message}`)
+    }
+
+    expect(result.data).toHaveLength(100)
+
+    // Verify all generated valid search terms
+    for (const term of result.data) {
+      expectSteVecArray(term as { sv: Array<Record<string, unknown>> })
+    }
+  }, 60000)
+
+  it('should handle array containment with many elements', async () => {
+    // Create an array with many elements for containment check
+    // Simulates checking if a large set of values is contained in a JSONB array
+    const largeArray = Array.from({ length: 100 }, (_, i) => `item_${i}`)
+
+    const terms: SearchTerm[] = [
+      {
+        value: { items: largeArray },
+        column: jsonbSchema.encrypted_jsonb,
+        table: jsonbSchema,
+        containmentType: 'contains',
+      },
+    ]
+
+    const result = await protectClient.createSearchTerms(terms)
+
+    if (result.failure) {
+      throw new Error(`[protect]: ${result.failure.message}`)
+    }
+
+    expect(result.data).toHaveLength(1)
+    expectSteVecArray(result.data[0] as { sv: Array<Record<string, unknown>> })
+
+    // Verify the ste_vec has entries for all array elements
+    const svResult = result.data[0] as { sv: Array<unknown> }
+    expect(svResult.sv.length).toBeGreaterThanOrEqual(100)
+  }, 30000)
+
+  it('should handle containment with numeric range values', async () => {
+    // Test containment with various numeric values including edge cases
+    const numericValues = [
+      0,
+      1,
+      -1,
+      42,
+      100,
+      1000,
+      -500,
+      0.5,
+      -0.5,
+      999999,
+      Number.MAX_SAFE_INTEGER,
+      Number.MIN_SAFE_INTEGER,
+    ]
+
+    const terms: SearchTerm[] = numericValues.map((num) => ({
+      value: { count: num },
+      column: jsonbSchema.encrypted_jsonb,
+      table: jsonbSchema,
+      containmentType: 'contains' as const,
+    }))
+
+    const result = await protectClient.createSearchTerms(terms)
+
+    if (result.failure) {
+      throw new Error(`[protect]: ${result.failure.message}`)
+    }
+
+    expect(result.data).toHaveLength(numericValues.length)
+
+    for (const term of result.data) {
+      expectSteVecArray(term as { sv: Array<Record<string, unknown>> })
+    }
+  }, 30000)
+
+  it('should handle subset containment check pattern', async () => {
+    // Test the subset vs exact match pattern used in proxy containment index tests
+    // Generate terms that check if smaller objects are contained in larger ones
+    const subsets = [
+      { a: 1 }, // smallest subset
+      { a: 1, b: 2 }, // larger subset
+      { a: 1, b: 2, c: 3 }, // even larger
+      { a: 1, b: 2, c: 3, d: 4, e: 5 }, // full object
+    ]
+
+    const terms: SearchTerm[] = subsets.map((subset) => ({
+      value: subset,
+      column: jsonbSchema.encrypted_jsonb,
+      table: jsonbSchema,
+      containmentType: 'contains' as const,
+    }))
+
+    const result = await protectClient.createSearchTerms(terms)
+
+    if (result.failure) {
+      throw new Error(`[protect]: ${result.failure.message}`)
+    }
+
+    expect(result.data).toHaveLength(subsets.length)
+
+    // Each larger subset should produce more ste_vec entries
+    const svLengths = result.data.map((r) => (r as { sv: Array<unknown> }).sv.length)
+    for (let i = 1; i < svLengths.length; i++) {
+      expect(svLengths[i]).toBeGreaterThanOrEqual(svLengths[i - 1])
+    }
   }, 30000)
 })
