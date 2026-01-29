@@ -44,7 +44,7 @@ describe('JSON extraction operations - Equality', () => {
     }
 
     expect(result.data).toHaveLength(1)
-    expectJsonPathWithValue(result.data[0] as Record<string, unknown>)
+    expectJsonPathWithValue(result.data[0] as Record<string, unknown>, 'age', '30')
   })
 
   it('should support equality operation on values extracted via jsonb_path_query (deep path)', async () => {
@@ -65,7 +65,11 @@ describe('JSON extraction operations - Equality', () => {
     }
 
     expect(result.data).toHaveLength(1)
-    expectJsonPathWithValue(result.data[0] as Record<string, unknown>)
+    expectJsonPathWithValue(
+      result.data[0] as Record<string, unknown>,
+      'user.profile.id',
+      '123'
+    )
   })
 
   it('should support equality operation on values extracted via jsonb_path_query (explicit index)', async () => {
@@ -105,7 +109,7 @@ describe('JSON extraction operations - Equality', () => {
     }
 
     expect(result.data).toHaveLength(1)
-    expectJsonPathSelectorOnly(result.data[0] as Record<string, unknown>)
+    expectJsonPathSelectorOnly(result.data[0] as Record<string, unknown>, 'age')
   })
 
   it('should support filtering by array elements using jsonb_array_elements equivalent (wildcard path)', async () => {
@@ -127,7 +131,11 @@ describe('JSON extraction operations - Equality', () => {
     }
 
     expect(result.data).toHaveLength(1)
-    expectJsonPathWithValue(result.data[0] as Record<string, unknown>)
+    expectJsonPathWithValue(
+      result.data[0] as Record<string, unknown>,
+      'tags[*]',
+      'urgent'
+    )
   })
 })
 

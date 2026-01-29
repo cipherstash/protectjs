@@ -144,7 +144,10 @@ describe('JSONB Extraction - jsonb_array_elements', () => {
     }
 
     expect(result.data).toHaveLength(1)
-    expectJsonPathSelectorOnly(result.data[0] as Record<string, unknown>)
+    expectJsonPathSelectorOnly(
+      result.data[0] as Record<string, unknown>,
+      'array_string[@]'
+    )
   }, 30000)
 
   it('should support array elements with numeric array via wildcard path', async () => {
@@ -164,7 +167,10 @@ describe('JSONB Extraction - jsonb_array_elements', () => {
     }
 
     expect(result.data).toHaveLength(1)
-    expectJsonPathSelectorOnly(result.data[0] as Record<string, unknown>)
+    expectJsonPathSelectorOnly(
+      result.data[0] as Record<string, unknown>,
+      'array_number[@]'
+    )
   }, 30000)
 
   it('should support array elements with [*] wildcard notation', async () => {
@@ -184,7 +190,10 @@ describe('JSONB Extraction - jsonb_array_elements', () => {
     }
 
     expect(result.data).toHaveLength(1)
-    expectJsonPathSelectorOnly(result.data[0] as Record<string, unknown>)
+    expectJsonPathSelectorOnly(
+      result.data[0] as Record<string, unknown>,
+      'array_string[*]'
+    )
   }, 30000)
 
   it('should support filtering array elements by value', async () => {
@@ -205,7 +214,11 @@ describe('JSONB Extraction - jsonb_array_elements', () => {
     }
 
     expect(result.data).toHaveLength(1)
-    expectJsonPathWithValue(result.data[0] as Record<string, unknown>)
+    expectJsonPathWithValue(
+      result.data[0] as Record<string, unknown>,
+      'array_string[@]',
+      'hello'
+    )
   }, 30000)
 
   it('should support filtering numeric array elements by value', async () => {
@@ -226,7 +239,11 @@ describe('JSONB Extraction - jsonb_array_elements', () => {
     }
 
     expect(result.data).toHaveLength(1)
-    expectJsonPathWithValue(result.data[0] as Record<string, unknown>)
+    expectJsonPathWithValue(
+      result.data[0] as Record<string, unknown>,
+      'array_number[@]',
+      42
+    )
   }, 30000)
 
   it('should handle array_elements with unknown field (empty result)', async () => {
@@ -249,7 +266,10 @@ describe('JSONB Extraction - jsonb_array_elements', () => {
 
     expect(result.data).toHaveLength(1)
     // Client generates selector - proxy returns empty when field doesn't exist
-    expectJsonPathSelectorOnly(result.data[0] as Record<string, unknown>)
+    expectJsonPathSelectorOnly(
+      result.data[0] as Record<string, unknown>,
+      'nonexistent_array[@]'
+    )
   }, 30000)
 })
 
@@ -313,7 +333,10 @@ describe('JSONB Extraction - jsonb_array_length', () => {
 
     expect(result.data).toHaveLength(1)
     // Client generates selector - proxy returns NULL for length of unknown field
-    expectJsonPathSelectorOnly(result.data[0] as Record<string, unknown>)
+    expectJsonPathSelectorOnly(
+      result.data[0] as Record<string, unknown>,
+      'nonexistent_array'
+    )
   }, 30000)
 })
 
@@ -341,7 +364,10 @@ describe('JSONB Field Access - Direct Arrow Operator', () => {
     }
 
     expect(result.data).toHaveLength(1)
-    expectJsonPathSelectorOnly(result.data[0] as Record<string, unknown>)
+    expectJsonPathSelectorOnly(
+      result.data[0] as Record<string, unknown>,
+      'string'
+    )
   }, 30000)
 
   it('should support get numeric field via path', async () => {
@@ -361,7 +387,10 @@ describe('JSONB Field Access - Direct Arrow Operator', () => {
     }
 
     expect(result.data).toHaveLength(1)
-    expectJsonPathSelectorOnly(result.data[0] as Record<string, unknown>)
+    expectJsonPathSelectorOnly(
+      result.data[0] as Record<string, unknown>,
+      'number'
+    )
   }, 30000)
 
   it('should support get numeric array field via path', async () => {
@@ -381,7 +410,10 @@ describe('JSONB Field Access - Direct Arrow Operator', () => {
     }
 
     expect(result.data).toHaveLength(1)
-    expectJsonPathSelectorOnly(result.data[0] as Record<string, unknown>)
+    expectJsonPathSelectorOnly(
+      result.data[0] as Record<string, unknown>,
+      'array_number'
+    )
   }, 30000)
 
   it('should support get string array field via path', async () => {
@@ -401,7 +433,10 @@ describe('JSONB Field Access - Direct Arrow Operator', () => {
     }
 
     expect(result.data).toHaveLength(1)
-    expectJsonPathSelectorOnly(result.data[0] as Record<string, unknown>)
+    expectJsonPathSelectorOnly(
+      result.data[0] as Record<string, unknown>,
+      'array_string'
+    )
   }, 30000)
 
   it('should support get nested object field via path', async () => {
@@ -421,7 +456,10 @@ describe('JSONB Field Access - Direct Arrow Operator', () => {
     }
 
     expect(result.data).toHaveLength(1)
-    expectJsonPathSelectorOnly(result.data[0] as Record<string, unknown>)
+    expectJsonPathSelectorOnly(
+      result.data[0] as Record<string, unknown>,
+      'nested'
+    )
   }, 30000)
 
   it('should support get nested field via deep path', async () => {
@@ -441,7 +479,10 @@ describe('JSONB Field Access - Direct Arrow Operator', () => {
     }
 
     expect(result.data).toHaveLength(1)
-    expectJsonPathSelectorOnly(result.data[0] as Record<string, unknown>)
+    expectJsonPathSelectorOnly(
+      result.data[0] as Record<string, unknown>,
+      'nested.string'
+    )
   }, 30000)
 
   it('should handle unknown field path gracefully', async () => {
@@ -463,7 +504,10 @@ describe('JSONB Field Access - Direct Arrow Operator', () => {
 
     expect(result.data).toHaveLength(1)
     // Still generates a selector - proxy will return NULL/empty
-    expectJsonPathSelectorOnly(result.data[0] as Record<string, unknown>)
+    expectJsonPathSelectorOnly(
+      result.data[0] as Record<string, unknown>,
+      'nonexistent_field'
+    )
   }, 30000)
 })
 
@@ -487,7 +531,11 @@ describe('JSONB Field Access - Selector Flexibility', () => {
     }
 
     expect(result.data).toHaveLength(1)
-    expectJsonPathWithValue(result.data[0] as Record<string, unknown>)
+    expectJsonPathWithValue(
+      result.data[0] as Record<string, unknown>,
+      'string',
+      'hello'
+    )
   }, 30000)
 
   it('should accept nested field dot notation', async () => {
@@ -507,7 +555,11 @@ describe('JSONB Field Access - Selector Flexibility', () => {
     }
 
     expect(result.data).toHaveLength(1)
-    expectJsonPathWithValue(result.data[0] as Record<string, unknown>)
+    expectJsonPathWithValue(
+      result.data[0] as Record<string, unknown>,
+      'nested.string',
+      'world'
+    )
   }, 30000)
 
   it('should accept path as array format', async () => {
@@ -527,7 +579,11 @@ describe('JSONB Field Access - Selector Flexibility', () => {
     }
 
     expect(result.data).toHaveLength(1)
-    expectJsonPathWithValue(result.data[0] as Record<string, unknown>)
+    expectJsonPathWithValue(
+      result.data[0] as Record<string, unknown>,
+      'nested.string',
+      'world'
+    )
   }, 30000)
 })
 
@@ -788,7 +844,10 @@ describe('JSONB Path Operations - jsonb_path_exists', () => {
     }
 
     expect(result.data).toHaveLength(1)
-    expectJsonPathSelectorOnly(result.data[0] as Record<string, unknown>)
+    expectJsonPathSelectorOnly(
+      result.data[0] as Record<string, unknown>,
+      'number'
+    )
   }, 30000)
 
   it('should support path exists for nested string', async () => {
@@ -808,7 +867,10 @@ describe('JSONB Path Operations - jsonb_path_exists', () => {
     }
 
     expect(result.data).toHaveLength(1)
-    expectJsonPathSelectorOnly(result.data[0] as Record<string, unknown>)
+    expectJsonPathSelectorOnly(
+      result.data[0] as Record<string, unknown>,
+      'nested.string'
+    )
   }, 30000)
 
   it('should support path exists for nested object', async () => {
@@ -828,7 +890,10 @@ describe('JSONB Path Operations - jsonb_path_exists', () => {
     }
 
     expect(result.data).toHaveLength(1)
-    expectJsonPathSelectorOnly(result.data[0] as Record<string, unknown>)
+    expectJsonPathSelectorOnly(
+      result.data[0] as Record<string, unknown>,
+      'nested'
+    )
   }, 30000)
 
   it('should handle path exists for unknown path', async () => {
@@ -849,7 +914,10 @@ describe('JSONB Path Operations - jsonb_path_exists', () => {
 
     expect(result.data).toHaveLength(1)
     // Client still generates selector - proxy determines existence
-    expectJsonPathSelectorOnly(result.data[0] as Record<string, unknown>)
+    expectJsonPathSelectorOnly(
+      result.data[0] as Record<string, unknown>,
+      'unknown_path'
+    )
   }, 30000)
 })
 
@@ -874,7 +942,11 @@ describe('JSONB Path Operations - jsonb_path_query', () => {
     }
 
     expect(result.data).toHaveLength(1)
-    expectJsonPathWithValue(result.data[0] as Record<string, unknown>)
+    expectJsonPathWithValue(
+      result.data[0] as Record<string, unknown>,
+      'number',
+      42
+    )
   }, 30000)
 
   it('should support path query for nested string', async () => {
@@ -895,7 +967,11 @@ describe('JSONB Path Operations - jsonb_path_query', () => {
     }
 
     expect(result.data).toHaveLength(1)
-    expectJsonPathWithValue(result.data[0] as Record<string, unknown>)
+    expectJsonPathWithValue(
+      result.data[0] as Record<string, unknown>,
+      'nested.string',
+      'world'
+    )
   }, 30000)
 
   it('should support path query for nested object', async () => {
@@ -915,7 +991,10 @@ describe('JSONB Path Operations - jsonb_path_query', () => {
     }
 
     expect(result.data).toHaveLength(1)
-    expectJsonPathSelectorOnly(result.data[0] as Record<string, unknown>)
+    expectJsonPathSelectorOnly(
+      result.data[0] as Record<string, unknown>,
+      'nested'
+    )
   }, 30000)
 
   it('should handle path_query with unknown path (empty set return)', async () => {
@@ -938,7 +1017,10 @@ describe('JSONB Path Operations - jsonb_path_query', () => {
 
     expect(result.data).toHaveLength(1)
     // Client generates selector - proxy returns empty set for unknown path
-    expectJsonPathSelectorOnly(result.data[0] as Record<string, unknown>)
+    expectJsonPathSelectorOnly(
+      result.data[0] as Record<string, unknown>,
+      'unknown_deep.path.that.does.not.exist'
+    )
   }, 30000)
 })
 
@@ -963,7 +1045,11 @@ describe('JSONB Path Operations - jsonb_path_query_first', () => {
     }
 
     expect(result.data).toHaveLength(1)
-    expectJsonPathWithValue(result.data[0] as Record<string, unknown>)
+    expectJsonPathWithValue(
+      result.data[0] as Record<string, unknown>,
+      'array_string[*]',
+      'hello'
+    )
   }, 30000)
 
   it('should support path query first for array wildcard number', async () => {
@@ -984,7 +1070,11 @@ describe('JSONB Path Operations - jsonb_path_query_first', () => {
     }
 
     expect(result.data).toHaveLength(1)
-    expectJsonPathWithValue(result.data[0] as Record<string, unknown>)
+    expectJsonPathWithValue(
+      result.data[0] as Record<string, unknown>,
+      'array_number[*]',
+      42
+    )
   }, 30000)
 
   it('should support path query first for nested string', async () => {
@@ -1005,7 +1095,11 @@ describe('JSONB Path Operations - jsonb_path_query_first', () => {
     }
 
     expect(result.data).toHaveLength(1)
-    expectJsonPathWithValue(result.data[0] as Record<string, unknown>)
+    expectJsonPathWithValue(
+      result.data[0] as Record<string, unknown>,
+      'nested.string',
+      'world'
+    )
   }, 30000)
 
   it('should support path query first for nested object', async () => {
@@ -1025,7 +1119,10 @@ describe('JSONB Path Operations - jsonb_path_query_first', () => {
     }
 
     expect(result.data).toHaveLength(1)
-    expectJsonPathSelectorOnly(result.data[0] as Record<string, unknown>)
+    expectJsonPathSelectorOnly(
+      result.data[0] as Record<string, unknown>,
+      'nested'
+    )
   }, 30000)
 
   it('should handle path_query_first with unknown path (NULL return)', async () => {
@@ -1048,7 +1145,10 @@ describe('JSONB Path Operations - jsonb_path_query_first', () => {
 
     expect(result.data).toHaveLength(1)
     // Client generates selector - proxy returns NULL for unknown path in path_query_first
-    expectJsonPathSelectorOnly(result.data[0] as Record<string, unknown>)
+    expectJsonPathSelectorOnly(
+      result.data[0] as Record<string, unknown>,
+      'nonexistent_field_for_first'
+    )
   }, 30000)
 })
 
@@ -1432,7 +1532,11 @@ describe('JSONB Data Types Coverage', () => {
     }
 
     expect(result.data).toHaveLength(1)
-    expectJsonPathWithValue(result.data[0] as Record<string, unknown>)
+    expectJsonPathWithValue(
+      result.data[0] as Record<string, unknown>,
+      'string',
+      'test_string'
+    )
   }, 30000)
 
   it('should handle number/integer data type in extraction', async () => {
@@ -1452,7 +1556,11 @@ describe('JSONB Data Types Coverage', () => {
     }
 
     expect(result.data).toHaveLength(1)
-    expectJsonPathWithValue(result.data[0] as Record<string, unknown>)
+    expectJsonPathWithValue(
+      result.data[0] as Record<string, unknown>,
+      'number',
+      12345
+    )
   }, 30000)
 
   it('should handle string array in containment', async () => {
@@ -1556,7 +1664,11 @@ describe('JSONB Data Types Coverage', () => {
     }
 
     expect(result.data).toHaveLength(1)
-    expectJsonPathWithValue(result.data[0] as Record<string, unknown>)
+    expectJsonPathWithValue(
+      result.data[0] as Record<string, unknown>,
+      'is_active',
+      true
+    )
   }, 30000)
 
   it('should handle float/decimal numbers', async () => {
@@ -1576,7 +1688,11 @@ describe('JSONB Data Types Coverage', () => {
     }
 
     expect(result.data).toHaveLength(1)
-    expectJsonPathWithValue(result.data[0] as Record<string, unknown>)
+    expectJsonPathWithValue(
+      result.data[0] as Record<string, unknown>,
+      'price',
+      99.99
+    )
   }, 30000)
 
   it('should handle negative numbers', async () => {
@@ -1596,7 +1712,11 @@ describe('JSONB Data Types Coverage', () => {
     }
 
     expect(result.data).toHaveLength(1)
-    expectJsonPathWithValue(result.data[0] as Record<string, unknown>)
+    expectJsonPathWithValue(
+      result.data[0] as Record<string, unknown>,
+      'balance',
+      -500
+    )
   }, 30000)
 })
 
@@ -1642,7 +1762,11 @@ describe('JSONB Edge Cases', () => {
     }
 
     expect(result.data).toHaveLength(1)
-    expectJsonPathWithValue(result.data[0] as Record<string, unknown>)
+    expectJsonPathWithValue(
+      result.data[0] as Record<string, unknown>,
+      'a.b.c.d.e.f.g.h.i.j.k.l',
+      'deep_value'
+    )
   }, 30000)
 
   it('should handle special characters in string values', async () => {
@@ -1662,7 +1786,11 @@ describe('JSONB Edge Cases', () => {
     }
 
     expect(result.data).toHaveLength(1)
-    expectJsonPathWithValue(result.data[0] as Record<string, unknown>)
+    expectJsonPathWithValue(
+      result.data[0] as Record<string, unknown>,
+      'message',
+      'Hello "world" with \'quotes\' and \\backslash\\'
+    )
   }, 30000)
 
   it('should handle unicode characters', async () => {
@@ -1682,7 +1810,11 @@ describe('JSONB Edge Cases', () => {
     }
 
     expect(result.data).toHaveLength(1)
-    expectJsonPathWithValue(result.data[0] as Record<string, unknown>)
+    expectJsonPathWithValue(
+      result.data[0] as Record<string, unknown>,
+      'greeting',
+      '你好世界 🌍 مرحبا'
+    )
   }, 30000)
 
   it('should handle multiple array wildcards in path', async () => {
@@ -1702,7 +1834,10 @@ describe('JSONB Edge Cases', () => {
     }
 
     expect(result.data).toHaveLength(1)
-    expectJsonPathSelectorOnly(result.data[0] as Record<string, unknown>)
+    expectJsonPathSelectorOnly(
+      result.data[0] as Record<string, unknown>,
+      'matrix[@][@]'
+    )
   }, 30000)
 
   it('should handle complex nested array path', async () => {
@@ -1723,7 +1858,11 @@ describe('JSONB Edge Cases', () => {
     }
 
     expect(result.data).toHaveLength(1)
-    expectJsonPathWithValue(result.data[0] as Record<string, unknown>)
+    expectJsonPathWithValue(
+      result.data[0] as Record<string, unknown>,
+      'users[@].orders[@].items[0].name',
+      'Widget'
+    )
   }, 30000)
 
   it('should handle large containment object (50+ keys)', async () => {
@@ -1796,13 +1935,20 @@ describe('JSONB Batch Operations', () => {
     expect(result.data).toHaveLength(4)
 
     // First: path query with value
-    expectJsonPathWithValue(result.data[0] as Record<string, unknown>)
+    expectJsonPathWithValue(
+      result.data[0] as Record<string, unknown>,
+      'string',
+      'hello'
+    )
 
     // Second: containment query
     expectSteVecArray(result.data[1] as { sv: Array<Record<string, unknown>> })
 
     // Third: path-only query
-    expectJsonPathSelectorOnly(result.data[2] as Record<string, unknown>)
+    expectJsonPathSelectorOnly(
+      result.data[2] as Record<string, unknown>,
+      'nested.string'
+    )
 
     // Fourth: containedBy query
     expectSteVecArray(result.data[3] as { sv: Array<Record<string, unknown>> })
