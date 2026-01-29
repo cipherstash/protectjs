@@ -106,11 +106,12 @@ beforeAll(async () => {
   const client = postgres(process.env.DATABASE_URL as string)
   db = drizzle({ client })
 
-  // Create test table if it doesn't exist
+  // Drop and recreate test table to ensure correct column type
+  await db.execute(sql`DROP TABLE IF EXISTS drizzle_jsonb_comparison_test`)
   await db.execute(sql`
-    CREATE TABLE IF NOT EXISTS drizzle_jsonb_comparison_test (
+    CREATE TABLE drizzle_jsonb_comparison_test (
       id SERIAL PRIMARY KEY,
-      encrypted_jsonb JSONB,
+      encrypted_jsonb eql_v2_encrypted,
       created_at TIMESTAMP DEFAULT NOW(),
       test_run_id TEXT
     )
