@@ -149,6 +149,10 @@ export type { DecryptOperation } from './ffi/operations/decrypt'
 export type { DecryptModelOperation } from './ffi/operations/decrypt-model'
 export type { EncryptModelOperation } from './ffi/operations/encrypt-model'
 export type { EncryptOperation } from './ffi/operations/encrypt'
+/**
+ * @deprecated Use EncryptQueryOperation or BatchEncryptQueryOperation instead.
+ * This type will be removed in v2.0.
+ */
 export type { SearchTermsOperation } from './ffi/operations/deprecated/search-terms'
 export type { EncryptQueryOperation } from './ffi/operations/encrypt-query'
 export type { QuerySearchTermsOperation } from './ffi/operations/query-search-terms'

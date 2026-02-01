@@ -7,7 +7,7 @@
  *
  * Migration:
  *   - Use `encryptQuery()` with QueryTerm types instead of `createSearchTerms()`
- *   - See `./encrypt-query.ts` for the replacement API
+ *   - See `../encrypt-query.ts` for the replacement API
  *
  * Example migration:
  *   // Before (deprecated):

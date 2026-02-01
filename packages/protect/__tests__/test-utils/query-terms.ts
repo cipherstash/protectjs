@@ -31,7 +31,8 @@ export const expectSteVecSelector = (term: { s?: string }) => {
 /** Validates an sv array entry has selector and additional content */
 export const expectSteVecEntry = (entry: Record<string, unknown>) => {
   expectSteVecSelector(entry as { s?: string })
-  // Entry should have more than just the selector
+  // Entry should have more than just the selector (s field)
+  // Expect at least 2 fields: 's' (selector) + encrypted content
   expect(Object.keys(entry).length).toBeGreaterThan(1)
 }
 
@@ -66,6 +67,8 @@ export const expectJsonPathWithValue = (
 
   // Verify plaintext does not leak into encrypted term
   const termString = JSON.stringify(term)
+  // Only check paths/values longer than 3 chars to avoid false positives
+  // from short strings that might coincidentally appear in hex ciphertext
   if (originalPath && originalPath.length > 3) {
     expect(termString).not.toContain(originalPath)
   }
@@ -93,6 +96,8 @@ export const expectJsonPathSelectorOnly = (
   expect(term).not.toHaveProperty('c')
 
   // Verify plaintext path does not leak into encrypted term
+  // Only check paths longer than 3 chars to avoid false positives
+  // from short strings that might coincidentally appear in hex ciphertext
   if (originalPath && originalPath.length > 3) {
     const termString = JSON.stringify(term)
     expect(termString).not.toContain(originalPath)
@@ -135,6 +140,8 @@ export const expectEncryptedJsonPayload = (
           : JSON.stringify(originalPlaintext)
 
       // Check that significant portions of plaintext are not in the encrypted content
+      // Only check strings longer than 10 chars to avoid false positives from short
+      // strings (like numbers or short keys) that might coincidentally appear in ciphertext
       if (plaintextString.length > 10) {
         expect(ciphertextContent).not.toContain(plaintextString)
       }
