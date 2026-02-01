@@ -19,7 +19,7 @@ import type {
 } from '../../types'
 import { queryTypeToFfi } from '../../types'
 import { noClientError } from '../index'
-import { buildNestedObject, toDollarPath } from './json-path-utils'
+import { buildNestedObject, toJsonPath } from './json-path-utils'
 import { ProtectOperation } from './base-operation'
 
 /**
@@ -135,7 +135,7 @@ async function encryptSearchTermsHelper(
         })
       } else {
         // Path-only terms (no value) need selector encryption
-        const selector = toDollarPath(term.path)
+        const selector = toJsonPath(term.path)
         selectorOnlyItems.push({
           selector,
           column: term.column.getName(),
