@@ -46,5 +46,32 @@ describe('json-path-utils', () => {
     it('should handle underscore in segment names', () => {
       expect(toJsonPath(['user_name'])).toBe('$.user_name')
     })
+
+    describe('string vs array path distinction', () => {
+      it('should split string paths on dots, treating each part as a separate segment', () => {
+        // String "user.name" is split into TWO segments: "user" and "name"
+        expect(toJsonPath('user.name')).toBe('$.user.name')
+      })
+
+      it('should preserve array segments as-is, treating dots within segments literally', () => {
+        // Array ["user.name"] is ONE segment: "user.name" (dot is part of the key name)
+        // Since "user.name" contains a dot (special character), bracket notation is used
+        expect(toJsonPath(['user.name'])).toBe('$["user.name"]')
+      })
+
+      it('should demonstrate the semantic difference between string and array paths', () => {
+        // These two inputs look similar but produce different outputs:
+        // - String path: dots are path separators
+        // - Array path: each element is a complete segment name (dots are literal)
+        const stringPath = 'a.b.c'
+        const arrayPathWithDots = ['a.b.c']
+
+        // String: 3 segments -> $.a.b.c
+        expect(toJsonPath(stringPath)).toBe('$.a.b.c')
+
+        // Array: 1 segment with dots in the name -> $["a.b.c"]
+        expect(toJsonPath(arrayPathWithDots)).toBe('$["a.b.c"]')
+      })
+    })
   })
 })
