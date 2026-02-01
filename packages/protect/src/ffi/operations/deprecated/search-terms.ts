@@ -1,11 +1,32 @@
+/**
+ * ============================================================================
+ * DEPRECATED MODULE
+ * ============================================================================
+ *
+ * This module is deprecated and will be removed in v2.0.
+ *
+ * Migration:
+ *   - Use `encryptQuery()` with QueryTerm types instead of `createSearchTerms()`
+ *   - See `./encrypt-query.ts` for the replacement API
+ *
+ * Example migration:
+ *   // Before (deprecated):
+ *   const terms = await client.createSearchTerms([{ value, column, table }])
+ *
+ *   // After:
+ *   const terms = await client.encryptQuery(value, { column, table })
+ *
+ * ============================================================================
+ */
+
 import { type Result, withResult } from '@byteslice/result'
 import {
   encryptBulk,
   encryptQueryBulk,
   ProtectError as FfiProtectError,
 } from '@cipherstash/protect-ffi'
-import { type ProtectError, ProtectErrorTypes } from '../..'
-import { logger } from '../../../../utils/logger'
+import { type ProtectError, ProtectErrorTypes } from '../../..'
+import { logger } from '../../../../../utils/logger'
 import type {
   Client,
   Encrypted,
@@ -16,11 +37,11 @@ import type {
   QueryOpName,
   SearchTerm,
   SimpleSearchTerm,
-} from '../../types'
-import { queryTypeToFfi } from '../../types'
-import { noClientError } from '../index'
-import { buildNestedObject, toJsonPath } from './json-path-utils'
-import { ProtectOperation } from './base-operation'
+} from '../../../types'
+import { queryTypeToFfi } from '../../../types'
+import { noClientError } from '../../index'
+import { buildNestedObject, toJsonPath } from '../json-path-utils'
+import { ProtectOperation } from '../base-operation'
 
 /**
  * Type guard to check if a search term is a JSON path search term
@@ -248,6 +269,9 @@ async function encryptSearchTermsHelper(
   return results
 }
 
+/**
+ * @deprecated Use EncryptQueryOperation instead. Will be removed in v2.0.
+ */
 export class SearchTermsOperation extends ProtectOperation<
   EncryptedSearchTerm[]
 > {
