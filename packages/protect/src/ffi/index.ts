@@ -35,7 +35,7 @@ import { EncryptOperation } from './operations/encrypt'
 import { EncryptModelOperation } from './operations/encrypt-model'
 import { EncryptQueryOperation } from './operations/encrypt-query'
 import { QuerySearchTermsOperation } from './operations/query-search-terms'
-import { SearchTermsOperation } from './operations/search-terms'
+import { SearchTermsOperation } from './operations/deprecated/search-terms'
 
 export const noClientError = () =>
   new Error(
