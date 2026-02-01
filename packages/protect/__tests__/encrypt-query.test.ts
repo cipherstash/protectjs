@@ -688,3 +688,137 @@ describe('encryptQuery API - Edge Cases', () => {
     expect(encrypted.sv.length).toBeGreaterThanOrEqual(50)
   })
 })
+
+describe('encryptQuery API - Number Encryption', () => {
+  let protectClient: Awaited<ReturnType<typeof protect>>
+
+  beforeAll(async () => {
+    protectClient = await protect({ schemas: [scalarSchema] })
+  })
+
+  describe('Number values with different query types', () => {
+    it('should encrypt number with default (auto-inferred) query type', async () => {
+      const result = await protectClient.encryptQuery(42, {
+        column: scalarSchema.age,
+        table: scalarSchema,
+      })
+
+      if (result.failure) {
+        throw new Error(`[protect]: ${result.failure.message}`)
+      }
+
+      expect(result.data).toBeDefined()
+      // Auto-inferred should return encrypted data with 'c' property
+      expect(result.data).toHaveProperty('c')
+    })
+
+    it('should encrypt number with equality query type', async () => {
+      const result = await protectClient.encryptQuery(100, {
+        column: scalarSchema.age,
+        table: scalarSchema,
+        queryType: 'equality',
+      })
+
+      if (result.failure) {
+        throw new Error(`[protect]: ${result.failure.message}`)
+      }
+
+      expect(result.data).toBeDefined()
+      // Equality queries have 'hm' property
+      expect(result.data).toHaveProperty('hm')
+    })
+
+    it('should encrypt number with orderAndRange query type', async () => {
+      const result = await protectClient.encryptQuery(99, {
+        column: scalarSchema.age,
+        table: scalarSchema,
+        queryType: 'orderAndRange',
+      })
+
+      if (result.failure) {
+        throw new Error(`[protect]: ${result.failure.message}`)
+      }
+
+      expect(result.data).toBeDefined()
+      // ORE queries have 'ob' property (order block)
+      expect(result.data).toHaveProperty('ob')
+      expect(Array.isArray(result.data.ob)).toBe(true)
+    })
+
+    it('should encrypt negative numbers', async () => {
+      const result = await protectClient.encryptQuery(-50, {
+        column: scalarSchema.age,
+        table: scalarSchema,
+        queryType: 'orderAndRange',
+      })
+
+      if (result.failure) {
+        throw new Error(`[protect]: ${result.failure.message}`)
+      }
+
+      expect(result.data).toBeDefined()
+      expect(result.data).toHaveProperty('ob')
+    })
+
+    it('should encrypt floating point numbers', async () => {
+      const result = await protectClient.encryptQuery(99.99, {
+        column: scalarSchema.age,
+        table: scalarSchema,
+        queryType: 'orderAndRange',
+      })
+
+      if (result.failure) {
+        throw new Error(`[protect]: ${result.failure.message}`)
+      }
+
+      expect(result.data).toBeDefined()
+      expect(result.data).toHaveProperty('ob')
+    })
+
+    it('should encrypt zero', async () => {
+      const result = await protectClient.encryptQuery(0, {
+        column: scalarSchema.age,
+        table: scalarSchema,
+        queryType: 'equality',
+      })
+
+      if (result.failure) {
+        throw new Error(`[protect]: ${result.failure.message}`)
+      }
+
+      expect(result.data).toBeDefined()
+      expect(result.data).toHaveProperty('hm')
+    })
+  })
+
+  describe('Number values in batch operations', () => {
+    it('should encrypt multiple numbers in batch with explicit queryType', async () => {
+      const terms: QueryTerm[] = [
+        {
+          value: 42,
+          column: scalarSchema.age,
+          table: scalarSchema,
+          queryType: 'equality',
+        },
+        {
+          value: 100,
+          column: scalarSchema.age,
+          table: scalarSchema,
+          queryType: 'orderAndRange',
+        },
+      ]
+
+      const result = await protectClient.encryptQuery(terms)
+
+      if (result.failure) {
+        throw new Error(`[protect]: ${result.failure.message}`)
+      }
+
+      expect(result.data).toHaveLength(2)
+      // First term used equality
+      expect(result.data[0]).toHaveProperty('hm')
+      // Second term used orderAndRange
+      expect(result.data[1]).toHaveProperty('ob')
+    })
+  })
+})
