@@ -1,16 +1,28 @@
+/**
+ * ============================================================================
+ * DEPRECATED API TESTS
+ * ============================================================================
+ *
+ * These tests cover the deprecated `createSearchTerms()` API.
+ * The API is deprecated and will be removed in v2.0.
+ *
+ * For new code, use `encryptQuery()` with QueryTerm types instead.
+ * See `encrypt-query.test.ts` for tests covering the replacement API.
+ *
+ * ============================================================================
+ */
+
 import 'dotenv/config'
 import { csColumn, csTable } from '@cipherstash/schema'
 import { beforeAll, describe, expect, it } from 'vitest'
-import { LockContext, type SearchTerm, protect } from '../src'
+import { type SearchTerm, protect } from '../../src'
 import {
   expectMatchIndex,
   expectJsonPathWithValue,
   expectJsonPathSelectorOnly,
   expectSteVecArray,
-  expectSteVecSelector,
   expectCompositeLiteralWithEncryption,
-  parseCompositeLiteral,
-} from './test-utils/query-terms'
+} from '../test-utils/query-terms'
 
 const users = csTable('users', {
   email: csColumn('email').freeTextSearch().equality().orderAndRange(),
@@ -73,9 +85,8 @@ describe('create search terms', () => {
     }
 
     const result = searchTermsResult.data[0] as string
-    expectCompositeLiteralWithEncryption(
-      result,
-      (parsed) => expectMatchIndex(parsed as { bf?: unknown[] })
+    expectCompositeLiteralWithEncryption(result, (parsed) =>
+      expectMatchIndex(parsed as { bf?: unknown[] }),
     )
   }, 30000)
 
@@ -100,9 +111,8 @@ describe('create search terms', () => {
     const result = searchTermsResult.data[0] as string
     expect(result).toMatch(/^".*"$/)
     const unescaped = JSON.parse(result)
-    expectCompositeLiteralWithEncryption(
-      unescaped,
-      (parsed) => expectMatchIndex(parsed as { bf?: unknown[] })
+    expectCompositeLiteralWithEncryption(unescaped, (parsed) =>
+      expectMatchIndex(parsed as { bf?: unknown[] }),
     )
   }, 30000)
 })
@@ -364,7 +374,7 @@ describe('create search terms - JSON comprehensive', () => {
       expect(result.data).toHaveLength(1)
       // Containment results have 'sv' array for wrapped values
       expect(result.data[0]).toHaveProperty('sv')
-      const svResult = result.data[0] as { sv: Array<{ s: any }> }
+      const svResult = result.data[0] as { sv: Array<{ s: unknown }> }
       expect(Array.isArray(svResult.sv)).toBe(true)
       // sv array length depends on FFI flattening implementation
       expect(svResult.sv.length).toBeGreaterThan(0)
@@ -390,7 +400,7 @@ describe('create search terms - JSON comprehensive', () => {
 
       expect(result.data).toHaveLength(1)
       expect(result.data[0]).toHaveProperty('sv')
-      const svResult = result.data[0] as { sv: Array<{ s: any }> }
+      const svResult = result.data[0] as { sv: Array<{ s: unknown }> }
       // sv array length depends on FFI flattening implementation
       expect(svResult.sv.length).toBeGreaterThan(0)
       expect(svResult.sv[0].s).toMatch(/^[0-9a-f]+$/)
@@ -414,7 +424,7 @@ describe('create search terms - JSON comprehensive', () => {
 
       expect(result.data).toHaveLength(1)
       expect(result.data[0]).toHaveProperty('sv')
-      const svResult = result.data[0] as { sv: Array<{ s: any }> }
+      const svResult = result.data[0] as { sv: Array<{ s: unknown }> }
       // sv array length depends on FFI flattening implementation
       expect(svResult.sv.length).toBeGreaterThanOrEqual(2)
       expect(svResult.sv[0].s).toMatch(/^[0-9a-f]+$/)
@@ -459,7 +469,7 @@ describe('create search terms - JSON comprehensive', () => {
 
       expect(result.data).toHaveLength(1)
       expect(result.data[0]).toHaveProperty('sv')
-      const svResult = result.data[0] as { sv: Array<{ s: any }> }
+      const svResult = result.data[0] as { sv: Array<{ s: unknown }> }
       // sv array length depends on FFI flattening implementation for arrays
       expect(svResult.sv.length).toBeGreaterThan(0)
       expect(svResult.sv[0].s).toMatch(/^[0-9a-f]+$/)
@@ -686,7 +696,7 @@ describe('create search terms - JSON comprehensive', () => {
 
       expect(result.data).toHaveLength(1)
       expect(result.data[0]).toHaveProperty('sv')
-      const svResult = result.data[0] as { sv: Array<{ s: any }> }
+      const svResult = result.data[0] as { sv: Array<{ s: unknown }> }
       // sv array length depends on FFI flattening implementation
       expect(svResult.sv.length).toBeGreaterThanOrEqual(2)
       expect(svResult.sv[0].s).toMatch(/^[0-9a-f]+$/)
@@ -1088,6 +1098,4 @@ describe('create search terms - JSON comprehensive', () => {
       expectSteVecArray(encrypted as { sv: Array<Record<string, unknown>> })
     }, 30000)
   })
-
-
 })
