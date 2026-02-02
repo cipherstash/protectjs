@@ -732,7 +732,7 @@ describe('Search terms', () => {
     expect(searchTermsResult.data).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          c: expect.any(String),
+          v: 2,
         }),
       ]),
     )
@@ -882,7 +882,7 @@ describe('Invalid or uncoercable values', () => {
       })
 
       expect(result.failure).toBeDefined()
-      expect(result.failure?.message).toContain('Unsupported conversion')
+      expect(result.failure?.message).toContain('Cannot convert')
     },
     30000,
   )

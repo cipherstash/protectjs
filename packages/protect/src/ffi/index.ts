@@ -10,25 +10,30 @@ import { type ProtectError, ProtectErrorTypes } from '..'
 import { loadWorkSpaceId } from '../../../utils/config'
 import { logger } from '../../../utils/logger'
 import { toFfiKeysetIdentifier } from '../helpers'
+import { isScalarQueryTermArray } from './helpers/type-guards'
 import type {
   BulkDecryptPayload,
   BulkEncryptPayload,
   Client,
   Decrypted,
   EncryptOptions,
+  EncryptQueryOptions,
   Encrypted,
   KeysetIdentifier,
+  ScalarQueryTerm,
   SearchTerm,
 } from '../types'
 import { BulkDecryptOperation } from './operations/bulk-decrypt'
 import { BulkDecryptModelsOperation } from './operations/bulk-decrypt-models'
 import { BulkEncryptOperation } from './operations/bulk-encrypt'
 import { BulkEncryptModelsOperation } from './operations/bulk-encrypt-models'
+import { BatchEncryptQueryOperation } from './operations/batch-encrypt-query'
 import { DecryptOperation } from './operations/decrypt'
 import { DecryptModelOperation } from './operations/decrypt-model'
 import { EncryptOperation } from './operations/encrypt'
 import { EncryptModelOperation } from './operations/encrypt-model'
-import { SearchTermsOperation } from './operations/search-terms'
+import { EncryptQueryOperation } from './operations/encrypt-query'
+import { SearchTermsOperation } from './operations/deprecated/search-terms'
 
 export const noClientError = () =>
   new Error(
@@ -179,6 +184,82 @@ export class ProtectClient {
   }
 
   /**
+   * Encrypt a query value - returns a promise which resolves to an encrypted query value.
+   *
+   * @param plaintext - The plaintext value to be encrypted for querying. Can be null.
+   * @param opts - Options specifying the column, table, and optional queryType for encryption.
+   * @returns An EncryptQueryOperation that can be awaited or chained with additional methods.
+   *
+   * @example
+   * The following example demonstrates how to encrypt a query value using the Protect client.
+   *
+   * ```typescript
+   * // Define encryption schema
+   * import { csTable, csColumn } from "@cipherstash/protect"
+   * const userSchema = csTable("users", {
+   *  email: csColumn("email").equality(),
+   * });
+   *
+   * // Initialize Protect client
+   * const protectClient = await protect({ schemas: [userSchema] })
+   *
+   * // Encrypt a query value
+   * const encryptedResult = await protectClient.encryptQuery(
+   *  "person@example.com",
+   *  { column: userSchema.email, table: userSchema, queryType: 'equality' }
+   * )
+   *
+   * // Handle encryption result
+   * if (encryptedResult.failure) {
+   *   throw new Error(`Encryption failed: ${encryptedResult.failure.message}`);
+   * }
+   *
+   * console.log("Encrypted query:", encryptedResult.data);
+   * ```
+   *
+   * @example
+   * The queryType can be auto-inferred from the column's configured indexes:
+   *
+   * ```typescript
+   * // When queryType is omitted, it will be inferred from the column's indexes
+   * const encryptedResult = await protectClient.encryptQuery(
+   *  "person@example.com",
+   *  { column: userSchema.email, table: userSchema }
+   * )
+   * ```
+   *
+   * @see {@link EncryptQueryOperation}
+   */
+  encryptQuery(
+    plaintext: JsPlaintext | null,
+    opts: EncryptQueryOptions,
+  ): EncryptQueryOperation
+
+  /**
+   * Encrypt multiple values for use in queries (batch operation).
+   * @param terms - Array of query terms to encrypt
+   */
+  encryptQuery(
+    terms: readonly ScalarQueryTerm[],
+  ): BatchEncryptQueryOperation
+
+  encryptQuery(
+    plaintextOrTerms: JsPlaintext | null | readonly ScalarQueryTerm[],
+    opts?: EncryptQueryOptions,
+  ): EncryptQueryOperation | BatchEncryptQueryOperation {
+    // Discriminate between ScalarQueryTerm[] and JsPlaintext (which can also be an array)
+    // using a type guard function
+    if (isScalarQueryTermArray(plaintextOrTerms)) {
+      return new BatchEncryptQueryOperation(this.client, plaintextOrTerms)
+    }
+    return new EncryptQueryOperation(
+      this.client,
+      plaintextOrTerms as JsPlaintext | null,
+      opts!,
+    )
+  }
+
+  /**
    * Decryption - returns a promise which resolves to a decrypted value.
    *
    * @param encryptedData - The encrypted data to be decrypted.
@@ -308,6 +389,22 @@ export class ProtectClient {
 
   /**
    * Create search terms to use in a query searching encrypted data
+   *
+   * @deprecated Use `encryptQuery(terms)` instead. Will be removed in v2.0.
+   *
+   * Migration example:
+   * ```typescript
+   * // Before (deprecated)
+   * const result = await client.createSearchTerms([
+   *   { value: 'test', column: users.email, table: users }
+   * ])
+   *
+   * // After
+   * const result = await client.encryptQuery([
+   *   { value: 'test', column: users.email, table: users, queryType: 'equality' }
+   * ])
+   * ```
+   *
    * Usage:
    *    await eqlClient.createSearchTerms(searchTerms)
    *    await eqlClient.createSearchTerms(searchTerms).withLockContext(lockContext)

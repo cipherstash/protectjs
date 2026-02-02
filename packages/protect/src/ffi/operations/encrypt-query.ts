@@ -1,0 +1,145 @@
+import { type Result, withResult } from '@byteslice/result'
+import {
+  type JsPlaintext,
+  encryptQuery as ffiEncryptQuery,
+} from '@cipherstash/protect-ffi'
+import { type ProtectError, ProtectErrorTypes } from '../..'
+import { logger } from '../../../../utils/logger'
+import type { LockContext } from '../../identify'
+import type { Client, Encrypted, EncryptQueryOptions } from '../../types'
+import { queryTypeToFfi } from '../../types'
+import { noClientError } from '../index'
+import { ProtectOperation } from './base-operation'
+import { inferIndexType, validateIndexType } from '../helpers/infer-index-type'
+
+export class EncryptQueryOperation extends ProtectOperation<Encrypted> {
+  constructor(
+    private client: Client,
+    private plaintext: JsPlaintext | null,
+    private opts: EncryptQueryOptions,
+  ) {
+    super()
+  }
+
+  public withLockContext(lockContext: LockContext): EncryptQueryOperationWithLockContext {
+    return new EncryptQueryOperationWithLockContext(this.client, this.plaintext, this.opts, lockContext, this.auditMetadata)
+  }
+
+  public async execute(): Promise<Result<Encrypted, ProtectError>> {
+    logger.debug('Encrypting query', {
+      column: this.opts.column.getName(),
+      table: this.opts.table.tableName,
+      queryType: this.opts.queryType,
+    })
+
+    if (this.plaintext === null) {
+      return { data: null }
+    }
+
+    if (typeof this.plaintext === 'number' && Number.isNaN(this.plaintext)) {
+      return {
+        failure: {
+          type: ProtectErrorTypes.EncryptionError,
+          message: '[protect]: Cannot encrypt NaN value',
+        },
+      }
+    }
+
+    if (typeof this.plaintext === 'number' && !Number.isFinite(this.plaintext)) {
+      return {
+        failure: {
+          type: ProtectErrorTypes.EncryptionError,
+          message: '[protect]: Cannot encrypt Infinity value',
+        },
+      }
+    }
+
+    return await withResult(
+      async () => {
+        if (!this.client) throw noClientError()
+
+        const { metadata } = this.getAuditData()
+
+        const indexType = this.opts.queryType
+          ? queryTypeToFfi[this.opts.queryType]
+          : inferIndexType(this.opts.column)
+
+        if (this.opts.queryType) {
+          validateIndexType(this.opts.column, indexType)
+        }
+
+        return await ffiEncryptQuery(this.client, {
+          plaintext: this.plaintext as JsPlaintext,
+          column: this.opts.column.getName(),
+          table: this.opts.table.tableName,
+          indexType,
+          unverifiedContext: metadata,
+        })
+      },
+      (error) => ({
+        type: ProtectErrorTypes.EncryptionError,
+        message: error.message,
+      }),
+    )
+  }
+
+  public getOperation() {
+    return { client: this.client, plaintext: this.plaintext, ...this.opts }
+  }
+}
+
+export class EncryptQueryOperationWithLockContext extends ProtectOperation<Encrypted> {
+  constructor(
+    private client: Client,
+    private plaintext: JsPlaintext | null,
+    private opts: EncryptQueryOptions,
+    private lockContext: LockContext,
+    auditMetadata?: Record<string, unknown>,
+  ) {
+    super()
+    this.auditMetadata = auditMetadata
+  }
+
+  public async execute(): Promise<Result<Encrypted, ProtectError>> {
+    if (this.plaintext === null) {
+      return { data: null }
+    }
+
+    const lockContextResult = await this.lockContext.getLockContext()
+    if (lockContextResult.failure) {
+      return { failure: lockContextResult.failure }
+    }
+
+    const { ctsToken, context } = lockContextResult.data
+
+    return await withResult(
+      async () => {
+        if (!this.client) throw noClientError()
+
+        const { metadata } = this.getAuditData()
+
+        const indexType = this.opts.queryType
+          ? queryTypeToFfi[this.opts.queryType]
+          : inferIndexType(this.opts.column)
+
+        if (this.opts.queryType) {
+          validateIndexType(this.opts.column, indexType)
+        }
+
+        return await ffiEncryptQuery(this.client, {
+          plaintext: this.plaintext as JsPlaintext,
+          column: this.opts.column.getName(),
+          table: this.opts.table.tableName,
+          indexType,
+          lockContext: context,
+          serviceToken: ctsToken,
+          unverifiedContext: metadata,
+        })
+      },
+      (error) => ({
+        type: ProtectErrorTypes.EncryptionError,
+        message: error.message,
+      }),
+    )
+  }
+}

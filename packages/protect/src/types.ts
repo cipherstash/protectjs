@@ -122,3 +122,53 @@ type DecryptionError<T> = {
 }
 
 export type DecryptionResult<T> = DecryptionSuccess<T> | DecryptionError<T>
+
+/**
+ * User-facing query type names.
+ * Maps to specific FFI index types via queryTypeToFfi.
+ */
+export type QueryTypeName = 'orderAndRange' | 'freeTextSearch' | 'equality'
+
+/**
+ * Internal FFI index type names.
+ * @internal
+ */
+export type FfiIndexTypeName = 'ore' | 'match' | 'unique'
+
+/**
+ * Query type constants for use with encryptQuery().
+ */
+export const queryTypes = {
+  orderAndRange: 'orderAndRange',
+  freeTextSearch: 'freeTextSearch',
+  equality: 'equality',
+} as const satisfies Record<string, QueryTypeName>
+
+/**
+ * Maps user-friendly query type names to FFI index type names.
+ * @internal
+ */
+export const queryTypeToFfi: Record<QueryTypeName, FfiIndexTypeName> = {
+  orderAndRange: 'ore',
+  freeTextSearch: 'match',
+  equality: 'unique',
+}
+
+/**
+ * Options for encrypting a single query term.
+ */
+export type EncryptQueryOptions = {
+  column: ProtectColumn
+  table: ProtectTable<ProtectTableColumn>
+  queryType?: QueryTypeName  // Optional - auto-infers if omitted
+}
+
+/**
+ * Individual query term for bulk operations.
+ */
+export type ScalarQueryTerm = {
+  value: JsPlaintext | null
+  column: ProtectColumn
+  table: ProtectTable<ProtectTableColumn>
+  queryType?: QueryTypeName  // Optional - auto-infers if omitted
+}

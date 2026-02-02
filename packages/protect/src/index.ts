@@ -99,6 +99,23 @@ export type { DecryptModelOperation } from './ffi/operations/decrypt-model'
 export type { EncryptModelOperation } from './ffi/operations/encrypt-model'
 export type { EncryptOperation } from './ffi/operations/encrypt'
 
+// Operations
+export { EncryptQueryOperation, EncryptQueryOperationWithLockContext } from './ffi/operations/encrypt-query'
+export { BatchEncryptQueryOperation, BatchEncryptQueryOperationWithLockContext } from './ffi/operations/batch-encrypt-query'
+
+// Helpers
+export { inferIndexType, validateIndexType } from './ffi/helpers/infer-index-type'
+
+// Types
+export type {
+  QueryTypeName,
+  FfiIndexTypeName,
+  EncryptQueryOptions,
+  ScalarQueryTerm,
+} from './types'
+
+export { queryTypes, queryTypeToFfi } from './types'
+
 export { csTable, csColumn, csValue } from '@cipherstash/schema'
 export type {
   ProtectColumn,
