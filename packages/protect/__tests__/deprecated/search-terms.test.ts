@@ -1,14 +1,14 @@
 import 'dotenv/config'
 import { csColumn, csTable } from '@cipherstash/schema'
 import { describe, expect, it } from 'vitest'
-import { type SearchTerm, protect } from '../src'
+import { type SearchTerm, protect } from '../../src'
 
 const users = csTable('users', {
   email: csColumn('email').freeTextSearch().equality().orderAndRange(),
   address: csColumn('address').freeTextSearch(),
 })
 
-describe('create search terms', () => {
+describe('createSearchTerms (deprecated - backward compatibility)', () => {
   it('should create search terms with default return type', async () => {
     const protectClient = await protect({ schemas: [users] })
 
@@ -34,7 +34,7 @@ describe('create search terms', () => {
     expect(searchTermsResult.data).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          c: expect.any(String),
+          v: 2,
         }),
       ]),
     )
