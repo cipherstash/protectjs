@@ -23,6 +23,12 @@ export type EncryptedColumnConfig = {
    * Enable order and range index for sorting and range queries.
    */
   orderAndRange?: boolean
+  /**
+   * Enable searchable JSON index for JSONB containment and path queries.
+   * When enabled, this automatically sets dataType to 'json' and configures
+   * the ste_vec index required for path selection (->, ->>) and containment (@>, <@) queries.
+   */
+  searchableJson?: boolean
 }
 
 /**

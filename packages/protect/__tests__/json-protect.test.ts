@@ -2,6 +2,7 @@ import 'dotenv/config'
 import { csColumn, csTable, csValue } from '@cipherstash/schema'
 import { beforeAll, describe, expect, it } from 'vitest'
 import { LockContext, protect } from '../src'
+import { expectEncryptedJsonPayload } from './test-utils/query-terms'
 
 const users = csTable('users', {
   email: csColumn('email').freeTextSearch().equality().orderAndRange(),
@@ -54,8 +55,11 @@ describe('JSON encryption and decryption', () => {
       throw new Error(`[protect]: ${ciphertext.failure.message}`)
     }
 
-    // Verify encrypted field
-    expect(ciphertext.data).not.toHaveProperty('k')
+    // Verify encrypted field has EQL v2 structure
+    expectEncryptedJsonPayload(
+      ciphertext.data as Record<string, unknown>,
+      json
+    )
 
     const plaintext = await protectClient.decrypt(ciphertext.data)
 
@@ -106,8 +110,11 @@ describe('JSON encryption and decryption', () => {
       throw new Error(`[protect]: ${ciphertext.failure.message}`)
     }
 
-    // Verify encrypted field
-    expect(ciphertext.data).not.toHaveProperty('k')
+    // Verify encrypted field has EQL v2 structure
+    expectEncryptedJsonPayload(
+      ciphertext.data as Record<string, unknown>,
+      json
+    )
 
     const plaintext = await protectClient.decrypt(ciphertext.data)
 
@@ -148,8 +155,8 @@ describe('JSON encryption and decryption', () => {
       throw new Error(`[protect]: ${ciphertext.failure.message}`)
     }
 
-    // Verify encrypted field
-    expect(ciphertext.data).not.toHaveProperty('k')
+    // Verify encrypted field has EQL v2 structure
+    expectEncryptedJsonPayload(ciphertext.data as Record<string, unknown>, json)
 
     const plaintext = await protectClient.decrypt(ciphertext.data)
 
@@ -175,8 +182,8 @@ describe('JSON encryption and decryption', () => {
       throw new Error(`[protect]: ${ciphertext.failure.message}`)
     }
 
-    // Verify encrypted field
-    expect(ciphertext.data).not.toHaveProperty('k')
+    // Verify encrypted field has EQL v2 structure
+    expectEncryptedJsonPayload(ciphertext.data as Record<string, unknown>, json)
 
     const plaintext = await protectClient.decrypt(ciphertext.data)
 
@@ -213,10 +220,19 @@ describe('JSON model encryption and decryption', () => {
       throw new Error(`[protect]: ${encryptedModel.failure.message}`)
     }
 
-    // Verify encrypted fields
-    expect(encryptedModel.data.email).not.toHaveProperty('k')
-    expect(encryptedModel.data.address).not.toHaveProperty('k')
-    expect(encryptedModel.data.json).not.toHaveProperty('k')
+    // Verify encrypted fields have EQL v2 structure
+    expectEncryptedJsonPayload(
+      encryptedModel.data.email as Record<string, unknown>,
+      decryptedModel.email
+    )
+    expectEncryptedJsonPayload(
+      encryptedModel.data.address as Record<string, unknown>,
+      decryptedModel.address
+    )
+    expectEncryptedJsonPayload(
+      encryptedModel.data.json as Record<string, unknown>,
+      decryptedModel.json
+    )
 
     // Verify non-encrypted fields remain unchanged
     expect(encryptedModel.data.id).toBe('1')
@@ -253,9 +269,15 @@ describe('JSON model encryption and decryption', () => {
       throw new Error(`[protect]: ${encryptedModel.failure.message}`)
     }
 
-    // Verify encrypted fields
-    expect(encryptedModel.data.email).not.toHaveProperty('k')
-    expect(encryptedModel.data.address).not.toHaveProperty('k')
+    // Verify encrypted fields have EQL v2 structure
+    expectEncryptedJsonPayload(
+      encryptedModel.data.email as Record<string, unknown>,
+      decryptedModel.email
+    )
+    expectEncryptedJsonPayload(
+      encryptedModel.data.address as Record<string, unknown>,
+      decryptedModel.address
+    )
     expect(encryptedModel.data.json).toBeNull()
 
     const decryptedResult = await protectClient.decryptModel<User>(
@@ -288,9 +310,15 @@ describe('JSON model encryption and decryption', () => {
       throw new Error(`[protect]: ${encryptedModel.failure.message}`)
     }
 
-    // Verify encrypted fields
-    expect(encryptedModel.data.email).not.toHaveProperty('k')
-    expect(encryptedModel.data.address).not.toHaveProperty('k')
+    // Verify encrypted fields have EQL v2 structure
+    expectEncryptedJsonPayload(
+      encryptedModel.data.email as Record<string, unknown>,
+      decryptedModel.email
+    )
+    expectEncryptedJsonPayload(
+      encryptedModel.data.address as Record<string, unknown>,
+      decryptedModel.address
+    )
     expect(encryptedModel.data.json).toBeUndefined()
 
     const decryptedResult = await protectClient.decryptModel<User>(
@@ -322,17 +350,26 @@ describe('JSON bulk encryption and decryption', () => {
       throw new Error(`[protect]: ${encryptedData.failure.message}`)
     }
 
-    // Verify structure
+    // Verify structure and EQL v2 encrypted payloads
     expect(encryptedData.data).toHaveLength(3)
     expect(encryptedData.data[0]).toHaveProperty('id', 'user1')
     expect(encryptedData.data[0]).toHaveProperty('data')
-    expect(encryptedData.data[0].data).not.toHaveProperty('k')
+    expectEncryptedJsonPayload(
+      encryptedData.data[0].data as Record<string, unknown>,
+      jsonPayloads[0].plaintext
+    )
     expect(encryptedData.data[1]).toHaveProperty('id', 'user2')
     expect(encryptedData.data[1]).toHaveProperty('data')
-    expect(encryptedData.data[1].data).not.toHaveProperty('k')
+    expectEncryptedJsonPayload(
+      encryptedData.data[1].data as Record<string, unknown>,
+      jsonPayloads[1].plaintext
+    )
     expect(encryptedData.data[2]).toHaveProperty('id', 'user3')
     expect(encryptedData.data[2]).toHaveProperty('data')
-    expect(encryptedData.data[2].data).not.toHaveProperty('k')
+    expectEncryptedJsonPayload(
+      encryptedData.data[2].data as Record<string, unknown>,
+      jsonPayloads[2].plaintext
+    )
 
     // Now decrypt the data
     const decryptedData = await protectClient.bulkDecrypt(encryptedData.data)
@@ -376,17 +413,23 @@ describe('JSON bulk encryption and decryption', () => {
       throw new Error(`[protect]: ${encryptedData.failure.message}`)
     }
 
-    // Verify structure
+    // Verify structure and EQL v2 encrypted payloads
     expect(encryptedData.data).toHaveLength(3)
     expect(encryptedData.data[0]).toHaveProperty('id', 'user1')
     expect(encryptedData.data[0]).toHaveProperty('data')
-    expect(encryptedData.data[0].data).not.toHaveProperty('k')
+    expectEncryptedJsonPayload(
+      encryptedData.data[0].data as Record<string, unknown>,
+      jsonPayloads[0].plaintext
+    )
     expect(encryptedData.data[1]).toHaveProperty('id', 'user2')
     expect(encryptedData.data[1]).toHaveProperty('data')
     expect(encryptedData.data[1].data).toBeNull()
     expect(encryptedData.data[2]).toHaveProperty('id', 'user3')
     expect(encryptedData.data[2]).toHaveProperty('data')
-    expect(encryptedData.data[2].data).not.toHaveProperty('k')
+    expectEncryptedJsonPayload(
+      encryptedData.data[2].data as Record<string, unknown>,
+      jsonPayloads[2].plaintext
+    )
 
     // Now decrypt the data
     const decryptedData = await protectClient.bulkDecrypt(encryptedData.data)
@@ -446,13 +489,31 @@ describe('JSON bulk encryption and decryption', () => {
       throw new Error(`[protect]: ${encryptedModels.failure.message}`)
     }
 
-    // Verify encrypted fields for each model
-    expect(encryptedModels.data[0].email).not.toHaveProperty('k')
-    expect(encryptedModels.data[0].address).not.toHaveProperty('k')
-    expect(encryptedModels.data[0].json).not.toHaveProperty('k')
-    expect(encryptedModels.data[1].email).not.toHaveProperty('k')
-    expect(encryptedModels.data[1].address).not.toHaveProperty('k')
-    expect(encryptedModels.data[1].json).not.toHaveProperty('k')
+    // Verify encrypted fields have EQL v2 structure for each model
+    expectEncryptedJsonPayload(
+      encryptedModels.data[0].email as Record<string, unknown>,
+      decryptedModels[0].email
+    )
+    expectEncryptedJsonPayload(
+      encryptedModels.data[0].address as Record<string, unknown>,
+      decryptedModels[0].address
+    )
+    expectEncryptedJsonPayload(
+      encryptedModels.data[0].json as Record<string, unknown>,
+      decryptedModels[0].json
+    )
+    expectEncryptedJsonPayload(
+      encryptedModels.data[1].email as Record<string, unknown>,
+      decryptedModels[1].email
+    )
+    expectEncryptedJsonPayload(
+      encryptedModels.data[1].address as Record<string, unknown>,
+      decryptedModels[1].address
+    )
+    expectEncryptedJsonPayload(
+      encryptedModels.data[1].json as Record<string, unknown>,
+      decryptedModels[1].json
+    )
 
     // Verify non-encrypted fields remain unchanged
     expect(encryptedModels.data[0].id).toBe('1')
@@ -510,8 +571,8 @@ describe('JSON encryption with lock context', () => {
       throw new Error(`[protect]: ${ciphertext.failure.message}`)
     }
 
-    // Verify encrypted field
-    expect(ciphertext.data).not.toHaveProperty('k')
+    // Verify encrypted field has EQL v2 structure
+    expectEncryptedJsonPayload(ciphertext.data as Record<string, unknown>, json)
 
     const plaintext = await protectClient
       .decrypt(ciphertext.data)
@@ -556,9 +617,15 @@ describe('JSON encryption with lock context', () => {
       throw new Error(`[protect]: ${encryptedModel.failure.message}`)
     }
 
-    // Verify encrypted fields
-    expect(encryptedModel.data.email).not.toHaveProperty('k')
-    expect(encryptedModel.data.json).not.toHaveProperty('k')
+    // Verify encrypted fields have EQL v2 structure
+    expectEncryptedJsonPayload(
+      encryptedModel.data.email as Record<string, unknown>,
+      decryptedModel.email
+    )
+    expectEncryptedJsonPayload(
+      encryptedModel.data.json as Record<string, unknown>,
+      decryptedModel.json
+    )
 
     const decryptedResult = await protectClient
       .decryptModel(encryptedModel.data)
@@ -602,14 +669,20 @@ describe('JSON encryption with lock context', () => {
       throw new Error(`[protect]: ${encryptedData.failure.message}`)
     }
 
-    // Verify structure
+    // Verify structure and EQL v2 encrypted payloads
     expect(encryptedData.data).toHaveLength(2)
     expect(encryptedData.data[0]).toHaveProperty('id', 'user1')
     expect(encryptedData.data[0]).toHaveProperty('data')
-    expect(encryptedData.data[0].data).not.toHaveProperty('k')
+    expectEncryptedJsonPayload(
+      encryptedData.data[0].data as Record<string, unknown>,
+      jsonPayloads[0].plaintext
+    )
     expect(encryptedData.data[1]).toHaveProperty('id', 'user2')
     expect(encryptedData.data[1]).toHaveProperty('data')
-    expect(encryptedData.data[1].data).not.toHaveProperty('k')
+    expectEncryptedJsonPayload(
+      encryptedData.data[1].data as Record<string, unknown>,
+      jsonPayloads[1].plaintext
+    )
 
     // Decrypt with lock context
     const decryptedData = await protectClient
@@ -669,11 +742,21 @@ describe('JSON nested object encryption', () => {
       throw new Error(`[protect]: ${encryptedModel.failure.message}`)
     }
 
-    // Verify encrypted fields
-    expect(encryptedModel.data.email).not.toHaveProperty('k')
-    expect(encryptedModel.data.metadata?.profile).not.toHaveProperty('k')
-    expect(encryptedModel.data.metadata?.settings?.preferences).toHaveProperty(
-      'c',
+    // Verify encrypted fields have EQL v2 structure
+    expectEncryptedJsonPayload(
+      encryptedModel.data.email as Record<string, unknown>,
+      decryptedModel.email
+    )
+    expectEncryptedJsonPayload(
+      encryptedModel.data.metadata?.profile as Record<string, unknown>,
+      decryptedModel.metadata?.profile
+    )
+    expectEncryptedJsonPayload(
+      encryptedModel.data.metadata?.settings?.preferences as Record<
+        string,
+        unknown
+      >,
+      decryptedModel.metadata?.settings?.preferences
     )
 
     // Verify non-encrypted fields remain unchanged
@@ -713,8 +796,11 @@ describe('JSON nested object encryption', () => {
       throw new Error(`[protect]: ${encryptedModel.failure.message}`)
     }
 
-    // Verify null fields are preserved
-    expect(encryptedModel.data.email).not.toHaveProperty('k')
+    // Verify encrypted email field has EQL v2 structure, null fields are preserved
+    expectEncryptedJsonPayload(
+      encryptedModel.data.email as Record<string, unknown>,
+      decryptedModel.email
+    )
     expect(encryptedModel.data.metadata?.profile).toBeNull()
     expect(encryptedModel.data.metadata?.settings?.preferences).toBeNull()
 
@@ -752,8 +838,11 @@ describe('JSON nested object encryption', () => {
       throw new Error(`[protect]: ${encryptedModel.failure.message}`)
     }
 
-    // Verify undefined fields are preserved
-    expect(encryptedModel.data.email).not.toHaveProperty('k')
+    // Verify encrypted email field has EQL v2 structure, undefined fields are preserved
+    expectEncryptedJsonPayload(
+      encryptedModel.data.email as Record<string, unknown>,
+      decryptedModel.email
+    )
     expect(encryptedModel.data.metadata?.profile).toBeUndefined()
     expect(encryptedModel.data.metadata?.settings?.preferences).toBeUndefined()
 
@@ -798,8 +887,11 @@ describe('JSON edge cases and error handling', () => {
       throw new Error(`[protect]: ${ciphertext.failure.message}`)
     }
 
-    // Verify encrypted field
-    expect(ciphertext.data).not.toHaveProperty('k')
+    // Verify encrypted field has EQL v2 structure
+    expectEncryptedJsonPayload(
+      ciphertext.data as Record<string, unknown>,
+      largeJson
+    )
 
     const plaintext = await protectClient.decrypt(ciphertext.data)
 
@@ -846,8 +938,8 @@ describe('JSON edge cases and error handling', () => {
       throw new Error(`[protect]: ${ciphertext.failure.message}`)
     }
 
-    // Verify encrypted field
-    expect(ciphertext.data).not.toHaveProperty('k')
+    // Verify encrypted field has EQL v2 structure
+    expectEncryptedJsonPayload(ciphertext.data as Record<string, unknown>, json)
 
     const plaintext = await protectClient.decrypt(ciphertext.data)
 
@@ -947,8 +1039,8 @@ describe('JSON advanced scenarios', () => {
       throw new Error(`[protect]: ${ciphertext.failure.message}`)
     }
 
-    // Verify encrypted field
-    expect(ciphertext.data).not.toHaveProperty('k')
+    // Verify encrypted field has EQL v2 structure
+    expectEncryptedJsonPayload(ciphertext.data as Record<string, unknown>, json)
 
     const plaintext = await protectClient.decrypt(ciphertext.data)
 
@@ -974,8 +1066,8 @@ describe('JSON advanced scenarios', () => {
       throw new Error(`[protect]: ${ciphertext.failure.message}`)
     }
 
-    // Verify encrypted field
-    expect(ciphertext.data).not.toHaveProperty('k')
+    // Verify encrypted field has EQL v2 structure
+    expectEncryptedJsonPayload(ciphertext.data as Record<string, unknown>, json)
 
     const plaintext = await protectClient.decrypt(ciphertext.data)
 
@@ -1009,8 +1101,8 @@ describe('JSON advanced scenarios', () => {
       throw new Error(`[protect]: ${ciphertext.failure.message}`)
     }
 
-    // Verify encrypted field
-    expect(ciphertext.data).not.toHaveProperty('k')
+    // Verify encrypted field has EQL v2 structure
+    expectEncryptedJsonPayload(ciphertext.data as Record<string, unknown>, json)
 
     const plaintext = await protectClient.decrypt(ciphertext.data)
 
@@ -1044,8 +1136,8 @@ describe('JSON advanced scenarios', () => {
       throw new Error(`[protect]: ${ciphertext.failure.message}`)
     }
 
-    // Verify encrypted field
-    expect(ciphertext.data).not.toHaveProperty('k')
+    // Verify encrypted field has EQL v2 structure
+    expectEncryptedJsonPayload(ciphertext.data as Record<string, unknown>, json)
 
     const plaintext = await protectClient.decrypt(ciphertext.data)
 
@@ -1080,8 +1172,8 @@ describe('JSON advanced scenarios', () => {
       throw new Error(`[protect]: ${ciphertext.failure.message}`)
     }
 
-    // Verify encrypted field
-    expect(ciphertext.data).not.toHaveProperty('k')
+    // Verify encrypted field has EQL v2 structure
+    expectEncryptedJsonPayload(ciphertext.data as Record<string, unknown>, json)
 
     const plaintext = await protectClient.decrypt(ciphertext.data)
 
@@ -1139,8 +1231,8 @@ describe('JSON error handling and edge cases', () => {
       throw new Error(`[protect]: ${ciphertext.failure.message}`)
     }
 
-    // Verify encrypted field
-    expect(ciphertext.data).not.toHaveProperty('k')
+    // Verify encrypted field has EQL v2 structure
+    expectEncryptedJsonPayload(ciphertext.data as Record<string, unknown>, json)
 
     const plaintext = await protectClient.decrypt(ciphertext.data)
 
@@ -1168,8 +1260,8 @@ describe('JSON error handling and edge cases', () => {
       throw new Error(`[protect]: ${ciphertext.failure.message}`)
     }
 
-    // Verify encrypted field
-    expect(ciphertext.data).not.toHaveProperty('k')
+    // Verify encrypted field has EQL v2 structure
+    expectEncryptedJsonPayload(ciphertext.data as Record<string, unknown>, json)
 
     const plaintext = await protectClient.decrypt(ciphertext.data)
 
@@ -1205,8 +1297,8 @@ describe('JSON error handling and edge cases', () => {
       throw new Error(`[protect]: ${ciphertext.failure.message}`)
     }
 
-    // Verify encrypted field
-    expect(ciphertext.data).not.toHaveProperty('k')
+    // Verify encrypted field has EQL v2 structure
+    expectEncryptedJsonPayload(ciphertext.data as Record<string, unknown>, json)
 
     const plaintext = await protectClient.decrypt(ciphertext.data)
 

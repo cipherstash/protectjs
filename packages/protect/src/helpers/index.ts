@@ -1,12 +1,29 @@
 import type { KeysetIdentifier as KeysetIdentifierFfi } from '@cipherstash/protect-ffi'
 import type { Encrypted, KeysetIdentifier } from '../types'
 
+/**
+ * Represents an encrypted payload formatted for a PostgreSQL composite type (`eql_v2_encrypted`).
+ */
 export type EncryptedPgComposite = {
+  /** The raw encrypted data object. */
   data: Encrypted
 }
 
 /**
- * Helper function to transform an encrypted payload into a PostgreSQL composite type
+ * Transforms an encrypted payload into a PostgreSQL composite type format.
+ *
+ * This is required when inserting encrypted data into a column defined as `eql_v2_encrypted`
+ * using a PostgreSQL client or SDK (like Supabase).
+ *
+ * @param obj - The encrypted payload object.
+ *
+ * @example
+ * **Supabase SDK Integration**
+ * ```typescript
+ * const { data, error } = await supabase
+ *   .from('users')
+ *   .insert([encryptedToPgComposite(encryptedResult.data)])
+ * ```
  */
 export function encryptedToPgComposite(obj: Encrypted): EncryptedPgComposite {
   return {
@@ -15,7 +32,21 @@ export function encryptedToPgComposite(obj: Encrypted): EncryptedPgComposite {
 }
 
 /**
- * Helper function to transform a model's encrypted fields into PostgreSQL composite types
+ * Transforms all encrypted fields within a model into PostgreSQL composite types.
+ *
+ * Automatically detects fields that look like encrypted payloads and wraps them
+ * in the structure expected by PostgreSQL's `eql_v2_encrypted` composite type.
+ *
+ * @param model - An object containing one or more encrypted fields.
+ *
+ * @example
+ * **Supabase Model Integration**
+ * ```typescript
+ * const encryptedModel = await protectClient.encryptModel(user, usersTable);
+ * const { data, error } = await supabase
+ *   .from('users')
+ *   .insert([modelToEncryptedPgComposites(encryptedModel.data)])
+ * ```
  */
 export function modelToEncryptedPgComposites<T extends Record<string, unknown>>(
   model: T,
@@ -34,7 +65,17 @@ export function modelToEncryptedPgComposites<T extends Record<string, unknown>>(
 }
 
 /**
- * Helper function to transform multiple models' encrypted fields into PostgreSQL composite types
+ * Transforms multiple models' encrypted fields into PostgreSQL composite types.
+ *
+ * @param models - An array of objects containing encrypted fields.
+ *
+ * @example
+ * ```typescript
+ * const encryptedModels = await protectClient.bulkEncryptModels(users, usersTable);
+ * await supabase
+ *   .from('users')
+ *   .insert(bulkModelsToEncryptedPgComposites(encryptedModels.data))
+ * ```
  */
 export function bulkModelsToEncryptedPgComposites<
   T extends Record<string, unknown>,
@@ -42,6 +83,9 @@ export function bulkModelsToEncryptedPgComposites<
   return models.map((model) => modelToEncryptedPgComposites(model))
 }
 
+/**
+ * @internal
+ */
 export function toFfiKeysetIdentifier(
   keyset: KeysetIdentifier | undefined,
 ): KeysetIdentifierFfi | undefined {
@@ -55,7 +99,9 @@ export function toFfiKeysetIdentifier(
 }
 
 /**
- * Helper function to check if a value is an encrypted payload
+ * Checks if a value is an encrypted payload object.
+ *
+ * @param value - The value to check.
  */
 export function isEncryptedPayload(value: unknown): value is Encrypted {
   if (value === null) return false
