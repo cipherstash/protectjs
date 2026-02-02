@@ -252,6 +252,14 @@ export class ProtectClient {
     if (isScalarQueryTermArray(plaintextOrTerms)) {
       return new BatchEncryptQueryOperation(this.client, plaintextOrTerms)
     }
+
+    // Handle empty arrays: if opts provided, treat as single value; otherwise batch mode
+    // This maintains backward compatibility for encryptQuery([]) while allowing
+    // encryptQuery([], opts) to encrypt an empty array as a single value
+    if (Array.isArray(plaintextOrTerms) && plaintextOrTerms.length === 0 && !opts) {
+      return new BatchEncryptQueryOperation(this.client, [] as readonly ScalarQueryTerm[])
+    }
+
     return new EncryptQueryOperation(
       this.client,
       plaintextOrTerms as JsPlaintext | null,

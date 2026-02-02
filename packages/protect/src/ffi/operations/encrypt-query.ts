@@ -105,6 +105,24 @@ export class EncryptQueryOperationWithLockContext extends ProtectOperation<Encry
       return { data: null }
     }
 
+    if (typeof this.plaintext === 'number' && Number.isNaN(this.plaintext)) {
+      return {
+        failure: {
+          type: ProtectErrorTypes.EncryptionError,
+          message: '[protect]: Cannot encrypt NaN value',
+        },
+      }
+    }
+
+    if (typeof this.plaintext === 'number' && !Number.isFinite(this.plaintext)) {
+      return {
+        failure: {
+          type: ProtectErrorTypes.EncryptionError,
+          message: '[protect]: Cannot encrypt Infinity value',
+        },
+      }
+    }
+
     const lockContextResult = await this.lockContext.getLockContext()
     if (lockContextResult.failure) {
       return { failure: lockContextResult.failure }

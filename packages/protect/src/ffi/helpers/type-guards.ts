@@ -9,9 +9,9 @@ export function isScalarQueryTermArray(
 ): value is readonly ScalarQueryTerm[] {
   return (
     Array.isArray(value) &&
-    (value.length === 0 ||
-      (typeof value[0] === 'object' &&
-        value[0] !== null &&
-        'column' in value[0]))
+    value.length > 0 &&
+    typeof value[0] === 'object' &&
+    value[0] !== null &&
+    'column' in value[0]
   )
 }

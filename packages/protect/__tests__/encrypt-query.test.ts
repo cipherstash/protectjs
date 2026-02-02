@@ -131,6 +131,7 @@ describe('encryptQuery', () => {
     }, 30000)
 
     it('handles empty array', async () => {
+      // Empty arrays without opts are treated as empty batch for backward compatibility
       const result = await protectClient.encryptQuery([])
 
       if (result.failure) throw new Error(result.failure.message)
