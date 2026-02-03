@@ -8,10 +8,10 @@ import { type ProtectError, ProtectErrorTypes } from '../..'
 import { logger } from '../../../../utils/logger'
 import type { Context, LockContext } from '../../identify'
 import type { Client, Encrypted, ScalarQueryTerm } from '../../types'
-import { queryTypeToFfi } from '../../types'
 import { noClientError } from '../index'
 import { ProtectOperation } from './base-operation'
-import { inferIndexType, validateIndexType } from '../helpers/infer-index-type'
+import { resolveIndexType } from '../helpers/infer-index-type'
+import { assertValidNumericValue } from '../helpers/validation'
 
 /**
  * Separates null values from non-null terms in the input array.
@@ -46,21 +46,9 @@ function buildQueryPayload(
   term: ScalarQueryTerm,
   lockContext?: Context,
 ): QueryPayload {
-  if (typeof term.value === 'number' && Number.isNaN(term.value)) {
-    throw new Error('[protect]: Cannot encrypt NaN value')
-  }
+  assertValidNumericValue(term.value)
 
-  if (typeof term.value === 'number' && !Number.isFinite(term.value)) {
-    throw new Error('[protect]: Cannot encrypt Infinity value')
-  }
-
-  const indexType = term.queryType
-    ? queryTypeToFfi[term.queryType]
-    : inferIndexType(term.column)
-
-  if (term.queryType) {
-    validateIndexType(term.column, indexType)
-  }
+  const indexType = resolveIndexType(term.column, term.queryType)
 
   const payload: QueryPayload = {
     plaintext: term.value as JsPlaintext,

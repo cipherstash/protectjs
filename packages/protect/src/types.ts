@@ -158,20 +158,23 @@ export const queryTypeToFfi: Record<QueryTypeName, FfiIndexTypeName> = {
 }
 
 /**
- * Options for encrypting a single query term.
+ * Base type for query term options shared between single and bulk operations.
+ * @internal
  */
-export type EncryptQueryOptions = {
+export type QueryTermBase = {
   column: ProtectColumn
   table: ProtectTable<ProtectTableColumn>
   queryType?: QueryTypeName  // Optional - auto-infers if omitted
 }
 
 /**
+ * Options for encrypting a single query term.
+ */
+export type EncryptQueryOptions = QueryTermBase
+
+/**
  * Individual query term for bulk operations.
  */
-export type ScalarQueryTerm = {
+export type ScalarQueryTerm = QueryTermBase & {
   value: JsPlaintext | null
-  column: ProtectColumn
-  table: ProtectTable<ProtectTableColumn>
-  queryType?: QueryTypeName  // Optional - auto-infers if omitted
 }

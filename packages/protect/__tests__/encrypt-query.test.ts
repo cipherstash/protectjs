@@ -1,29 +1,17 @@
 import 'dotenv/config'
-import { describe, expect, it, beforeAll, vi } from 'vitest'
-import { csColumn, csTable } from '@cipherstash/schema'
+import { describe, expect, it, beforeAll } from 'vitest'
 import { protect, ProtectErrorTypes } from '../src'
 import type { ProtectClient } from '../src/ffi'
-
-const users = csTable('users', {
-  email: csColumn('email').equality(),
-  bio: csColumn('bio').freeTextSearch(),
-  age: csColumn('age').dataType('number').orderAndRange(),
-})
-
-// Column with only freeTextSearch (for auto-inference test)
-const articles = csTable('articles', {
-  content: csColumn('content').freeTextSearch(),
-})
-
-// Column with only orderAndRange (for auto-inference test)
-const products = csTable('products', {
-  price: csColumn('price').dataType('number').orderAndRange(),
-})
-
-// Column with no indexes (for validation error test)
-const metadata = csTable('metadata', {
-  raw: csColumn('raw'),
-})
+import {
+  users,
+  articles,
+  products,
+  metadata,
+  createMockLockContext,
+  createFailingMockLockContext,
+  unwrapResult,
+  expectFailure,
+} from './fixtures'
 
 describe('encryptQuery', () => {
   let protectClient: ProtectClient
@@ -40,13 +28,13 @@ describe('encryptQuery', () => {
         queryType: 'equality',
       })
 
-      if (result.failure) throw new Error(result.failure.message)
+      const data = unwrapResult(result)
 
-      expect(result.data).toMatchObject({
+      expect(data).toMatchObject({
         i: { t: 'users', c: 'email' },
         v: expect.any(Number),
       })
-      expect(result.data).toHaveProperty('hm')
+      expect(data).toHaveProperty('hm')
     }, 30000)
 
     it('encrypts for freeTextSearch query type', async () => {
@@ -56,13 +44,13 @@ describe('encryptQuery', () => {
         queryType: 'freeTextSearch',
       })
 
-      if (result.failure) throw new Error(result.failure.message)
+      const data = unwrapResult(result)
 
-      expect(result.data).toMatchObject({
+      expect(data).toMatchObject({
         i: { t: 'users', c: 'bio' },
         v: expect.any(Number),
       })
-      expect(result.data).toHaveProperty('bf')
+      expect(data).toHaveProperty('bf')
     }, 30000)
 
     it('encrypts for orderAndRange query type', async () => {
@@ -72,13 +60,13 @@ describe('encryptQuery', () => {
         queryType: 'orderAndRange',
       })
 
-      if (result.failure) throw new Error(result.failure.message)
+      const data = unwrapResult(result)
 
-      expect(result.data).toMatchObject({
+      expect(data).toMatchObject({
         i: { t: 'users', c: 'age' },
         v: expect.any(Number),
       })
-      expect(result.data).toHaveProperty('ob')
+      expect(data).toHaveProperty('ob')
     }, 30000)
   })
 
@@ -89,8 +77,8 @@ describe('encryptQuery', () => {
         table: users,
       })
 
-      if (result.failure) throw new Error(result.failure.message)
-      expect(result.data).toHaveProperty('hm')
+      const data = unwrapResult(result)
+      expect(data).toHaveProperty('hm')
     }, 30000)
 
     it('auto-infers freeTextSearch for match-only column', async () => {
@@ -99,8 +87,8 @@ describe('encryptQuery', () => {
         table: articles,
       })
 
-      if (result.failure) throw new Error(result.failure.message)
-      expect(result.data).toHaveProperty('bf')
+      const data = unwrapResult(result)
+      expect(data).toHaveProperty('bf')
     }, 30000)
 
     it('auto-infers orderAndRange for ore-only column', async () => {
@@ -109,8 +97,8 @@ describe('encryptQuery', () => {
         table: products,
       })
 
-      if (result.failure) throw new Error(result.failure.message)
-      expect(result.data).toHaveProperty('ob')
+      const data = unwrapResult(result)
+      expect(data).toHaveProperty('ob')
     }, 30000)
   })
 
@@ -122,8 +110,8 @@ describe('encryptQuery', () => {
         queryType: 'equality',
       })
 
-      if (result.failure) throw new Error(result.failure.message)
-      expect(result.data).toBeNull()
+      const data = unwrapResult(result)
+      expect(data).toBeNull()
     }, 30000)
 
     it('rejects NaN values', async () => {
@@ -133,8 +121,7 @@ describe('encryptQuery', () => {
         queryType: 'orderAndRange',
       })
 
-      expect(result.failure).toBeDefined()
-      expect(result.failure?.message).toContain('NaN')
+      expectFailure(result, 'NaN')
     }, 30000)
 
     it('rejects Infinity values', async () => {
@@ -144,8 +131,7 @@ describe('encryptQuery', () => {
         queryType: 'orderAndRange',
       })
 
-      expect(result.failure).toBeDefined()
-      expect(result.failure?.message).toContain('Infinity')
+      expectFailure(result, 'Infinity')
     }, 30000)
 
     it('rejects negative Infinity values', async () => {
@@ -155,8 +141,7 @@ describe('encryptQuery', () => {
         queryType: 'orderAndRange',
       })
 
-      expect(result.failure).toBeDefined()
-      expect(result.failure?.message).toContain('Infinity')
+      expectFailure(result, 'Infinity')
     }, 30000)
   })
 
@@ -168,8 +153,7 @@ describe('encryptQuery', () => {
         queryType: 'freeTextSearch', // email only has equality
       })
 
-      expect(result.failure).toBeDefined()
-      expect(result.failure?.message).toContain('not configured')
+      expectFailure(result, 'not configured')
     }, 30000)
 
     it('fails when column has no indexes configured', async () => {
@@ -178,8 +162,7 @@ describe('encryptQuery', () => {
         table: metadata,
       })
 
-      expect(result.failure).toBeDefined()
-      expect(result.failure?.message).toContain('no indexes configured')
+      expectFailure(result, 'no indexes configured')
     }, 30000)
 
     it('provides descriptive error for queryType mismatch', async () => {
@@ -189,10 +172,8 @@ describe('encryptQuery', () => {
         queryType: 'equality', // age only has orderAndRange
       })
 
-      expect(result.failure).toBeDefined()
-      expect(result.failure?.type).toBe(ProtectErrorTypes.EncryptionError)
-      expect(result.failure?.message).toContain('unique')
-      expect(result.failure?.message).toContain('not configured')
+      expectFailure(result, 'unique')
+      expectFailure(result, 'not configured', ProtectErrorTypes.EncryptionError)
     }, 30000)
   })
 
@@ -204,12 +185,12 @@ describe('encryptQuery', () => {
         queryType: 'orderAndRange',
       })
 
-      if (result.failure) throw new Error(result.failure.message)
-      expect(result.data).toMatchObject({
+      const data = unwrapResult(result)
+      expect(data).toMatchObject({
         i: { t: 'users', c: 'age' },
         v: expect.any(Number),
       })
-      expect(result.data).toHaveProperty('ob')
+      expect(data).toHaveProperty('ob')
     }, 30000)
 
     it('encrypts MIN_SAFE_INTEGER', async () => {
@@ -219,12 +200,12 @@ describe('encryptQuery', () => {
         queryType: 'orderAndRange',
       })
 
-      if (result.failure) throw new Error(result.failure.message)
-      expect(result.data).toMatchObject({
+      const data = unwrapResult(result)
+      expect(data).toMatchObject({
         i: { t: 'users', c: 'age' },
         v: expect.any(Number),
       })
-      expect(result.data).toHaveProperty('ob')
+      expect(data).toHaveProperty('ob')
     }, 30000)
 
     it('encrypts negative zero', async () => {
@@ -234,8 +215,8 @@ describe('encryptQuery', () => {
         queryType: 'orderAndRange',
       })
 
-      if (result.failure) throw new Error(result.failure.message)
-      expect(result.data).toHaveProperty('ob')
+      const data = unwrapResult(result)
+      expect(data).toHaveProperty('ob')
     }, 30000)
   })
 
@@ -247,12 +228,12 @@ describe('encryptQuery', () => {
         queryType: 'equality',
       })
 
-      if (result.failure) throw new Error(result.failure.message)
-      expect(result.data).toMatchObject({
+      const data = unwrapResult(result)
+      expect(data).toMatchObject({
         i: { t: 'users', c: 'email' },
         v: expect.any(Number),
       })
-      expect(result.data).toHaveProperty('hm')
+      expect(data).toHaveProperty('hm')
     }, 30000)
 
     it('encrypts unicode/emoji strings', async () => {
@@ -262,12 +243,12 @@ describe('encryptQuery', () => {
         queryType: 'freeTextSearch',
       })
 
-      if (result.failure) throw new Error(result.failure.message)
-      expect(result.data).toMatchObject({
+      const data = unwrapResult(result)
+      expect(data).toMatchObject({
         i: { t: 'users', c: 'bio' },
         v: expect.any(Number),
       })
-      expect(result.data).toHaveProperty('bf')
+      expect(data).toHaveProperty('bf')
     }, 30000)
 
     it('encrypts strings with SQL special characters', async () => {
@@ -277,12 +258,12 @@ describe('encryptQuery', () => {
         queryType: 'equality',
       })
 
-      if (result.failure) throw new Error(result.failure.message)
-      expect(result.data).toMatchObject({
+      const data = unwrapResult(result)
+      expect(data).toMatchObject({
         i: { t: 'users', c: 'email' },
         v: expect.any(Number),
       })
-      expect(result.data).toHaveProperty('hm')
+      expect(data).toHaveProperty('hm')
     }, 30000)
   })
 
@@ -294,20 +275,20 @@ describe('encryptQuery', () => {
         { value: 42, column: users.age, table: users, queryType: 'orderAndRange' },
       ])
 
-      if (result.failure) throw new Error(result.failure.message)
+      const data = unwrapResult(result)
 
-      expect(result.data).toHaveLength(3)
-      expect(result.data[0]).toMatchObject({ i: { t: 'users', c: 'email' } })
-      expect(result.data[1]).toMatchObject({ i: { t: 'users', c: 'bio' } })
-      expect(result.data[2]).toMatchObject({ i: { t: 'users', c: 'age' } })
+      expect(data).toHaveLength(3)
+      expect(data[0]).toMatchObject({ i: { t: 'users', c: 'email' } })
+      expect(data[1]).toMatchObject({ i: { t: 'users', c: 'bio' } })
+      expect(data[2]).toMatchObject({ i: { t: 'users', c: 'age' } })
     }, 30000)
 
     it('handles empty array', async () => {
       // Empty arrays without opts are treated as empty batch for backward compatibility
       const result = await protectClient.encryptQuery([])
 
-      if (result.failure) throw new Error(result.failure.message)
-      expect(result.data).toEqual([])
+      const data = unwrapResult(result)
+      expect(data).toEqual([])
     }, 30000)
 
     it('handles null values in batch', async () => {
@@ -316,11 +297,11 @@ describe('encryptQuery', () => {
         { value: null, column: users.bio, table: users, queryType: 'freeTextSearch' },
       ])
 
-      if (result.failure) throw new Error(result.failure.message)
+      const data = unwrapResult(result)
 
-      expect(result.data).toHaveLength(2)
-      expect(result.data[0]).not.toBeNull()
-      expect(result.data[1]).toBeNull()
+      expect(data).toHaveLength(2)
+      expect(data[0]).not.toBeNull()
+      expect(data[1]).toBeNull()
     }, 30000)
 
     it('auto-infers queryType when omitted', async () => {
@@ -329,11 +310,11 @@ describe('encryptQuery', () => {
         { value: 42, column: users.age, table: users },
       ])
 
-      if (result.failure) throw new Error(result.failure.message)
+      const data = unwrapResult(result)
 
-      expect(result.data).toHaveLength(2)
-      expect(result.data[0]).toHaveProperty('hm')
-      expect(result.data[1]).toHaveProperty('ob')
+      expect(data).toHaveLength(2)
+      expect(data[0]).toHaveProperty('hm')
+      expect(data[1]).toHaveProperty('ob')
     }, 30000)
 
     it('rejects NaN/Infinity values in batch', async () => {
@@ -350,8 +331,7 @@ describe('encryptQuery', () => {
         { value: -Infinity, column: users.age, table: users, queryType: 'orderAndRange' },
       ])
 
-      expect(result.failure).toBeDefined()
-      expect(result.failure?.message).toContain('Infinity')
+      expectFailure(result, 'Infinity')
     }, 30000)
   })
 
@@ -365,16 +345,16 @@ describe('encryptQuery', () => {
         { value: 42, column: users.age, table: users, queryType: 'orderAndRange' },
       ])
 
-      if (result.failure) throw new Error(result.failure.message)
+      const data = unwrapResult(result)
 
-      expect(result.data).toHaveLength(5)
-      expect(result.data[0]).toBeNull()
-      expect(result.data[1]).not.toBeNull()
-      expect(result.data[1]).toHaveProperty('hm')
-      expect(result.data[2]).toBeNull()
-      expect(result.data[3]).toBeNull()
-      expect(result.data[4]).not.toBeNull()
-      expect(result.data[4]).toHaveProperty('ob')
+      expect(data).toHaveLength(5)
+      expect(data[0]).toBeNull()
+      expect(data[1]).not.toBeNull()
+      expect(data[1]).toHaveProperty('hm')
+      expect(data[2]).toBeNull()
+      expect(data[3]).toBeNull()
+      expect(data[4]).not.toBeNull()
+      expect(data[4]).toHaveProperty('ob')
     }, 30000)
 
     it('handles single-item array', async () => {
@@ -382,11 +362,11 @@ describe('encryptQuery', () => {
         { value: 'single@example.com', column: users.email, table: users, queryType: 'equality' },
       ])
 
-      if (result.failure) throw new Error(result.failure.message)
+      const data = unwrapResult(result)
 
-      expect(result.data).toHaveLength(1)
-      expect(result.data[0]).toMatchObject({ i: { t: 'users', c: 'email' } })
-      expect(result.data[0]).toHaveProperty('hm')
+      expect(data).toHaveLength(1)
+      expect(data[0]).toMatchObject({ i: { t: 'users', c: 'email' } })
+      expect(data[0]).toHaveProperty('hm')
     }, 30000)
 
     it('handles all-null array', async () => {
@@ -396,12 +376,12 @@ describe('encryptQuery', () => {
         { value: null, column: users.age, table: users, queryType: 'orderAndRange' },
       ])
 
-      if (result.failure) throw new Error(result.failure.message)
+      const data = unwrapResult(result)
 
-      expect(result.data).toHaveLength(3)
-      expect(result.data[0]).toBeNull()
-      expect(result.data[1]).toBeNull()
-      expect(result.data[2]).toBeNull()
+      expect(data).toHaveLength(3)
+      expect(data[0]).toBeNull()
+      expect(data[1]).toBeNull()
+      expect(data[2]).toBeNull()
     }, 30000)
   })
 
@@ -415,8 +395,8 @@ describe('encryptQuery', () => {
         })
         .audit({ userId: 'test-user' })
 
-      if (result.failure) throw new Error(result.failure.message)
-      expect(result.data).toMatchObject({ i: { t: 'users', c: 'email' } })
+      const data = unwrapResult(result)
+      expect(data).toMatchObject({ i: { t: 'users', c: 'email' } })
     }, 30000)
 
     it('passes audit metadata for bulk query', async () => {
@@ -426,21 +406,14 @@ describe('encryptQuery', () => {
         ])
         .audit({ userId: 'test-user' })
 
-      if (result.failure) throw new Error(result.failure.message)
-      expect(result.data).toHaveLength(1)
+      const data = unwrapResult(result)
+      expect(data).toHaveLength(1)
     }, 30000)
   })
 
   describe('LockContext support', () => {
     it('single query with LockContext calls getLockContext', async () => {
-      const mockLockContext = {
-        getLockContext: vi.fn().mockResolvedValue({
-          data: {
-            ctsToken: { accessToken: 'mock-token', expiry: Date.now() + 3600000 },
-            context: { identityClaim: ['sub'] }
-          }
-        })
-      }
+      const mockLockContext = createMockLockContext()
 
       const operation = protectClient.encryptQuery('test@example.com', {
         column: users.email,
@@ -454,14 +427,7 @@ describe('encryptQuery', () => {
     }, 30000)
 
     it('bulk query with LockContext calls getLockContext', async () => {
-      const mockLockContext = {
-        getLockContext: vi.fn().mockResolvedValue({
-          data: {
-            ctsToken: { accessToken: 'mock-token', expiry: Date.now() + 3600000 },
-            context: { identityClaim: ['sub'] }
-          }
-        })
-      }
+      const mockLockContext = createMockLockContext()
 
       const operation = protectClient.encryptQuery([
         { value: 'test@example.com', column: users.email, table: users, queryType: 'equality' },
@@ -473,14 +439,7 @@ describe('encryptQuery', () => {
     }, 30000)
 
     it('executes single query with LockContext mock', async () => {
-      const mockLockContext = {
-        getLockContext: vi.fn().mockResolvedValue({
-          data: {
-            ctsToken: { accessToken: 'mock-token', expiry: Date.now() + 3600000 },
-            context: { identityClaim: ['sub'] }
-          }
-        })
-      }
+      const mockLockContext = createMockLockContext()
 
       const operation = protectClient.encryptQuery('test@example.com', {
         column: users.email,
@@ -493,23 +452,16 @@ describe('encryptQuery', () => {
 
       expect(mockLockContext.getLockContext).toHaveBeenCalledTimes(1)
 
-      if (result.failure) throw new Error(result.failure.message)
-      expect(result.data).toMatchObject({
+      const data = unwrapResult(result)
+      expect(data).toMatchObject({
         i: { t: 'users', c: 'email' },
         v: expect.any(Number),
       })
-      expect(result.data).toHaveProperty('hm')
+      expect(data).toHaveProperty('hm')
     }, 30000)
 
     it('executes bulk query with LockContext mock', async () => {
-      const mockLockContext = {
-        getLockContext: vi.fn().mockResolvedValue({
-          data: {
-            ctsToken: { accessToken: 'mock-token', expiry: Date.now() + 3600000 },
-            context: { identityClaim: ['sub'] }
-          }
-        })
-      }
+      const mockLockContext = createMockLockContext()
 
       const operation = protectClient.encryptQuery([
         { value: 'test@example.com', column: users.email, table: users, queryType: 'equality' },
@@ -521,21 +473,17 @@ describe('encryptQuery', () => {
 
       expect(mockLockContext.getLockContext).toHaveBeenCalledTimes(1)
 
-      if (result.failure) throw new Error(result.failure.message)
-      expect(result.data).toHaveLength(2)
-      expect(result.data[0]).toHaveProperty('hm')
-      expect(result.data[1]).toHaveProperty('ob')
+      const data = unwrapResult(result)
+      expect(data).toHaveLength(2)
+      expect(data[0]).toHaveProperty('hm')
+      expect(data[1]).toHaveProperty('ob')
     }, 30000)
 
     it('handles LockContext failure gracefully', async () => {
-      const mockLockContext = {
-        getLockContext: vi.fn().mockResolvedValue({
-          failure: {
-            type: ProtectErrorTypes.CtsTokenError,
-            message: 'Mock LockContext failure'
-          }
-        })
-      }
+      const mockLockContext = createFailingMockLockContext(
+        ProtectErrorTypes.CtsTokenError,
+        'Mock LockContext failure'
+      )
 
       const operation = protectClient.encryptQuery('test@example.com', {
         column: users.email,
@@ -546,20 +494,11 @@ describe('encryptQuery', () => {
       const withContext = operation.withLockContext(mockLockContext as any)
       const result = await withContext.execute()
 
-      expect(result.failure).toBeDefined()
-      expect(result.failure?.type).toBe(ProtectErrorTypes.CtsTokenError)
-      expect(result.failure?.message).toBe('Mock LockContext failure')
+      expectFailure(result, 'Mock LockContext failure', ProtectErrorTypes.CtsTokenError)
     }, 30000)
 
     it('handles null value with LockContext', async () => {
-      const mockLockContext = {
-        getLockContext: vi.fn().mockResolvedValue({
-          data: {
-            ctsToken: { accessToken: 'mock-token', expiry: Date.now() + 3600000 },
-            context: { identityClaim: ['sub'] }
-          }
-        })
-      }
+      const mockLockContext = createMockLockContext()
 
       const operation = protectClient.encryptQuery(null, {
         column: users.email,
@@ -572,8 +511,8 @@ describe('encryptQuery', () => {
 
       // Null values should return null without calling LockContext
       // since there's nothing to encrypt
-      if (result.failure) throw new Error(result.failure.message)
-      expect(result.data).toBeNull()
+      const data = unwrapResult(result)
+      expect(data).toBeNull()
     }, 30000)
   })
 })

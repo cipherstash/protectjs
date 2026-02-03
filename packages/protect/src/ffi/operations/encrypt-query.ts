@@ -7,10 +7,10 @@ import { type ProtectError, ProtectErrorTypes } from '../..'
 import { logger } from '../../../../utils/logger'
 import type { LockContext } from '../../identify'
 import type { Client, Encrypted, EncryptQueryOptions } from '../../types'
-import { queryTypeToFfi } from '../../types'
 import { noClientError } from '../index'
 import { ProtectOperation } from './base-operation'
-import { inferIndexType, validateIndexType } from '../helpers/infer-index-type'
+import { resolveIndexType } from '../helpers/infer-index-type'
+import { validateNumericValue } from '../helpers/validation'
 
 /**
  * @internal Use {@link ProtectClient.encryptQuery} instead.
@@ -39,22 +39,9 @@ export class EncryptQueryOperation extends ProtectOperation<Encrypted> {
       return { data: null }
     }
 
-    if (typeof this.plaintext === 'number' && Number.isNaN(this.plaintext)) {
-      return {
-        failure: {
-          type: ProtectErrorTypes.EncryptionError,
-          message: '[protect]: Cannot encrypt NaN value',
-        },
-      }
-    }
-
-    if (typeof this.plaintext === 'number' && !Number.isFinite(this.plaintext)) {
-      return {
-        failure: {
-          type: ProtectErrorTypes.EncryptionError,
-          message: '[protect]: Cannot encrypt Infinity value',
-        },
-      }
+    const validationError = validateNumericValue(this.plaintext)
+    if (validationError) {
+      return validationError
     }
 
     return await withResult(
@@ -63,13 +50,7 @@ export class EncryptQueryOperation extends ProtectOperation<Encrypted> {
 
         const { metadata } = this.getAuditData()
 
-        const indexType = this.opts.queryType
-          ? queryTypeToFfi[this.opts.queryType]
-          : inferIndexType(this.opts.column)
-
-        if (this.opts.queryType) {
-          validateIndexType(this.opts.column, indexType)
-        }
+        const indexType = resolveIndexType(this.opts.column, this.opts.queryType)
 
         return await ffiEncryptQuery(this.client, {
           plaintext: this.plaintext as JsPlaintext,
@@ -111,22 +92,9 @@ export class EncryptQueryOperationWithLockContext extends ProtectOperation<Encry
       return { data: null }
     }
 
-    if (typeof this.plaintext === 'number' && Number.isNaN(this.plaintext)) {
-      return {
-        failure: {
-          type: ProtectErrorTypes.EncryptionError,
-          message: '[protect]: Cannot encrypt NaN value',
-        },
-      }
-    }
-
-    if (typeof this.plaintext === 'number' && !Number.isFinite(this.plaintext)) {
-      return {
-        failure: {
-          type: ProtectErrorTypes.EncryptionError,
-          message: '[protect]: Cannot encrypt Infinity value',
-        },
-      }
+    const validationError = validateNumericValue(this.plaintext)
+    if (validationError) {
+      return validationError
     }
 
     const lockContextResult = await this.lockContext.getLockContext()
@@ -142,13 +110,7 @@ export class EncryptQueryOperationWithLockContext extends ProtectOperation<Encry
 
         const { metadata } = this.getAuditData()
 
-        const indexType = this.opts.queryType
-          ? queryTypeToFfi[this.opts.queryType]
-          : inferIndexType(this.opts.column)
-
-        if (this.opts.queryType) {
-          validateIndexType(this.opts.column, indexType)
-        }
+        const indexType = resolveIndexType(this.opts.column, this.opts.queryType)
 
         return await ffiEncryptQuery(this.client, {
           plaintext: this.plaintext as JsPlaintext,
