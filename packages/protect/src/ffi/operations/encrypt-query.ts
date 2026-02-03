@@ -50,7 +50,11 @@ export class EncryptQueryOperation extends ProtectOperation<Encrypted> {
 
         const { metadata } = this.getAuditData()
 
-        const { indexType, queryOp } = resolveIndexType(this.opts.column, this.opts.queryType)
+        const { indexType, queryOp } = resolveIndexType(
+          this.opts.column,
+          this.opts.queryType,
+          this.plaintext
+        )
 
         return await ffiEncryptQuery(this.client, {
           plaintext: this.plaintext as JsPlaintext,
@@ -111,7 +115,11 @@ export class EncryptQueryOperationWithLockContext extends ProtectOperation<Encry
 
         const { metadata } = this.getAuditData()
 
-        const { indexType, queryOp } = resolveIndexType(this.opts.column, this.opts.queryType)
+        const { indexType, queryOp } = resolveIndexType(
+          this.opts.column,
+          this.opts.queryType,
+          this.plaintext
+        )
 
         return await ffiEncryptQuery(this.client, {
           plaintext: this.plaintext as JsPlaintext,
