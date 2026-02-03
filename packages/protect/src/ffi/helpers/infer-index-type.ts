@@ -1,7 +1,7 @@
 import type { FfiIndexTypeName, QueryTypeName } from '../../types'
 import { queryTypeToFfi, queryTypeToQueryOp } from '../../types'
 import type { ProtectColumn } from '@cipherstash/schema'
-import type { QueryOpName } from '@cipherstash/protect-ffi'
+import type { QueryOpName, JsPlaintext } from '@cipherstash/protect-ffi'
 
 /**
  * Infer the primary index type from a column's configured indexes.
@@ -23,6 +23,25 @@ export function inferIndexType(column: ProtectColumn): FfiIndexTypeName {
 
   throw new Error(
     `Column "${column.getName()}" has no suitable index for queries`
+  )
+}
+
+/**
+ * Infer the FFI query operation from plaintext type for STE Vec queries.
+ * - String → ste_vec_selector (JSONPath queries like '$.user.email')
+ * - Object/Array → ste_vec_term (containment queries like { role: 'admin' })
+ * @throws Error if plaintext type cannot be mapped to a query operation
+ */
+export function inferQueryOpFromPlaintext(plaintext: JsPlaintext): QueryOpName {
+  if (typeof plaintext === 'string') {
+    return 'ste_vec_selector'
+  }
+  if (typeof plaintext === 'object' && plaintext !== null) {
+    return 'ste_vec_term'
+  }
+  throw new Error(
+    `Cannot infer STE Vec query operation from ${typeof plaintext}. ` +
+      `Use queryType: 'steVecSelector' for path queries or 'steVecTerm' for containment.`
   )
 }
 
@@ -50,24 +69,37 @@ export function validateIndexType(column: ProtectColumn, indexType: FfiIndexType
 /**
  * Resolve the index type and query operation for a query.
  * Validates the index type is configured on the column when queryType is explicit.
+ * For ste_vec columns without explicit queryType, infers queryOp from plaintext shape.
  *
  * @param column - The column to resolve the index type for
  * @param queryType - Optional explicit query type (if provided, validates against column config)
+ * @param plaintext - Optional plaintext value for queryOp inference on ste_vec columns
  * @returns The FFI index type name and optional query operation name
+ * @throws Error if ste_vec is inferred but queryOp cannot be determined
  */
 export function resolveIndexType(
   column: ProtectColumn,
-  queryType?: QueryTypeName
+  queryType?: QueryTypeName,
+  plaintext?: JsPlaintext | null
 ): { indexType: FfiIndexTypeName; queryOp?: QueryOpName } {
-  const indexType = queryType
-    ? queryTypeToFfi[queryType]
-    : inferIndexType(column)
+  const indexType = queryType ? queryTypeToFfi[queryType] : inferIndexType(column)
 
   if (queryType) {
     validateIndexType(column, indexType)
+    return { indexType, queryOp: queryTypeToQueryOp[queryType] }
   }
 
-  const queryOp = queryType ? queryTypeToQueryOp[queryType] : undefined
+  // ste_vec inferred without explicit queryType → must infer from plaintext
+  if (indexType === 'ste_vec') {
+    if (plaintext === undefined || plaintext === null) {
+      throw new Error(
+        `Cannot infer query operation for searchableJson column "${column.getName()}". ` +
+          `Provide queryType: 'steVecSelector' (for JSONPath queries) or 'steVecTerm' (for containment).`
+      )
+    }
+    return { indexType, queryOp: inferQueryOpFromPlaintext(plaintext) }
+  }
 
-  return { indexType, queryOp }
+  // Non-ste_vec → no queryOp needed
+  return { indexType }
 }

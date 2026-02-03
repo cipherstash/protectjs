@@ -249,3 +249,95 @@ describe('encryptQuery batch with STE Vec', () => {
     expect(data[1]).toMatchObject({ i: { t: 'documents', c: 'metadata' } })
   }, 30000)
 })
+
+describe('encryptQuery with queryType inference', () => {
+  let protectClient: ProtectClient
+
+  beforeAll(async () => {
+    protectClient = await protect({ schemas: [jsonbSchema] })
+  })
+
+  it('infers steVecSelector for string plaintext without queryType', async () => {
+    const result = await protectClient.encryptQuery('$.user.email', {
+      column: jsonbSchema.metadata,
+      table: jsonbSchema,
+      // No queryType - should infer steVecSelector from string
+    })
+
+    const data = unwrapResult(result)
+    expect(data).toBeDefined()
+    expect(data).toMatchObject({
+      i: { t: 'documents', c: 'metadata' },
+    })
+  }, 30000)
+
+  it('infers steVecTerm for object plaintext without queryType', async () => {
+    const result = await protectClient.encryptQuery({ role: 'admin' }, {
+      column: jsonbSchema.metadata,
+      table: jsonbSchema,
+      // No queryType - should infer steVecTerm from object
+    })
+
+    const data = unwrapResult(result)
+    expect(data).toBeDefined()
+    expect(data).toMatchObject({
+      i: { t: 'documents', c: 'metadata' },
+    })
+  }, 30000)
+
+  it('infers steVecTerm for array plaintext without queryType', async () => {
+    const result = await protectClient.encryptQuery(['admin', 'user'], {
+      column: jsonbSchema.metadata,
+      table: jsonbSchema,
+      // No queryType - should infer steVecTerm from array
+    })
+
+    const data = unwrapResult(result)
+    expect(data).toBeDefined()
+    expect(data).toMatchObject({
+      i: { t: 'documents', c: 'metadata' },
+    })
+  }, 30000)
+
+  it('returns null for null plaintext (no inference needed)', async () => {
+    const result = await protectClient.encryptQuery(null, {
+      column: jsonbSchema.metadata,
+      table: jsonbSchema,
+      // No queryType and null plaintext - should return null
+    })
+
+    // Null returns null, doesn't throw
+    const data = unwrapResult(result)
+    expect(data).toBeNull()
+  }, 30000)
+})
+
+describe('encryptQuery batch with queryType inference', () => {
+  let protectClient: ProtectClient
+
+  beforeAll(async () => {
+    protectClient = await protect({ schemas: [jsonbSchema] })
+  })
+
+  it('infers queryOp for each term independently in batch', async () => {
+    const results = await protectClient.encryptQuery([
+      {
+        value: '$.user.email',  // string → steVecSelector
+        column: jsonbSchema.metadata,
+        table: jsonbSchema,
+        // No queryType
+      },
+      {
+        value: { role: 'admin' },  // object → steVecTerm
+        column: jsonbSchema.metadata,
+        table: jsonbSchema,
+        // No queryType
+      },
+    ])
+
+    const data = unwrapResult(results)
+    expect(data).toHaveLength(2)
+    expect(data[0]).toBeDefined()
+    expect(data[1]).toBeDefined()
+  }, 30000)
+})
