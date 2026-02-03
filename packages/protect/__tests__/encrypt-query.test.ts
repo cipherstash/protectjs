@@ -411,6 +411,104 @@ describe('encryptQuery', () => {
     }, 30000)
   })
 
+  describe('returnType formatting', () => {
+    it('returns Encrypted by default (no returnType)', async () => {
+      const result = await protectClient.encryptQuery([
+        { value: 'test@example.com', column: users.email, table: users, queryType: 'equality' },
+      ])
+
+      const data = unwrapResult(result)
+
+      expect(data).toHaveLength(1)
+      expect(data[0]).toMatchObject({
+        i: { t: 'users', c: 'email' },
+        v: expect.any(Number),
+      })
+      expect(typeof data[0]).toBe('object')
+    }, 30000)
+
+    it('returns composite-literal format when specified', async () => {
+      const result = await protectClient.encryptQuery([
+        { value: 'test@example.com', column: users.email, table: users, queryType: 'equality', returnType: 'composite-literal' },
+      ])
+
+      const data = unwrapResult(result)
+
+      expect(data).toHaveLength(1)
+      expect(typeof data[0]).toBe('string')
+      // Format: ("json")
+      expect(data[0]).toMatch(/^\(".*"\)$/)
+    }, 30000)
+
+    it('returns escaped-composite-literal format when specified', async () => {
+      const result = await protectClient.encryptQuery([
+        { value: 'test@example.com', column: users.email, table: users, queryType: 'equality', returnType: 'escaped-composite-literal' },
+      ])
+
+      const data = unwrapResult(result)
+
+      expect(data).toHaveLength(1)
+      expect(typeof data[0]).toBe('string')
+      // Format: "(\"json\")" - outer quotes with escaped inner quotes
+      expect(data[0]).toMatch(/^"\(.*\)"$/)
+    }, 30000)
+
+    it('returns eql format when explicitly specified', async () => {
+      const result = await protectClient.encryptQuery([
+        { value: 'test@example.com', column: users.email, table: users, queryType: 'equality', returnType: 'eql' },
+      ])
+
+      const data = unwrapResult(result)
+
+      expect(data).toHaveLength(1)
+      expect(data[0]).toMatchObject({
+        i: { t: 'users', c: 'email' },
+        v: expect.any(Number),
+      })
+      expect(typeof data[0]).toBe('object')
+    }, 30000)
+
+    it('handles mixed returnType values in same batch', async () => {
+      const result = await protectClient.encryptQuery([
+        { value: 'test@example.com', column: users.email, table: users, queryType: 'equality' }, // default
+        { value: 'search term', column: users.bio, table: users, queryType: 'freeTextSearch', returnType: 'composite-literal' },
+        { value: 42, column: users.age, table: users, queryType: 'orderAndRange', returnType: 'escaped-composite-literal' },
+      ])
+
+      const data = unwrapResult(result)
+
+      expect(data).toHaveLength(3)
+
+      // First: default (Encrypted object)
+      expect(typeof data[0]).toBe('object')
+      expect(data[0]).toMatchObject({ i: { t: 'users', c: 'email' } })
+
+      // Second: composite-literal (string)
+      expect(typeof data[1]).toBe('string')
+      expect(data[1]).toMatch(/^\(".*"\)$/)
+
+      // Third: escaped-composite-literal (string)
+      expect(typeof data[2]).toBe('string')
+      expect(data[2]).toMatch(/^"\(.*\)"$/)
+    }, 30000)
+
+    it('handles returnType with null values', async () => {
+      const result = await protectClient.encryptQuery([
+        { value: null, column: users.email, table: users, queryType: 'equality', returnType: 'composite-literal' },
+        { value: 'test@example.com', column: users.email, table: users, queryType: 'equality', returnType: 'composite-literal' },
+        { value: null, column: users.bio, table: users, queryType: 'freeTextSearch', returnType: 'escaped-composite-literal' },
+      ])
+
+      const data = unwrapResult(result)
+
+      expect(data).toHaveLength(3)
+      expect(data[0]).toBeNull()
+      expect(typeof data[1]).toBe('string')
+      expect(data[1]).toMatch(/^\(".*"\)$/)
+      expect(data[2]).toBeNull()
+    }, 30000)
+  })
+
   describe('LockContext support', () => {
     it('single query with LockContext calls getLockContext', async () => {
       const mockLockContext = createMockLockContext()

@@ -19,13 +19,21 @@ export function encryptedToPgComposite(obj: Encrypted): EncryptedPgComposite {
  * Helper function to transform an encrypted payload into a PostgreSQL composite literal string.
  * Use this when querying with `.eq()` or similar equality operations in Supabase.
  *
+ * @deprecated Use `encryptQuery()` with `returnType: 'composite-literal'` instead.
  * @example
  * ```typescript
+ * // Before (deprecated):
  * const [encrypted] = await protectClient.encryptQuery([
  *   { value: searchValue, column, table, queryType: 'equality' }
  * ])
  * const literal = encryptedToCompositeLiteral(encrypted)
  * await supabase.from('table').select().eq('column', literal)
+ *
+ * // After (recommended):
+ * const [searchTerm] = await protectClient.encryptQuery([
+ *   { value: searchValue, column, table, queryType: 'equality', returnType: 'composite-literal' }
+ * ])
+ * await supabase.from('table').select().eq('column', searchTerm)
  * ```
  */
 export function encryptedToCompositeLiteral(obj: Encrypted): string {

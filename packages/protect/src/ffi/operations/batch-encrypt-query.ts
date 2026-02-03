@@ -7,7 +7,7 @@ import {
 import { type ProtectError, ProtectErrorTypes } from '../..'
 import { logger } from '../../../../utils/logger'
 import type { Context, LockContext } from '../../identify'
-import type { Client, Encrypted, ScalarQueryTerm } from '../../types'
+import type { Client, Encrypted, EncryptedQueryResult, ScalarQueryTerm } from '../../types'
 import { noClientError } from '../index'
 import { ProtectOperation } from './base-operation'
 import { resolveIndexType } from '../helpers/infer-index-type'
@@ -67,25 +67,27 @@ function buildQueryPayload(
 /**
  * Reconstructs the results array with nulls in their original positions.
  * Non-null encrypted values are placed at their original indices.
+ * Applies formatting based on term.returnType.
  */
 function assembleResults(
   totalLength: number,
   nullIndices: Set<number>,
   encryptedValues: Encrypted[],
   nonNullTerms: { term: ScalarQueryTerm; originalIndex: number }[],
-): Encrypted[] {
-  const results: Encrypted[] = new Array(totalLength)
+): EncryptedQueryResult[] {
+  const results: EncryptedQueryResult[] = new Array(totalLength).fill(null)
 
-  // Set null positions
-  for (let i = 0; i < totalLength; i++) {
-    if (nullIndices.has(i)) {
-      results[i] = null
+  // Fill in encrypted values at their original positions, applying formatting
+  nonNullTerms.forEach(({ term, originalIndex }, i) => {
+    const encrypted = encryptedValues[i]
+
+    if (term.returnType === 'composite-literal') {
+      results[originalIndex] = `(${JSON.stringify(JSON.stringify(encrypted))})`
+    } else if (term.returnType === 'escaped-composite-literal') {
+      results[originalIndex] = JSON.stringify(`(${JSON.stringify(JSON.stringify(encrypted))})`)
+    } else {
+      results[originalIndex] = encrypted
     }
-  }
-
-  // Fill in encrypted values at their original positions
-  nonNullTerms.forEach(({ originalIndex }, i) => {
-    results[originalIndex] = encryptedValues[i]
   })
 
   return results
@@ -94,7 +96,7 @@ function assembleResults(
 /**
  * @internal Use {@link ProtectClient.encryptQuery} with array input instead.
  */
-export class BatchEncryptQueryOperation extends ProtectOperation<Encrypted[]> {
+export class BatchEncryptQueryOperation extends ProtectOperation<EncryptedQueryResult[]> {
   constructor(
     private client: Client,
     private terms: readonly ScalarQueryTerm[],
@@ -106,7 +108,7 @@ export class BatchEncryptQueryOperation extends ProtectOperation<Encrypted[]> {
     return new BatchEncryptQueryOperationWithLockContext(this.client, this.terms, lockContext, this.auditMetadata)
   }
 
-  public async execute(): Promise<Result<Encrypted[], ProtectError>> {
+  public async execute(): Promise<Result<EncryptedQueryResult[], ProtectError>> {
     logger.debug('Encrypting query terms', { count: this.terms.length })
 
     if (this.terms.length === 0) {
@@ -145,7 +147,7 @@ export class BatchEncryptQueryOperation extends ProtectOperation<Encrypted[]> {
 /**
  * @internal Use {@link ProtectClient.encryptQuery} with array input and `.withLockContext()` instead.
  */
-export class BatchEncryptQueryOperationWithLockContext extends ProtectOperation<Encrypted[]> {
+export class BatchEncryptQueryOperationWithLockContext extends ProtectOperation<EncryptedQueryResult[]> {
   constructor(
     private client: Client,
     private terms: readonly ScalarQueryTerm[],
@@ -156,7 +158,7 @@ export class BatchEncryptQueryOperationWithLockContext extends ProtectOperation<
     this.auditMetadata = auditMetadata
   }
 
-  public async execute(): Promise<Result<Encrypted[], ProtectError>> {
+  public async execute(): Promise<Result<EncryptedQueryResult[], ProtectError>> {
     logger.debug('Encrypting query terms with lock context', { count: this.terms.length })
 
     if (this.terms.length === 0) {

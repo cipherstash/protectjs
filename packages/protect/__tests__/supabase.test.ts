@@ -4,7 +4,6 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import {
   type Encrypted,
   bulkModelsToEncryptedPgComposites,
-  encryptedToCompositeLiteral,
   encryptedToPgComposite,
   isEncryptedPayload,
   modelToEncryptedPgComposites,
@@ -265,23 +264,23 @@ describe('supabase', () => {
     const insertedRecordId = insertResult.data[0].id
     insertedIds.push(insertedRecordId)
 
-    // Create encrypted query for equality search
+    // Create encrypted query for equality search with composite-literal returnType
     const encryptedResult = await protectClient.encryptQuery([
-      { value: testAge, column: table.age, table: table, queryType: 'equality' },
+      { value: testAge, column: table.age, table: table, queryType: 'equality', returnType: 'composite-literal' },
     ])
 
     if (encryptedResult.failure) {
       throw new Error(`[protect]: ${encryptedResult.failure.message}`)
     }
 
-    const [encryptedAge] = encryptedResult.data
+    const [searchTerm] = encryptedResult.data
 
     // Query filtering by both encrypted age AND our specific test run's ID
     // This ensures we don't pick up stale data from other test runs
     const { data, error } = await supabase
       .from('protect-ci')
       .select('id, age::jsonb, otherField')
-      .eq('age', encryptedToCompositeLiteral(encryptedAge))
+      .eq('age', searchTerm)
       .eq('test_run_id', TEST_RUN_ID)
 
     if (error) {

@@ -59,6 +59,12 @@ export type KeysetIdentifier =
 export type EncryptedSearchTerm = Encrypted | string
 
 /**
+ * Result type for encryptQuery batch operations.
+ * Can be Encrypted (default), string (for composite-literal formats), or null.
+ */
+export type EncryptedQueryResult = Encrypted | string | null
+
+/**
  * Represents a payload to be encrypted using the `encrypt` function
  */
 export type EncryptPayload = JsPlaintext | null
@@ -165,6 +171,7 @@ export type QueryTermBase = {
   column: ProtectColumn
   table: ProtectTable<ProtectTableColumn>
   queryType?: QueryTypeName  // Optional - auto-infers if omitted
+  returnType?: 'eql' | 'composite-literal' | 'escaped-composite-literal'
 }
 
 /**
