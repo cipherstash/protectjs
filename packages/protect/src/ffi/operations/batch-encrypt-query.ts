@@ -49,13 +49,14 @@ function buildQueryPayload(
 ): QueryPayload {
   assertValidNumericValue(term.value)
 
-  const indexType = resolveIndexType(term.column, term.queryType)
+  const { indexType, queryOp } = resolveIndexType(term.column, term.queryType)
 
   const payload: QueryPayload = {
     plaintext: term.value as JsPlaintext,
     column: term.column.getName(),
     table: term.table.tableName,
     indexType,
+    queryOp,
   }
 
   if (lockContext !== undefined) {

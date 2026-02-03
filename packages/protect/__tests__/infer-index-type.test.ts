@@ -36,6 +36,11 @@ describe('infer-index-type helpers', () => {
       const noIndex = csTable('t', { col: csColumn('col') })
       expect(() => inferIndexType(noIndex.col)).toThrow('no indexes configured')
     })
+
+    it('returns ste_vec for searchableJson-only column', () => {
+      const schema = csTable('t', { col: csColumn('col').searchableJson() })
+      expect(inferIndexType(schema.col)).toBe('ste_vec')
+    })
   })
 
   describe('validateIndexType', () => {
@@ -45,6 +50,16 @@ describe('infer-index-type helpers', () => {
 
     it('throws for unconfigured index type', () => {
       expect(() => validateIndexType(users.email, 'match')).toThrow('not configured')
+    })
+
+    it('accepts ste_vec when configured', () => {
+      const schema = csTable('t', { col: csColumn('col').searchableJson() })
+      expect(() => validateIndexType(schema.col, 'ste_vec')).not.toThrow()
+    })
+
+    it('rejects ste_vec when not configured', () => {
+      const schema = csTable('t', { col: csColumn('col').equality() })
+      expect(() => validateIndexType(schema.col, 'ste_vec')).toThrow('not configured')
     })
   })
 })

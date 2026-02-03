@@ -33,6 +33,24 @@ export const metadata = csTable('metadata', {
   raw: csColumn('raw'),
 })
 
+/**
+ * Documents table with searchable JSON column (for STE Vec queries)
+ */
+export const jsonbSchema = csTable('documents', {
+  id: csColumn('id'),
+  metadata: csColumn('metadata').searchableJson(),
+})
+
+/**
+ * Schema fixture with mixed column types including JSON.
+ */
+export const mixedSchema = csTable('records', {
+  id: csColumn('id'),
+  email: csColumn('email').equality(),
+  name: csColumn('name').freeTextSearch(),
+  metadata: csColumn('metadata').searchableJson(),
+})
+
 // ============ Mock Factories ============
 
 /**
