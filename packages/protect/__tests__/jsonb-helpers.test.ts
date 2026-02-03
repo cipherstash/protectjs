@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-// Import from internal helpers (these are not part of the public API)
+// Import from helpers module (also available from package root)
 import { toJsonPath, buildNestedObject, parseJsonbPath } from '../src/helpers'
 
 describe('toJsonPath', () => {

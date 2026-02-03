@@ -36,7 +36,7 @@ export function toJsonPath(path: string): string {
  * parseJsonbPath("$.name")          // ["name"]
  */
 export function parseJsonbPath(path: string): string[] {
-  if (!path) return []
+  if (!path || typeof path !== 'string') return []
 
   // Remove leading $. or $ prefix
   const normalized = path.replace(/^\$\.?/, '')
