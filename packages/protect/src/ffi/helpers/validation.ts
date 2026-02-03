@@ -6,11 +6,13 @@ import type { Result } from '@byteslice/result'
  * Returns a failure Result if validation fails, undefined otherwise.
  * Use this in async flows that return Result types.
  *
+ * Uses `never` as the success type so the result can be assigned to any Result<T, ProtectError>.
+ *
  * @internal
  */
 export function validateNumericValue(
   value: unknown
-): Result<undefined, ProtectError> | undefined {
+): Result<never, ProtectError> | undefined {
   if (typeof value === 'number' && Number.isNaN(value)) {
     return {
       failure: {
