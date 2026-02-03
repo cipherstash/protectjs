@@ -12,6 +12,7 @@ export function isScalarQueryTermArray(
     value.length > 0 &&
     typeof value[0] === 'object' &&
     value[0] !== null &&
-    'column' in value[0]
+    'column' in value[0] &&
+    'table' in value[0]
   )
 }

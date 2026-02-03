@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { csColumn, csTable } from '@cipherstash/schema'
 import { inferIndexType, validateIndexType } from '../src/ffi/helpers/infer-index-type'
 
-describe('inferIndexType', () => {
+describe('infer-index-type helpers', () => {
   const users = csTable('users', {
     email: csColumn('email').equality(),
     bio: csColumn('bio').freeTextSearch(),

@@ -673,14 +673,6 @@ function createComparisonOperator(
       }
     }
 
-    // Create SQL using eql_v2 functions for encrypted columns
-    const sqlFnMap = {
-      gt: () => sql`eql_v2.gt(${left}, ${bindIfParam(right, left)})`,
-      gte: () => sql`eql_v2.gte(${left}, ${bindIfParam(right, left)})`,
-      lt: () => sql`eql_v2.lt(${left}, ${bindIfParam(right, left)})`,
-      lte: () => sql`eql_v2.lte(${left}, ${bindIfParam(right, left)})`,
-    }
-
     // This will be replaced with encrypted value in executeLazyOperator
     const executeFn = (encrypted: unknown) => {
       if (encrypted === undefined) {

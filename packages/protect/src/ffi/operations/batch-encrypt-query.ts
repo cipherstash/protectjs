@@ -175,18 +175,19 @@ export class BatchEncryptQueryOperationWithLockContext extends ProtectOperation<
       return { data: [] }
     }
 
+    // Check for all-null terms BEFORE fetching lockContext to avoid unnecessary network call
+    const { nullIndices, nonNullTerms } = filterNullTerms(this.terms)
+
+    if (nonNullTerms.length === 0) {
+      return { data: this.terms.map(() => null) }
+    }
+
     const lockContextResult = await this.lockContext.getLockContext()
     if (lockContextResult.failure) {
       return { failure: lockContextResult.failure }
     }
 
     const { ctsToken, context } = lockContextResult.data
-
-    const { nullIndices, nonNullTerms } = filterNullTerms(this.terms)
-
-    if (nonNullTerms.length === 0) {
-      return { data: this.terms.map(() => null) }
-    }
 
     return await withResult(
       async () => {

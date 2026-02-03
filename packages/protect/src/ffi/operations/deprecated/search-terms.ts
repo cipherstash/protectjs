@@ -25,7 +25,7 @@ export class SearchTermsOperation extends ProtectOperation<EncryptedSearchTerm[]
   }
 
   public async execute(): Promise<Result<EncryptedSearchTerm[], ProtectError>> {
-    logger.debug('Creating search terms (deprecated API)', { terms: this.terms })
+    logger.debug('Creating search terms (deprecated API)', { count: this.terms.length })
 
     return await withResult(
       async () => {
@@ -83,6 +83,8 @@ export class SearchTermsOperationWithLockContext extends ProtectOperation<Encryp
 
     return await withResult(
       async () => {
+        if (!op.client) throw noClientError()
+
         const { metadata } = this.getAuditData()
 
         const queries: QueryPayload[] = op.terms.map((term: SearchTerm) => ({
