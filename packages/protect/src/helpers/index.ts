@@ -1,4 +1,4 @@
-import type { KeysetIdentifier as KeysetIdentifierFfi } from '@cipherstash/protect-ffi'
+import type { Encrypted as CipherStashEncrypted, KeysetIdentifier as KeysetIdentifierFfi } from '@cipherstash/protect-ffi'
 import type { Encrypted, KeysetIdentifier } from '../types'
 
 export type EncryptedPgComposite = {
@@ -36,7 +36,10 @@ export function encryptedToPgComposite(obj: Encrypted): EncryptedPgComposite {
  * await supabase.from('table').select().eq('column', searchTerm)
  * ```
  */
-export function encryptedToCompositeLiteral(obj: Encrypted): string {
+export function encryptedToCompositeLiteral(obj: CipherStashEncrypted): string {
+  if (obj === null) {
+    throw new Error('encryptedToCompositeLiteral: obj cannot be null')
+  }
   return `(${JSON.stringify(JSON.stringify(obj))})`
 }
 
@@ -52,8 +55,11 @@ export function encryptedToCompositeLiteral(obj: Encrypted): string {
  * const escapedLiteral = encryptedToEscapedCompositeLiteral(encrypted)
  * ```
  */
-export function encryptedToEscapedCompositeLiteral(obj: Encrypted): string {
-  return JSON.stringify(`(${JSON.stringify(JSON.stringify(obj))})`)
+export function encryptedToEscapedCompositeLiteral(obj: CipherStashEncrypted): string {
+  if (obj === null) {
+    throw new Error('encryptedToEscapedCompositeLiteral: obj cannot be null')
+  }
+  return JSON.stringify(encryptedToCompositeLiteral(obj))
 }
 
 /**

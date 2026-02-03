@@ -7,7 +7,8 @@ import {
 import { type ProtectError, ProtectErrorTypes } from '../..'
 import { logger } from '../../../../utils/logger'
 import type { Context, LockContext } from '../../identify'
-import type { Client, Encrypted, EncryptedQueryResult, ScalarQueryTerm } from '../../types'
+import type { Encrypted as CipherStashEncrypted } from '@cipherstash/protect-ffi'
+import type { Client, EncryptedQueryResult, ScalarQueryTerm } from '../../types'
 import { noClientError } from '../index'
 import { ProtectOperation } from './base-operation'
 import { resolveIndexType } from '../helpers/infer-index-type'
@@ -72,7 +73,7 @@ function buildQueryPayload(
  */
 function assembleResults(
   totalLength: number,
-  encryptedValues: Encrypted[],
+  encryptedValues: CipherStashEncrypted[],
   nonNullTerms: { term: ScalarQueryTerm; originalIndex: number }[],
 ): EncryptedQueryResult[] {
   const results: EncryptedQueryResult[] = new Array(totalLength).fill(null)
