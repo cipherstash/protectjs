@@ -47,12 +47,20 @@ export function encryptedToCompositeLiteral(obj: CipherStashEncrypted): string {
  * Helper function to transform an encrypted payload into an escaped PostgreSQL composite literal string.
  * Use this when you need the composite literal format to be escaped as a string value.
  *
+ * @deprecated Use `encryptQuery()` with `returnType: 'escaped-composite-literal'` instead.
+ * See also: `encryptedToCompositeLiteral` for parallel deprecation guidance.
  * @example
  * ```typescript
+ * // Before (deprecated):
  * const [encrypted] = await protectClient.encryptQuery([
  *   { value: searchValue, column, table, queryType: 'equality' }
  * ])
  * const escapedLiteral = encryptedToEscapedCompositeLiteral(encrypted)
+ *
+ * // After (recommended):
+ * const [searchTerm] = await protectClient.encryptQuery([
+ *   { value: searchValue, column, table, queryType: 'equality', returnType: 'escaped-composite-literal' }
+ * ])
  * ```
  */
 export function encryptedToEscapedCompositeLiteral(obj: CipherStashEncrypted): string {
