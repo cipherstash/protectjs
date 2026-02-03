@@ -12,6 +12,9 @@ import { noClientError } from '../index'
 import { ProtectOperation } from './base-operation'
 import { inferIndexType, validateIndexType } from '../helpers/infer-index-type'
 
+/**
+ * @internal Use {@link ProtectClient.encryptQuery} instead.
+ */
 export class EncryptQueryOperation extends ProtectOperation<Encrypted> {
   constructor(
     private client: Client,
@@ -88,6 +91,9 @@ export class EncryptQueryOperation extends ProtectOperation<Encrypted> {
   }
 }
 
+/**
+ * @internal Use {@link ProtectClient.encryptQuery} with `.withLockContext()` instead.
+ */
 export class EncryptQueryOperationWithLockContext extends ProtectOperation<Encrypted> {
   constructor(
     private client: Client,

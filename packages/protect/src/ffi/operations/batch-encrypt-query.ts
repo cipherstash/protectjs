@@ -103,6 +103,9 @@ function assembleResults(
   return results
 }
 
+/**
+ * @internal Use {@link ProtectClient.encryptQuery} with array input instead.
+ */
 export class BatchEncryptQueryOperation extends ProtectOperation<Encrypted[]> {
   constructor(
     private client: Client,
@@ -151,6 +154,9 @@ export class BatchEncryptQueryOperation extends ProtectOperation<Encrypted[]> {
   }
 }
 
+/**
+ * @internal Use {@link ProtectClient.encryptQuery} with array input and `.withLockContext()` instead.
+ */
 export class BatchEncryptQueryOperationWithLockContext extends ProtectOperation<Encrypted[]> {
   constructor(
     private client: Client,

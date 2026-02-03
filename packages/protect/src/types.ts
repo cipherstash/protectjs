@@ -124,8 +124,11 @@ type DecryptionError<T> = {
 export type DecryptionResult<T> = DecryptionSuccess<T> | DecryptionError<T>
 
 /**
- * User-facing query type names.
- * Maps to specific FFI index types via queryTypeToFfi.
+ * User-facing query type names for encrypting query values.
+ *
+ * - `'equality'`: For exact match queries. {@link https://cipherstash.com/docs/platform/searchable-encryption/supported-queries/exact | Exact Queries}
+ * - `'freeTextSearch'`: For text search queries. {@link https://cipherstash.com/docs/platform/searchable-encryption/supported-queries/match | Match Queries}
+ * - `'orderAndRange'`: For comparison and range queries. {@link https://cipherstash.com/docs/platform/searchable-encryption/supported-queries/range | Range Queries}
  */
 export type QueryTypeName = 'orderAndRange' | 'freeTextSearch' | 'equality'
 
