@@ -4,6 +4,7 @@ import type {
   ProtectTable,
   ProtectTableColumn,
 } from '@cipherstash/protect/client'
+import type { QueryTypeName } from '@cipherstash/protect'
 import {
   type SQL,
   type SQLWrapper,
@@ -259,6 +260,7 @@ interface ValueToEncrypt {
   readonly value: string | number
   readonly column: SQLWrapper
   readonly columnInfo: ColumnInfo
+  readonly queryType?: QueryTypeName
 }
 
 /**
@@ -267,7 +269,7 @@ interface ValueToEncrypt {
  */
 async function encryptValues(
   protectClient: ProtectClient,
-  values: Array<{ value: unknown; column: SQLWrapper }>,
+  values: Array<{ value: unknown; column: SQLWrapper; queryType?: QueryTypeName }>,
   protectTable: ProtectTable<ProtectTableColumn> | undefined,
   protectTableCache: Map<string, ProtectTable<ProtectTableColumn>>,
 ): Promise<unknown[]> {
@@ -280,7 +282,7 @@ async function encryptValues(
   const results: unknown[] = new Array(values.length)
 
   for (let i = 0; i < values.length; i++) {
-    const { value, column } = values[i]
+    const { value, column, queryType } = values[i]
     const columnInfo = getColumnInfo(column, protectTable, protectTableCache)
 
     if (
@@ -298,6 +300,7 @@ async function encryptValues(
       value: plaintextValue,
       column,
       columnInfo,
+      queryType,
     })
   }
 
@@ -311,13 +314,13 @@ async function encryptValues(
     {
       column: ProtectColumn
       table: ProtectTable<ProtectTableColumn>
-      values: Array<{ value: string | number; index: number }>
+      values: Array<{ value: string | number; index: number; queryType?: QueryTypeName }>
       resultIndices: number[]
     }
   >()
 
   let valueIndex = 0
-  for (const { value, column, columnInfo } of valuesToEncrypt) {
+  for (const { value, column, columnInfo, queryType } of valuesToEncrypt) {
     // Safe access with validation - we know these exist from earlier checks
     if (
       !columnInfo.config ||
@@ -338,7 +341,7 @@ async function encryptValues(
       }
       columnGroups.set(columnName, group)
     }
-    group.values.push({ value, index: valueIndex++ })
+    group.values.push({ value, index: valueIndex++, queryType })
 
     // Find the original index in the results array
     const originalIndex = values.findIndex(
@@ -359,13 +362,14 @@ async function encryptValues(
         value: v.value,
         column: group.column,
         table: group.table,
+        queryType: v.queryType,
       }))
 
-      const searchTerms = await protectClient.createSearchTerms(terms)
+      const encryptedTerms = await protectClient.encryptQuery(terms)
 
-      if (searchTerms.failure) {
+      if (encryptedTerms.failure) {
         throw new ProtectOperatorError(
-          `Failed to create search terms for column "${columnName}": ${searchTerms.failure.message}`,
+          `Failed to encrypt query terms for column "${columnName}": ${encryptedTerms.failure.message}`,
           { columnName },
         )
       }
@@ -374,7 +378,7 @@ async function encryptValues(
       for (let i = 0; i < group.values.length; i++) {
         const resultIndex = group.resultIndices[i] ?? -1
         if (resultIndex >= 0 && resultIndex < results.length) {
-          results[resultIndex] = searchTerms.data[i]
+          results[resultIndex] = encryptedTerms.data[i]
         }
       }
     } catch (error) {
@@ -403,10 +407,11 @@ async function encryptValue(
   drizzleColumn: SQLWrapper,
   protectTable: ProtectTable<ProtectTableColumn> | undefined,
   protectTableCache: Map<string, ProtectTable<ProtectTableColumn>>,
+  queryType?: QueryTypeName,
 ): Promise<unknown> {
   const results = await encryptValues(
     protectClient,
-    [{ value, column: drizzleColumn }],
+    [{ value, column: drizzleColumn, queryType }],
     protectTable,
     protectTableCache,
   )
@@ -423,6 +428,7 @@ async function encryptValue(
 interface LazyOperator {
   readonly __isLazyOperator: true
   readonly operator: string
+  readonly queryType?: QueryTypeName
   readonly left: SQLWrapper
   readonly right: unknown
   readonly min?: unknown
@@ -467,6 +473,7 @@ function createLazyOperator(
   protectTableCache: Map<string, ProtectTable<ProtectTableColumn>>,
   min?: unknown,
   max?: unknown,
+  queryType?: QueryTypeName,
 ): LazyOperator & Promise<SQL> {
   let resolvedSQL: SQL | undefined
   let encryptionPromise: Promise<SQL> | undefined
@@ -474,6 +481,7 @@ function createLazyOperator(
   const lazyOp: LazyOperator = {
     __isLazyOperator: true,
     operator,
+    queryType,
     left,
     right,
     min,
@@ -607,8 +615,8 @@ async function executeLazyOperatorDirect(
     const [encryptedMin, encryptedMax] = await encryptValues(
       protectClient,
       [
-        { value: lazyOp.min, column: lazyOp.left },
-        { value: lazyOp.max, column: lazyOp.left },
+        { value: lazyOp.min, column: lazyOp.left, queryType: lazyOp.queryType },
+        { value: lazyOp.max, column: lazyOp.left, queryType: lazyOp.queryType },
       ],
       defaultProtectTable,
       protectTableCache,
@@ -623,6 +631,7 @@ async function executeLazyOperatorDirect(
     lazyOp.left,
     defaultProtectTable,
     protectTableCache,
+    lazyOp.queryType,
   )
 
   return lazyOp.execute(encrypted)
@@ -697,6 +706,9 @@ function createComparisonOperator(
       protectClient,
       defaultProtectTable,
       protectTableCache,
+      undefined,  // min
+      undefined,  // max
+      'orderAndRange',
     ) as Promise<SQL>
   }
 
@@ -728,6 +740,9 @@ function createComparisonOperator(
       protectClient,
       defaultProtectTable,
       protectTableCache,
+      undefined,  // min
+      undefined,  // max
+      'equality',
     ) as Promise<SQL>
   }
 
@@ -791,6 +806,7 @@ function createRangeOperator(
     protectTableCache,
     min,
     max,
+    'orderAndRange',
   ) as Promise<SQL>
 }
 
@@ -847,6 +863,9 @@ function createTextSearchOperator(
     protectClient,
     defaultProtectTable,
     protectTableCache,
+    undefined,  // min
+    undefined,  // max
+    'freeTextSearch',
   ) as Promise<SQL>
 }
 
@@ -1323,7 +1342,7 @@ export function createProtectOperators(protectClient: ProtectClient): {
     // Encrypt all values in the array in a single batch
     const encryptedValues = await encryptValues(
       protectClient,
-      right.map((value) => ({ value, column: left })),
+      right.map((value) => ({ value, column: left, queryType: 'equality' as const })),
       defaultProtectTable,
       protectTableCache,
     )
@@ -1369,7 +1388,7 @@ export function createProtectOperators(protectClient: ProtectClient): {
     // Encrypt all values in the array in a single batch
     const encryptedValues = await encryptValues(
       protectClient,
-      right.map((value) => ({ value, column: left })),
+      right.map((value) => ({ value, column: left, queryType: 'equality' as const })),
       defaultProtectTable,
       protectTableCache,
     )
@@ -1465,6 +1484,7 @@ export function createProtectOperators(protectClient: ProtectClient): {
       value: unknown
       column: SQLWrapper
       columnInfo: ColumnInfo
+      queryType?: QueryTypeName
       lazyOpIndex: number
       isMin?: boolean
       isMax?: boolean
@@ -1481,6 +1501,7 @@ export function createProtectOperators(protectClient: ProtectClient): {
           value: lazyOp.min,
           column: lazyOp.left,
           columnInfo: lazyOp.columnInfo,
+          queryType: lazyOp.queryType,
           lazyOpIndex: i,
           isMin: true,
         })
@@ -1488,6 +1509,7 @@ export function createProtectOperators(protectClient: ProtectClient): {
           value: lazyOp.max,
           column: lazyOp.left,
           columnInfo: lazyOp.columnInfo,
+          queryType: lazyOp.queryType,
           lazyOpIndex: i,
           isMax: true,
         })
@@ -1496,6 +1518,7 @@ export function createProtectOperators(protectClient: ProtectClient): {
           value: lazyOp.right,
           column: lazyOp.left,
           columnInfo: lazyOp.columnInfo,
+          queryType: lazyOp.queryType,
           lazyOpIndex: i,
         })
       }
@@ -1504,7 +1527,7 @@ export function createProtectOperators(protectClient: ProtectClient): {
     // Batch encrypt all values
     const encryptedResults = await encryptValues(
       protectClient,
-      valuesToEncrypt.map((v) => ({ value: v.value, column: v.column })),
+      valuesToEncrypt.map((v) => ({ value: v.value, column: v.column, queryType: v.queryType })),
       defaultProtectTable,
       protectTableCache,
     )
@@ -1617,6 +1640,7 @@ export function createProtectOperators(protectClient: ProtectClient): {
       value: unknown
       column: SQLWrapper
       columnInfo: ColumnInfo
+      queryType?: QueryTypeName
       lazyOpIndex: number
       isMin?: boolean
       isMax?: boolean
@@ -1633,6 +1657,7 @@ export function createProtectOperators(protectClient: ProtectClient): {
           value: lazyOp.min,
           column: lazyOp.left,
           columnInfo: lazyOp.columnInfo,
+          queryType: lazyOp.queryType,
           lazyOpIndex: i,
           isMin: true,
         })
@@ -1640,6 +1665,7 @@ export function createProtectOperators(protectClient: ProtectClient): {
           value: lazyOp.max,
           column: lazyOp.left,
           columnInfo: lazyOp.columnInfo,
+          queryType: lazyOp.queryType,
           lazyOpIndex: i,
           isMax: true,
         })
@@ -1648,6 +1674,7 @@ export function createProtectOperators(protectClient: ProtectClient): {
           value: lazyOp.right,
           column: lazyOp.left,
           columnInfo: lazyOp.columnInfo,
+          queryType: lazyOp.queryType,
           lazyOpIndex: i,
         })
       }
@@ -1655,7 +1682,7 @@ export function createProtectOperators(protectClient: ProtectClient): {
 
     const encryptedResults = await encryptValues(
       protectClient,
-      valuesToEncrypt.map((v) => ({ value: v.value, column: v.column })),
+      valuesToEncrypt.map((v) => ({ value: v.value, column: v.column, queryType: v.queryType })),
       defaultProtectTable,
       protectTableCache,
     )
