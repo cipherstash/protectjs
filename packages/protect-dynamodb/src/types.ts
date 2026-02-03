@@ -47,5 +47,20 @@ export interface ProtectDynamoDBInstance {
     protectTable: ProtectTable<ProtectTableColumn>,
   ): BulkDecryptModelsOperation<T>
 
+  /**
+   * @deprecated Use `protectClient.encryptQuery(terms)` instead and extract the `hm` field for DynamoDB key lookups.
+   * Will be removed in v2.0.
+   *
+   * @example
+   * ```typescript
+   * // Before (deprecated)
+   * const result = await protectDynamo.createSearchTerms([{ value, column, table }])
+   * const hmac = result.data[0]
+   *
+   * // After (new API)
+   * const [encrypted] = await protectClient.encryptQuery([{ value, column, table, queryType: 'equality' }])
+   * const hmac = encrypted.hm
+   * ```
+   */
   createSearchTerms(terms: SearchTerm[]): SearchTermsOperation
 }

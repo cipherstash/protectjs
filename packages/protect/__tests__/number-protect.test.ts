@@ -708,78 +708,20 @@ describe('Nested object encryption', () => {
   }, 30000)
 })
 
-describe('Search terms', () => {
-  it('should create search terms for number fields', async () => {
-    const searchTerms = [
-      {
-        value: 25,
-        column: users.age,
-        table: users,
-      },
-      {
-        value: 100,
-        column: users.score,
-        table: users,
-      },
-    ]
+describe('encryptQuery for numbers', () => {
+  it('should create encrypted query for number fields', async () => {
+    const result = await protectClient.encryptQuery([
+      { value: 25, column: users.age, table: users, queryType: 'equality' },
+      { value: 100, column: users.score, table: users, queryType: 'equality' },
+    ])
 
-    const searchTermsResult = await protectClient.createSearchTerms(searchTerms)
-
-    if (searchTermsResult.failure) {
-      throw new Error(`[protect]: ${searchTermsResult.failure.message}`)
+    if (result.failure) {
+      throw new Error(`[protect]: ${result.failure.message}`)
     }
 
-    expect(searchTermsResult.data).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          v: 2,
-        }),
-      ]),
-    )
-  }, 30000)
-
-  it('should create search terms with composite-literal return type for numbers', async () => {
-    const searchTerms = [
-      {
-        value: 42,
-        column: users.age,
-        table: users,
-        returnType: 'composite-literal' as const,
-      },
-    ]
-
-    const searchTermsResult = await protectClient.createSearchTerms(searchTerms)
-
-    if (searchTermsResult.failure) {
-      throw new Error(`[protect]: ${searchTermsResult.failure.message}`)
-    }
-
-    const result = searchTermsResult.data[0] as string
-    expect(result).toMatch(/^\(.*\)$/)
-    expect(() => JSON.parse(result.slice(1, -1))).not.toThrow()
-  }, 30000)
-
-  it('should create search terms with escaped-composite-literal return type for numbers', async () => {
-    const searchTerms = [
-      {
-        value: 99,
-        column: users.score,
-        table: users,
-        returnType: 'escaped-composite-literal' as const,
-      },
-    ]
-
-    const searchTermsResult = await protectClient.createSearchTerms(searchTerms)
-
-    if (searchTermsResult.failure) {
-      throw new Error(`[protect]: ${searchTermsResult.failure.message}`)
-    }
-
-    const result = searchTermsResult.data[0] as string
-    expect(result).toMatch(/^".*"$/)
-    const unescaped = JSON.parse(result)
-    expect(unescaped).toMatch(/^\(.*\)$/)
-    expect(() => JSON.parse(unescaped.slice(1, -1))).not.toThrow()
+    expect(result.data).toHaveLength(2)
+    expect(result.data[0]).toHaveProperty('v', 2)
+    expect(result.data[1]).toHaveProperty('v', 2)
   }, 30000)
 })
 

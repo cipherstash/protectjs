@@ -6,6 +6,8 @@ import { type SearchTerm, protect } from '../../src'
 const users = csTable('users', {
   email: csColumn('email').freeTextSearch().equality().orderAndRange(),
   address: csColumn('address').freeTextSearch(),
+  age: csColumn('age').dataType('number').equality(),
+  score: csColumn('score').dataType('number').equality(),
 })
 
 describe('createSearchTerms (deprecated - backward compatibility)', () => {
@@ -74,6 +76,54 @@ describe('createSearchTerms (deprecated - backward compatibility)', () => {
         returnType: 'escaped-composite-literal',
       },
     ] as SearchTerm[]
+
+    const searchTermsResult = await protectClient.createSearchTerms(searchTerms)
+
+    if (searchTermsResult.failure) {
+      throw new Error(`[protect]: ${searchTermsResult.failure.message}`)
+    }
+
+    const result = searchTermsResult.data[0] as string
+    expect(result).toMatch(/^".*"$/)
+    const unescaped = JSON.parse(result)
+    expect(unescaped).toMatch(/^\(.*\)$/)
+    expect(() => JSON.parse(unescaped.slice(1, -1))).not.toThrow()
+  }, 30000)
+
+  it('should create search terms with composite-literal return type for numbers', async () => {
+    const protectClient = await protect({ schemas: [users] })
+
+    const searchTerms = [
+      {
+        value: 42,
+        column: users.age,
+        table: users,
+        returnType: 'composite-literal' as const,
+      },
+    ]
+
+    const searchTermsResult = await protectClient.createSearchTerms(searchTerms)
+
+    if (searchTermsResult.failure) {
+      throw new Error(`[protect]: ${searchTermsResult.failure.message}`)
+    }
+
+    const result = searchTermsResult.data[0] as string
+    expect(result).toMatch(/^\(.*\)$/)
+    expect(() => JSON.parse(result.slice(1, -1))).not.toThrow()
+  }, 30000)
+
+  it('should create search terms with escaped-composite-literal return type for numbers', async () => {
+    const protectClient = await protect({ schemas: [users] })
+
+    const searchTerms = [
+      {
+        value: 99,
+        column: users.score,
+        table: users,
+        returnType: 'escaped-composite-literal' as const,
+      },
+    ]
 
     const searchTermsResult = await protectClient.createSearchTerms(searchTerms)
 
