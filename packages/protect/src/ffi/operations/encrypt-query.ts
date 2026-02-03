@@ -50,7 +50,7 @@ export class EncryptQueryOperation extends ProtectOperation<Encrypted> {
 
         const { metadata } = this.getAuditData()
 
-        const indexType = resolveIndexType(this.opts.column, this.opts.queryType)
+        const { indexType, queryOp } = resolveIndexType(this.opts.column, this.opts.queryType)
 
         // Validate value/index compatibility
         assertValueIndexCompatibility(
@@ -64,6 +64,7 @@ export class EncryptQueryOperation extends ProtectOperation<Encrypted> {
           column: this.opts.column.getName(),
           table: this.opts.table.tableName,
           indexType,
+          queryOp,
           unverifiedContext: metadata,
         })
       },
@@ -117,7 +118,7 @@ export class EncryptQueryOperationWithLockContext extends ProtectOperation<Encry
 
         const { metadata } = this.getAuditData()
 
-        const indexType = resolveIndexType(this.opts.column, this.opts.queryType)
+        const { indexType, queryOp } = resolveIndexType(this.opts.column, this.opts.queryType)
 
         // Validate value/index compatibility
         assertValueIndexCompatibility(
@@ -131,6 +132,7 @@ export class EncryptQueryOperationWithLockContext extends ProtectOperation<Encry
           column: this.opts.column.getName(),
           table: this.opts.table.tableName,
           indexType,
+          queryOp,
           lockContext: context,
           serviceToken: ctsToken,
           unverifiedContext: metadata,

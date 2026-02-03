@@ -2,6 +2,7 @@ import type {
   Encrypted as CipherStashEncrypted,
   JsPlaintext,
   newClient,
+  QueryOpName,
 } from '@cipherstash/protect-ffi'
 import type {
   ProtectColumn,
@@ -135,14 +136,16 @@ export type DecryptionResult<T> = DecryptionSuccess<T> | DecryptionError<T>
  * - `'equality'`: For exact match queries. {@link https://cipherstash.com/docs/platform/searchable-encryption/supported-queries/exact | Exact Queries}
  * - `'freeTextSearch'`: For text search queries. {@link https://cipherstash.com/docs/platform/searchable-encryption/supported-queries/match | Match Queries}
  * - `'orderAndRange'`: For comparison and range queries. {@link https://cipherstash.com/docs/platform/searchable-encryption/supported-queries/range | Range Queries}
+ * - `'steVecSelector'`: For STE vector selector queries.
+ * - `'steVecTerm'`: For STE vector term queries.
  */
-export type QueryTypeName = 'orderAndRange' | 'freeTextSearch' | 'equality'
+export type QueryTypeName = 'orderAndRange' | 'freeTextSearch' | 'equality' | 'steVecSelector' | 'steVecTerm'
 
 /**
  * Internal FFI index type names.
  * @internal
  */
-export type FfiIndexTypeName = 'ore' | 'match' | 'unique'
+export type FfiIndexTypeName = 'ore' | 'match' | 'unique' | 'ste_vec'
 
 /**
  * Query type constants for use with encryptQuery().
@@ -151,6 +154,8 @@ export const queryTypes = {
   orderAndRange: 'orderAndRange',
   freeTextSearch: 'freeTextSearch',
   equality: 'equality',
+  steVecSelector: 'steVecSelector',
+  steVecTerm: 'steVecTerm',
 } as const satisfies Record<string, QueryTypeName>
 
 /**
@@ -161,6 +166,18 @@ export const queryTypeToFfi: Record<QueryTypeName, FfiIndexTypeName> = {
   orderAndRange: 'ore',
   freeTextSearch: 'match',
   equality: 'unique',
+  steVecSelector: 'ste_vec',
+  steVecTerm: 'ste_vec',
+}
+
+/**
+ * Maps query type names to FFI query operation names.
+ * Returns undefined for query types that don't need a specific queryOp.
+ * @internal
+ */
+export const queryTypeToQueryOp: Partial<Record<QueryTypeName, QueryOpName>> = {
+  steVecSelector: 'ste_vec_selector',
+  steVecTerm: 'ste_vec_term',
 }
 
 /**

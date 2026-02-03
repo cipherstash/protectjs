@@ -50,7 +50,7 @@ function buildQueryPayload(
 ): QueryPayload {
   assertValidNumericValue(term.value)
 
-  const indexType = resolveIndexType(term.column, term.queryType)
+  const { indexType, queryOp } = resolveIndexType(term.column, term.queryType)
 
   // Validate value/index compatibility
   assertValueIndexCompatibility(
@@ -64,6 +64,7 @@ function buildQueryPayload(
     column: term.column.getName(),
     table: term.table.tableName,
     indexType,
+    queryOp,
   }
 
   if (lockContext != null) {
