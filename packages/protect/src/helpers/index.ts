@@ -6,12 +6,30 @@ export type EncryptedPgComposite = {
 }
 
 /**
- * Helper function to transform an encrypted payload into a PostgreSQL composite type
+ * Helper function to transform an encrypted payload into a PostgreSQL composite type.
+ * Use this when inserting data via Supabase or similar clients.
  */
 export function encryptedToPgComposite(obj: Encrypted): EncryptedPgComposite {
   return {
     data: obj,
   }
+}
+
+/**
+ * Helper function to transform an encrypted payload into a PostgreSQL composite literal string.
+ * Use this when querying with `.eq()` or similar equality operations in Supabase.
+ *
+ * @example
+ * ```typescript
+ * const [encrypted] = await protectClient.encryptQuery([
+ *   { value: searchValue, column, table, queryType: 'equality' }
+ * ])
+ * const literal = encryptedToCompositeLiteral(encrypted)
+ * await supabase.from('table').select().eq('column', literal)
+ * ```
+ */
+export function encryptedToCompositeLiteral(obj: Encrypted): string {
+  return `(${JSON.stringify(JSON.stringify(obj))})`
 }
 
 /**

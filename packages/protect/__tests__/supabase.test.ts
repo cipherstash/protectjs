@@ -4,6 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import {
   type Encrypted,
   bulkModelsToEncryptedPgComposites,
+  encryptedToCompositeLiteral,
   encryptedToPgComposite,
   isEncryptedPayload,
   modelToEncryptedPgComposites,
@@ -280,7 +281,7 @@ describe('supabase', () => {
     const { data, error } = await supabase
       .from('protect-ci')
       .select('id, age::jsonb, otherField')
-      .eq('age', encryptedToPgComposite(encryptedAge))
+      .eq('age', encryptedToCompositeLiteral(encryptedAge))
       .eq('test_run_id', TEST_RUN_ID)
 
     if (error) {

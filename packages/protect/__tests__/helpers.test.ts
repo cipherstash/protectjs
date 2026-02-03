@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   bulkModelsToEncryptedPgComposites,
+  encryptedToCompositeLiteral,
   encryptedToPgComposite,
   isEncryptedPayload,
   modelToEncryptedPgComposites,
@@ -26,6 +27,29 @@ describe('helpers', () => {
       expect(pgComposite).toEqual({
         data: encrypted,
       })
+    })
+  })
+
+  describe('encryptedToCompositeLiteral', () => {
+    it('should convert encrypted payload to pg composite literal string', () => {
+      const encrypted = {
+        v: 1,
+        c: 'ciphertext',
+        i: {
+          c: 'iv',
+          t: 't',
+        },
+      }
+
+      const literal = encryptedToCompositeLiteral(encrypted)
+      // Should produce PostgreSQL composite literal format: ("json_string")
+      expect(literal).toMatch(/^\(.*\)$/)
+      // The inner content should be a valid JSON string (double-stringified)
+      const innerContent = literal.slice(1, -1) // Remove outer parentheses
+      expect(() => JSON.parse(innerContent)).not.toThrow()
+      // Parsing the inner content should give us the original JSON
+      const parsedJson = JSON.parse(JSON.parse(innerContent))
+      expect(parsedJson).toEqual(encrypted)
     })
   })
 
