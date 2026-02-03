@@ -41,6 +41,22 @@ export function encryptedToCompositeLiteral(obj: Encrypted): string {
 }
 
 /**
+ * Helper function to transform an encrypted payload into an escaped PostgreSQL composite literal string.
+ * Use this when you need the composite literal format to be escaped as a string value.
+ *
+ * @example
+ * ```typescript
+ * const [encrypted] = await protectClient.encryptQuery([
+ *   { value: searchValue, column, table, queryType: 'equality' }
+ * ])
+ * const escapedLiteral = encryptedToEscapedCompositeLiteral(encrypted)
+ * ```
+ */
+export function encryptedToEscapedCompositeLiteral(obj: Encrypted): string {
+  return JSON.stringify(`(${JSON.stringify(JSON.stringify(obj))})`)
+}
+
+/**
  * Helper function to transform a model's encrypted fields into PostgreSQL composite types
  */
 export function modelToEncryptedPgComposites<T extends Record<string, unknown>>(

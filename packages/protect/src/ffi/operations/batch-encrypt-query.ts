@@ -12,6 +12,7 @@ import { noClientError } from '../index'
 import { ProtectOperation } from './base-operation'
 import { resolveIndexType } from '../helpers/infer-index-type'
 import { assertValidNumericValue } from '../helpers/validation'
+import { encryptedToCompositeLiteral, encryptedToEscapedCompositeLiteral } from '../../helpers'
 
 /**
  * Separates null values from non-null terms in the input array.
@@ -71,7 +72,6 @@ function buildQueryPayload(
  */
 function assembleResults(
   totalLength: number,
-  nullIndices: Set<number>,
   encryptedValues: Encrypted[],
   nonNullTerms: { term: ScalarQueryTerm; originalIndex: number }[],
 ): EncryptedQueryResult[] {
@@ -82,9 +82,9 @@ function assembleResults(
     const encrypted = encryptedValues[i]
 
     if (term.returnType === 'composite-literal') {
-      results[originalIndex] = `(${JSON.stringify(JSON.stringify(encrypted))})`
+      results[originalIndex] = encryptedToCompositeLiteral(encrypted)
     } else if (term.returnType === 'escaped-composite-literal') {
-      results[originalIndex] = JSON.stringify(`(${JSON.stringify(JSON.stringify(encrypted))})`)
+      results[originalIndex] = encryptedToEscapedCompositeLiteral(encrypted)
     } else {
       results[originalIndex] = encrypted
     }
@@ -134,7 +134,7 @@ export class BatchEncryptQueryOperation extends ProtectOperation<EncryptedQueryR
           unverifiedContext: metadata,
         })
 
-        return assembleResults(this.terms.length, nullIndices, encrypted, nonNullTerms)
+        return assembleResults(this.terms.length, encrypted, nonNullTerms)
       },
       (error) => ({
         type: ProtectErrorTypes.EncryptionError,
@@ -193,7 +193,7 @@ export class BatchEncryptQueryOperationWithLockContext extends ProtectOperation<
           unverifiedContext: metadata,
         })
 
-        return assembleResults(this.terms.length, nullIndices, encrypted, nonNullTerms)
+        return assembleResults(this.terms.length, encrypted, nonNullTerms)
       },
       (error) => ({
         type: ProtectErrorTypes.EncryptionError,

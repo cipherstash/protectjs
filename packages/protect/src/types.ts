@@ -171,6 +171,12 @@ export type QueryTermBase = {
   column: ProtectColumn
   table: ProtectTable<ProtectTableColumn>
   queryType?: QueryTypeName  // Optional - auto-infers if omitted
+  /**
+   * The format for the returned encrypted value:
+   * - `'eql'` (default) - Returns raw Encrypted object
+   * - `'composite-literal'` - Returns PostgreSQL composite literal format `("json")`
+   * - `'escaped-composite-literal'` - Returns escaped format `"(\"json\")"`
+   */
   returnType?: 'eql' | 'composite-literal' | 'escaped-composite-literal'
 }
 
