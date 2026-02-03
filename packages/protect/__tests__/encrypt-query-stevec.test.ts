@@ -107,21 +107,16 @@ describe('encryptQuery with steVecTerm', () => {
     })
   }, 30000)
 
-  it('handles string plaintext with steVecTerm', async () => {
+  it('rejects string plaintext with steVecTerm', async () => {
+    // steVecTerm requires object or array, not string
+    // For path queries like '$.field', use steVecSelector instead
     const result = await protectClient.encryptQuery('search text', {
       column: jsonbSchema.metadata,
       table: jsonbSchema,
       queryType: 'steVecTerm',
     })
 
-    // String plaintext with steVecTerm - test what actually happens
-    // This may succeed or fail depending on FFI implementation
-    if (result.failure) {
-      expectFailure(result)
-    } else {
-      const data = unwrapResult(result)
-      expect(data).toBeDefined()
-    }
+    expectFailure(result, /expected JSON object or array/)
   }, 30000)
 })
 
