@@ -123,8 +123,11 @@ export type {
   ProtectTableColumn,
   ProtectValue,
 } from '@cipherstash/schema'
+// LockContext class export (value export for instantiation)
+export { LockContext } from './identify'
+
+// LockContext related type exports
 export type {
-  LockContext,
   CtsRegions,
   IdentifyOptions,
   CtsToken,

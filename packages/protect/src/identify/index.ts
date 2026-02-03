@@ -57,13 +57,13 @@ export class LockContext {
   async identify(jwtToken: string): Promise<Result<LockContext, ProtectError>> {
     const workspaceId = this.workspaceId
 
-    const ctsEndoint =
+    const ctsEndpoint =
       process.env.CS_CTS_ENDPOINT ||
       'https://ap-southeast-2.aws.auth.viturhosted.net'
 
     const ctsFetchResult = await withResult(
       () =>
-        fetch(`${ctsEndoint}/api/authorize`, {
+        fetch(`${ctsEndpoint}/api/authorize`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
