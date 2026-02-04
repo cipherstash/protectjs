@@ -398,7 +398,7 @@ export class ProtectClient {
   /**
    * Create search terms to use in a query searching encrypted data
    *
-   * @deprecated Use `encryptQuery(terms)` instead. Will be removed in v2.0.
+   * @deprecated Use `encryptQuery(terms)` instead.
    *
    * Migration example:
    * ```typescript
