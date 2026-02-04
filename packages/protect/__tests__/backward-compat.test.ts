@@ -47,8 +47,9 @@ describe('k-field backward compatibility', () => {
     }
 
     // Simulate legacy payload by adding k field to the encrypted data
+    // Use non-null assertion since we've already checked for failure above
     const legacyPayload = {
-      ...encrypted.data,
+      ...encrypted.data!,
       k: 'ct', // Legacy discriminant field - should be ignored during decryption
     }
 

@@ -65,6 +65,9 @@ export function protectDynamoDB(
       )
     },
 
+    /**
+     * @deprecated Use `protectClient.encryptQuery(terms)` instead and extract the `hm` field for DynamoDB key lookups.
+     */
     createSearchTerms(terms: SearchTerm[]) {
       return new SearchTermsOperation(protectClient, terms, options)
     },

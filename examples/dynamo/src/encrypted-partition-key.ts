@@ -49,21 +49,23 @@ const main = async () => {
 
   await docClient.send(putCommand)
 
-  const searchTermsResult = await protectDynamo.createSearchTerms([
-    {
-      value: 'abc@example.com',
-      column: users.email,
-      table: users,
-    },
+  // Use encryptQuery to create the search term for partition key lookup
+  const encryptedResult = await protectClient.encryptQuery([
+    { value: 'abc@example.com', column: users.email, table: users, queryType: 'equality' },
   ])
 
-  if (searchTermsResult.failure) {
+  if (encryptedResult.failure) {
     throw new Error(
-      `Failed to create search terms: ${searchTermsResult.failure.message}`,
+      `Failed to encrypt query: ${encryptedResult.failure.message}`,
     )
   }
 
-  const [emailHmac] = searchTermsResult.data
+  // Extract the HMAC for DynamoDB key lookup
+  const encryptedEmail = encryptedResult.data[0]
+  if (!encryptedEmail) {
+    throw new Error('Failed to encrypt query: no result returned')
+  }
+  const emailHmac = encryptedEmail.hm
 
   const getCommand = new GetCommand({
     TableName: tableName,

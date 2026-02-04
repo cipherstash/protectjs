@@ -59,6 +59,12 @@ export type KeysetIdentifier =
 export type EncryptedSearchTerm = Encrypted | string
 
 /**
+ * Result type for encryptQuery batch operations.
+ * Can be Encrypted (default), string (for composite-literal formats), or null.
+ */
+export type EncryptedQueryResult = Encrypted | string | null
+
+/**
  * Represents a payload to be encrypted using the `encrypt` function
  */
 export type EncryptPayload = JsPlaintext | null
@@ -122,3 +128,66 @@ type DecryptionError<T> = {
 }
 
 export type DecryptionResult<T> = DecryptionSuccess<T> | DecryptionError<T>
+
+/**
+ * User-facing query type names for encrypting query values.
+ *
+ * - `'equality'`: For exact match queries. {@link https://cipherstash.com/docs/platform/searchable-encryption/supported-queries/exact | Exact Queries}
+ * - `'freeTextSearch'`: For text search queries. {@link https://cipherstash.com/docs/platform/searchable-encryption/supported-queries/match | Match Queries}
+ * - `'orderAndRange'`: For comparison and range queries. {@link https://cipherstash.com/docs/platform/searchable-encryption/supported-queries/range | Range Queries}
+ */
+export type QueryTypeName = 'orderAndRange' | 'freeTextSearch' | 'equality'
+
+/**
+ * Internal FFI index type names.
+ * @internal
+ */
+export type FfiIndexTypeName = 'ore' | 'match' | 'unique'
+
+/**
+ * Query type constants for use with encryptQuery().
+ */
+export const queryTypes = {
+  orderAndRange: 'orderAndRange',
+  freeTextSearch: 'freeTextSearch',
+  equality: 'equality',
+} as const satisfies Record<string, QueryTypeName>
+
+/**
+ * Maps user-friendly query type names to FFI index type names.
+ * @internal
+ */
+export const queryTypeToFfi: Record<QueryTypeName, FfiIndexTypeName> = {
+  orderAndRange: 'ore',
+  freeTextSearch: 'match',
+  equality: 'unique',
+}
+
+/**
+ * Base type for query term options shared between single and bulk operations.
+ * @internal
+ */
+export type QueryTermBase = {
+  column: ProtectColumn
+  table: ProtectTable<ProtectTableColumn>
+  queryType?: QueryTypeName  // Optional - auto-infers if omitted
+  /**
+   * The format for the returned encrypted value:
+   * - `'eql'` (default) - Returns raw Encrypted object
+   * - `'composite-literal'` - Returns PostgreSQL composite literal format `("json")`
+   * - `'escaped-composite-literal'` - Returns escaped format `"(\"json\")"`
+   */
+  returnType?: 'eql' | 'composite-literal' | 'escaped-composite-literal'
+}
+
+/**
+ * Options for encrypting a single query term.
+ */
+export type EncryptQueryOptions = QueryTermBase
+
+/**
+ * Individual query term for bulk operations.
+ */
+export type ScalarQueryTerm = QueryTermBase & {
+  value: JsPlaintext | null
+}

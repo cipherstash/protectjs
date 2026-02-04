@@ -1,4 +1,7 @@
-import type { ProtectClient } from '@cipherstash/protect'
+import {
+  type ProtectClient,
+  encryptedToPgComposite,
+} from '@cipherstash/protect'
 import type { EntityTarget } from 'typeorm'
 import { AppDataSource } from '../data-source'
 
@@ -199,25 +202,28 @@ export class ProtectEntityHelper {
     // biome-ignore lint/suspicious/noExplicitAny: Required for Protect.js schema types
     fieldConfig: { table: any; column: any },
   ): Promise<T | null> {
-    const searchTermsResult = await this.protectClient.createSearchTerms([
+    // Use encryptQuery instead of deprecated createSearchTerms
+    const encryptedResult = await this.protectClient.encryptQuery([
       {
         value: searchValue,
         column: fieldConfig.column,
         table: fieldConfig.table,
-        returnType: 'composite-literal',
+        queryType: 'equality',
       },
     ])
 
-    if (searchTermsResult.failure) {
+    if (encryptedResult.failure) {
       throw new Error(
-        `Failed to create search terms: ${searchTermsResult.failure.message}`,
+        `Failed to encrypt query: ${encryptedResult.failure.message}`,
       )
     }
+
+    const [encrypted] = encryptedResult.data
 
     const repository = AppDataSource.getRepository(entityClass)
     return repository.findOne({
       where: {
-        [fieldName]: searchTermsResult.data[0],
+        [fieldName]: encryptedToPgComposite(encrypted),
         // biome-ignore lint/suspicious/noExplicitAny: Required for dynamic field access
       } as any,
     })
