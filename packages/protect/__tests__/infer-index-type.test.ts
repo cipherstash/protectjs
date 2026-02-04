@@ -81,12 +81,12 @@ describe('infer-index-type helpers', () => {
       expect(inferQueryOpFromPlaintext(['admin', 'user'])).toBe('ste_vec_term')
     })
 
-    it('throws for number plaintext', () => {
-      expect(() => inferQueryOpFromPlaintext(42)).toThrow('Cannot infer STE Vec query operation')
+    it('returns ste_vec_term for number plaintext', () => {
+      expect(inferQueryOpFromPlaintext(42)).toBe('ste_vec_term')
     })
 
-    it('throws for boolean plaintext', () => {
-      expect(() => inferQueryOpFromPlaintext(true)).toThrow('Cannot infer STE Vec query operation')
+    it('returns ste_vec_term for boolean plaintext', () => {
+      expect(inferQueryOpFromPlaintext(true)).toBe('ste_vec_term')
     })
   })
 
@@ -109,18 +109,16 @@ describe('infer-index-type helpers', () => {
       expect(result).toEqual({ indexType: 'ste_vec', queryOp: 'ste_vec_term' })
     })
 
-    it('throws when ste_vec inferred but plaintext is null', () => {
+    it('returns indexType only when ste_vec inferred but plaintext is null', () => {
       const schema = csTable('t', { col: csColumn('col').searchableJson() })
-      expect(() => resolveIndexType(schema.col, undefined, null)).toThrow(
-        'Cannot infer query operation for searchableJson column'
-      )
+      const result = resolveIndexType(schema.col, undefined, null)
+      expect(result).toEqual({ indexType: 'ste_vec' })
     })
 
-    it('throws when ste_vec inferred but plaintext is undefined', () => {
+    it('returns indexType only when ste_vec inferred but plaintext is undefined', () => {
       const schema = csTable('t', { col: csColumn('col').searchableJson() })
-      expect(() => resolveIndexType(schema.col)).toThrow(
-        'Cannot infer query operation for searchableJson column'
-      )
+      const result = resolveIndexType(schema.col)
+      expect(result).toEqual({ indexType: 'ste_vec' })
     })
 
     it('uses explicit queryType over plaintext inference', () => {

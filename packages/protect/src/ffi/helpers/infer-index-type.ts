@@ -29,20 +29,23 @@ export function inferIndexType(column: ProtectColumn): FfiIndexTypeName {
 /**
  * Infer the FFI query operation from plaintext type for STE Vec queries.
  * - String → ste_vec_selector (JSONPath queries like '$.user.email')
- * - Object/Array → ste_vec_term (containment queries like { role: 'admin' })
- * @throws Error if plaintext type cannot be mapped to a query operation
+ * - Object/Array/Number/Boolean → ste_vec_term (containment queries)
  */
 export function inferQueryOpFromPlaintext(plaintext: JsPlaintext): QueryOpName {
   if (typeof plaintext === 'string') {
     return 'ste_vec_selector'
   }
-  if (typeof plaintext === 'object' && plaintext !== null) {
+  // Objects, arrays, numbers, booleans are all valid JSONB containment values
+  if (
+    typeof plaintext === 'object' ||
+    typeof plaintext === 'number' ||
+    typeof plaintext === 'boolean' ||
+    typeof plaintext === 'bigint'
+  ) {
     return 'ste_vec_term'
   }
-  throw new Error(
-    `Cannot infer STE Vec query operation from ${typeof plaintext}. ` +
-      `Use queryType: 'steVecSelector' for path queries or 'steVecTerm' for containment.`
-  )
+  // This should never happen with valid JsPlaintext, but keep for safety
+  return 'ste_vec_term'
 }
 
 /**
@@ -92,10 +95,8 @@ export function resolveIndexType(
   // ste_vec inferred without explicit queryType → must infer from plaintext
   if (indexType === 'ste_vec') {
     if (plaintext === undefined || plaintext === null) {
-      throw new Error(
-        `Cannot infer query operation for searchableJson column "${column.getName()}". ` +
-          `Provide queryType: 'steVecSelector' (for JSONPath queries) or 'steVecTerm' (for containment).`
-      )
+      // Null plaintext handled by caller (returns null early) - no inference needed
+      return { indexType }
     }
     return { indexType, queryOp: inferQueryOpFromPlaintext(plaintext) }
   }

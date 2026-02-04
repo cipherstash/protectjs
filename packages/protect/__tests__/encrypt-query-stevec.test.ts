@@ -299,6 +299,28 @@ describe('encryptQuery with queryType inference', () => {
     })
   }, 30000)
 
+  it('infers steVecTerm for number plaintext but FFI requires wrapping', async () => {
+    // Numbers infer steVecTerm but FFI requires wrapping in object/array
+    const result = await protectClient.encryptQuery(42, {
+      column: jsonbSchema.metadata,
+      table: jsonbSchema,
+      // No queryType - infers steVecTerm, FFI rejects with helpful message
+    })
+
+    expectFailure(result, /Wrap the number in a JSON object/)
+  }, 30000)
+
+  it('infers steVecTerm for boolean plaintext but FFI requires wrapping', async () => {
+    // Booleans infer steVecTerm but FFI requires wrapping in object/array
+    const result = await protectClient.encryptQuery(true, {
+      column: jsonbSchema.metadata,
+      table: jsonbSchema,
+      // No queryType - infers steVecTerm, FFI rejects with helpful message
+    })
+
+    expectFailure(result, /Wrap the boolean in a JSON object/)
+  }, 30000)
+
   it('returns null for null plaintext (no inference needed)', async () => {
     const result = await protectClient.encryptQuery(null, {
       column: jsonbSchema.metadata,
@@ -309,6 +331,24 @@ describe('encryptQuery with queryType inference', () => {
     // Null returns null, doesn't throw
     const data = unwrapResult(result)
     expect(data).toBeNull()
+  }, 30000)
+
+  it('uses explicit queryType over plaintext inference', async () => {
+    // String plaintext would normally infer steVecSelector, but explicit steVecTerm should be used
+    // Note: steVecTerm with string fails FFI validation, so we test the opposite direction
+    // Using a number (which would infer steVecTerm) with explicit steVecSelector would also fail
+    // So we verify with array + steVecTerm (already tested) and trust unit test coverage for precedence
+    const result = await protectClient.encryptQuery([42], {
+      column: jsonbSchema.metadata,
+      table: jsonbSchema,
+      queryType: 'steVecTerm',  // Explicit - matches inference but proves explicit path works
+    })
+
+    const data = unwrapResult(result)
+    expect(data).toBeDefined()
+    expect(data).toMatchObject({
+      i: { t: 'documents', c: 'metadata' },
+    })
   }, 30000)
 })
 

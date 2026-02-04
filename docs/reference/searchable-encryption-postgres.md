@@ -154,7 +154,16 @@ const term = await protectClient.encryptQuery('$.user.email', {
 
 > [!NOTE]
 > When a column uses `searchableJson()`, string values passed to `encryptQuery` are treated as JSONPath selectors.
-> If you need to query for a JSON string value itself, wrap it in an object or array and use `steVecTerm`.
+> If you need to query for a JSON string value itself, wrap it in an object or array:
+>
+> ```typescript
+> // To find documents where a field contains the string "admin"
+> const term = await protectClient.encryptQuery(['admin'], {
+>   column: schema.metadata,
+>   table: schema,
+>   queryType: 'steVecTerm',  // Explicit for clarity
+> })
+> ```
 
 ### Exact matching
 
