@@ -10,7 +10,7 @@ import type { Client, Encrypted, EncryptQueryOptions } from '../../types'
 import { noClientError } from '../index'
 import { ProtectOperation } from './base-operation'
 import { resolveIndexType } from '../helpers/infer-index-type'
-import { validateNumericValue } from '../helpers/validation'
+import { validateNumericValue, assertValueIndexCompatibility } from '../helpers/validation'
 
 /**
  * @internal Use {@link ProtectClient.encryptQuery} instead.
@@ -51,6 +51,13 @@ export class EncryptQueryOperation extends ProtectOperation<Encrypted> {
         const { metadata } = this.getAuditData()
 
         const indexType = resolveIndexType(this.opts.column, this.opts.queryType)
+
+        // Validate value/index compatibility
+        assertValueIndexCompatibility(
+          this.plaintext,
+          indexType,
+          this.opts.column.getName()
+        )
 
         return await ffiEncryptQuery(this.client, {
           plaintext: this.plaintext as JsPlaintext,
@@ -111,6 +118,13 @@ export class EncryptQueryOperationWithLockContext extends ProtectOperation<Encry
         const { metadata } = this.getAuditData()
 
         const indexType = resolveIndexType(this.opts.column, this.opts.queryType)
+
+        // Validate value/index compatibility
+        assertValueIndexCompatibility(
+          this.plaintext,
+          indexType,
+          this.opts.column.getName()
+        )
 
         return await ffiEncryptQuery(this.client, {
           plaintext: this.plaintext as JsPlaintext,

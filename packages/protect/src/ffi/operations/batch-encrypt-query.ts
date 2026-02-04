@@ -12,7 +12,7 @@ import type { Client, EncryptedQueryResult, ScalarQueryTerm } from '../../types'
 import { noClientError } from '../index'
 import { ProtectOperation } from './base-operation'
 import { resolveIndexType } from '../helpers/infer-index-type'
-import { assertValidNumericValue } from '../helpers/validation'
+import { assertValidNumericValue, assertValueIndexCompatibility } from '../helpers/validation'
 import { encryptedToCompositeLiteral, encryptedToEscapedCompositeLiteral } from '../../helpers'
 
 /**
@@ -52,6 +52,13 @@ function buildQueryPayload(
 
   const indexType = resolveIndexType(term.column, term.queryType)
 
+  // Validate value/index compatibility
+  assertValueIndexCompatibility(
+    term.value,
+    indexType,
+    term.column.getName()
+  )
+
   const payload: QueryPayload = {
     plaintext: term.value as JsPlaintext,
     column: term.column.getName(),
@@ -59,7 +66,7 @@ function buildQueryPayload(
     indexType,
   }
 
-  if (lockContext !== undefined) {
+  if (lockContext != null) {
     payload.lockContext = lockContext
   }
 

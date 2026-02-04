@@ -177,6 +177,57 @@ describe('encryptQuery', () => {
     }, 30000)
   })
 
+  describe('value/index type compatibility', () => {
+    it('fails when encrypting number with match index (explicit queryType)', async () => {
+      const result = await protectClient.encryptQuery(123, {
+        column: articles.content, // match-only column
+        table: articles,
+        queryType: 'freeTextSearch',
+      })
+
+      expectFailure(result, 'match')
+      expectFailure(result, 'numeric')
+    }, 30000)
+
+    it('fails when encrypting number with auto-inferred match index', async () => {
+      const result = await protectClient.encryptQuery(123, {
+        column: articles.content, // match-only column, will infer 'match'
+        table: articles,
+      })
+
+      expectFailure(result, 'match')
+    }, 30000)
+
+    it('fails in batch when number used with match index', async () => {
+      const result = await protectClient.encryptQuery([
+        { value: 123, column: articles.content, table: articles },
+      ])
+
+      expectFailure(result, 'match')
+    }, 30000)
+
+    it('allows string with match index', async () => {
+      const result = await protectClient.encryptQuery('search text', {
+        column: articles.content,
+        table: articles,
+      })
+
+      const data = unwrapResult(result)
+      expect(data).toHaveProperty('bf') // bloom filter
+    }, 30000)
+
+    it('allows number with ore index', async () => {
+      const result = await protectClient.encryptQuery(42, {
+        column: users.age,
+        table: users,
+        queryType: 'orderAndRange',
+      })
+
+      const data = unwrapResult(result)
+      expect(data).toHaveProperty('ob') // order bits
+    }, 30000)
+  })
+
   describe('numeric edge cases', () => {
     it('encrypts MAX_SAFE_INTEGER', async () => {
       const result = await protectClient.encryptQuery(Number.MAX_SAFE_INTEGER, {
@@ -611,6 +662,33 @@ describe('encryptQuery', () => {
       // since there's nothing to encrypt
       const data = unwrapResult(result)
       expect(data).toBeNull()
+    }, 30000)
+
+    it('handles explicit null context from getLockContext gracefully', async () => {
+      // Simulate a runtime scenario where context is null (bypasses TypeScript)
+      const mockLockContext = {
+        getLockContext: vi.fn().mockResolvedValue({
+          data: {
+            ctsToken: {
+              accessToken: 'mock-token',
+              expiry: Date.now() + 3600000,
+            },
+            context: null, // Explicit null - simulating runtime edge case
+          },
+        }),
+      }
+
+      const operation = protectClient.encryptQuery([
+        { value: 'test@example.com', column: users.email, table: users, queryType: 'equality' },
+      ])
+
+      const withContext = operation.withLockContext(mockLockContext as any)
+      const result = await withContext.execute()
+
+      // Should succeed - null context should not be passed to FFI
+      const data = unwrapResult(result)
+      expect(data).toHaveLength(1)
+      expect(data[0]).toHaveProperty('hm')
     }, 30000)
   })
 })
