@@ -20,6 +20,7 @@ export function toJsonPath(path: string): string {
   if (path.startsWith('$.')) return path
   if (path.startsWith('$')) return `$.${path.slice(1)}`
   if (path.startsWith('.')) return `$${path}`
+  if (path.startsWith('[')) return `$${path}`
   return `$.${path}`
 }
 

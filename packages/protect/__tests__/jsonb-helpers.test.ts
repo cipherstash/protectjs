@@ -51,7 +51,19 @@ describe('toJsonPath', () => {
   })
 
   it('handles array index at root level', () => {
-    expect(toJsonPath('[0].name')).toBe('$.[0].name')
+    expect(toJsonPath('[0].name')).toBe('$[0].name')
+  })
+
+  it('handles large array index', () => {
+    expect(toJsonPath('items[999].value')).toBe('$.items[999].value')
+  })
+
+  it('handles deeply nested path after array index', () => {
+    expect(toJsonPath('data[0].user.profile.settings')).toBe('$.data[0].user.profile.settings')
+  })
+
+  it('handles root array with nested array', () => {
+    expect(toJsonPath('[0].items[1].name')).toBe('$[0].items[1].name')
   })
 })
 
