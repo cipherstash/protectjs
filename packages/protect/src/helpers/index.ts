@@ -126,3 +126,9 @@ export function isEncryptedPayload(value: unknown): value is Encrypted {
 
   return false
 }
+
+export {
+  toJsonPath,
+  buildNestedObject,
+  parseJsonbPath,
+} from './jsonb'
