@@ -54,6 +54,14 @@ describe('toJsonPath', () => {
     expect(toJsonPath('[0].name')).toBe('$[0].name')
   })
 
+  it('preserves already-prefixed root array index', () => {
+    expect(toJsonPath('$[0]')).toBe('$[0]')
+  })
+
+  it('preserves already-prefixed root array index with property', () => {
+    expect(toJsonPath('$[0].name')).toBe('$[0].name')
+  })
+
   it('handles large array index', () => {
     expect(toJsonPath('items[999].value')).toBe('$.items[999].value')
   })

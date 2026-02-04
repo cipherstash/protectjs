@@ -1,9 +1,9 @@
 /**
  * JSONB path utilities for converting between path formats.
  *
- * These utilities support simple dot-notation paths only.
- * Path segments are not validated - callers are responsible for ensuring
- * segments contain valid property names (no brackets, quotes, or special chars).
+ * These utilities support dot-notation and basic JSONPath-style array indices (e.g., "[0]").
+ * Only limited validation is performed (forbidden prototype keys); callers should still
+ * ensure segments are valid property names.
  */
 
 /**
@@ -17,6 +17,7 @@
  */
 export function toJsonPath(path: string): string {
   if (!path || path === '$') return '$'
+  if (path.startsWith('$[')) return path
   if (path.startsWith('$.')) return path
   if (path.startsWith('$')) return `$.${path.slice(1)}`
   if (path.startsWith('.')) return `$${path}`
