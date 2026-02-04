@@ -49,7 +49,6 @@ export interface ProtectDynamoDBInstance {
 
   /**
    * @deprecated Use `protectClient.encryptQuery(terms)` instead and extract the `hm` field for DynamoDB key lookups.
-   * Will be removed in v2.0.
    *
    * @example
    * ```typescript

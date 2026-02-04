@@ -393,7 +393,7 @@ describe('encryptQuery', () => {
           table: users,
           queryType: 'equality',
         })
-        .audit({ userId: 'test-user' })
+        .audit({ metadata: { userId: 'test-user' } })
 
       const data = unwrapResult(result)
       expect(data).toMatchObject({ i: { t: 'users', c: 'email' } })
@@ -404,7 +404,7 @@ describe('encryptQuery', () => {
         .encryptQuery([
           { value: 'test@example.com', column: users.email, table: users, queryType: 'equality' },
         ])
-        .audit({ userId: 'test-user' })
+        .audit({ metadata: { userId: 'test-user' } })
 
       const data = unwrapResult(result)
       expect(data).toHaveLength(1)
