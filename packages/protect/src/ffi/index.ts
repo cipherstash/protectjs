@@ -229,6 +229,11 @@ export class ProtectClient {
    * ```
    *
    * @see {@link EncryptQueryOperation}
+   *
+   * **JSONB columns (searchableJson):**
+   * When `queryType` is omitted on a `searchableJson()` column, the query operation is inferred:
+   * - String plaintext → `steVecSelector` (JSONPath queries like `'$.user.email'`)
+   * - Object/Array plaintext → `steVecTerm` (containment queries like `{ role: 'admin' }`)
    */
   encryptQuery(
     plaintext: JsPlaintext | null,

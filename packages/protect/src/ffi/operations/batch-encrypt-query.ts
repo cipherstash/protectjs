@@ -16,8 +16,8 @@ import { assertValidNumericValue, assertValueIndexCompatibility } from '../helpe
 import { encryptedToCompositeLiteral, encryptedToEscapedCompositeLiteral } from '../../helpers'
 
 /**
- * Separates null values from non-null terms in the input array.
- * Returns a set of indices where values are null and an array of non-null terms with their original indices.
+ * Separates null/undefined values from non-null terms in the input array.
+ * Returns a set of indices where values are null/undefined and an array of non-null terms with their original indices.
  */
 function filterNullTerms(
   terms: readonly ScalarQueryTerm[],
@@ -29,7 +29,7 @@ function filterNullTerms(
   const nonNullTerms: { term: ScalarQueryTerm; originalIndex: number }[] = []
 
   terms.forEach((term, index) => {
-    if (term.value === null) {
+    if (term.value === null || term.value === undefined) {
       nullIndices.add(index)
     } else {
       nonNullTerms.push({ term, originalIndex: index })
@@ -50,7 +50,11 @@ function buildQueryPayload(
 ): QueryPayload {
   assertValidNumericValue(term.value)
 
-  const indexType = resolveIndexType(term.column, term.queryType)
+  const { indexType, queryOp } = resolveIndexType(
+    term.column,
+    term.queryType,
+    term.value
+  )
 
   // Validate value/index compatibility
   assertValueIndexCompatibility(
@@ -64,6 +68,7 @@ function buildQueryPayload(
     column: term.column.getName(),
     table: term.table.tableName,
     indexType,
+    queryOp,
   }
 
   if (lockContext != null) {

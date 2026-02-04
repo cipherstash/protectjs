@@ -106,6 +106,65 @@ console.log(term.data) // array of search terms
 
 ## Search capabilities
 
+### JSONB queries with searchableJson
+
+For columns storing JSON data, use `.searchableJson()` to enable encrypted JSONB queries:
+
+```typescript
+const schema = csTable('documents', {
+  metadata: csColumn('metadata_encrypted')
+    .searchableJson()  // Enables JSONB path and containment queries
+})
+```
+
+**Query types for JSONB columns:**
+
+When using `encryptQuery` on a `searchableJson()` column, the query operation is automatically inferred from the plaintext type:
+
+- **String plaintext** → `steVecSelector` (JSONPath queries like `'$.user.email'`)
+- **Object/Array plaintext** → `steVecTerm` (containment queries like `{ role: 'admin' }`)
+
+```typescript
+// JSONPath selector query (string → steVecSelector inferred)
+const pathTerm = await protectClient.encryptQuery('$.user.email', {
+  column: schema.metadata,
+  table: schema,
+  // queryType is automatically inferred as 'steVecSelector'
+})
+
+// Containment query (object → steVecTerm inferred)
+const containmentTerm = await protectClient.encryptQuery({ role: 'admin' }, {
+  column: schema.metadata,
+  table: schema,
+  // queryType is automatically inferred as 'steVecTerm'
+})
+```
+
+**Explicit query type:**
+
+You can also specify `queryType` explicitly if needed:
+
+```typescript
+const term = await protectClient.encryptQuery('$.user.email', {
+  column: schema.metadata,
+  table: schema,
+  queryType: 'steVecSelector',  // Explicit
+})
+```
+
+> [!NOTE]
+> When a column uses `searchableJson()`, string values passed to `encryptQuery` are treated as JSONPath selectors.
+> If you need to query for a JSON string value itself, wrap it in an object or array:
+>
+> ```typescript
+> // To find documents where a field contains the string "admin"
+> const term = await protectClient.encryptQuery(['admin'], {
+>   column: schema.metadata,
+>   table: schema,
+>   queryType: 'steVecTerm',  // Explicit for clarity
+> })
+> ```
+
 ### Exact matching
 
 Use `.equality()` when you need to find exact matches:
