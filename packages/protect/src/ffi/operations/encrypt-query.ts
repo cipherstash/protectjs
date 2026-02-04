@@ -35,7 +35,7 @@ export class EncryptQueryOperation extends ProtectOperation<Encrypted> {
       queryType: this.opts.queryType,
     })
 
-    if (this.plaintext === null) {
+    if (this.plaintext === null || this.plaintext === undefined) {
       return { data: null }
     }
 
@@ -100,7 +100,7 @@ export class EncryptQueryOperationWithLockContext extends ProtectOperation<Encry
   }
 
   public async execute(): Promise<Result<Encrypted, ProtectError>> {
-    if (this.plaintext === null) {
+    if (this.plaintext === null || this.plaintext === undefined) {
       return { data: null }
     }
 
