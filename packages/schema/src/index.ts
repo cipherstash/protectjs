@@ -211,13 +211,15 @@ export class ProtectColumn {
   }
 
   /**
-   * Enable a STE Vec index, uses the column name for the index.
+   * Configure this column for searchable encrypted JSON.
+   * Enables path queries ($.user.email) and containment queries ({ role: 'admin' }).
+   * Automatically sets cast_as to 'json'.
    */
-  // NOTE: Leaving this commented out until stevec indexing for JSON is supported.
-  /*searchableJson() {
-    this.indexesValue.ste_vec = { prefix: this.columnName }
+  searchableJson() {
+    this.castAsValue = 'json'
+    this.indexesValue.ste_vec = { prefix: 'enabled' }
     return this
-  }*/
+  }
 
   build() {
     return {
