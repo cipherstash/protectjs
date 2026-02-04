@@ -34,6 +34,26 @@ describe('toJsonPath', () => {
   it('handles empty string', () => {
     expect(toJsonPath('')).toBe('$')
   })
+
+  it('handles array index in path', () => {
+    expect(toJsonPath('user.roles[0]')).toBe('$.user.roles[0]')
+  })
+
+  it('handles array index with nested property', () => {
+    expect(toJsonPath('items[0].name')).toBe('$.items[0].name')
+  })
+
+  it('handles already-prefixed path with array index', () => {
+    expect(toJsonPath('$.data[2]')).toBe('$.data[2]')
+  })
+
+  it('handles nested array indices', () => {
+    expect(toJsonPath('matrix[0][1]')).toBe('$.matrix[0][1]')
+  })
+
+  it('handles array index at root level', () => {
+    expect(toJsonPath('[0].name')).toBe('$.[0].name')
+  })
 })
 
 describe('buildNestedObject', () => {
