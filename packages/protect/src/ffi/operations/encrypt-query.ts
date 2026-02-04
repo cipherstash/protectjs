@@ -40,8 +40,8 @@ export class EncryptQueryOperation extends ProtectOperation<Encrypted> {
     }
 
     const validationError = validateNumericValue(this.plaintext)
-    if (validationError) {
-      return validationError
+    if (validationError?.failure) {
+      return { failure: validationError.failure }
     }
 
     return await withResult(
@@ -100,8 +100,8 @@ export class EncryptQueryOperationWithLockContext extends ProtectOperation<Encry
     }
 
     const validationError = validateNumericValue(this.plaintext)
-    if (validationError) {
-      return validationError
+    if (validationError?.failure) {
+      return { failure: validationError.failure }
     }
 
     const lockContextResult = await this.lockContext.getLockContext()
