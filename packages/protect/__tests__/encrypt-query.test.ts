@@ -32,7 +32,7 @@ describe('encryptQuery', () => {
 
       expect(data).toMatchObject({
         i: { t: 'users', c: 'email' },
-        v: expect.any(Number),
+        v: 2,
       })
       expect(data).toHaveProperty('hm')
     }, 30000)
@@ -48,7 +48,7 @@ describe('encryptQuery', () => {
 
       expect(data).toMatchObject({
         i: { t: 'users', c: 'bio' },
-        v: expect.any(Number),
+        v: 2,
       })
       expect(data).toHaveProperty('bf')
     }, 30000)
@@ -64,7 +64,7 @@ describe('encryptQuery', () => {
 
       expect(data).toMatchObject({
         i: { t: 'users', c: 'age' },
-        v: expect.any(Number),
+        v: 2,
       })
       expect(data).toHaveProperty('ob')
     }, 30000)
@@ -188,7 +188,7 @@ describe('encryptQuery', () => {
       const data = unwrapResult(result)
       expect(data).toMatchObject({
         i: { t: 'users', c: 'age' },
-        v: expect.any(Number),
+        v: 2,
       })
       expect(data).toHaveProperty('ob')
     }, 30000)
@@ -203,7 +203,7 @@ describe('encryptQuery', () => {
       const data = unwrapResult(result)
       expect(data).toMatchObject({
         i: { t: 'users', c: 'age' },
-        v: expect.any(Number),
+        v: 2,
       })
       expect(data).toHaveProperty('ob')
     }, 30000)
@@ -231,7 +231,7 @@ describe('encryptQuery', () => {
       const data = unwrapResult(result)
       expect(data).toMatchObject({
         i: { t: 'users', c: 'email' },
-        v: expect.any(Number),
+        v: 2,
       })
       expect(data).toHaveProperty('hm')
     }, 30000)
@@ -246,7 +246,7 @@ describe('encryptQuery', () => {
       const data = unwrapResult(result)
       expect(data).toMatchObject({
         i: { t: 'users', c: 'bio' },
-        v: expect.any(Number),
+        v: 2,
       })
       expect(data).toHaveProperty('bf')
     }, 30000)
@@ -261,7 +261,7 @@ describe('encryptQuery', () => {
       const data = unwrapResult(result)
       expect(data).toMatchObject({
         i: { t: 'users', c: 'email' },
-        v: expect.any(Number),
+        v: 2,
       })
       expect(data).toHaveProperty('hm')
     }, 30000)
@@ -422,7 +422,7 @@ describe('encryptQuery', () => {
       expect(data).toHaveLength(1)
       expect(data[0]).toMatchObject({
         i: { t: 'users', c: 'email' },
-        v: expect.any(Number),
+        v: 2,
       })
       expect(typeof data[0]).toBe('object')
     }, 30000)
@@ -463,7 +463,7 @@ describe('encryptQuery', () => {
       expect(data).toHaveLength(1)
       expect(data[0]).toMatchObject({
         i: { t: 'users', c: 'email' },
-        v: expect.any(Number),
+        v: 2,
       })
       expect(typeof data[0]).toBe('object')
     }, 30000)
@@ -553,7 +553,7 @@ describe('encryptQuery', () => {
       const data = unwrapResult(result)
       expect(data).toMatchObject({
         i: { t: 'users', c: 'email' },
-        v: expect.any(Number),
+        v: 2,
       })
       expect(data).toHaveProperty('hm')
     }, 30000)
