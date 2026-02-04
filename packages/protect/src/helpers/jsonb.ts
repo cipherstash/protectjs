@@ -59,6 +59,14 @@ export function parseJsonbPath(path: string): string[] {
  * buildNestedObject("a.b.c", 123)
  * // Returns: { a: { b: { c: 123 } } }
  */
+const FORBIDDEN_KEYS = ['__proto__', 'prototype', 'constructor']
+
+function validateSegment(segment: string): void {
+  if (FORBIDDEN_KEYS.includes(segment)) {
+    throw new Error(`Path contains forbidden segment: ${segment}`)
+  }
+}
+
 export function buildNestedObject(
   path: string,
   value: unknown
@@ -72,14 +80,18 @@ export function buildNestedObject(
     throw new Error('Path must contain at least one segment')
   }
 
-  const result: Record<string, unknown> = {}
+  const result: Record<string, unknown> = Object.create(null)
   let current = result
 
   for (let i = 0; i < segments.length - 1; i++) {
-    current[segments[i]] = {}
-    current = current[segments[i]] as Record<string, unknown>
+    const key = segments[i]
+    validateSegment(key)
+    current[key] = Object.create(null)
+    current = current[key] as Record<string, unknown>
   }
 
-  current[segments[segments.length - 1]] = value
+  const leafKey = segments[segments.length - 1]
+  validateSegment(leafKey)
+  current[leafKey] = value
   return result
 }

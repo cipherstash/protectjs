@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest'
-// Import from helpers module (also available from package root)
-import { toJsonPath, buildNestedObject, parseJsonbPath } from '../src/helpers'
+import { toJsonPath, buildNestedObject, parseJsonbPath } from '../src'
 
 describe('toJsonPath', () => {
   it('converts simple path to JSONPath format', () => {
@@ -116,6 +115,22 @@ describe('buildNestedObject', () => {
 
   it('throws on root-only path', () => {
     expect(() => buildNestedObject('$', 'value')).toThrow('Path must contain at least one segment')
+  })
+
+  it('throws on __proto__ segment', () => {
+    expect(() => buildNestedObject('__proto__.polluted', 'yes')).toThrow('Path contains forbidden segment: __proto__')
+  })
+
+  it('throws on prototype segment', () => {
+    expect(() => buildNestedObject('user.prototype.hack', 'yes')).toThrow('Path contains forbidden segment: prototype')
+  })
+
+  it('throws on constructor segment', () => {
+    expect(() => buildNestedObject('constructor', 'yes')).toThrow('Path contains forbidden segment: constructor')
+  })
+
+  it('throws on nested forbidden segment', () => {
+    expect(() => buildNestedObject('a.b.__proto__', 'yes')).toThrow('Path contains forbidden segment: __proto__')
   })
 })
 
