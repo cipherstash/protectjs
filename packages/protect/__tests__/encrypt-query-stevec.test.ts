@@ -1,7 +1,8 @@
 import 'dotenv/config'
 import { describe, expect, it, beforeAll } from 'vitest'
 import { protect } from '../src'
-import type { ProtectClient } from '../src/ffi'
+
+type ProtectClient = Awaited<ReturnType<typeof protect>>
 import {
   jsonbSchema,
   metadata,

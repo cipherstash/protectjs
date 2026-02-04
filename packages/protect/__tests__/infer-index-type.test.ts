@@ -1,8 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { csColumn, csTable } from '@cipherstash/schema'
+import { inferIndexType, validateIndexType } from '../src/index'
 import {
-  inferIndexType,
-  validateIndexType,
   inferQueryOpFromPlaintext,
   resolveIndexType,
 } from '../src/ffi/helpers/infer-index-type'
