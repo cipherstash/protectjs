@@ -8,6 +8,7 @@ import {
   products,
   metadata,
   createMockLockContext,
+  createMockLockContextWithNullContext,
   createFailingMockLockContext,
   unwrapResult,
   expectFailure,
@@ -666,17 +667,7 @@ describe('encryptQuery', () => {
 
     it('handles explicit null context from getLockContext gracefully', async () => {
       // Simulate a runtime scenario where context is null (bypasses TypeScript)
-      const mockLockContext = {
-        getLockContext: vi.fn().mockResolvedValue({
-          data: {
-            ctsToken: {
-              accessToken: 'mock-token',
-              expiry: Date.now() + 3600000,
-            },
-            context: null, // Explicit null - simulating runtime edge case
-          },
-        }),
-      }
+      const mockLockContext = createMockLockContextWithNullContext()
 
       const operation = protectClient.encryptQuery([
         { value: 'test@example.com', column: users.email, table: users, queryType: 'equality' },

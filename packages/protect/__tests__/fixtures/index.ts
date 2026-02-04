@@ -59,6 +59,23 @@ export function createMockLockContext(overrides?: {
 }
 
 /**
+ * Creates a mock LockContext with explicit null context (simulates runtime edge case)
+ */
+export function createMockLockContextWithNullContext() {
+  return {
+    getLockContext: vi.fn().mockResolvedValue({
+      data: {
+        ctsToken: {
+          accessToken: 'mock-token',
+          expiry: Date.now() + 3600000,
+        },
+        context: null, // Explicit null - simulating runtime edge case
+      },
+    }),
+  }
+}
+
+/**
  * Creates a mock LockContext that returns a failure
  */
 export function createFailingMockLockContext(errorType: string, message: string) {
