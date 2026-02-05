@@ -10,6 +10,14 @@ import {
   expectFailure,
 } from './fixtures'
 
+/*
+ * The `searchableJson` queryType provides a friendlier API by auto-inferring the
+ * underlying query operation from the plaintext type. It's equivalent to omitting
+ * queryType on ste_vec columns, but explicit for code clarity.
+ * - String values → ste_vec_selector (JSONPath queries)
+ * - Object/Array values → ste_vec_term (containment queries)
+ */
+
 describe('encryptQuery with searchableJson queryType', () => {
   let protectClient: ProtectClient
 

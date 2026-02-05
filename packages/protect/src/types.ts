@@ -141,6 +141,10 @@ export type DecryptionResult<T> = DecryptionSuccess<T> | DecryptionError<T>
  * - `'searchableJson'`: Auto-infers selector or term based on plaintext type (recommended)
  *   - String values → ste_vec_selector (JSONPath queries)
  *   - Object/Array/Number/Boolean → ste_vec_term (containment queries)
+ *
+ * Note: For columns with an ste_vec index, `'searchableJson'` behaves identically to omitting
+ * `queryType` entirely - both auto-infer the query operation from the plaintext type. Using
+ * `'searchableJson'` explicitly is useful for code clarity and self-documenting intent.
  */
 export type QueryTypeName = 'orderAndRange' | 'freeTextSearch' | 'equality' | 'steVecSelector' | 'steVecTerm' | 'searchableJson'
 
