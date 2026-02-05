@@ -120,6 +120,68 @@ describe('encryptQuery with searchableJson queryType', () => {
   }, 30000)
 })
 
+describe('encryptQuery with searchableJson column and omitted queryType', () => {
+  let protectClient: ProtectClient
+
+  beforeAll(async () => {
+    protectClient = await protect({ schemas: [jsonbSchema, metadata] })
+  })
+
+  it('auto-infers ste_vec_selector for string plaintext (JSONPath)', async () => {
+    const result = await protectClient.encryptQuery('$.user.email', {
+      column: jsonbSchema.metadata,
+      table: jsonbSchema,
+    })
+
+    const data = unwrapResult(result)
+    expect(data).toBeDefined()
+    expect(data).toMatchObject({
+      i: { t: 'documents', c: 'metadata' },
+    })
+  }, 30000)
+
+  it('auto-infers ste_vec_term for object plaintext (containment)', async () => {
+    const result = await protectClient.encryptQuery({ role: 'admin' }, {
+      column: jsonbSchema.metadata,
+      table: jsonbSchema,
+    })
+
+    const data = unwrapResult(result)
+    expect(data).toBeDefined()
+    expect(data).toMatchObject({
+      i: { t: 'documents', c: 'metadata' },
+    })
+  }, 30000)
+
+  it('returns null for null plaintext', async () => {
+    const result = await protectClient.encryptQuery(null, {
+      column: jsonbSchema.metadata,
+      table: jsonbSchema,
+    })
+
+    const data = unwrapResult(result)
+    expect(data).toBeNull()
+  }, 30000)
+
+  it('fails for bare number plaintext (requires wrapping)', async () => {
+    const result = await protectClient.encryptQuery(42, {
+      column: jsonbSchema.metadata,
+      table: jsonbSchema,
+    })
+
+    expectFailure(result, /Wrap the number in a JSON object/)
+  }, 30000)
+
+  it('fails for bare boolean plaintext (requires wrapping)', async () => {
+    const result = await protectClient.encryptQuery(true, {
+      column: jsonbSchema.metadata,
+      table: jsonbSchema,
+    })
+
+    expectFailure(result, /Wrap the boolean in a JSON object/)
+  }, 30000)
+})
+
 describe('searchableJson validation', () => {
   let protectClient: ProtectClient
 
@@ -230,6 +292,32 @@ describe('searchableJson batch operations', () => {
     expect(data[0]).toBeDefined()
     expect(data[1]).toBeDefined()
     expect(data[2]).toBeDefined()
+  }, 30000)
+
+  it('can omit queryType for searchableJson in batch', async () => {
+    const result = await protectClient.encryptQuery([
+      {
+        value: '$.path1',
+        column: jsonbSchema.metadata,
+        table: jsonbSchema,
+      },
+      {
+        value: { key: 'value' },
+        column: jsonbSchema.metadata,
+        table: jsonbSchema,
+      },
+      {
+        value: null,
+        column: jsonbSchema.metadata,
+        table: jsonbSchema,
+      },
+    ])
+
+    const data = unwrapResult(result)
+    expect(data).toHaveLength(3)
+    expect(data[0]).toBeDefined()
+    expect(data[1]).toBeDefined()
+    expect(data[2]).toBeNull()
   }, 30000)
 })
 
