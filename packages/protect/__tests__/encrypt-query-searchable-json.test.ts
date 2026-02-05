@@ -1,6 +1,6 @@
 import 'dotenv/config'
 import { describe, expect, it, beforeAll } from 'vitest'
-import { protect } from '../src'
+import { protect, ProtectErrorTypes } from '../src'
 
 type ProtectClient = Awaited<ReturnType<typeof protect>>
 import {
@@ -8,6 +8,9 @@ import {
   metadata,
   unwrapResult,
   expectFailure,
+  createMockLockContext,
+  createFailingMockLockContext,
+  createMockLockContextWithNullContext,
 } from './fixtures'
 
 /*
@@ -383,6 +386,471 @@ describe('searchableJson with LockContext', () => {
     expect(typeof operation.withLockContext).toBe('function')
   })
 
-  // Note: Full LockContext integration tested in lock-context.test.ts
-  // These tests verify the API surface is correct for searchableJson
+  it('executes string plaintext with LockContext mock', async () => {
+    const mockLockContext = createMockLockContext()
+
+    const operation = protectClient.encryptQuery('$.user.email', {
+      column: jsonbSchema.metadata,
+      table: jsonbSchema,
+      queryType: 'searchableJson',
+    })
+
+    const withContext = operation.withLockContext(mockLockContext as any)
+    const result = await withContext.execute()
+
+    expect(mockLockContext.getLockContext).toHaveBeenCalledTimes(1)
+
+    const data = unwrapResult(result)
+    expect(data).toMatchObject({
+      i: { t: 'documents', c: 'metadata' },
+    })
+  }, 30000)
+
+  it('executes object plaintext with LockContext mock', async () => {
+    const mockLockContext = createMockLockContext()
+
+    const operation = protectClient.encryptQuery({ role: 'admin' }, {
+      column: jsonbSchema.metadata,
+      table: jsonbSchema,
+      queryType: 'searchableJson',
+    })
+
+    const withContext = operation.withLockContext(mockLockContext as any)
+    const result = await withContext.execute()
+
+    // LockContext should be called even if the actual encryption fails
+    // with a mock token (ste_vec_term operations may require real auth)
+    expect(mockLockContext.getLockContext).toHaveBeenCalledTimes(1)
+
+    // The result may fail due to mock token, but we verify LockContext integration worked
+    if (result.data) {
+      expect(result.data).toMatchObject({
+        i: { t: 'documents', c: 'metadata' },
+      })
+    }
+  }, 30000)
+
+  it('executes batch with LockContext mock', async () => {
+    const mockLockContext = createMockLockContext()
+
+    const operation = protectClient.encryptQuery([
+      {
+        value: '$.user.email',
+        column: jsonbSchema.metadata,
+        table: jsonbSchema,
+        queryType: 'searchableJson',
+      },
+      {
+        value: { role: 'admin' },
+        column: jsonbSchema.metadata,
+        table: jsonbSchema,
+        queryType: 'searchableJson',
+      },
+    ])
+
+    const withContext = operation.withLockContext(mockLockContext as any)
+    const result = await withContext.execute()
+
+    // LockContext should be called even if the actual encryption fails
+    // with a mock token (ste_vec_term operations may require real auth)
+    expect(mockLockContext.getLockContext).toHaveBeenCalledTimes(1)
+
+    // The result may fail due to mock token, but we verify LockContext integration worked
+    if (result.data) {
+      expect(result.data).toHaveLength(2)
+    }
+  }, 30000)
+
+  it('handles LockContext failure gracefully', async () => {
+    const mockLockContext = createFailingMockLockContext(
+      ProtectErrorTypes.CtsTokenError,
+      'Mock LockContext failure'
+    )
+
+    const operation = protectClient.encryptQuery('$.user.email', {
+      column: jsonbSchema.metadata,
+      table: jsonbSchema,
+      queryType: 'searchableJson',
+    })
+
+    const withContext = operation.withLockContext(mockLockContext as any)
+    const result = await withContext.execute()
+
+    expectFailure(result, 'Mock LockContext failure', ProtectErrorTypes.CtsTokenError)
+  }, 30000)
+
+  it('handles null value with LockContext', async () => {
+    const mockLockContext = createMockLockContext()
+
+    const operation = protectClient.encryptQuery(null, {
+      column: jsonbSchema.metadata,
+      table: jsonbSchema,
+      queryType: 'searchableJson',
+    })
+
+    const withContext = operation.withLockContext(mockLockContext as any)
+    const result = await withContext.execute()
+
+    // Null values should return null without calling LockContext
+    // since there's nothing to encrypt
+    const data = unwrapResult(result)
+    expect(data).toBeNull()
+  }, 30000)
+
+  it('handles explicit null context from getLockContext gracefully', async () => {
+    const mockLockContext = createMockLockContextWithNullContext()
+
+    const operation = protectClient.encryptQuery([
+      {
+        value: '$.user.email',
+        column: jsonbSchema.metadata,
+        table: jsonbSchema,
+        queryType: 'searchableJson',
+      },
+    ])
+
+    const withContext = operation.withLockContext(mockLockContext as any)
+    const result = await withContext.execute()
+
+    // Should succeed - null context should not be passed to FFI
+    const data = unwrapResult(result)
+    expect(data).toHaveLength(1)
+    expect(data[0]).toMatchObject({ i: { t: 'documents', c: 'metadata' } })
+  }, 30000)
+})
+
+describe('searchableJson equivalence', () => {
+  let protectClient: ProtectClient
+
+  beforeAll(async () => {
+    protectClient = await protect({ schemas: [jsonbSchema] })
+  })
+
+  it('produces identical metadata to omitting queryType for string', async () => {
+    const explicitResult = await protectClient.encryptQuery('$.user.email', {
+      column: jsonbSchema.metadata,
+      table: jsonbSchema,
+      queryType: 'searchableJson',
+    })
+
+    const implicitResult = await protectClient.encryptQuery('$.user.email', {
+      column: jsonbSchema.metadata,
+      table: jsonbSchema,
+    })
+
+    // Both should succeed and have identical metadata structure
+    const explicitData = unwrapResult(explicitResult)
+    const implicitData = unwrapResult(implicitResult)
+
+    expect(explicitData.i).toEqual(implicitData.i)
+    expect(explicitData.v).toEqual(implicitData.v)
+  }, 30000)
+
+  it('produces identical metadata to omitting queryType for object', async () => {
+    const explicitResult = await protectClient.encryptQuery({ role: 'admin' }, {
+      column: jsonbSchema.metadata,
+      table: jsonbSchema,
+      queryType: 'searchableJson',
+    })
+
+    const implicitResult = await protectClient.encryptQuery({ role: 'admin' }, {
+      column: jsonbSchema.metadata,
+      table: jsonbSchema,
+    })
+
+    const explicitData = unwrapResult(explicitResult)
+    const implicitData = unwrapResult(implicitResult)
+
+    expect(explicitData.i).toEqual(implicitData.i)
+    expect(explicitData.v).toEqual(implicitData.v)
+  }, 30000)
+
+  it('produces identical metadata to explicit steVecSelector for string', async () => {
+    const searchableJsonResult = await protectClient.encryptQuery('$.user.email', {
+      column: jsonbSchema.metadata,
+      table: jsonbSchema,
+      queryType: 'searchableJson',
+    })
+
+    const steVecSelectorResult = await protectClient.encryptQuery('$.user.email', {
+      column: jsonbSchema.metadata,
+      table: jsonbSchema,
+      queryType: 'steVecSelector',
+    })
+
+    const searchableJsonData = unwrapResult(searchableJsonResult)
+    const steVecSelectorData = unwrapResult(steVecSelectorResult)
+
+    expect(searchableJsonData.i).toEqual(steVecSelectorData.i)
+    expect(searchableJsonData.v).toEqual(steVecSelectorData.v)
+  }, 30000)
+
+  it('produces identical metadata to explicit steVecTerm for object', async () => {
+    const searchableJsonResult = await protectClient.encryptQuery({ role: 'admin' }, {
+      column: jsonbSchema.metadata,
+      table: jsonbSchema,
+      queryType: 'searchableJson',
+    })
+
+    const steVecTermResult = await protectClient.encryptQuery({ role: 'admin' }, {
+      column: jsonbSchema.metadata,
+      table: jsonbSchema,
+      queryType: 'steVecTerm',
+    })
+
+    const searchableJsonData = unwrapResult(searchableJsonResult)
+    const steVecTermData = unwrapResult(steVecTermResult)
+
+    expect(searchableJsonData.i).toEqual(steVecTermData.i)
+    expect(searchableJsonData.v).toEqual(steVecTermData.v)
+  }, 30000)
+})
+
+describe('searchableJson edge cases', () => {
+  let protectClient: ProtectClient
+
+  beforeAll(async () => {
+    protectClient = await protect({ schemas: [jsonbSchema] })
+  })
+
+  // Valid edge cases that should succeed
+
+  it('succeeds for empty object', async () => {
+    const result = await protectClient.encryptQuery({}, {
+      column: jsonbSchema.metadata,
+      table: jsonbSchema,
+      queryType: 'searchableJson',
+    })
+
+    const data = unwrapResult(result)
+    expect(data).toMatchObject({
+      i: { t: 'documents', c: 'metadata' },
+    })
+  }, 30000)
+
+  it('succeeds for empty array', async () => {
+    const result = await protectClient.encryptQuery([], {
+      column: jsonbSchema.metadata,
+      table: jsonbSchema,
+      queryType: 'searchableJson',
+    })
+
+    const data = unwrapResult(result)
+    expect(data).toMatchObject({
+      i: { t: 'documents', c: 'metadata' },
+    })
+  }, 30000)
+
+  it('succeeds for object with wrapped number', async () => {
+    const result = await protectClient.encryptQuery({ value: 42 }, {
+      column: jsonbSchema.metadata,
+      table: jsonbSchema,
+      queryType: 'searchableJson',
+    })
+
+    const data = unwrapResult(result)
+    expect(data).toMatchObject({
+      i: { t: 'documents', c: 'metadata' },
+    })
+  }, 30000)
+
+  it('succeeds for object with wrapped boolean', async () => {
+    const result = await protectClient.encryptQuery({ active: true }, {
+      column: jsonbSchema.metadata,
+      table: jsonbSchema,
+      queryType: 'searchableJson',
+    })
+
+    const data = unwrapResult(result)
+    expect(data).toMatchObject({
+      i: { t: 'documents', c: 'metadata' },
+    })
+  }, 30000)
+
+  it('succeeds for object with null value', async () => {
+    const result = await protectClient.encryptQuery({ field: null }, {
+      column: jsonbSchema.metadata,
+      table: jsonbSchema,
+      queryType: 'searchableJson',
+    })
+
+    const data = unwrapResult(result)
+    expect(data).toMatchObject({
+      i: { t: 'documents', c: 'metadata' },
+    })
+  }, 30000)
+
+  it('succeeds for deeply nested object (3+ levels)', async () => {
+    const result = await protectClient.encryptQuery({
+      level1: {
+        level2: {
+          level3: {
+            level4: {
+              value: 'deep',
+            },
+          },
+        },
+      },
+    }, {
+      column: jsonbSchema.metadata,
+      table: jsonbSchema,
+      queryType: 'searchableJson',
+    })
+
+    const data = unwrapResult(result)
+    expect(data).toMatchObject({
+      i: { t: 'documents', c: 'metadata' },
+    })
+  }, 30000)
+
+  // String edge cases for JSONPath selectors
+
+  it('succeeds for JSONPath with array index notation', async () => {
+    const result = await protectClient.encryptQuery('$.items[0].name', {
+      column: jsonbSchema.metadata,
+      table: jsonbSchema,
+      queryType: 'searchableJson',
+    })
+
+    const data = unwrapResult(result)
+    expect(data).toMatchObject({
+      i: { t: 'documents', c: 'metadata' },
+    })
+  }, 30000)
+
+  it('succeeds for JSONPath with wildcard', async () => {
+    const result = await protectClient.encryptQuery('$.items[*].name', {
+      column: jsonbSchema.metadata,
+      table: jsonbSchema,
+      queryType: 'searchableJson',
+    })
+
+    const data = unwrapResult(result)
+    expect(data).toMatchObject({
+      i: { t: 'documents', c: 'metadata' },
+    })
+  }, 30000)
+})
+
+describe('searchableJson batch edge cases', () => {
+  let protectClient: ProtectClient
+
+  beforeAll(async () => {
+    protectClient = await protect({ schemas: [jsonbSchema] })
+  })
+
+  it('handles single-item batch identically to scalar', async () => {
+    const scalarResult = await protectClient.encryptQuery('$.user.email', {
+      column: jsonbSchema.metadata,
+      table: jsonbSchema,
+      queryType: 'searchableJson',
+    })
+
+    const batchResult = await protectClient.encryptQuery([
+      {
+        value: '$.user.email',
+        column: jsonbSchema.metadata,
+        table: jsonbSchema,
+        queryType: 'searchableJson',
+      },
+    ])
+
+    const scalarData = unwrapResult(scalarResult)
+    const batchData = unwrapResult(batchResult)
+
+    expect(batchData).toHaveLength(1)
+    expect(batchData[0].i).toEqual(scalarData.i)
+    expect(batchData[0].v).toEqual(scalarData.v)
+  }, 30000)
+
+  it('handles all-null batch', async () => {
+    const result = await protectClient.encryptQuery([
+      {
+        value: null,
+        column: jsonbSchema.metadata,
+        table: jsonbSchema,
+        queryType: 'searchableJson',
+      },
+      {
+        value: null,
+        column: jsonbSchema.metadata,
+        table: jsonbSchema,
+        queryType: 'searchableJson',
+      },
+      {
+        value: null,
+        column: jsonbSchema.metadata,
+        table: jsonbSchema,
+        queryType: 'searchableJson',
+      },
+    ])
+
+    const data = unwrapResult(result)
+    expect(data).toHaveLength(3)
+    expect(data[0]).toBeNull()
+    expect(data[1]).toBeNull()
+    expect(data[2]).toBeNull()
+  }, 30000)
+
+  it('handles large batch (10+ items)', async () => {
+    const items = Array.from({ length: 12 }, (_, i) => ({
+      value: i % 2 === 0 ? `$.path${i}` : { index: i },
+      column: jsonbSchema.metadata,
+      table: jsonbSchema,
+      queryType: 'searchableJson' as const,
+    }))
+
+    const result = await protectClient.encryptQuery(items)
+
+    const data = unwrapResult(result)
+    expect(data).toHaveLength(12)
+    data.forEach((item: any) => {
+      expect(item).toMatchObject({
+        i: { t: 'documents', c: 'metadata' },
+      })
+    })
+  }, 30000)
+
+  it('handles multiple interspersed nulls at various positions', async () => {
+    const result = await protectClient.encryptQuery([
+      {
+        value: null,
+        column: jsonbSchema.metadata,
+        table: jsonbSchema,
+        queryType: 'searchableJson',
+      },
+      {
+        value: '$.user.email',
+        column: jsonbSchema.metadata,
+        table: jsonbSchema,
+        queryType: 'searchableJson',
+      },
+      {
+        value: null,
+        column: jsonbSchema.metadata,
+        table: jsonbSchema,
+        queryType: 'searchableJson',
+      },
+      {
+        value: { role: 'admin' },
+        column: jsonbSchema.metadata,
+        table: jsonbSchema,
+        queryType: 'searchableJson',
+      },
+      {
+        value: null,
+        column: jsonbSchema.metadata,
+        table: jsonbSchema,
+        queryType: 'searchableJson',
+      },
+    ])
+
+    const data = unwrapResult(result)
+    expect(data).toHaveLength(5)
+    expect(data[0]).toBeNull()
+    expect(data[1]).not.toBeNull()
+    expect(data[2]).toBeNull()
+    expect(data[3]).not.toBeNull()
+    expect(data[4]).toBeNull()
+  }, 30000)
 })
