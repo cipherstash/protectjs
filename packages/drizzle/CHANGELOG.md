@@ -1,5 +1,21 @@
 # @cipherstash/drizzle
 
+## 3.0.0
+
+### Patch Changes
+
+- db72e2c: Add `encryptQuery` API for encrypting query terms with explicit query type selection.
+
+  - New `encryptQuery()` method replaces `createSearchTerms()` with improved query type handling
+  - Supports `equality`, `freeTextSearch`, and `orderAndRange` query types
+  - Deprecates `createSearchTerms()` - use `encryptQuery()` instead
+  - Updates drizzle operators to use correct index selection via `queryType` parameter
+
+- Updated dependencies [db72e2c]
+- Updated dependencies [e769740]
+  - @cipherstash/protect@10.5.0
+  - @cipherstash/schema@2.1.0
+
 ## 2.3.0
 
 ### Patch Changes
