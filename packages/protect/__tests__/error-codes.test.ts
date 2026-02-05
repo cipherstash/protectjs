@@ -28,6 +28,11 @@ describe('FFI Error Code Preservation', () => {
     raw: csColumn('raw'),
   })
 
+  // Schema with non-existent column for triggering FFI UNKNOWN_COLUMN error
+  const badModelSchema = csTable('test_table', {
+    nonexistent: csColumn('nonexistent_column'),
+  })
+
   beforeAll(async () => {
     protectClient = await protect({ schemas: [testSchema, noIndexSchema] })
   })
@@ -203,11 +208,6 @@ describe('FFI Error Code Preservation', () => {
   })
 
   describe('encryptModel error codes', () => {
-    // Schema with non-existent column for triggering FFI error
-    const badModelSchema = csTable('test_table', {
-      nonexistent: csColumn('nonexistent_column'),
-    })
-
     it('returns UNKNOWN_COLUMN code for model with non-existent column', async () => {
       const model = { nonexistent: 'test value' }
 
@@ -238,10 +238,6 @@ describe('FFI Error Code Preservation', () => {
   })
 
   describe('bulkEncryptModels error codes', () => {
-    const badModelSchema = csTable('test_table', {
-      nonexistent: csColumn('nonexistent_column'),
-    })
-
     it('returns UNKNOWN_COLUMN code for models with non-existent column', async () => {
       const models = [{ nonexistent: 'value1' }, { nonexistent: 'value2' }]
 
