@@ -1,5 +1,13 @@
 # nest
 
+## 0.0.11
+
+### Patch Changes
+
+- Updated dependencies [db72e2c]
+- Updated dependencies [e769740]
+  - @cipherstash/protect@10.5.0
+
 ## 0.0.10
 
 ### Patch Changes
