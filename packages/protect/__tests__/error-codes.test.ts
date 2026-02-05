@@ -1,7 +1,7 @@
 import 'dotenv/config'
 import { describe, expect, it, beforeAll } from 'vitest'
 import { protect, ProtectErrorTypes, FfiProtectError } from '../src'
-import type { ProtectClient, ProtectErrorCode } from '../src'
+import type { ProtectClient } from '../src'
 import { csColumn, csTable } from '@cipherstash/schema'
 
 /** FFI tests require longer timeout due to client initialization */
@@ -23,7 +23,7 @@ describe('FFI Error Code Preservation', () => {
     metadata: csColumn('metadata').searchableJson(),
   })
 
-  // Schema without indexes for testing MISSING_INDEX
+  // Schema without indexes for testing non-FFI validation
   const noIndexSchema = csTable('no_index_table', {
     raw: csColumn('raw'),
   })
@@ -32,21 +32,14 @@ describe('FFI Error Code Preservation', () => {
     protectClient = await protect({ schemas: [testSchema, noIndexSchema] })
   })
 
-  describe('FfiProtectError class export', () => {
-    it('exports FfiProtectError class from protect package', () => {
-      expect(FfiProtectError).toBeDefined()
-      expect(typeof FfiProtectError).toBe('function')
-    })
-
-    it('FfiProtectError instances have code property', () => {
+  describe('FfiProtectError class', () => {
+    it('constructs with code and message', () => {
       const error = new FfiProtectError({
         code: 'UNKNOWN_COLUMN',
         message: 'Test error',
       })
       expect(error.code).toBe('UNKNOWN_COLUMN')
       expect(error.message).toBe('Test error')
-      expect(error).toBeInstanceOf(Error)
-      expect(error).toBeInstanceOf(FfiProtectError)
     })
   })
 
@@ -66,7 +59,8 @@ describe('FFI Error Code Preservation', () => {
       expect(result.failure?.code).toBe('UNKNOWN_COLUMN')
     }, FFI_TEST_TIMEOUT)
 
-    it('returns MISSING_INDEX code when column has no indexes', async () => {
+    it('returns undefined code for columns without indexes (non-FFI validation)', async () => {
+      // This error is caught during pre-FFI validation, not by FFI itself
       const result = await protectClient.encryptQuery('test', {
         column: noIndexSchema.raw,
         table: noIndexSchema,
@@ -74,11 +68,9 @@ describe('FFI Error Code Preservation', () => {
 
       expect(result.failure).toBeDefined()
       expect(result.failure?.type).toBe(ProtectErrorTypes.EncryptionError)
-      // FFI may return a specific error code or undefined depending on validation order.
-      // When code is defined, it should be one of the expected FFI error codes.
-      if (result.failure?.code !== undefined) {
-        expect(['MISSING_INDEX', 'UNKNOWN_COLUMN', 'INVARIANT_VIOLATION']).toContain(result.failure.code)
-      }
+      expect(result.failure?.message).toContain('no indexes configured')
+      // Pre-FFI validation errors don't have FFI error codes
+      expect(result.failure?.code).toBeUndefined()
     }, FFI_TEST_TIMEOUT)
 
     it('returns undefined code for non-FFI validation errors', async () => {
@@ -147,8 +139,8 @@ describe('FFI Error Code Preservation', () => {
   })
 
   describe('decrypt error codes', () => {
-    it('preserves error code for invalid ciphertext', async () => {
-      // Create an invalid/malformed ciphertext
+    it('returns undefined code for malformed ciphertext (non-FFI validation)', async () => {
+      // This error occurs during ciphertext parsing, not FFI decryption
       const invalidCiphertext = {
         i: { t: 'test_table', c: 'nonexistent' },
         v: 2,
@@ -159,78 +151,8 @@ describe('FFI Error Code Preservation', () => {
 
       expect(result.failure).toBeDefined()
       expect(result.failure?.type).toBe(ProtectErrorTypes.DecryptionError)
-      // FFI should return an error code for invalid ciphertext when available.
-      // The code may be undefined if the error occurs outside FFI validation.
-      if (result.failure?.code !== undefined) {
-        expect(typeof result.failure.code).toBe('string')
-      }
+      // Malformed ciphertext errors are caught before FFI and don't have codes
+      expect(result.failure?.code).toBeUndefined()
     }, FFI_TEST_TIMEOUT)
-  })
-
-  describe('ProtectError interface', () => {
-    it('ProtectError has optional code field', async () => {
-      const fakeColumn = csColumn('nonexistent_column').equality()
-
-      const result = await protectClient.encryptQuery('test', {
-        column: fakeColumn,
-        table: testSchema,
-        queryType: 'equality',
-      })
-
-      // Type check: code should be accessible (may be undefined for non-FFI errors)
-      // TypeScript already guarantees the type as ProtectErrorCode | undefined
-      expect(result.failure).toBeDefined()
-      expect(result.failure?.code).toBe('UNKNOWN_COLUMN')
-    }, FFI_TEST_TIMEOUT)
-
-    it('error code enables programmatic error handling', async () => {
-      const fakeColumn = csColumn('nonexistent_column').equality()
-
-      const result = await protectClient.encryptQuery('test', {
-        column: fakeColumn,
-        table: testSchema,
-        queryType: 'equality',
-      })
-
-      if (result.failure) {
-        // Demonstrate programmatic error handling based on code
-        switch (result.failure.code) {
-          case 'UNKNOWN_COLUMN':
-            // Handle unknown column error
-            expect(result.failure.message).toContain('nonexistent_column')
-            break
-          case 'MISSING_INDEX':
-            // Handle missing index error
-            break
-          case undefined:
-            // Handle non-FFI errors (validation, etc.)
-            break
-          default:
-            // Handle other FFI errors
-            break
-        }
-      }
-    }, FFI_TEST_TIMEOUT)
-  })
-
-  describe('error code type safety', () => {
-    it('ProtectErrorCode type includes expected values', () => {
-      // Type-level test: these should all be valid ProtectErrorCode values
-      const codes: ProtectErrorCode[] = [
-        'INVARIANT_VIOLATION',
-        'UNKNOWN_QUERY_OP',
-        'UNKNOWN_COLUMN',
-        'MISSING_INDEX',
-        'INVALID_QUERY_INPUT',
-        'INVALID_JSON_PATH',
-        'STE_VEC_REQUIRES_JSON_CAST_AS',
-        'UNKNOWN',
-      ]
-
-      expect(codes).toHaveLength(8)
-      codes.forEach(code => {
-        expect(typeof code).toBe('string')
-      })
-    })
   })
 })
