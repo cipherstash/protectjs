@@ -191,8 +191,13 @@ describe('FFI Error Code Preservation', () => {
 
   describe('bulkDecrypt error codes', () => {
     it('returns undefined code for malformed ciphertexts (non-FFI validation)', async () => {
-      // Malformed ciphertexts cause FFI parsing errors before fallible decryption
-      // This triggers a top-level failure, not per-item errors
+      // bulkDecrypt uses the "fallible" FFI API (decryptBulkFallible) which normally:
+      // - Succeeds at the operation level
+      // - Returns per-item results with either { data } or { error }
+      //
+      // However, malformed ciphertexts cause parsing errors BEFORE the fallible API,
+      // which throws and triggers a top-level failure (not per-item errors).
+      // These pre-FFI errors don't have structured FFI error codes.
       const invalidCiphertexts = [
         { data: { i: { t: 'test_table', c: 'email' }, v: 2, c: 'invalid1' } },
         { data: { i: { t: 'test_table', c: 'email' }, v: 2, c: 'invalid2' } },
