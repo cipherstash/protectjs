@@ -136,10 +136,17 @@ export type DecryptionResult<T> = DecryptionSuccess<T> | DecryptionError<T>
  * - `'equality'`: For exact match queries. {@link https://cipherstash.com/docs/platform/searchable-encryption/supported-queries/exact | Exact Queries}
  * - `'freeTextSearch'`: For text search queries. {@link https://cipherstash.com/docs/platform/searchable-encryption/supported-queries/match | Match Queries}
  * - `'orderAndRange'`: For comparison and range queries. {@link https://cipherstash.com/docs/platform/searchable-encryption/supported-queries/range | Range Queries}
- * - `'steVecSelector'`: For STE vector selector queries.
- * - `'steVecTerm'`: For STE vector term queries.
+ * - `'steVecSelector'`: For JSONPath selector queries (e.g., '$.user.email')
+ * - `'steVecTerm'`: For containment queries (e.g., { role: 'admin' })
+ * - `'searchableJson'`: Auto-infers selector or term based on plaintext type (recommended)
+ *   - String values → ste_vec_selector (JSONPath queries)
+ *   - Object/Array/Number/Boolean → ste_vec_term (containment queries)
+ *
+ * Note: For columns with an ste_vec index, `'searchableJson'` behaves identically to omitting
+ * `queryType` entirely - both auto-infer the query operation from the plaintext type. Using
+ * `'searchableJson'` explicitly is useful for code clarity and self-documenting intent.
  */
-export type QueryTypeName = 'orderAndRange' | 'freeTextSearch' | 'equality' | 'steVecSelector' | 'steVecTerm'
+export type QueryTypeName = 'orderAndRange' | 'freeTextSearch' | 'equality' | 'steVecSelector' | 'steVecTerm' | 'searchableJson'
 
 /**
  * Internal FFI index type names.
@@ -156,6 +163,7 @@ export const queryTypes = {
   equality: 'equality',
   steVecSelector: 'steVecSelector',
   steVecTerm: 'steVecTerm',
+  searchableJson: 'searchableJson',
 } as const satisfies Record<string, QueryTypeName>
 
 /**
@@ -168,6 +176,7 @@ export const queryTypeToFfi: Record<QueryTypeName, FfiIndexTypeName> = {
   equality: 'unique',
   steVecSelector: 'ste_vec',
   steVecTerm: 'ste_vec',
+  searchableJson: 'ste_vec',
 }
 
 /**

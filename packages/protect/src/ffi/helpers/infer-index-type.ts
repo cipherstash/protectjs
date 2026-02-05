@@ -89,6 +89,15 @@ export function resolveIndexType(
 
   if (queryType) {
     validateIndexType(column, indexType)
+
+    // For searchableJson, infer queryOp from plaintext type (not from mapping)
+    if (queryType === 'searchableJson') {
+      if (plaintext === undefined || plaintext === null) {
+        return { indexType }
+      }
+      return { indexType, queryOp: inferQueryOpFromPlaintext(plaintext) }
+    }
+
     return { indexType, queryOp: queryTypeToQueryOp[queryType] }
   }
 

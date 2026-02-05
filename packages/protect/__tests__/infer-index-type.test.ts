@@ -133,4 +133,41 @@ describe('infer-index-type helpers', () => {
       expect(result).toEqual({ indexType: 'unique', queryOp: undefined })
     })
   })
+
+  describe('resolveIndexType with explicit searchableJson queryType', () => {
+    it('infers ste_vec_selector for string plaintext with searchableJson', () => {
+      const schema = csTable('t', { col: csColumn('col').searchableJson() })
+      const result = resolveIndexType(schema.col, 'searchableJson', '$.user.email')
+      expect(result).toEqual({ indexType: 'ste_vec', queryOp: 'ste_vec_selector' })
+    })
+
+    it('infers ste_vec_term for object plaintext with searchableJson', () => {
+      const schema = csTable('t', { col: csColumn('col').searchableJson() })
+      const result = resolveIndexType(schema.col, 'searchableJson', { role: 'admin' })
+      expect(result).toEqual({ indexType: 'ste_vec', queryOp: 'ste_vec_term' })
+    })
+
+    it('infers ste_vec_term for array plaintext with searchableJson', () => {
+      const schema = csTable('t', { col: csColumn('col').searchableJson() })
+      const result = resolveIndexType(schema.col, 'searchableJson', ['admin'])
+      expect(result).toEqual({ indexType: 'ste_vec', queryOp: 'ste_vec_term' })
+    })
+
+    it('returns indexType only when searchableJson and plaintext is null', () => {
+      const schema = csTable('t', { col: csColumn('col').searchableJson() })
+      const result = resolveIndexType(schema.col, 'searchableJson', null)
+      expect(result).toEqual({ indexType: 'ste_vec' })
+    })
+
+    it('returns indexType only when searchableJson and plaintext is undefined', () => {
+      const schema = csTable('t', { col: csColumn('col').searchableJson() })
+      const result = resolveIndexType(schema.col, 'searchableJson', undefined)
+      expect(result).toEqual({ indexType: 'ste_vec' })
+    })
+
+    it('validates ste_vec index when searchableJson used', () => {
+      const schema = csTable('t', { col: csColumn('col').equality() }) // No ste_vec
+      expect(() => resolveIndexType(schema.col, 'searchableJson', '$.path')).toThrow('not configured')
+    })
+  })
 })
