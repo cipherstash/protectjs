@@ -24,7 +24,7 @@ export class ProtectDynamoDBErrorImpl
 }
 
 export function handleError(
-  error: Error,
+  error: unknown,
   context: string,
   options?: {
     logger?: {
@@ -34,9 +34,27 @@ export function handleError(
   },
 ): ProtectDynamoDBError {
   // Preserve FFI error code if available, otherwise use generic DynamoDB error code
-  const errorCode = error instanceof FfiProtectError ? error.code : 'PROTECT_DYNAMODB_ERROR'
+  // Check for FfiProtectError instance or plain ProtectError objects with code property
+  const errorObj = error as Record<string, unknown>
+  const errorCode =
+    error instanceof FfiProtectError
+      ? error.code
+      : errorObj &&
+          typeof errorObj === 'object' &&
+          'code' in errorObj &&
+          typeof errorObj.code === 'string'
+        ? (errorObj.code as ProtectErrorCode)
+        : 'PROTECT_DYNAMODB_ERROR'
+
+  const errorMessage =
+    error instanceof Error
+      ? error.message
+      : errorObj && typeof errorObj.message === 'string'
+        ? errorObj.message
+        : String(error)
+
   const protectError = new ProtectDynamoDBErrorImpl(
-    error.message,
+    errorMessage,
     errorCode,
     { context },
   )

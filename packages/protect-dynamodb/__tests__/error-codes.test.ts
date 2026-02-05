@@ -41,23 +41,21 @@ describe('ProtectDynamoDB Error Code Preservation', () => {
   })
 
   describe('encryptModel error codes', () => {
-    it('uses PROTECT_DYNAMODB_ERROR for encryption failures', async () => {
-      // Note: FFI error codes from protectClient.encryptModel are not currently
-      // preserved through the DynamoDB layer - the failure result contains the code
-      // but it's wrapped in a new Error() which loses the FfiProtectError type
+    it('preserves FFI error codes', async () => {
       const model = { nonexistent: 'test value' }
 
       const result = await protectDynamo.encryptModel(model, badSchema)
 
       expect(result.failure).toBeDefined()
       expect((result.failure as ProtectDynamoDBError).code).toBe(
-        'PROTECT_DYNAMODB_ERROR',
+        'UNKNOWN_COLUMN',
       )
     }, FFI_TEST_TIMEOUT)
   })
 
   describe('decryptModel error codes', () => {
-    it('uses PROTECT_DYNAMODB_ERROR for malformed ciphertext', async () => {
+    it('uses PROTECT_DYNAMODB_ERROR for IO/parsing errors without FFI codes', async () => {
+      // Malformed ciphertext causes IO/parsing errors that don't have FFI error codes
       const malformedItem = {
         email__source: 'invalid_ciphertext_data',
       }
@@ -65,6 +63,7 @@ describe('ProtectDynamoDB Error Code Preservation', () => {
       const result = await protectDynamo.decryptModel(malformedItem, testSchema)
 
       expect(result.failure).toBeDefined()
+      // FFI returns undefined code for IO/parsing errors, so we fall back to generic code
       expect((result.failure as ProtectDynamoDBError).code).toBe(
         'PROTECT_DYNAMODB_ERROR',
       )
@@ -72,23 +71,21 @@ describe('ProtectDynamoDB Error Code Preservation', () => {
   })
 
   describe('bulkEncryptModels error codes', () => {
-    it('uses PROTECT_DYNAMODB_ERROR for bulk encryption failures', async () => {
-      // Note: FFI error codes from protectClient.bulkEncryptModels are not currently
-      // preserved through the DynamoDB layer - the failure result contains the code
-      // but it's wrapped in a new Error() which loses the FfiProtectError type
+    it('preserves FFI error codes', async () => {
       const models = [{ nonexistent: 'value1' }, { nonexistent: 'value2' }]
 
       const result = await protectDynamo.bulkEncryptModels(models, badSchema)
 
       expect(result.failure).toBeDefined()
       expect((result.failure as ProtectDynamoDBError).code).toBe(
-        'PROTECT_DYNAMODB_ERROR',
+        'UNKNOWN_COLUMN',
       )
     }, FFI_TEST_TIMEOUT)
   })
 
   describe('bulkDecryptModels error codes', () => {
-    it('uses PROTECT_DYNAMODB_ERROR for malformed items', async () => {
+    it('uses PROTECT_DYNAMODB_ERROR for IO/parsing errors without FFI codes', async () => {
+      // Malformed ciphertext causes IO/parsing errors that don't have FFI error codes
       const malformedItems = [
         { email__source: 'invalid1' },
         { email__source: 'invalid2' },
@@ -100,6 +97,7 @@ describe('ProtectDynamoDB Error Code Preservation', () => {
       )
 
       expect(result.failure).toBeDefined()
+      // FFI returns undefined code for IO/parsing errors, so we fall back to generic code
       expect((result.failure as ProtectDynamoDBError).code).toBe(
         'PROTECT_DYNAMODB_ERROR',
       )
