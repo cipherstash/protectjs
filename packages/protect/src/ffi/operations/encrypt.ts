@@ -9,7 +9,8 @@ import type {
   ProtectTableColumn,
   ProtectValue,
 } from '@cipherstash/schema'
-import { type ProtectError, ProtectErrorTypes, FfiProtectError } from '../..'
+import { type ProtectError, ProtectErrorTypes } from '../..'
+import { getErrorCode } from '../helpers/error-code'
 import { logger } from '../../../../utils/logger'
 import type { LockContext } from '../../identify'
 import type { Client, EncryptOptions, Encrypted } from '../../types'
@@ -79,10 +80,10 @@ export class EncryptOperation extends ProtectOperation<Encrypted> {
           unverifiedContext: metadata,
         })
       },
-      (error) => ({
+      (error: unknown) => ({
         type: ProtectErrorTypes.EncryptionError,
-        message: error.message,
-        code: error instanceof FfiProtectError ? error.code : undefined,
+        message: (error as Error).message,
+        code: getErrorCode(error),
       }),
     )
   }
@@ -147,10 +148,10 @@ export class EncryptOperationWithLockContext extends ProtectOperation<Encrypted>
           unverifiedContext: metadata,
         })
       },
-      (error) => ({
+      (error: unknown) => ({
         type: ProtectErrorTypes.EncryptionError,
-        message: error.message,
-        code: error instanceof FfiProtectError ? error.code : undefined,
+        message: (error as Error).message,
+        code: getErrorCode(error),
       }),
     )
   }

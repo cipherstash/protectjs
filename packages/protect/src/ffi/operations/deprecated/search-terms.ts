@@ -1,6 +1,7 @@
 import { type Result, withResult } from '@byteslice/result'
 import { encryptQueryBulk, type QueryPayload } from '@cipherstash/protect-ffi'
-import { type ProtectError, ProtectErrorTypes, FfiProtectError } from '../../..'
+import { type ProtectError, ProtectErrorTypes } from '../../..'
+import { getErrorCode } from '../../helpers/error-code'
 import { logger } from '../../../../../utils/logger'
 import type { Client, EncryptedSearchTerm, SearchTerm } from '../../../types'
 import { noClientError } from '../..'
@@ -55,10 +56,10 @@ export class SearchTermsOperation extends ProtectOperation<EncryptedSearchTerm[]
           return encryptedTerms[index]
         })
       },
-      (error) => ({
+      (error: unknown) => ({
         type: ProtectErrorTypes.EncryptionError,
-        message: error.message,
-        code: error instanceof FfiProtectError ? error.code : undefined,
+        message: (error as Error).message,
+        code: getErrorCode(error),
       }),
     )
   }
@@ -112,10 +113,10 @@ export class SearchTermsOperationWithLockContext extends ProtectOperation<Encryp
           return encryptedTerms[index]
         })
       },
-      (error) => ({
+      (error: unknown) => ({
         type: ProtectErrorTypes.EncryptionError,
-        message: error.message,
-        code: error instanceof FfiProtectError ? error.code : undefined,
+        message: (error as Error).message,
+        code: getErrorCode(error),
       }),
     )
   }

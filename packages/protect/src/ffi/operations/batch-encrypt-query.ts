@@ -4,7 +4,8 @@ import {
   encryptQueryBulk as ffiEncryptQueryBulk,
   type QueryPayload,
 } from '@cipherstash/protect-ffi'
-import { type ProtectError, ProtectErrorTypes, FfiProtectError } from '../..'
+import { type ProtectError, ProtectErrorTypes } from '../..'
+import { getErrorCode } from '../helpers/error-code'
 import { logger } from '../../../../utils/logger'
 import type { Context, LockContext } from '../../identify'
 import type { Encrypted as CipherStashEncrypted } from '@cipherstash/protect-ffi'
@@ -149,10 +150,10 @@ export class BatchEncryptQueryOperation extends ProtectOperation<EncryptedQueryR
 
         return assembleResults(this.terms.length, encrypted, nonNullTerms)
       },
-      (error) => ({
+      (error: unknown) => ({
         type: ProtectErrorTypes.EncryptionError,
-        message: error.message,
-        code: error instanceof FfiProtectError ? error.code : undefined,
+        message: (error as Error).message,
+        code: getErrorCode(error),
       }),
     )
   }
@@ -209,10 +210,10 @@ export class BatchEncryptQueryOperationWithLockContext extends ProtectOperation<
 
         return assembleResults(this.terms.length, encrypted, nonNullTerms)
       },
-      (error) => ({
+      (error: unknown) => ({
         type: ProtectErrorTypes.EncryptionError,
-        message: error.message,
-        code: error instanceof FfiProtectError ? error.code : undefined,
+        message: (error as Error).message,
+        code: getErrorCode(error),
       }),
     )
   }

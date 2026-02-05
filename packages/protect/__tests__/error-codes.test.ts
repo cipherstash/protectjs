@@ -4,6 +4,9 @@ import { protect, ProtectErrorTypes, FfiProtectError } from '../src'
 import type { ProtectClient, ProtectErrorCode } from '../src'
 import { csColumn, csTable } from '@cipherstash/schema'
 
+/** FFI tests require longer timeout due to client initialization */
+const FFI_TEST_TIMEOUT = 30_000
+
 /**
  * Tests for FFI error code preservation in ProtectError.
  * These tests verify that specific FFI error codes are preserved when errors occur,
@@ -61,7 +64,7 @@ describe('FFI Error Code Preservation', () => {
       expect(result.failure).toBeDefined()
       expect(result.failure?.type).toBe(ProtectErrorTypes.EncryptionError)
       expect(result.failure?.code).toBe('UNKNOWN_COLUMN')
-    }, 30000)
+    }, FFI_TEST_TIMEOUT)
 
     it('returns MISSING_INDEX code when column has no indexes', async () => {
       const result = await protectClient.encryptQuery('test', {
@@ -71,11 +74,12 @@ describe('FFI Error Code Preservation', () => {
 
       expect(result.failure).toBeDefined()
       expect(result.failure?.type).toBe(ProtectErrorTypes.EncryptionError)
-      // Expect either MISSING_INDEX or error message mentioning indexes
-      if (result.failure?.code) {
+      // FFI may return a specific error code or undefined depending on validation order.
+      // When code is defined, it should be one of the expected FFI error codes.
+      if (result.failure?.code !== undefined) {
         expect(['MISSING_INDEX', 'UNKNOWN_COLUMN', 'INVARIANT_VIOLATION']).toContain(result.failure.code)
       }
-    }, 30000)
+    }, FFI_TEST_TIMEOUT)
 
     it('returns undefined code for non-FFI validation errors', async () => {
       // NaN validation happens before FFI call
@@ -89,7 +93,7 @@ describe('FFI Error Code Preservation', () => {
       expect(result.failure?.type).toBe(ProtectErrorTypes.EncryptionError)
       // Non-FFI errors should have undefined code
       expect(result.failure?.code).toBeUndefined()
-    }, 30000)
+    }, FFI_TEST_TIMEOUT)
   })
 
   describe('batch encryptQuery error codes', () => {
@@ -103,7 +107,7 @@ describe('FFI Error Code Preservation', () => {
       expect(result.failure).toBeDefined()
       expect(result.failure?.type).toBe(ProtectErrorTypes.EncryptionError)
       expect(result.failure?.code).toBe('UNKNOWN_COLUMN')
-    }, 30000)
+    }, FFI_TEST_TIMEOUT)
 
     it('returns undefined code for non-FFI batch errors', async () => {
       const result = await protectClient.encryptQuery([
@@ -112,7 +116,7 @@ describe('FFI Error Code Preservation', () => {
 
       expect(result.failure).toBeDefined()
       expect(result.failure?.code).toBeUndefined()
-    }, 30000)
+    }, FFI_TEST_TIMEOUT)
   })
 
   describe('encrypt error codes', () => {
@@ -127,7 +131,7 @@ describe('FFI Error Code Preservation', () => {
       expect(result.failure).toBeDefined()
       expect(result.failure?.type).toBe(ProtectErrorTypes.EncryptionError)
       expect(result.failure?.code).toBe('UNKNOWN_COLUMN')
-    }, 30000)
+    }, FFI_TEST_TIMEOUT)
 
     it('returns undefined code for non-FFI encrypt errors', async () => {
       const result = await protectClient.encrypt(NaN, {
@@ -139,7 +143,7 @@ describe('FFI Error Code Preservation', () => {
       expect(result.failure?.type).toBe(ProtectErrorTypes.EncryptionError)
       // NaN validation happens before FFI call
       expect(result.failure?.code).toBeUndefined()
-    }, 30000)
+    }, FFI_TEST_TIMEOUT)
   })
 
   describe('decrypt error codes', () => {
@@ -155,11 +159,12 @@ describe('FFI Error Code Preservation', () => {
 
       expect(result.failure).toBeDefined()
       expect(result.failure?.type).toBe(ProtectErrorTypes.DecryptionError)
-      // FFI should return an error code for invalid ciphertext
-      if (result.failure?.code) {
+      // FFI should return an error code for invalid ciphertext when available.
+      // The code may be undefined if the error occurs outside FFI validation.
+      if (result.failure?.code !== undefined) {
         expect(typeof result.failure.code).toBe('string')
       }
-    }, 30000)
+    }, FFI_TEST_TIMEOUT)
   })
 
   describe('ProtectError interface', () => {
@@ -173,11 +178,10 @@ describe('FFI Error Code Preservation', () => {
       })
 
       // Type check: code should be accessible (may be undefined for non-FFI errors)
-      if (result.failure) {
-        const errorCode: typeof result.failure.code = result.failure.code
-        expect(['string', 'undefined']).toContain(typeof errorCode)
-      }
-    }, 30000)
+      // TypeScript already guarantees the type as ProtectErrorCode | undefined
+      expect(result.failure).toBeDefined()
+      expect(result.failure?.code).toBe('UNKNOWN_COLUMN')
+    }, FFI_TEST_TIMEOUT)
 
     it('error code enables programmatic error handling', async () => {
       const fakeColumn = csColumn('nonexistent_column').equality()
@@ -206,7 +210,7 @@ describe('FFI Error Code Preservation', () => {
             break
         }
       }
-    }, 30000)
+    }, FFI_TEST_TIMEOUT)
   })
 
   describe('error code type safety', () => {

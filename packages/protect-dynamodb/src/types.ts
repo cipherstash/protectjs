@@ -1,6 +1,7 @@
 import type {
   Encrypted,
   ProtectClient,
+  ProtectErrorCode,
   ProtectTable,
   ProtectTableColumn,
   SearchTerm,
@@ -22,7 +23,7 @@ export interface ProtectDynamoDBConfig {
 }
 
 export interface ProtectDynamoDBError extends Error {
-  code: string
+  code: ProtectErrorCode | 'PROTECT_DYNAMODB_ERROR'
   details?: Record<string, unknown>
 }
 

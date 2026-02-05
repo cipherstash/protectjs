@@ -1,5 +1,6 @@
 import type {
   Encrypted,
+  ProtectErrorCode,
   ProtectTable,
   ProtectTableColumn,
 } from '@cipherstash/protect'
@@ -14,7 +15,7 @@ export class ProtectDynamoDBErrorImpl
 {
   constructor(
     message: string,
-    public code: string,
+    public code: ProtectErrorCode | 'PROTECT_DYNAMODB_ERROR',
     public details?: Record<string, unknown>,
   ) {
     super(message)

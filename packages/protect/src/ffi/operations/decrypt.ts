@@ -3,7 +3,8 @@ import {
   type JsPlaintext,
   decrypt as ffiDecrypt,
 } from '@cipherstash/protect-ffi'
-import { type ProtectError, ProtectErrorTypes, FfiProtectError } from '../..'
+import { type ProtectError, ProtectErrorTypes } from '../..'
+import { getErrorCode } from '../helpers/error-code'
 import { logger } from '../../../../utils/logger'
 import type { LockContext } from '../../identify'
 import type { Client, Encrypted } from '../../types'
@@ -52,10 +53,10 @@ export class DecryptOperation extends ProtectOperation<JsPlaintext | null> {
           unverifiedContext: metadata,
         })
       },
-      (error) => ({
+      (error: unknown) => ({
         type: ProtectErrorTypes.DecryptionError,
-        message: error.message,
-        code: error instanceof FfiProtectError ? error.code : undefined,
+        message: (error as Error).message,
+        code: getErrorCode(error),
       }),
     )
   }
@@ -119,10 +120,10 @@ export class DecryptOperationWithLockContext extends ProtectOperation<JsPlaintex
           serviceToken: context.data.ctsToken,
         })
       },
-      (error) => ({
+      (error: unknown) => ({
         type: ProtectErrorTypes.DecryptionError,
-        message: error.message,
-        code: error instanceof FfiProtectError ? error.code : undefined,
+        message: (error as Error).message,
+        code: getErrorCode(error),
       }),
     )
   }
