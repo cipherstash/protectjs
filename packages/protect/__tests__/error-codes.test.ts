@@ -186,15 +186,18 @@ describe('FFI Error Code Preservation', () => {
 
   describe('bulkDecrypt error codes', () => {
     it('returns undefined code for malformed ciphertexts (non-FFI validation)', async () => {
+      // Malformed ciphertexts cause FFI parsing errors before fallible decryption
+      // This triggers a top-level failure, not per-item errors
       const invalidCiphertexts = [
-        { i: { t: 'test_table', c: 'email' }, v: 2, c: 'invalid1' },
-        { i: { t: 'test_table', c: 'email' }, v: 2, c: 'invalid2' },
+        { data: { i: { t: 'test_table', c: 'email' }, v: 2, c: 'invalid1' } },
+        { data: { i: { t: 'test_table', c: 'email' }, v: 2, c: 'invalid2' } },
       ]
 
       const result = await protectClient.bulkDecrypt(invalidCiphertexts)
 
       expect(result.failure).toBeDefined()
       expect(result.failure?.type).toBe(ProtectErrorTypes.DecryptionError)
+      // FFI parsing errors don't have structured error codes
       expect(result.failure?.code).toBeUndefined()
     }, FFI_TEST_TIMEOUT)
   })
