@@ -155,4 +155,130 @@ describe('FFI Error Code Preservation', () => {
       expect(result.failure?.code).toBeUndefined()
     }, FFI_TEST_TIMEOUT)
   })
+
+  describe('bulkEncrypt error codes', () => {
+    it('returns UNKNOWN_COLUMN code for non-existent column', async () => {
+      const fakeColumn = csColumn('nonexistent_column')
+
+      const result = await protectClient.bulkEncrypt(
+        [{ plaintext: 'test1' }, { plaintext: 'test2' }],
+        {
+          column: fakeColumn,
+          table: testSchema,
+        },
+      )
+
+      expect(result.failure).toBeDefined()
+      expect(result.failure?.type).toBe(ProtectErrorTypes.EncryptionError)
+      expect(result.failure?.code).toBe('UNKNOWN_COLUMN')
+    }, FFI_TEST_TIMEOUT)
+
+    it('returns undefined code for non-FFI validation errors', async () => {
+      const result = await protectClient.bulkEncrypt([{ plaintext: NaN }], {
+        column: testSchema.age,
+        table: testSchema,
+      })
+
+      expect(result.failure).toBeDefined()
+      expect(result.failure?.code).toBeUndefined()
+    }, FFI_TEST_TIMEOUT)
+  })
+
+  describe('bulkDecrypt error codes', () => {
+    it('returns undefined code for malformed ciphertexts (non-FFI validation)', async () => {
+      const invalidCiphertexts = [
+        { i: { t: 'test_table', c: 'email' }, v: 2, c: 'invalid1' },
+        { i: { t: 'test_table', c: 'email' }, v: 2, c: 'invalid2' },
+      ]
+
+      const result = await protectClient.bulkDecrypt(invalidCiphertexts)
+
+      expect(result.failure).toBeDefined()
+      expect(result.failure?.type).toBe(ProtectErrorTypes.DecryptionError)
+      expect(result.failure?.code).toBeUndefined()
+    }, FFI_TEST_TIMEOUT)
+  })
+
+  describe('encryptModel error codes', () => {
+    // Schema with non-existent column for triggering FFI error
+    const badModelSchema = csTable('test_table', {
+      nonexistent: csColumn('nonexistent_column'),
+    })
+
+    it('returns UNKNOWN_COLUMN code for model with non-existent column', async () => {
+      const model = { nonexistent: 'test value' }
+
+      const result = await protectClient.encryptModel(model, badModelSchema)
+
+      expect(result.failure).toBeDefined()
+      expect(result.failure?.type).toBe(ProtectErrorTypes.EncryptionError)
+      expect(result.failure?.code).toBe('UNKNOWN_COLUMN')
+    }, FFI_TEST_TIMEOUT)
+  })
+
+  describe('decryptModel error codes', () => {
+    it('returns undefined code for malformed model (non-FFI validation)', async () => {
+      const malformedModel = {
+        email: {
+          i: { t: 'test_table', c: 'email' },
+          v: 2,
+          c: 'invalid_ciphertext',
+        },
+      }
+
+      const result = await protectClient.decryptModel(malformedModel)
+
+      expect(result.failure).toBeDefined()
+      expect(result.failure?.type).toBe(ProtectErrorTypes.DecryptionError)
+      expect(result.failure?.code).toBeUndefined()
+    }, FFI_TEST_TIMEOUT)
+  })
+
+  describe('bulkEncryptModels error codes', () => {
+    const badModelSchema = csTable('test_table', {
+      nonexistent: csColumn('nonexistent_column'),
+    })
+
+    it('returns UNKNOWN_COLUMN code for models with non-existent column', async () => {
+      const models = [{ nonexistent: 'value1' }, { nonexistent: 'value2' }]
+
+      const result = await protectClient.bulkEncryptModels(
+        models,
+        badModelSchema,
+      )
+
+      expect(result.failure).toBeDefined()
+      expect(result.failure?.type).toBe(ProtectErrorTypes.EncryptionError)
+      expect(result.failure?.code).toBe('UNKNOWN_COLUMN')
+    }, FFI_TEST_TIMEOUT)
+  })
+
+  describe('bulkDecryptModels error codes', () => {
+    it('returns undefined code for malformed models (non-FFI validation)', async () => {
+      const malformedModels = [
+        { email: { i: { t: 'test_table', c: 'email' }, v: 2, c: 'invalid1' } },
+        { email: { i: { t: 'test_table', c: 'email' }, v: 2, c: 'invalid2' } },
+      ]
+
+      const result = await protectClient.bulkDecryptModels(malformedModels)
+
+      expect(result.failure).toBeDefined()
+      expect(result.failure?.type).toBe(ProtectErrorTypes.DecryptionError)
+      expect(result.failure?.code).toBeUndefined()
+    }, FFI_TEST_TIMEOUT)
+  })
+
+  describe('searchTerms (deprecated) error codes', () => {
+    it('returns UNKNOWN_COLUMN code for non-existent column', async () => {
+      const fakeColumn = csColumn('nonexistent_column').equality()
+
+      const result = await protectClient.createSearchTerms([
+        { value: 'test', column: fakeColumn, table: testSchema },
+      ])
+
+      expect(result.failure).toBeDefined()
+      expect(result.failure?.type).toBe(ProtectErrorTypes.EncryptionError)
+      expect(result.failure?.code).toBe('UNKNOWN_COLUMN')
+    }, FFI_TEST_TIMEOUT)
+  })
 })
