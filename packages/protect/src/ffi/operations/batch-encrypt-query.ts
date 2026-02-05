@@ -4,7 +4,7 @@ import {
   encryptQueryBulk as ffiEncryptQueryBulk,
   type QueryPayload,
 } from '@cipherstash/protect-ffi'
-import { type ProtectError, ProtectErrorTypes } from '../..'
+import { type ProtectError, ProtectErrorTypes, FfiProtectError } from '../..'
 import { logger } from '../../../../utils/logger'
 import type { Context, LockContext } from '../../identify'
 import type { Encrypted as CipherStashEncrypted } from '@cipherstash/protect-ffi'
@@ -152,6 +152,7 @@ export class BatchEncryptQueryOperation extends ProtectOperation<EncryptedQueryR
       (error) => ({
         type: ProtectErrorTypes.EncryptionError,
         message: error.message,
+        code: error instanceof FfiProtectError ? error.code : undefined,
       }),
     )
   }
@@ -211,6 +212,7 @@ export class BatchEncryptQueryOperationWithLockContext extends ProtectOperation<
       (error) => ({
         type: ProtectErrorTypes.EncryptionError,
         message: error.message,
+        code: error instanceof FfiProtectError ? error.code : undefined,
       }),
     )
   }

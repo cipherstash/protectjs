@@ -3,6 +3,7 @@ import type {
   ProtectTable,
   ProtectTableColumn,
 } from '@cipherstash/protect'
+import { FfiProtectError } from '@cipherstash/protect'
 import type { ProtectDynamoDBError } from './types'
 export const ciphertextAttrSuffix = '__source'
 export const searchTermAttrSuffix = '__hmac'
@@ -31,9 +32,11 @@ export function handleError(
     errorHandler?: (error: ProtectDynamoDBError) => void
   },
 ): ProtectDynamoDBError {
+  // Preserve FFI error code if available, otherwise use generic DynamoDB error code
+  const errorCode = error instanceof FfiProtectError ? error.code : 'PROTECT_DYNAMODB_ERROR'
   const protectError = new ProtectDynamoDBErrorImpl(
     error.message,
-    'PROTECT_DYNAMODB_ERROR',
+    errorCode,
     { context },
   )
 

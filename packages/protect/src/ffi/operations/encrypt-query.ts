@@ -3,7 +3,7 @@ import {
   type JsPlaintext,
   encryptQuery as ffiEncryptQuery,
 } from '@cipherstash/protect-ffi'
-import { type ProtectError, ProtectErrorTypes } from '../..'
+import { type ProtectError, ProtectErrorTypes, FfiProtectError } from '../..'
 import { logger } from '../../../../utils/logger'
 import type { LockContext } from '../../identify'
 import type { Client, Encrypted, EncryptQueryOptions } from '../../types'
@@ -75,6 +75,7 @@ export class EncryptQueryOperation extends ProtectOperation<Encrypted> {
       (error) => ({
         type: ProtectErrorTypes.EncryptionError,
         message: error.message,
+        code: error instanceof FfiProtectError ? error.code : undefined,
       }),
     )
   }
@@ -149,6 +150,7 @@ export class EncryptQueryOperationWithLockContext extends ProtectOperation<Encry
       (error) => ({
         type: ProtectErrorTypes.EncryptionError,
         message: error.message,
+        code: error instanceof FfiProtectError ? error.code : undefined,
       }),
     )
   }

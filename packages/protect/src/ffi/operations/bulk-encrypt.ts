@@ -6,7 +6,7 @@ import type {
   ProtectTableColumn,
   ProtectValue,
 } from '@cipherstash/schema'
-import { type ProtectError, ProtectErrorTypes } from '../..'
+import { type ProtectError, ProtectErrorTypes, FfiProtectError } from '../..'
 import { logger } from '../../../../utils/logger'
 import type { Context, LockContext } from '../../identify'
 import type {
@@ -128,6 +128,7 @@ export class BulkEncryptOperation extends ProtectOperation<BulkEncryptedData> {
       (error: unknown) => ({
         type: ProtectErrorTypes.EncryptionError,
         message: (error as Error).message,
+        code: error instanceof FfiProtectError ? error.code : undefined,
       }),
     )
   }
@@ -204,6 +205,7 @@ export class BulkEncryptOperationWithLockContext extends ProtectOperation<BulkEn
       (error: unknown) => ({
         type: ProtectErrorTypes.EncryptionError,
         message: (error as Error).message,
+        code: error instanceof FfiProtectError ? error.code : undefined,
       }),
     )
   }

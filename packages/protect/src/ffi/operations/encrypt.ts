@@ -9,7 +9,7 @@ import type {
   ProtectTableColumn,
   ProtectValue,
 } from '@cipherstash/schema'
-import { type ProtectError, ProtectErrorTypes } from '../..'
+import { type ProtectError, ProtectErrorTypes, FfiProtectError } from '../..'
 import { logger } from '../../../../utils/logger'
 import type { LockContext } from '../../identify'
 import type { Client, EncryptOptions, Encrypted } from '../../types'
@@ -82,6 +82,7 @@ export class EncryptOperation extends ProtectOperation<Encrypted> {
       (error) => ({
         type: ProtectErrorTypes.EncryptionError,
         message: error.message,
+        code: error instanceof FfiProtectError ? error.code : undefined,
       }),
     )
   }
@@ -149,6 +150,7 @@ export class EncryptOperationWithLockContext extends ProtectOperation<Encrypted>
       (error) => ({
         type: ProtectErrorTypes.EncryptionError,
         message: error.message,
+        code: error instanceof FfiProtectError ? error.code : undefined,
       }),
     )
   }

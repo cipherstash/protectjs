@@ -4,7 +4,7 @@ import {
   type DecryptResult,
   decryptBulkFallible,
 } from '@cipherstash/protect-ffi'
-import { type ProtectError, ProtectErrorTypes } from '../..'
+import { type ProtectError, ProtectErrorTypes, FfiProtectError } from '../..'
 import { logger } from '../../../../utils/logger'
 import type { Context, LockContext } from '../../identify'
 import type { BulkDecryptPayload, BulkDecryptedData, Client } from '../../types'
@@ -108,6 +108,7 @@ export class BulkDecryptOperation extends ProtectOperation<BulkDecryptedData> {
       (error: unknown) => ({
         type: ProtectErrorTypes.DecryptionError,
         message: (error as Error).message,
+        code: error instanceof FfiProtectError ? error.code : undefined,
       }),
     )
   }
@@ -169,6 +170,7 @@ export class BulkDecryptOperationWithLockContext extends ProtectOperation<BulkDe
       (error: unknown) => ({
         type: ProtectErrorTypes.DecryptionError,
         message: (error as Error).message,
+        code: error instanceof FfiProtectError ? error.code : undefined,
       }),
     )
   }

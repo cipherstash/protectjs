@@ -1,6 +1,6 @@
 import { type Result, withResult } from '@byteslice/result'
 import type { ProtectTable, ProtectTableColumn } from '@cipherstash/schema'
-import { type ProtectError, ProtectErrorTypes } from '../..'
+import { type ProtectError, ProtectErrorTypes, FfiProtectError } from '../..'
 import { logger } from '../../../../utils/logger'
 import type { LockContext } from '../../identify'
 import type { Client, Decrypted } from '../../types'
@@ -58,6 +58,7 @@ export class EncryptModelOperation<
       (error) => ({
         type: ProtectErrorTypes.EncryptionError,
         message: error.message,
+        code: error instanceof FfiProtectError ? error.code : undefined,
       }),
     )
   }
@@ -119,6 +120,7 @@ export class EncryptModelOperationWithLockContext<
       (error) => ({
         type: ProtectErrorTypes.EncryptionError,
         message: error.message,
+        code: error instanceof FfiProtectError ? error.code : undefined,
       }),
     )
   }

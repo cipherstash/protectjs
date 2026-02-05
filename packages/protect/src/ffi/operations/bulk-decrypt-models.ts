@@ -1,5 +1,5 @@
 import { type Result, withResult } from '@byteslice/result'
-import { type ProtectError, ProtectErrorTypes } from '../..'
+import { type ProtectError, ProtectErrorTypes, FfiProtectError } from '../..'
 import { logger } from '../../../../utils/logger'
 import type { LockContext } from '../../identify'
 import type { Client, Decrypted } from '../../types'
@@ -44,6 +44,7 @@ export class BulkDecryptModelsOperation<
       (error) => ({
         type: ProtectErrorTypes.DecryptionError,
         message: error.message,
+        code: error instanceof FfiProtectError ? error.code : undefined,
       }),
     )
   }
@@ -103,6 +104,7 @@ export class BulkDecryptModelsOperationWithLockContext<
       (error) => ({
         type: ProtectErrorTypes.DecryptionError,
         message: error.message,
+        code: error instanceof FfiProtectError ? error.code : undefined,
       }),
     )
   }
