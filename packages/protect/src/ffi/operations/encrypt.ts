@@ -10,6 +10,7 @@ import type {
   ProtectValue,
 } from '@cipherstash/schema'
 import { type ProtectError, ProtectErrorTypes } from '../..'
+import { getErrorCode } from '../helpers/error-code'
 import { logger } from '../../../../utils/logger'
 import type { LockContext } from '../../identify'
 import type { Client, EncryptOptions, Encrypted } from '../../types'
@@ -79,9 +80,10 @@ export class EncryptOperation extends ProtectOperation<Encrypted> {
           unverifiedContext: metadata,
         })
       },
-      (error) => ({
+      (error: unknown) => ({
         type: ProtectErrorTypes.EncryptionError,
-        message: error.message,
+        message: (error as Error).message,
+        code: getErrorCode(error),
       }),
     )
   }
@@ -146,9 +148,10 @@ export class EncryptOperationWithLockContext extends ProtectOperation<Encrypted>
           unverifiedContext: metadata,
         })
       },
-      (error) => ({
+      (error: unknown) => ({
         type: ProtectErrorTypes.EncryptionError,
-        message: error.message,
+        message: (error as Error).message,
+        code: getErrorCode(error),
       }),
     )
   }

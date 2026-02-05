@@ -7,6 +7,7 @@ import type {
   ProtectValue,
 } from '@cipherstash/schema'
 import { type ProtectError, ProtectErrorTypes } from '../..'
+import { getErrorCode } from '../helpers/error-code'
 import { logger } from '../../../../utils/logger'
 import type { Context, LockContext } from '../../identify'
 import type {
@@ -128,6 +129,7 @@ export class BulkEncryptOperation extends ProtectOperation<BulkEncryptedData> {
       (error: unknown) => ({
         type: ProtectErrorTypes.EncryptionError,
         message: (error as Error).message,
+        code: getErrorCode(error),
       }),
     )
   }
@@ -204,6 +206,7 @@ export class BulkEncryptOperationWithLockContext extends ProtectOperation<BulkEn
       (error: unknown) => ({
         type: ProtectErrorTypes.EncryptionError,
         message: (error as Error).message,
+        code: getErrorCode(error),
       }),
     )
   }

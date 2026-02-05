@@ -41,7 +41,13 @@ export class BulkEncryptModelsOperation<
           .audit(this.getAuditData())
 
         if (encryptResult.failure) {
-          throw new Error(`encryption error: ${encryptResult.failure.message}`)
+          // Create an Error object that preserves the FFI error code
+          // This is necessary because withResult's ensureError wraps non-Error objects
+          const error = new Error(encryptResult.failure.message) as Error & {
+            code?: string
+          }
+          error.code = encryptResult.failure.code
+          throw error
         }
 
         const data = encryptResult.data.map((item) => deepClone(item))

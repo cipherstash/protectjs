@@ -1,5 +1,6 @@
 import { type Result, withResult } from '@byteslice/result'
 import { type ProtectError, ProtectErrorTypes } from '../..'
+import { getErrorCode } from '../helpers/error-code'
 import { logger } from '../../../../utils/logger'
 import type { LockContext } from '../../identify'
 import type { Client, Decrypted } from '../../types'
@@ -41,9 +42,10 @@ export class DecryptModelOperation<
 
         return await decryptModelFields<T>(this.model, this.client, auditData)
       },
-      (error) => ({
+      (error: unknown) => ({
         type: ProtectErrorTypes.DecryptionError,
-        message: error.message,
+        message: (error as Error).message,
+        code: getErrorCode(error),
       }),
     )
   }
@@ -97,9 +99,10 @@ export class DecryptModelOperationWithLockContext<
           auditData,
         )
       },
-      (error) => ({
+      (error: unknown) => ({
         type: ProtectErrorTypes.DecryptionError,
-        message: error.message,
+        message: (error as Error).message,
+        code: getErrorCode(error),
       }),
     )
   }

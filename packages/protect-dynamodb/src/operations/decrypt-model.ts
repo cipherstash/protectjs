@@ -45,7 +45,13 @@ export class DecryptModelOperation<
           .audit(this.getAuditData())
 
         if (decryptResult.failure) {
-          throw new Error(`[protect]: ${decryptResult.failure.message}`)
+          // Create an Error object that preserves the FFI error code
+          // This is necessary because withResult's ensureError wraps non-Error objects
+          const error = new Error(decryptResult.failure.message) as Error & {
+            code?: string
+          }
+          error.code = decryptResult.failure.code
+          throw error
         }
 
         return decryptResult.data
