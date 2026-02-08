@@ -243,6 +243,10 @@ export const users = csTable("users", {
 export const orders = csTable("orders", {
   address: csColumn("address"),
 });
+
+export const documents = csTable("documents", {
+  metadata: csColumn("metadata").searchableJson(), // Enables encrypted JSONB queries
+});
 ```
 
 Read more about [defining your schema](./docs/reference/schema.md).
@@ -993,7 +997,12 @@ Until support for other data types are available, you can express interest in th
 
 ## Searchable encryption
 
-Read more about [searching encrypted data](./docs/concepts/searchable-encryption.md) in the docs.
+Protect.js supports searching encrypted data in PostgreSQL:
+
+- **Text columns**: Use `.equality()`, `.freeTextSearch()`, and `.orderAndRange()` for exact match, text search, and sorting/range queries.
+- **JSONB columns**: Use `.searchableJson()` (recommended) to enable encrypted JSONPath selector and containment queries on JSON data. The query operation is automatically inferred from the plaintext type.
+
+Read more about [searching encrypted data](./docs/concepts/searchable-encryption.md) and the [PostgreSQL implementation details](./docs/reference/searchable-encryption-postgres.md) in the docs.
 
 ## Multi-tenant encryption
 

@@ -3,9 +3,9 @@
 "@cipherstash/schema": minor
 ---
 
-Add STE Vec query support to encryptQuery API for encrypted JSONB columns.
+Add encrypted JSONB query support with `searchableJson()` (recommended).
 
-- New `searchableJson()` method on column schema enables encrypted JSONB queries
-- Automatic query operation inference from plaintext shape (string → steVecSelector, object/array → steVecTerm)
-- Supports explicit `queryType: 'steVecSelector'` and `queryType: 'steVecTerm'` options
-- JSONB path utilities for building encrypted JSON column queries
+- New `searchableJson()` schema method enables encrypted JSONB path and containment queries
+- Automatic query operation inference: string values become JSONPath selector queries, objects/arrays become containment queries
+- Also supports explicit `queryType: 'steVecSelector'` and `queryType: 'steVecTerm'` for advanced use cases
+- JSONB path utilities (`toJsonPath`, `buildNestedObject`, `parseJsonbPath`) for building encrypted JSON column queries
