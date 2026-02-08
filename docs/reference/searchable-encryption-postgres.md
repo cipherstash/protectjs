@@ -209,6 +209,8 @@ const tagsTerm = await protectClient.encryptQuery(['admin', 'user'], {
 > await protectClient.encryptQuery({ value: 42 }, { column: documents.metadata, table: documents })
 > ```
 
+<!-- -->
+
 > [!TIP]
 > Use the `buildNestedObject` helper to construct nested containment queries from dot-notation paths:
 >
