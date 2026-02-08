@@ -792,6 +792,13 @@ describe('searchableJson batch edge cases', () => {
     expect(data[2]).toBeNull()
   }, 30000)
 
+  it('handles empty batch', async () => {
+    const result = await protectClient.encryptQuery([])
+
+    const data = unwrapResult(result)
+    expect(data).toHaveLength(0)
+  }, 30000)
+
   it('handles large batch (10+ items)', async () => {
     const items = Array.from({ length: 12 }, (_, i) => ({
       value: i % 2 === 0 ? `$.path${i}` : { index: i },
