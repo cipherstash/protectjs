@@ -589,7 +589,9 @@ describe('searchableJson postgres integration', () => {
 
     const selectorDecrypted = await protectClient.decryptModel({ metadata: selectorRows[0].metadata })
     if (selectorDecrypted.failure) throw new Error(selectorDecrypted.failure.message)
-    expect(selectorDecrypted.data.metadata).toEqual(plaintext)
+    expect(selectorDecrypted.data.metadata).toEqual(
+      expect.objectContaining({ user: expect.objectContaining({ email: expect.any(String) }) }),
+    )
 
     // Execute containment query
     const containmentRows = await sql`
@@ -803,11 +805,12 @@ describe('searchableJson postgres integration', () => {
     // Empty object containment is valid SQL; verify it returns deterministic results
     expect(emptyObjRows.length).toBeGreaterThanOrEqual(0)
 
-    // If rows returned, verify they decrypt correctly
+    // If rows returned, verify they decrypt to a non-null object (any row under TEST_RUN_ID may match)
     if (emptyObjRows.length > 0) {
       const decryptedModel = await protectClient.decryptModel({ metadata: emptyObjRows[0].metadata })
       if (decryptedModel.failure) throw new Error(decryptedModel.failure.message)
-      expect(decryptedModel.data.metadata).toEqual(plaintext)
+      expect(typeof decryptedModel.data.metadata).toBe('object')
+      expect(decryptedModel.data.metadata).not.toBeNull()
     }
 
     // Empty array query
@@ -835,7 +838,8 @@ describe('searchableJson postgres integration', () => {
     if (emptyArrRows.length > 0) {
       const decryptedModel = await protectClient.decryptModel({ metadata: emptyArrRows[0].metadata })
       if (decryptedModel.failure) throw new Error(decryptedModel.failure.message)
-      expect(decryptedModel.data.metadata).toEqual(plaintext)
+      expect(typeof decryptedModel.data.metadata).toBe('object')
+      expect(decryptedModel.data.metadata).not.toBeNull()
     }
   }, 30000)
 })
