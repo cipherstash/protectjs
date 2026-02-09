@@ -422,6 +422,9 @@ describe('searchableJson with LockContext', () => {
     // with a mock token (ste_vec_term operations may require real auth)
     expect(mockLockContext.getLockContext).toHaveBeenCalledTimes(1)
 
+    // Ensure the operation actually completed (has either data or failure)
+    expect(result.data !== undefined || result.failure !== undefined).toBe(true)
+
     // The result may fail due to mock token, but we verify LockContext integration worked
     if (result.data) {
       expect(result.data).toMatchObject({
@@ -493,6 +496,7 @@ describe('searchableJson with LockContext', () => {
 
     // Null values should return null without calling LockContext
     // since there's nothing to encrypt
+    expect(mockLockContext.getLockContext).not.toHaveBeenCalled()
     const data = unwrapResult(result)
     expect(data).toBeNull()
   }, 30000)

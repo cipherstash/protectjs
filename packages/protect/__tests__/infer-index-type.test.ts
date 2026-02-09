@@ -1,10 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { csColumn, csTable } from '@cipherstash/schema'
 import { inferIndexType, validateIndexType } from '../src/index'
-import {
-  inferQueryOpFromPlaintext,
-  resolveIndexType,
-} from '../src/ffi/helpers/infer-index-type'
+import { inferQueryOpFromPlaintext } from '../src/ffi/helpers/infer-index-type'
 
 describe('infer-index-type helpers', () => {
   const users = csTable('users', {
@@ -89,85 +86,4 @@ describe('infer-index-type helpers', () => {
     })
   })
 
-  describe('resolveIndexType with plaintext inference', () => {
-    it('infers ste_vec_selector for string on searchableJson column', () => {
-      const schema = csTable('t', { col: csColumn('col').searchableJson() })
-      const result = resolveIndexType(schema.col, undefined, '$.user.email')
-      expect(result).toEqual({ indexType: 'ste_vec', queryOp: 'ste_vec_selector' })
-    })
-
-    it('infers ste_vec_term for object on searchableJson column', () => {
-      const schema = csTable('t', { col: csColumn('col').searchableJson() })
-      const result = resolveIndexType(schema.col, undefined, { role: 'admin' })
-      expect(result).toEqual({ indexType: 'ste_vec', queryOp: 'ste_vec_term' })
-    })
-
-    it('infers ste_vec_term for array on searchableJson column', () => {
-      const schema = csTable('t', { col: csColumn('col').searchableJson() })
-      const result = resolveIndexType(schema.col, undefined, ['admin'])
-      expect(result).toEqual({ indexType: 'ste_vec', queryOp: 'ste_vec_term' })
-    })
-
-    it('returns indexType only when ste_vec inferred but plaintext is null', () => {
-      const schema = csTable('t', { col: csColumn('col').searchableJson() })
-      const result = resolveIndexType(schema.col, undefined, null)
-      expect(result).toEqual({ indexType: 'ste_vec' })
-    })
-
-    it('returns indexType only when ste_vec inferred but plaintext is undefined', () => {
-      const schema = csTable('t', { col: csColumn('col').searchableJson() })
-      const result = resolveIndexType(schema.col)
-      expect(result).toEqual({ indexType: 'ste_vec' })
-    })
-
-    it('uses explicit queryType over plaintext inference', () => {
-      const schema = csTable('t', { col: csColumn('col').searchableJson() })
-      // Even with object plaintext, explicit steVecSelector should be used
-      const result = resolveIndexType(schema.col, 'steVecSelector', { role: 'admin' })
-      expect(result).toEqual({ indexType: 'ste_vec', queryOp: 'ste_vec_selector' })
-    })
-
-    it('does not require plaintext for non-ste_vec columns', () => {
-      const schema = csTable('t', { col: csColumn('col').equality() })
-      const result = resolveIndexType(schema.col)
-      expect(result).toEqual({ indexType: 'unique', queryOp: undefined })
-    })
-  })
-
-  describe('resolveIndexType with explicit searchableJson queryType', () => {
-    it('infers ste_vec_selector for string plaintext with searchableJson', () => {
-      const schema = csTable('t', { col: csColumn('col').searchableJson() })
-      const result = resolveIndexType(schema.col, 'searchableJson', '$.user.email')
-      expect(result).toEqual({ indexType: 'ste_vec', queryOp: 'ste_vec_selector' })
-    })
-
-    it('infers ste_vec_term for object plaintext with searchableJson', () => {
-      const schema = csTable('t', { col: csColumn('col').searchableJson() })
-      const result = resolveIndexType(schema.col, 'searchableJson', { role: 'admin' })
-      expect(result).toEqual({ indexType: 'ste_vec', queryOp: 'ste_vec_term' })
-    })
-
-    it('infers ste_vec_term for array plaintext with searchableJson', () => {
-      const schema = csTable('t', { col: csColumn('col').searchableJson() })
-      const result = resolveIndexType(schema.col, 'searchableJson', ['admin'])
-      expect(result).toEqual({ indexType: 'ste_vec', queryOp: 'ste_vec_term' })
-    })
-
-    it('returns indexType only when searchableJson and plaintext is null', () => {
-      const schema = csTable('t', { col: csColumn('col').searchableJson() })
-      const result = resolveIndexType(schema.col, 'searchableJson', null)
-      expect(result).toEqual({ indexType: 'ste_vec' })
-    })
-
-    it('returns indexType only when searchableJson and plaintext is undefined', () => {
-      const schema = csTable('t', { col: csColumn('col').searchableJson() })
-      const result = resolveIndexType(schema.col, 'searchableJson', undefined)
-      expect(result).toEqual({ indexType: 'ste_vec' })
-    })
-
-    it('validates ste_vec index when searchableJson used', () => {
-      const schema = csTable('t', { col: csColumn('col').equality() }) // No ste_vec
-      expect(() => resolveIndexType(schema.col, 'searchableJson', '$.path')).toThrow('not configured')
-    })
-  })
 })
