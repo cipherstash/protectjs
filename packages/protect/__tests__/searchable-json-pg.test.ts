@@ -3,6 +3,7 @@ import { csColumn, csTable } from '@cipherstash/schema'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import {
   type Encrypted,
+  isEncryptedPayload,
   protect,
 } from '../src'
 import postgres from 'postgres'
@@ -53,6 +54,14 @@ describe('searchableJson postgres integration', () => {
       throw new Error(`encrypt failed: ${encrypted.failure.message}`)
     }
 
+    expect(isEncryptedPayload(encrypted.data)).toBe(true)
+    expect(encrypted.data).toHaveProperty('v')
+    expect(encrypted.data).toHaveProperty('i')
+    expect((encrypted.data as any).i).toHaveProperty('t', 'protect-ci-jsonb')
+    expect((encrypted.data as any).i).toHaveProperty('c', 'metadata')
+    expect(encrypted.data).toHaveProperty('sv')
+    expect(Array.isArray((encrypted.data as any).sv)).toBe(true)
+
     const [inserted] = await sql`
       INSERT INTO "protect-ci-jsonb" (metadata, test_run_id)
       VALUES (${sql.json(encrypted.data)}::eql_v2_encrypted, ${TEST_RUN_ID})
@@ -81,6 +90,13 @@ describe('searchableJson postgres integration', () => {
 
     if (encryptedModels.failure) {
       throw new Error(`bulkEncryptModels failed: ${encryptedModels.failure.message}`)
+    }
+
+    for (const row of encryptedModels.data) {
+      expect(isEncryptedPayload(row.metadata)).toBe(true)
+      expect(row.metadata).toHaveProperty('v')
+      expect(row.metadata).toHaveProperty('i')
+      expect(row.metadata).toHaveProperty('sv')
     }
 
     const insertedRows = []
@@ -132,6 +148,11 @@ describe('searchableJson postgres integration', () => {
       throw new Error(`encryptModel failed: ${encryptedModel.failure.message}`)
     }
 
+    expect(isEncryptedPayload(encryptedModel.data.metadata)).toBe(true)
+    expect(encryptedModel.data.metadata).toHaveProperty('v')
+    expect(encryptedModel.data.metadata).toHaveProperty('i')
+    expect(encryptedModel.data.metadata).toHaveProperty('sv')
+
     const [inserted] = await sql`
       INSERT INTO "protect-ci-jsonb" (metadata, test_run_id)
       VALUES (${sql.json(encryptedModel.data.metadata)}::eql_v2_encrypted, ${TEST_RUN_ID})
@@ -159,6 +180,11 @@ describe('searchableJson postgres integration', () => {
 
     const encryptedModel = await protectClient.encryptModel(model, table)
     if (encryptedModel.failure) throw new Error(encryptedModel.failure.message)
+
+    expect(isEncryptedPayload(encryptedModel.data.metadata)).toBe(true)
+    expect(encryptedModel.data.metadata).toHaveProperty('v')
+    expect(encryptedModel.data.metadata).toHaveProperty('i')
+    expect(encryptedModel.data.metadata).toHaveProperty('sv')
 
     await sql`
       INSERT INTO "protect-ci-jsonb" (metadata, test_run_id)
@@ -189,7 +215,7 @@ describe('searchableJson postgres integration', () => {
     const decryptedModel = await protectClient.decryptModel({ metadata: rows[0].metadata })
     if (decryptedModel.failure) throw new Error(decryptedModel.failure.message)
 
-    expect((decryptedModel.data.metadata as any).user.email).toBe('selector-simple@test.com')
+    expect(decryptedModel.data.metadata).toEqual(plaintext)
   }, 30000)
 
   // 5. selector query nested path ('$.user.profile.role')
@@ -199,6 +225,11 @@ describe('searchableJson postgres integration', () => {
 
     const encryptedModel = await protectClient.encryptModel(model, table)
     if (encryptedModel.failure) throw new Error(encryptedModel.failure.message)
+
+    expect(isEncryptedPayload(encryptedModel.data.metadata)).toBe(true)
+    expect(encryptedModel.data.metadata).toHaveProperty('v')
+    expect(encryptedModel.data.metadata).toHaveProperty('i')
+    expect(encryptedModel.data.metadata).toHaveProperty('sv')
 
     await sql`
       INSERT INTO "protect-ci-jsonb" (metadata, test_run_id)
@@ -229,7 +260,7 @@ describe('searchableJson postgres integration', () => {
     const decryptedModel = await protectClient.decryptModel({ metadata: rows[0].metadata })
     if (decryptedModel.failure) throw new Error(decryptedModel.failure.message)
 
-    expect((decryptedModel.data.metadata as any).user.profile.role).toBe('moderator')
+    expect(decryptedModel.data.metadata).toEqual(plaintext)
   }, 30000)
 
   // 6. selector query array index ('$.items[0].name')
@@ -239,6 +270,11 @@ describe('searchableJson postgres integration', () => {
 
     const encryptedModel = await protectClient.encryptModel(model, table)
     if (encryptedModel.failure) throw new Error(encryptedModel.failure.message)
+
+    expect(isEncryptedPayload(encryptedModel.data.metadata)).toBe(true)
+    expect(encryptedModel.data.metadata).toHaveProperty('v')
+    expect(encryptedModel.data.metadata).toHaveProperty('i')
+    expect(encryptedModel.data.metadata).toHaveProperty('sv')
 
     await sql`
       INSERT INTO "protect-ci-jsonb" (metadata, test_run_id)
@@ -269,7 +305,7 @@ describe('searchableJson postgres integration', () => {
     const decryptedModel = await protectClient.decryptModel({ metadata: rows[0].metadata })
     if (decryptedModel.failure) throw new Error(decryptedModel.failure.message)
 
-    expect((decryptedModel.data.metadata as any).items[0].name).toBe('widget-selector')
+    expect(decryptedModel.data.metadata).toEqual(plaintext)
   }, 30000)
 
   // 7. selector query with returnType: 'composite-literal' works in SQL
@@ -279,6 +315,11 @@ describe('searchableJson postgres integration', () => {
 
     const encryptedModel = await protectClient.encryptModel(model, table)
     if (encryptedModel.failure) throw new Error(encryptedModel.failure.message)
+
+    expect(isEncryptedPayload(encryptedModel.data.metadata)).toBe(true)
+    expect(encryptedModel.data.metadata).toHaveProperty('v')
+    expect(encryptedModel.data.metadata).toHaveProperty('i')
+    expect(encryptedModel.data.metadata).toHaveProperty('sv')
 
     await sql`
       INSERT INTO "protect-ci-jsonb" (metadata, test_run_id)
@@ -313,7 +354,7 @@ describe('searchableJson postgres integration', () => {
     const decryptedModel = await protectClient.decryptModel({ metadata: rows[0].metadata })
     if (decryptedModel.failure) throw new Error(decryptedModel.failure.message)
 
-    expect((decryptedModel.data.metadata as any).feature).toBe('composite-literal-test')
+    expect(decryptedModel.data.metadata).toEqual(plaintext)
   }, 30000)
 
   // 8. containment query key/value ({ role: 'admin' })
@@ -323,6 +364,11 @@ describe('searchableJson postgres integration', () => {
 
     const encryptedModel = await protectClient.encryptModel(model, table)
     if (encryptedModel.failure) throw new Error(encryptedModel.failure.message)
+
+    expect(isEncryptedPayload(encryptedModel.data.metadata)).toBe(true)
+    expect(encryptedModel.data.metadata).toHaveProperty('v')
+    expect(encryptedModel.data.metadata).toHaveProperty('i')
+    expect(encryptedModel.data.metadata).toHaveProperty('sv')
 
     await sql`
       INSERT INTO "protect-ci-jsonb" (metadata, test_run_id)
@@ -353,7 +399,7 @@ describe('searchableJson postgres integration', () => {
     const decryptedModel = await protectClient.decryptModel({ metadata: rows[0].metadata })
     if (decryptedModel.failure) throw new Error(decryptedModel.failure.message)
 
-    expect((decryptedModel.data.metadata as any).role).toBe('admin-containment')
+    expect(decryptedModel.data.metadata).toEqual(plaintext)
   }, 30000)
 
   // 9. containment query nested object
@@ -363,6 +409,11 @@ describe('searchableJson postgres integration', () => {
 
     const encryptedModel = await protectClient.encryptModel(model, table)
     if (encryptedModel.failure) throw new Error(encryptedModel.failure.message)
+
+    expect(isEncryptedPayload(encryptedModel.data.metadata)).toBe(true)
+    expect(encryptedModel.data.metadata).toHaveProperty('v')
+    expect(encryptedModel.data.metadata).toHaveProperty('i')
+    expect(encryptedModel.data.metadata).toHaveProperty('sv')
 
     await sql`
       INSERT INTO "protect-ci-jsonb" (metadata, test_run_id)
@@ -393,7 +444,7 @@ describe('searchableJson postgres integration', () => {
     const decryptedModel = await protectClient.decryptModel({ metadata: rows[0].metadata })
     if (decryptedModel.failure) throw new Error(decryptedModel.failure.message)
 
-    expect((decryptedModel.data.metadata as any).user.profile.role).toBe('superadmin')
+    expect(decryptedModel.data.metadata).toEqual(plaintext)
   }, 30000)
 
   // 10. containment query array
@@ -403,6 +454,11 @@ describe('searchableJson postgres integration', () => {
 
     const encryptedModel = await protectClient.encryptModel(model, table)
     if (encryptedModel.failure) throw new Error(encryptedModel.failure.message)
+
+    expect(isEncryptedPayload(encryptedModel.data.metadata)).toBe(true)
+    expect(encryptedModel.data.metadata).toHaveProperty('v')
+    expect(encryptedModel.data.metadata).toHaveProperty('i')
+    expect(encryptedModel.data.metadata).toHaveProperty('sv')
 
     await sql`
       INSERT INTO "protect-ci-jsonb" (metadata, test_run_id)
@@ -433,7 +489,7 @@ describe('searchableJson postgres integration', () => {
     const decryptedModel = await protectClient.decryptModel({ metadata: rows[0].metadata })
     if (decryptedModel.failure) throw new Error(decryptedModel.failure.message)
 
-    expect((decryptedModel.data.metadata as any).tags).toEqual(['containment-alpha', 'containment-beta'])
+    expect(decryptedModel.data.metadata).toEqual(plaintext)
   }, 30000)
 
   // 11. containment query with returnType: 'composite-literal'
@@ -443,6 +499,11 @@ describe('searchableJson postgres integration', () => {
 
     const encryptedModel = await protectClient.encryptModel(model, table)
     if (encryptedModel.failure) throw new Error(encryptedModel.failure.message)
+
+    expect(isEncryptedPayload(encryptedModel.data.metadata)).toBe(true)
+    expect(encryptedModel.data.metadata).toHaveProperty('v')
+    expect(encryptedModel.data.metadata).toHaveProperty('i')
+    expect(encryptedModel.data.metadata).toHaveProperty('sv')
 
     await sql`
       INSERT INTO "protect-ci-jsonb" (metadata, test_run_id)
@@ -476,7 +537,7 @@ describe('searchableJson postgres integration', () => {
     const decryptedModel = await protectClient.decryptModel({ metadata: rows[0].metadata })
     if (decryptedModel.failure) throw new Error(decryptedModel.failure.message)
 
-    expect((decryptedModel.data.metadata as any).status).toBe('verified')
+    expect(decryptedModel.data.metadata).toEqual(plaintext)
   }, 30000)
 
   // 12. batch encrypt mixed selector + containment terms and execute both
@@ -486,6 +547,11 @@ describe('searchableJson postgres integration', () => {
 
     const encryptedModel = await protectClient.encryptModel(model, table)
     if (encryptedModel.failure) throw new Error(encryptedModel.failure.message)
+
+    expect(isEncryptedPayload(encryptedModel.data.metadata)).toBe(true)
+    expect(encryptedModel.data.metadata).toHaveProperty('v')
+    expect(encryptedModel.data.metadata).toHaveProperty('i')
+    expect(encryptedModel.data.metadata).toHaveProperty('sv')
 
     await sql`
       INSERT INTO "protect-ci-jsonb" (metadata, test_run_id)
@@ -523,7 +589,7 @@ describe('searchableJson postgres integration', () => {
 
     const selectorDecrypted = await protectClient.decryptModel({ metadata: selectorRows[0].metadata })
     if (selectorDecrypted.failure) throw new Error(selectorDecrypted.failure.message)
-    expect((selectorDecrypted.data.metadata as any).user.email).toBeDefined()
+    expect(selectorDecrypted.data.metadata).toEqual(plaintext)
 
     // Execute containment query
     const containmentRows = await sql`
@@ -536,7 +602,7 @@ describe('searchableJson postgres integration', () => {
 
     const containmentDecrypted = await protectClient.decryptModel({ metadata: containmentRows[0].metadata })
     if (containmentDecrypted.failure) throw new Error(containmentDecrypted.failure.message)
-    expect((containmentDecrypted.data.metadata as any).role).toBe('editor')
+    expect(containmentDecrypted.data.metadata).toEqual(plaintext)
   }, 30000)
 
   // 13. inferred queryType vs explicit (steVecSelector/steVecTerm) yield same DB results
@@ -546,6 +612,11 @@ describe('searchableJson postgres integration', () => {
 
     const encryptedModel = await protectClient.encryptModel(model, table)
     if (encryptedModel.failure) throw new Error(encryptedModel.failure.message)
+
+    expect(isEncryptedPayload(encryptedModel.data.metadata)).toBe(true)
+    expect(encryptedModel.data.metadata).toHaveProperty('v')
+    expect(encryptedModel.data.metadata).toHaveProperty('i')
+    expect(encryptedModel.data.metadata).toHaveProperty('sv')
 
     await sql`
       INSERT INTO "protect-ci-jsonb" (metadata, test_run_id)
@@ -597,6 +668,7 @@ describe('searchableJson postgres integration', () => {
     if (explicitDecrypted.failure) throw new Error(explicitDecrypted.failure.message)
 
     expect(inferredDecrypted.data.metadata).toEqual(explicitDecrypted.data.metadata)
+    expect(inferredDecrypted.data.metadata).toEqual(plaintext)
 
     // Containment: inferred (searchableJson) vs explicit (steVecTerm)
     const inferredTermResult = await protectClient.encryptQuery([
@@ -642,6 +714,7 @@ describe('searchableJson postgres integration', () => {
     if (explicitTermDecrypted.failure) throw new Error(explicitTermDecrypted.failure.message)
 
     expect(inferredTermDecrypted.data.metadata).toEqual(explicitTermDecrypted.data.metadata)
+    expect(inferredTermDecrypted.data.metadata).toEqual(plaintext)
   }, 30000)
 
   // 14. null handling: encrypt/decrypt + query behavior validated
@@ -696,6 +769,11 @@ describe('searchableJson postgres integration', () => {
     const encryptedModel = await protectClient.encryptModel(model, table)
     if (encryptedModel.failure) throw new Error(encryptedModel.failure.message)
 
+    expect(isEncryptedPayload(encryptedModel.data.metadata)).toBe(true)
+    expect(encryptedModel.data.metadata).toHaveProperty('v')
+    expect(encryptedModel.data.metadata).toHaveProperty('i')
+    expect(encryptedModel.data.metadata).toHaveProperty('sv')
+
     await sql`
       INSERT INTO "protect-ci-jsonb" (metadata, test_run_id)
       VALUES (${sql.json(encryptedModel.data.metadata)}::eql_v2_encrypted, ${TEST_RUN_ID})
@@ -729,7 +807,7 @@ describe('searchableJson postgres integration', () => {
     if (emptyObjRows.length > 0) {
       const decryptedModel = await protectClient.decryptModel({ metadata: emptyObjRows[0].metadata })
       if (decryptedModel.failure) throw new Error(decryptedModel.failure.message)
-      expect(decryptedModel.data.metadata).toBeDefined()
+      expect(decryptedModel.data.metadata).toEqual(plaintext)
     }
 
     // Empty array query
@@ -757,7 +835,7 @@ describe('searchableJson postgres integration', () => {
     if (emptyArrRows.length > 0) {
       const decryptedModel = await protectClient.decryptModel({ metadata: emptyArrRows[0].metadata })
       if (decryptedModel.failure) throw new Error(decryptedModel.failure.message)
-      expect(decryptedModel.data.metadata).toBeDefined()
+      expect(decryptedModel.data.metadata).toEqual(plaintext)
     }
   }, 30000)
 })
