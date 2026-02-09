@@ -8,7 +8,7 @@ if (!process.env.DATABASE_URL) {
   throw new Error('Missing env.DATABASE_URL')
 }
 
-const sql = postgres(process.env.DATABASE_URL)
+const sql = postgres(process.env.DATABASE_URL, { prepare: false })
 
 const table = csTable('protect-ci-jsonb', {
   metadata: csColumn('metadata').searchableJson(),
