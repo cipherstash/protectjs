@@ -58,6 +58,7 @@
 		"@supabase/supabase-js": "^2.47.10",
 		"execa": "^9.5.2",
 		"json-schema-to-typescript": "^15.0.2",
+		"postgres": "^3.4.7",
 		"tsup": "catalog:repo",
 		"tsx": "catalog:repo",
 		"typescript": "catalog:repo",
