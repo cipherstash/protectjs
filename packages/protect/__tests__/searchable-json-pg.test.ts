@@ -8,6 +8,7 @@ if (!process.env.DATABASE_URL) {
   throw new Error('Missing env.DATABASE_URL')
 }
 
+// Disable prepared statements — required for pooled connections (PgBouncer in transaction mode)
 const sql = postgres(process.env.DATABASE_URL, { prepare: false })
 
 const table = csTable('protect-ci-jsonb', {
