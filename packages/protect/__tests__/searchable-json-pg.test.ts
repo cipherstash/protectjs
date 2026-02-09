@@ -38,7 +38,7 @@ beforeAll(async () => {
 }, 30000)
 
 afterAll(async () => {
-  await sql`DROP TABLE IF EXISTS "protect-ci-jsonb"`
+  await sql`DELETE FROM "protect-ci-jsonb" WHERE test_run_id = ${TEST_RUN_ID}`
   await sql.end()
 }, 30000)
 
@@ -199,8 +199,7 @@ describe('searchableJson postgres integration', () => {
     const decryptedModel = await protectClient.decryptModel({ metadata: rows[0].metadata })
     if (decryptedModel.failure) throw new Error(decryptedModel.failure.message)
 
-    expect(decryptedModel.data.metadata).toHaveProperty('user')
-    expect((decryptedModel.data.metadata as any).user).toHaveProperty('email')
+    expect((decryptedModel.data.metadata as any).user.email).toBe('selector-simple@test.com')
   }, 30000)
 
   // 5. selector query nested path ('$.user.profile.role')
@@ -241,7 +240,7 @@ describe('searchableJson postgres integration', () => {
     const decryptedModel = await protectClient.decryptModel({ metadata: rows[0].metadata })
     if (decryptedModel.failure) throw new Error(decryptedModel.failure.message)
 
-    expect((decryptedModel.data.metadata as any).user.profile.role).toBeDefined()
+    expect((decryptedModel.data.metadata as any).user.profile.role).toBe('moderator')
   }, 30000)
 
   // 6. selector query array index ('$.items[0].name')
@@ -282,7 +281,7 @@ describe('searchableJson postgres integration', () => {
     const decryptedModel = await protectClient.decryptModel({ metadata: rows[0].metadata })
     if (decryptedModel.failure) throw new Error(decryptedModel.failure.message)
 
-    expect((decryptedModel.data.metadata as any).items[0].name).toBeDefined()
+    expect((decryptedModel.data.metadata as any).items[0].name).toBe('widget-selector')
   }, 30000)
 
   // 7. selector query with returnType: 'composite-literal' works in SQL
@@ -332,7 +331,7 @@ describe('searchableJson postgres integration', () => {
 
   // 8. containment query key/value ({ role: 'admin' })
   it('containment query key/value', async () => {
-    const plaintext = { role: 'admin', department: 'engineering' }
+    const plaintext = { role: 'admin-containment', department: 'engineering' }
     const model = { metadata: plaintext }
 
     const encryptedModel = await protectClient.encryptModel(model, table)
@@ -346,7 +345,7 @@ describe('searchableJson postgres integration', () => {
 
     const queryResult = await protectClient.encryptQuery([
       {
-        value: { role: 'admin' },
+        value: { role: 'admin-containment' },
         column: table.metadata,
         table: table,
         queryType: 'searchableJson',
@@ -368,7 +367,7 @@ describe('searchableJson postgres integration', () => {
     const decryptedModel = await protectClient.decryptModel({ metadata: rows[0].metadata })
     if (decryptedModel.failure) throw new Error(decryptedModel.failure.message)
 
-    expect((decryptedModel.data.metadata as any).role).toBe('admin')
+    expect((decryptedModel.data.metadata as any).role).toBe('admin-containment')
   }, 30000)
 
   // 9. containment query nested object
