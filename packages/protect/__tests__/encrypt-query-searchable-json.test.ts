@@ -41,7 +41,9 @@ describe('encryptQuery with searchableJson queryType', () => {
     expect(data).toBeDefined()
     expect(data).toMatchObject({
       i: { t: 'documents', c: 'metadata' },
+      v: 2,
     })
+    expect(data).toHaveProperty('s')
   }, 30000)
 
   it('auto-infers ste_vec_term for object plaintext (containment)', async () => {
@@ -55,7 +57,9 @@ describe('encryptQuery with searchableJson queryType', () => {
     expect(data).toBeDefined()
     expect(data).toMatchObject({
       i: { t: 'documents', c: 'metadata' },
+      v: 2,
     })
+    expect(data).toHaveProperty('sv')
   }, 30000)
 
   it('auto-infers ste_vec_term for nested object', async () => {
@@ -72,7 +76,9 @@ describe('encryptQuery with searchableJson queryType', () => {
     expect(data).toBeDefined()
     expect(data).toMatchObject({
       i: { t: 'documents', c: 'metadata' },
+      v: 2,
     })
+    expect(data).toHaveProperty('sv')
   }, 30000)
 
   it('auto-infers ste_vec_term for array plaintext', async () => {
@@ -86,7 +92,9 @@ describe('encryptQuery with searchableJson queryType', () => {
     expect(data).toBeDefined()
     expect(data).toMatchObject({
       i: { t: 'documents', c: 'metadata' },
+      v: 2,
     })
+    expect(data).toHaveProperty('sv')
   }, 30000)
 
   it('returns null for null plaintext', async () => {
@@ -140,7 +148,9 @@ describe('encryptQuery with searchableJson column and omitted queryType', () => 
     expect(data).toBeDefined()
     expect(data).toMatchObject({
       i: { t: 'documents', c: 'metadata' },
+      v: 2,
     })
+    expect(data).toHaveProperty('s')
   }, 30000)
 
   it('auto-infers ste_vec_term for object plaintext (containment)', async () => {
@@ -153,7 +163,9 @@ describe('encryptQuery with searchableJson column and omitted queryType', () => 
     expect(data).toBeDefined()
     expect(data).toMatchObject({
       i: { t: 'documents', c: 'metadata' },
+      v: 2,
     })
+    expect(data).toHaveProperty('sv')
   }, 30000)
 
   it('returns null for null plaintext', async () => {
@@ -235,8 +247,11 @@ describe('searchableJson batch operations', () => {
     const data = unwrapResult(result)
     expect(data).toHaveLength(3)
     expect(data[0]).toMatchObject({ i: { t: 'documents', c: 'metadata' } })
+    expect(data[0]).toHaveProperty('s')
     expect(data[1]).toMatchObject({ i: { t: 'documents', c: 'metadata' } })
+    expect(data[1]).toHaveProperty('sv')
     expect(data[2]).toMatchObject({ i: { t: 'documents', c: 'metadata' } })
+    expect(data[2]).toHaveProperty('sv')
   }, 30000)
 
   it('handles null values in batch', async () => {
@@ -265,6 +280,7 @@ describe('searchableJson batch operations', () => {
     expect(data).toHaveLength(3)
     expect(data[0]).toBeNull()
     expect(data[1]).not.toBeNull()
+    expect(data[1]).toHaveProperty('s')
     expect(data[2]).toBeNull()
   }, 30000)
 
@@ -292,9 +308,9 @@ describe('searchableJson batch operations', () => {
 
     const data = unwrapResult(result)
     expect(data).toHaveLength(3)
-    expect(data[0]).toBeDefined()
-    expect(data[1]).toBeDefined()
-    expect(data[2]).toBeDefined()
+    expect(data[0]).toHaveProperty('s')
+    expect(data[1]).toHaveProperty('s')
+    expect(data[2]).toHaveProperty('sv')
   }, 30000)
 
   it('can omit queryType for searchableJson in batch', async () => {
@@ -318,8 +334,8 @@ describe('searchableJson batch operations', () => {
 
     const data = unwrapResult(result)
     expect(data).toHaveLength(3)
-    expect(data[0]).toBeDefined()
-    expect(data[1]).toBeDefined()
+    expect(data[0]).toHaveProperty('s')
+    expect(data[1]).toHaveProperty('sv')
     expect(data[2]).toBeNull()
   }, 30000)
 })
@@ -403,7 +419,9 @@ describe('searchableJson with LockContext', () => {
     const data = unwrapResult(result)
     expect(data).toMatchObject({
       i: { t: 'documents', c: 'metadata' },
+      v: 2,
     })
+    expect(data).toHaveProperty('s')
   }, 30000)
 
   it('executes object plaintext with LockContext mock', async () => {
@@ -429,7 +447,9 @@ describe('searchableJson with LockContext', () => {
     if (result.data) {
       expect(result.data).toMatchObject({
         i: { t: 'documents', c: 'metadata' },
+        v: 2,
       })
+      expect(result.data).toHaveProperty('sv')
     }
   }, 30000)
 
@@ -520,6 +540,7 @@ describe('searchableJson with LockContext', () => {
     const data = unwrapResult(result)
     expect(data).toHaveLength(1)
     expect(data[0]).toMatchObject({ i: { t: 'documents', c: 'metadata' } })
+    expect(data[0]).toHaveProperty('s')
   }, 30000)
 })
 
@@ -548,6 +569,8 @@ describe('searchableJson equivalence', () => {
 
     expect(explicitData.i).toEqual(implicitData.i)
     expect(explicitData.v).toEqual(implicitData.v)
+    expect(explicitData).toHaveProperty('s')
+    expect(implicitData).toHaveProperty('s')
   }, 30000)
 
   it('produces identical metadata to omitting queryType for object', async () => {
@@ -567,6 +590,8 @@ describe('searchableJson equivalence', () => {
 
     expect(explicitData.i).toEqual(implicitData.i)
     expect(explicitData.v).toEqual(implicitData.v)
+    expect(explicitData).toHaveProperty('sv')
+    expect(implicitData).toHaveProperty('sv')
   }, 30000)
 
   it('produces identical metadata to explicit steVecSelector for string', async () => {
@@ -587,6 +612,8 @@ describe('searchableJson equivalence', () => {
 
     expect(searchableJsonData.i).toEqual(steVecSelectorData.i)
     expect(searchableJsonData.v).toEqual(steVecSelectorData.v)
+    expect(searchableJsonData).toHaveProperty('s')
+    expect(steVecSelectorData).toHaveProperty('s')
   }, 30000)
 
   it('produces identical metadata to explicit steVecTerm for object', async () => {
@@ -607,6 +634,8 @@ describe('searchableJson equivalence', () => {
 
     expect(searchableJsonData.i).toEqual(steVecTermData.i)
     expect(searchableJsonData.v).toEqual(steVecTermData.v)
+    expect(searchableJsonData).toHaveProperty('sv')
+    expect(steVecTermData).toHaveProperty('sv')
   }, 30000)
 })
 
@@ -629,7 +658,9 @@ describe('searchableJson edge cases', () => {
     const data = unwrapResult(result)
     expect(data).toMatchObject({
       i: { t: 'documents', c: 'metadata' },
+      v: 2,
     })
+    expect(data).toHaveProperty('sv')
   }, 30000)
 
   it('succeeds for empty array', async () => {
@@ -642,7 +673,9 @@ describe('searchableJson edge cases', () => {
     const data = unwrapResult(result)
     expect(data).toMatchObject({
       i: { t: 'documents', c: 'metadata' },
+      v: 2,
     })
+    expect(data).toHaveProperty('sv')
   }, 30000)
 
   it('succeeds for object with wrapped number', async () => {
@@ -655,7 +688,9 @@ describe('searchableJson edge cases', () => {
     const data = unwrapResult(result)
     expect(data).toMatchObject({
       i: { t: 'documents', c: 'metadata' },
+      v: 2,
     })
+    expect(data).toHaveProperty('sv')
   }, 30000)
 
   it('succeeds for object with wrapped boolean', async () => {
@@ -668,7 +703,9 @@ describe('searchableJson edge cases', () => {
     const data = unwrapResult(result)
     expect(data).toMatchObject({
       i: { t: 'documents', c: 'metadata' },
+      v: 2,
     })
+    expect(data).toHaveProperty('sv')
   }, 30000)
 
   it('succeeds for object with null value', async () => {
@@ -681,7 +718,9 @@ describe('searchableJson edge cases', () => {
     const data = unwrapResult(result)
     expect(data).toMatchObject({
       i: { t: 'documents', c: 'metadata' },
+      v: 2,
     })
+    expect(data).toHaveProperty('sv')
   }, 30000)
 
   it('succeeds for deeply nested object (3+ levels)', async () => {
@@ -704,7 +743,9 @@ describe('searchableJson edge cases', () => {
     const data = unwrapResult(result)
     expect(data).toMatchObject({
       i: { t: 'documents', c: 'metadata' },
+      v: 2,
     })
+    expect(data).toHaveProperty('sv')
   }, 30000)
 
   // String edge cases for JSONPath selectors
@@ -719,7 +760,9 @@ describe('searchableJson edge cases', () => {
     const data = unwrapResult(result)
     expect(data).toMatchObject({
       i: { t: 'documents', c: 'metadata' },
+      v: 2,
     })
+    expect(data).toHaveProperty('s')
   }, 30000)
 
   it('succeeds for JSONPath with wildcard', async () => {
@@ -732,7 +775,9 @@ describe('searchableJson edge cases', () => {
     const data = unwrapResult(result)
     expect(data).toMatchObject({
       i: { t: 'documents', c: 'metadata' },
+      v: 2,
     })
+    expect(data).toHaveProperty('s')
   }, 30000)
 })
 
@@ -765,6 +810,8 @@ describe('searchableJson batch edge cases', () => {
     expect(batchData).toHaveLength(1)
     expect(batchData[0].i).toEqual(scalarData.i)
     expect(batchData[0].v).toEqual(scalarData.v)
+    expect(scalarData).toHaveProperty('s')
+    expect(batchData[0]).toHaveProperty('s')
   }, 30000)
 
   it('handles all-null batch', async () => {
@@ -815,10 +862,12 @@ describe('searchableJson batch edge cases', () => {
 
     const data = unwrapResult(result)
     expect(data).toHaveLength(12)
-    data.forEach((item: any) => {
+    data.forEach((item: any, idx: number) => {
       expect(item).toMatchObject({
         i: { t: 'documents', c: 'metadata' },
+        v: 2,
       })
+      expect(item).toHaveProperty(idx % 2 === 0 ? 's' : 'sv')
     })
   }, 30000)
 
@@ -860,8 +909,10 @@ describe('searchableJson batch edge cases', () => {
     expect(data).toHaveLength(5)
     expect(data[0]).toBeNull()
     expect(data[1]).not.toBeNull()
+    expect(data[1]).toHaveProperty('s')
     expect(data[2]).toBeNull()
     expect(data[3]).not.toBeNull()
+    expect(data[3]).toHaveProperty('sv')
     expect(data[4]).toBeNull()
   }, 30000)
 })
