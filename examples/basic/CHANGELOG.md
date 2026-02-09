@@ -1,5 +1,13 @@
 # @cipherstash/basic-example
 
+## 1.1.17
+
+### Patch Changes
+
+- Updated dependencies [db72e2c]
+- Updated dependencies [e769740]
+  - @cipherstash/protect@10.5.0
+
 ## 1.1.16
 
 ### Patch Changes
