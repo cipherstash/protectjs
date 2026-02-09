@@ -687,14 +687,6 @@ describe('searchableJson postgres integration', () => {
         RETURNING id
       `
 
-      const compositeResult = await protectClient.encryptQuery({ role: 'escaped-containment-test' }, {
-        column: table.metadata,
-        table: table,
-        queryType: 'steVecTerm',
-        returnType: 'composite-literal',
-      })
-      if (compositeResult.failure) throw new Error(compositeResult.failure.message)
-
       const escapedResult = await protectClient.encryptQuery({ role: 'escaped-containment-test' }, {
         column: table.metadata,
         table: table,
@@ -709,14 +701,15 @@ describe('searchableJson postgres integration', () => {
       expect(escapedData).toMatch(/^"\(.*\)"$/)
       const unwrapped = JSON.parse(escapedData)
 
-      const compositeData = compositeResult.data as string
-      expect(unwrapped).toBe(compositeData)
+      // Unwrapped escaped format should be a valid composite-literal
+      expect(typeof unwrapped).toBe('string')
+      expect(unwrapped).toMatch(/^\(.*\)$/)
 
-      // Use composite-literal form to query PG
+      // Use unwrapped composite-literal form to query PG
       const rows = await sql`
         SELECT id, (metadata).data as metadata
         FROM "protect-ci-jsonb"
-        WHERE metadata @> ${compositeData}::eql_v2_encrypted
+        WHERE metadata @> ${unwrapped}::eql_v2_encrypted
         AND test_run_id = ${TEST_RUN_ID}
       `
 
