@@ -134,14 +134,17 @@ describe('searchableJson postgres integration', () => {
         RETURNING id
       `
 
-      const queryResult = await protectClient.encryptQuery('$.role', {
-        column: table.metadata,
-        table: table,
-        queryType: 'steVecSelector',
-        returnType: 'composite-literal',
-      })
+      const queryResult = await protectClient.encryptQuery([
+        {
+          value: '$.role',
+          column: table.metadata,
+          table: table,
+          queryType: 'steVecSelector',
+          returnType: 'composite-literal',
+        },
+      ])
       if (queryResult.failure) throw new Error(queryResult.failure.message)
-      const selectorTerm = queryResult.data
+      const [selectorTerm] = queryResult.data
 
       const rows = await sql`
         SELECT id, (metadata).data as metadata
@@ -172,14 +175,17 @@ describe('searchableJson postgres integration', () => {
         RETURNING id
       `
 
-      const queryResult = await protectClient.encryptQuery('$.user.email', {
-        column: table.metadata,
-        table: table,
-        queryType: 'steVecSelector',
-        returnType: 'composite-literal',
-      })
+      const queryResult = await protectClient.encryptQuery([
+        {
+          value: '$.user.email',
+          column: table.metadata,
+          table: table,
+          queryType: 'steVecSelector',
+          returnType: 'composite-literal',
+        },
+      ])
       if (queryResult.failure) throw new Error(queryResult.failure.message)
-      const selectorTerm = queryResult.data
+      const [selectorTerm] = queryResult.data
 
       const rows = await sql`
         SELECT id, (metadata).data as metadata
@@ -210,14 +216,17 @@ describe('searchableJson postgres integration', () => {
         RETURNING id
       `
 
-      const queryResult = await protectClient.encryptQuery('$.a.b.c', {
-        column: table.metadata,
-        table: table,
-        queryType: 'steVecSelector',
-        returnType: 'composite-literal',
-      })
+      const queryResult = await protectClient.encryptQuery([
+        {
+          value: '$.a.b.c',
+          column: table.metadata,
+          table: table,
+          queryType: 'steVecSelector',
+          returnType: 'composite-literal',
+        },
+      ])
       if (queryResult.failure) throw new Error(queryResult.failure.message)
-      const selectorTerm = queryResult.data
+      const [selectorTerm] = queryResult.data
 
       const rows = await sql`
         SELECT id, (metadata).data as metadata
@@ -248,14 +257,17 @@ describe('searchableJson postgres integration', () => {
         VALUES (${sql.json(encrypted.data.metadata)}::eql_v2_encrypted, ${TEST_RUN_ID})
       `
 
-      const queryResult = await protectClient.encryptQuery('$.nonexistent.path', {
-        column: table.metadata,
-        table: table,
-        queryType: 'steVecSelector',
-        returnType: 'composite-literal',
-      })
+      const queryResult = await protectClient.encryptQuery([
+        {
+          value: '$.nonexistent.path',
+          column: table.metadata,
+          table: table,
+          queryType: 'steVecSelector',
+          returnType: 'composite-literal',
+        },
+      ])
       if (queryResult.failure) throw new Error(queryResult.failure.message)
-      const selectorTerm = queryResult.data
+      const [selectorTerm] = queryResult.data
 
       const rows = await sql`
         SELECT id, (metadata).data as metadata
@@ -291,14 +303,17 @@ describe('searchableJson postgres integration', () => {
         RETURNING id
       `
 
-      const queryResult = await protectClient.encryptQuery('$.target.value', {
-        column: table.metadata,
-        table: table,
-        queryType: 'steVecSelector',
-        returnType: 'composite-literal',
-      })
+      const queryResult = await protectClient.encryptQuery([
+        {
+          value: '$.target.value',
+          column: table.metadata,
+          table: table,
+          queryType: 'steVecSelector',
+          returnType: 'composite-literal',
+        },
+      ])
       if (queryResult.failure) throw new Error(queryResult.failure.message)
-      const selectorTerm = queryResult.data
+      const [selectorTerm] = queryResult.data
 
       const rows = await sql`
         SELECT id, (metadata).data as metadata
@@ -338,14 +353,17 @@ describe('searchableJson postgres integration', () => {
         RETURNING id
       `
 
-      const queryResult = await protectClient.encryptQuery({ role: 'admin-containment' }, {
-        column: table.metadata,
-        table: table,
-        queryType: 'steVecTerm',
-        returnType: 'composite-literal',
-      })
+      const queryResult = await protectClient.encryptQuery([
+        {
+          value: { role: 'admin-containment' },
+          column: table.metadata,
+          table: table,
+          queryType: 'steVecTerm',
+          returnType: 'composite-literal',
+        },
+      ])
       if (queryResult.failure) throw new Error(queryResult.failure.message)
-      const containmentTerm = queryResult.data
+      const [containmentTerm] = queryResult.data
 
       const rows = await sql`
         SELECT id, (metadata).data as metadata
@@ -376,14 +394,17 @@ describe('searchableJson postgres integration', () => {
         RETURNING id
       `
 
-      const queryResult = await protectClient.encryptQuery({ user: { profile: { role: 'superadmin' } } }, {
-        column: table.metadata,
-        table: table,
-        queryType: 'steVecTerm',
-        returnType: 'composite-literal',
-      })
+      const queryResult = await protectClient.encryptQuery([
+        {
+          value: { user: { profile: { role: 'superadmin' } } },
+          column: table.metadata,
+          table: table,
+          queryType: 'steVecTerm',
+          returnType: 'composite-literal',
+        },
+      ])
       if (queryResult.failure) throw new Error(queryResult.failure.message)
-      const containmentTerm = queryResult.data
+      const [containmentTerm] = queryResult.data
 
       const rows = await sql`
         SELECT id, (metadata).data as metadata
@@ -413,14 +434,17 @@ describe('searchableJson postgres integration', () => {
         VALUES (${sql.json(encrypted.data.metadata)}::eql_v2_encrypted, ${TEST_RUN_ID})
       `
 
-      const queryResult = await protectClient.encryptQuery({ status: 'nonexistent-value-xyz' }, {
-        column: table.metadata,
-        table: table,
-        queryType: 'steVecTerm',
-        returnType: 'composite-literal',
-      })
+      const queryResult = await protectClient.encryptQuery([
+        {
+          value: { status: 'nonexistent-value-xyz' },
+          column: table.metadata,
+          table: table,
+          queryType: 'steVecTerm',
+          returnType: 'composite-literal',
+        },
+      ])
       if (queryResult.failure) throw new Error(queryResult.failure.message)
-      const containmentTerm = queryResult.data
+      const [containmentTerm] = queryResult.data
 
       const rows = await sql`
         SELECT id, (metadata).data as metadata
@@ -514,33 +538,41 @@ describe('searchableJson postgres integration', () => {
       `
 
       // Selector: inferred (searchableJson) vs explicit (steVecSelector)
-      const inferredSelector = await protectClient.encryptQuery('$.category', {
-        column: table.metadata,
-        table: table,
-        queryType: 'searchableJson',
-        returnType: 'composite-literal',
-      })
-      if (inferredSelector.failure) throw new Error(inferredSelector.failure.message)
+      const inferredSelectorResult = await protectClient.encryptQuery([
+        {
+          value: '$.category',
+          column: table.metadata,
+          table: table,
+          queryType: 'searchableJson',
+          returnType: 'composite-literal',
+        },
+      ])
+      if (inferredSelectorResult.failure) throw new Error(inferredSelectorResult.failure.message)
+      const [inferredSelectorTerm] = inferredSelectorResult.data
 
-      const explicitSelector = await protectClient.encryptQuery('$.category', {
-        column: table.metadata,
-        table: table,
-        queryType: 'steVecSelector',
-        returnType: 'composite-literal',
-      })
-      if (explicitSelector.failure) throw new Error(explicitSelector.failure.message)
+      const explicitSelectorResult = await protectClient.encryptQuery([
+        {
+          value: '$.category',
+          column: table.metadata,
+          table: table,
+          queryType: 'steVecSelector',
+          returnType: 'composite-literal',
+        },
+      ])
+      if (explicitSelectorResult.failure) throw new Error(explicitSelectorResult.failure.message)
+      const [explicitSelectorTerm] = explicitSelectorResult.data
 
       const inferredRows = await sql`
         SELECT id, (metadata).data as metadata
         FROM "protect-ci-jsonb" t,
-             eql_v2.jsonb_path_query(t.metadata, ${inferredSelector.data}::eql_v2_encrypted) as result
+             eql_v2.jsonb_path_query(t.metadata, ${inferredSelectorTerm}::eql_v2_encrypted) as result
         WHERE t.test_run_id = ${TEST_RUN_ID}
       `
 
       const explicitRows = await sql`
         SELECT id, (metadata).data as metadata
         FROM "protect-ci-jsonb" t,
-             eql_v2.jsonb_path_query(t.metadata, ${explicitSelector.data}::eql_v2_encrypted) as result
+             eql_v2.jsonb_path_query(t.metadata, ${explicitSelectorTerm}::eql_v2_encrypted) as result
         WHERE t.test_run_id = ${TEST_RUN_ID}
       `
 
@@ -563,33 +595,41 @@ describe('searchableJson postgres integration', () => {
       expect(inferredDecrypted.data.metadata).toEqual(plaintext)
 
       // Containment: inferred (searchableJson) vs explicit (steVecTerm)
-      const inferredTerm = await protectClient.encryptQuery({ category: 'equivalence-test' }, {
-        column: table.metadata,
-        table: table,
-        queryType: 'searchableJson',
-        returnType: 'composite-literal',
-      })
-      if (inferredTerm.failure) throw new Error(inferredTerm.failure.message)
+      const inferredTermResult = await protectClient.encryptQuery([
+        {
+          value: { category: 'equivalence-test' },
+          column: table.metadata,
+          table: table,
+          queryType: 'searchableJson',
+          returnType: 'composite-literal',
+        },
+      ])
+      if (inferredTermResult.failure) throw new Error(inferredTermResult.failure.message)
+      const [inferredContainmentTerm] = inferredTermResult.data
 
-      const explicitTerm = await protectClient.encryptQuery({ category: 'equivalence-test' }, {
-        column: table.metadata,
-        table: table,
-        queryType: 'steVecTerm',
-        returnType: 'composite-literal',
-      })
-      if (explicitTerm.failure) throw new Error(explicitTerm.failure.message)
+      const explicitTermResult = await protectClient.encryptQuery([
+        {
+          value: { category: 'equivalence-test' },
+          column: table.metadata,
+          table: table,
+          queryType: 'steVecTerm',
+          returnType: 'composite-literal',
+        },
+      ])
+      if (explicitTermResult.failure) throw new Error(explicitTermResult.failure.message)
+      const [explicitContainmentTerm] = explicitTermResult.data
 
       const inferredTermRows = await sql`
         SELECT id, (metadata).data as metadata
         FROM "protect-ci-jsonb"
-        WHERE metadata @> ${inferredTerm.data}::eql_v2_encrypted
+        WHERE metadata @> ${inferredContainmentTerm}::eql_v2_encrypted
         AND test_run_id = ${TEST_RUN_ID}
       `
 
       const explicitTermRows = await sql`
         SELECT id, (metadata).data as metadata
         FROM "protect-ci-jsonb"
-        WHERE metadata @> ${explicitTerm.data}::eql_v2_encrypted
+        WHERE metadata @> ${explicitContainmentTerm}::eql_v2_encrypted
         AND test_run_id = ${TEST_RUN_ID}
       `
 
