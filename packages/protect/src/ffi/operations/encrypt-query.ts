@@ -4,7 +4,7 @@ import {
   encryptQuery as ffiEncryptQuery,
 } from '@cipherstash/protect-ffi'
 import { type ProtectError, ProtectErrorTypes } from '../..'
-import { encryptedToCompositeLiteral, encryptedToEscapedCompositeLiteral } from '../../helpers'
+import { formatEncryptedResult } from '../../helpers'
 import { getErrorCode } from '../helpers/error-code'
 import { logger } from '../../../../utils/logger'
 import type { LockContext } from '../../identify'
@@ -74,13 +74,7 @@ export class EncryptQueryOperation extends ProtectOperation<EncryptedQueryResult
           unverifiedContext: metadata,
         })
 
-        if (this.opts.returnType === 'composite-literal') {
-          return encryptedToCompositeLiteral(encrypted)
-        }
-        if (this.opts.returnType === 'escaped-composite-literal') {
-          return encryptedToEscapedCompositeLiteral(encrypted)
-        }
-        return encrypted
+        return formatEncryptedResult(encrypted, this.opts.returnType)
       },
       (error: unknown) => ({
         type: ProtectErrorTypes.EncryptionError,
@@ -157,13 +151,7 @@ export class EncryptQueryOperationWithLockContext extends ProtectOperation<Encry
           unverifiedContext: metadata,
         })
 
-        if (this.opts.returnType === 'composite-literal') {
-          return encryptedToCompositeLiteral(encrypted)
-        }
-        if (this.opts.returnType === 'escaped-composite-literal') {
-          return encryptedToEscapedCompositeLiteral(encrypted)
-        }
-        return encrypted
+        return formatEncryptedResult(encrypted, this.opts.returnType)
       },
       (error: unknown) => ({
         type: ProtectErrorTypes.EncryptionError,
