@@ -199,7 +199,8 @@ const tagsTerm = await protectClient.encryptQuery(['admin', 'user'], {
 ```
 
 > [!WARNING]
-> Bare numbers and booleans are not supported as top-level query values. Wrap them in an object or array:
+> Bare numbers and booleans are not supported as top-level `searchableJson` query values. Wrap them in an object or array.
+> For `orderAndRange` queries, bare numbers are supported directly.
 >
 > ```typescript
 > // Wrong - will fail

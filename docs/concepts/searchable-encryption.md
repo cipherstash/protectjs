@@ -133,7 +133,7 @@ With searchable encryption, you can:
 Protect.js supports searching encrypted JSONB columns using the `.searchableJson()` schema index.
 This enables two types of queries on encrypted JSON data:
 
-- **JSONPath queries**: Search by JSON path (e.g., find documents with a `$.user.email` path)
+- **JSONPath queries**: Search by JSON path to find and return values at that path (e.g., `$.user.email`)
 - **Containment queries**: Check if encrypted JSON contains a specific structure (e.g., `{ role: 'admin' }`)
 
 The query operation is automatically inferred from the shape of your query value.
