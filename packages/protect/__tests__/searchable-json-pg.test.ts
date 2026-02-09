@@ -3,9 +3,6 @@ import { csColumn, csTable } from '@cipherstash/schema'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import {
   type Encrypted,
-  bulkModelsToEncryptedPgComposites,
-  encryptedToPgComposite,
-  modelToEncryptedPgComposites,
   protect,
 } from '../src'
 import postgres from 'postgres'
@@ -56,16 +53,14 @@ describe('searchableJson postgres integration', () => {
       throw new Error(`encrypt failed: ${encrypted.failure.message}`)
     }
 
-    const composite = encryptedToPgComposite(encrypted.data)
-
     const [inserted] = await sql`
       INSERT INTO "protect-ci-jsonb" (metadata, test_run_id)
-      VALUES (${sql.json(composite)}::eql_v2_encrypted, ${TEST_RUN_ID})
+      VALUES (${sql.json(encrypted.data)}::eql_v2_encrypted, ${TEST_RUN_ID})
       RETURNING id
     `
 
     const rows = await sql`
-      SELECT id, metadata::jsonb FROM "protect-ci-jsonb"
+      SELECT id, (metadata).data as metadata FROM "protect-ci-jsonb"
       WHERE id = ${inserted.id}
     `
 
@@ -88,10 +83,8 @@ describe('searchableJson postgres integration', () => {
       throw new Error(`bulkEncryptModels failed: ${encryptedModels.failure.message}`)
     }
 
-    const dataToInsert = bulkModelsToEncryptedPgComposites(encryptedModels.data)
-
     const insertedRows = []
-    for (const row of dataToInsert) {
+    for (const row of encryptedModels.data) {
       const [inserted] = await sql`
         INSERT INTO "protect-ci-jsonb" (metadata, test_run_id)
         VALUES (${sql.json(row.metadata)}::eql_v2_encrypted, ${TEST_RUN_ID})
@@ -102,7 +95,7 @@ describe('searchableJson postgres integration', () => {
 
     const ids = insertedRows.map((r) => r.id)
     const rows = await sql`
-      SELECT id, metadata::jsonb FROM "protect-ci-jsonb"
+      SELECT id, (metadata).data as metadata FROM "protect-ci-jsonb"
       WHERE id = ANY(${ids})
       ORDER BY id
     `
@@ -139,16 +132,14 @@ describe('searchableJson postgres integration', () => {
       throw new Error(`encryptModel failed: ${encryptedModel.failure.message}`)
     }
 
-    const pgData = modelToEncryptedPgComposites(encryptedModel.data)
-
     const [inserted] = await sql`
       INSERT INTO "protect-ci-jsonb" (metadata, test_run_id)
-      VALUES (${sql.json(pgData.metadata)}::eql_v2_encrypted, ${TEST_RUN_ID})
+      VALUES (${sql.json(encryptedModel.data.metadata)}::eql_v2_encrypted, ${TEST_RUN_ID})
       RETURNING id
     `
 
     const rows = await sql`
-      SELECT id, metadata::jsonb FROM "protect-ci-jsonb"
+      SELECT id, (metadata).data as metadata FROM "protect-ci-jsonb"
       WHERE id = ${inserted.id}
     `
 
@@ -169,10 +160,9 @@ describe('searchableJson postgres integration', () => {
     const encryptedModel = await protectClient.encryptModel(model, table)
     if (encryptedModel.failure) throw new Error(encryptedModel.failure.message)
 
-    const pgData = modelToEncryptedPgComposites(encryptedModel.data)
     await sql`
       INSERT INTO "protect-ci-jsonb" (metadata, test_run_id)
-      VALUES (${sql.json(pgData.metadata)}::eql_v2_encrypted, ${TEST_RUN_ID})
+      VALUES (${sql.json(encryptedModel.data.metadata)}::eql_v2_encrypted, ${TEST_RUN_ID})
     `
 
     const queryResult = await protectClient.encryptQuery([
@@ -189,7 +179,7 @@ describe('searchableJson postgres integration', () => {
     const [searchTerm] = queryResult.data
 
     const rows = await sql`
-      SELECT id, metadata::jsonb FROM "protect-ci-jsonb"
+      SELECT id, (metadata).data as metadata FROM "protect-ci-jsonb"
       WHERE metadata @> ${searchTerm}::eql_v2_encrypted
       AND test_run_id = ${TEST_RUN_ID}
     `
@@ -210,10 +200,9 @@ describe('searchableJson postgres integration', () => {
     const encryptedModel = await protectClient.encryptModel(model, table)
     if (encryptedModel.failure) throw new Error(encryptedModel.failure.message)
 
-    const pgData = modelToEncryptedPgComposites(encryptedModel.data)
     await sql`
       INSERT INTO "protect-ci-jsonb" (metadata, test_run_id)
-      VALUES (${sql.json(pgData.metadata)}::eql_v2_encrypted, ${TEST_RUN_ID})
+      VALUES (${sql.json(encryptedModel.data.metadata)}::eql_v2_encrypted, ${TEST_RUN_ID})
     `
 
     const queryResult = await protectClient.encryptQuery([
@@ -230,7 +219,7 @@ describe('searchableJson postgres integration', () => {
     const [searchTerm] = queryResult.data
 
     const rows = await sql`
-      SELECT id, metadata::jsonb FROM "protect-ci-jsonb"
+      SELECT id, (metadata).data as metadata FROM "protect-ci-jsonb"
       WHERE metadata @> ${searchTerm}::eql_v2_encrypted
       AND test_run_id = ${TEST_RUN_ID}
     `
@@ -251,10 +240,9 @@ describe('searchableJson postgres integration', () => {
     const encryptedModel = await protectClient.encryptModel(model, table)
     if (encryptedModel.failure) throw new Error(encryptedModel.failure.message)
 
-    const pgData = modelToEncryptedPgComposites(encryptedModel.data)
     await sql`
       INSERT INTO "protect-ci-jsonb" (metadata, test_run_id)
-      VALUES (${sql.json(pgData.metadata)}::eql_v2_encrypted, ${TEST_RUN_ID})
+      VALUES (${sql.json(encryptedModel.data.metadata)}::eql_v2_encrypted, ${TEST_RUN_ID})
     `
 
     const queryResult = await protectClient.encryptQuery([
@@ -271,7 +259,7 @@ describe('searchableJson postgres integration', () => {
     const [searchTerm] = queryResult.data
 
     const rows = await sql`
-      SELECT id, metadata::jsonb FROM "protect-ci-jsonb"
+      SELECT id, (metadata).data as metadata FROM "protect-ci-jsonb"
       WHERE metadata @> ${searchTerm}::eql_v2_encrypted
       AND test_run_id = ${TEST_RUN_ID}
     `
@@ -292,10 +280,9 @@ describe('searchableJson postgres integration', () => {
     const encryptedModel = await protectClient.encryptModel(model, table)
     if (encryptedModel.failure) throw new Error(encryptedModel.failure.message)
 
-    const pgData = modelToEncryptedPgComposites(encryptedModel.data)
     await sql`
       INSERT INTO "protect-ci-jsonb" (metadata, test_run_id)
-      VALUES (${sql.json(pgData.metadata)}::eql_v2_encrypted, ${TEST_RUN_ID})
+      VALUES (${sql.json(encryptedModel.data.metadata)}::eql_v2_encrypted, ${TEST_RUN_ID})
     `
 
     const queryResult = await protectClient.encryptQuery([
@@ -316,7 +303,7 @@ describe('searchableJson postgres integration', () => {
     expect(searchTerm).toMatch(/^\(".*"\)$/)
 
     const rows = await sql`
-      SELECT id, metadata::jsonb FROM "protect-ci-jsonb"
+      SELECT id, (metadata).data as metadata FROM "protect-ci-jsonb"
       WHERE metadata @> ${searchTerm}::eql_v2_encrypted
       AND test_run_id = ${TEST_RUN_ID}
     `
@@ -337,10 +324,9 @@ describe('searchableJson postgres integration', () => {
     const encryptedModel = await protectClient.encryptModel(model, table)
     if (encryptedModel.failure) throw new Error(encryptedModel.failure.message)
 
-    const pgData = modelToEncryptedPgComposites(encryptedModel.data)
     await sql`
       INSERT INTO "protect-ci-jsonb" (metadata, test_run_id)
-      VALUES (${sql.json(pgData.metadata)}::eql_v2_encrypted, ${TEST_RUN_ID})
+      VALUES (${sql.json(encryptedModel.data.metadata)}::eql_v2_encrypted, ${TEST_RUN_ID})
     `
 
     const queryResult = await protectClient.encryptQuery([
@@ -357,7 +343,7 @@ describe('searchableJson postgres integration', () => {
     const [searchTerm] = queryResult.data
 
     const rows = await sql`
-      SELECT id, metadata::jsonb FROM "protect-ci-jsonb"
+      SELECT id, (metadata).data as metadata FROM "protect-ci-jsonb"
       WHERE metadata @> ${searchTerm}::eql_v2_encrypted
       AND test_run_id = ${TEST_RUN_ID}
     `
@@ -378,10 +364,9 @@ describe('searchableJson postgres integration', () => {
     const encryptedModel = await protectClient.encryptModel(model, table)
     if (encryptedModel.failure) throw new Error(encryptedModel.failure.message)
 
-    const pgData = modelToEncryptedPgComposites(encryptedModel.data)
     await sql`
       INSERT INTO "protect-ci-jsonb" (metadata, test_run_id)
-      VALUES (${sql.json(pgData.metadata)}::eql_v2_encrypted, ${TEST_RUN_ID})
+      VALUES (${sql.json(encryptedModel.data.metadata)}::eql_v2_encrypted, ${TEST_RUN_ID})
     `
 
     const queryResult = await protectClient.encryptQuery([
@@ -398,7 +383,7 @@ describe('searchableJson postgres integration', () => {
     const [searchTerm] = queryResult.data
 
     const rows = await sql`
-      SELECT id, metadata::jsonb FROM "protect-ci-jsonb"
+      SELECT id, (metadata).data as metadata FROM "protect-ci-jsonb"
       WHERE metadata @> ${searchTerm}::eql_v2_encrypted
       AND test_run_id = ${TEST_RUN_ID}
     `
@@ -419,10 +404,9 @@ describe('searchableJson postgres integration', () => {
     const encryptedModel = await protectClient.encryptModel(model, table)
     if (encryptedModel.failure) throw new Error(encryptedModel.failure.message)
 
-    const pgData = modelToEncryptedPgComposites(encryptedModel.data)
     await sql`
       INSERT INTO "protect-ci-jsonb" (metadata, test_run_id)
-      VALUES (${sql.json(pgData.metadata)}::eql_v2_encrypted, ${TEST_RUN_ID})
+      VALUES (${sql.json(encryptedModel.data.metadata)}::eql_v2_encrypted, ${TEST_RUN_ID})
     `
 
     const queryResult = await protectClient.encryptQuery([
@@ -439,7 +423,7 @@ describe('searchableJson postgres integration', () => {
     const [searchTerm] = queryResult.data
 
     const rows = await sql`
-      SELECT id, metadata::jsonb FROM "protect-ci-jsonb"
+      SELECT id, (metadata).data as metadata FROM "protect-ci-jsonb"
       WHERE metadata @> ${searchTerm}::eql_v2_encrypted
       AND test_run_id = ${TEST_RUN_ID}
     `
@@ -460,10 +444,9 @@ describe('searchableJson postgres integration', () => {
     const encryptedModel = await protectClient.encryptModel(model, table)
     if (encryptedModel.failure) throw new Error(encryptedModel.failure.message)
 
-    const pgData = modelToEncryptedPgComposites(encryptedModel.data)
     await sql`
       INSERT INTO "protect-ci-jsonb" (metadata, test_run_id)
-      VALUES (${sql.json(pgData.metadata)}::eql_v2_encrypted, ${TEST_RUN_ID})
+      VALUES (${sql.json(encryptedModel.data.metadata)}::eql_v2_encrypted, ${TEST_RUN_ID})
     `
 
     const queryResult = await protectClient.encryptQuery([
@@ -483,7 +466,7 @@ describe('searchableJson postgres integration', () => {
     expect(searchTerm).toMatch(/^\(".*"\)$/)
 
     const rows = await sql`
-      SELECT id, metadata::jsonb FROM "protect-ci-jsonb"
+      SELECT id, (metadata).data as metadata FROM "protect-ci-jsonb"
       WHERE metadata @> ${searchTerm}::eql_v2_encrypted
       AND test_run_id = ${TEST_RUN_ID}
     `
@@ -504,10 +487,9 @@ describe('searchableJson postgres integration', () => {
     const encryptedModel = await protectClient.encryptModel(model, table)
     if (encryptedModel.failure) throw new Error(encryptedModel.failure.message)
 
-    const pgData = modelToEncryptedPgComposites(encryptedModel.data)
     await sql`
       INSERT INTO "protect-ci-jsonb" (metadata, test_run_id)
-      VALUES (${sql.json(pgData.metadata)}::eql_v2_encrypted, ${TEST_RUN_ID})
+      VALUES (${sql.json(encryptedModel.data.metadata)}::eql_v2_encrypted, ${TEST_RUN_ID})
     `
 
     const queryResult = await protectClient.encryptQuery([
@@ -532,7 +514,7 @@ describe('searchableJson postgres integration', () => {
 
     // Execute selector query
     const selectorRows = await sql`
-      SELECT id, metadata::jsonb FROM "protect-ci-jsonb"
+      SELECT id, (metadata).data as metadata FROM "protect-ci-jsonb"
       WHERE metadata @> ${selectorTerm}::eql_v2_encrypted
       AND test_run_id = ${TEST_RUN_ID}
     `
@@ -545,7 +527,7 @@ describe('searchableJson postgres integration', () => {
 
     // Execute containment query
     const containmentRows = await sql`
-      SELECT id, metadata::jsonb FROM "protect-ci-jsonb"
+      SELECT id, (metadata).data as metadata FROM "protect-ci-jsonb"
       WHERE metadata @> ${containmentTerm}::eql_v2_encrypted
       AND test_run_id = ${TEST_RUN_ID}
     `
@@ -565,10 +547,9 @@ describe('searchableJson postgres integration', () => {
     const encryptedModel = await protectClient.encryptModel(model, table)
     if (encryptedModel.failure) throw new Error(encryptedModel.failure.message)
 
-    const pgData = modelToEncryptedPgComposites(encryptedModel.data)
     await sql`
       INSERT INTO "protect-ci-jsonb" (metadata, test_run_id)
-      VALUES (${sql.json(pgData.metadata)}::eql_v2_encrypted, ${TEST_RUN_ID})
+      VALUES (${sql.json(encryptedModel.data.metadata)}::eql_v2_encrypted, ${TEST_RUN_ID})
     `
 
     // Selector: inferred (searchableJson) vs explicit (steVecSelector)
@@ -595,13 +576,13 @@ describe('searchableJson postgres integration', () => {
     if (explicitSelectorResult.failure) throw new Error(explicitSelectorResult.failure.message)
 
     const inferredSelectorRows = await sql`
-      SELECT id, metadata::jsonb FROM "protect-ci-jsonb"
+      SELECT id, (metadata).data as metadata FROM "protect-ci-jsonb"
       WHERE metadata @> ${inferredSelectorResult.data[0]}::eql_v2_encrypted
       AND test_run_id = ${TEST_RUN_ID}
     `
 
     const explicitSelectorRows = await sql`
-      SELECT id, metadata::jsonb FROM "protect-ci-jsonb"
+      SELECT id, (metadata).data as metadata FROM "protect-ci-jsonb"
       WHERE metadata @> ${explicitSelectorResult.data[0]}::eql_v2_encrypted
       AND test_run_id = ${TEST_RUN_ID}
     `
@@ -641,13 +622,13 @@ describe('searchableJson postgres integration', () => {
     if (explicitTermResult.failure) throw new Error(explicitTermResult.failure.message)
 
     const inferredTermRows = await sql`
-      SELECT id, metadata::jsonb FROM "protect-ci-jsonb"
+      SELECT id, (metadata).data as metadata FROM "protect-ci-jsonb"
       WHERE metadata @> ${inferredTermResult.data[0]}::eql_v2_encrypted
       AND test_run_id = ${TEST_RUN_ID}
     `
 
     const explicitTermRows = await sql`
-      SELECT id, metadata::jsonb FROM "protect-ci-jsonb"
+      SELECT id, (metadata).data as metadata FROM "protect-ci-jsonb"
       WHERE metadata @> ${explicitTermResult.data[0]}::eql_v2_encrypted
       AND test_run_id = ${TEST_RUN_ID}
     `
@@ -685,7 +666,7 @@ describe('searchableJson postgres integration', () => {
     `
 
     const rows = await sql`
-      SELECT id, metadata::jsonb FROM "protect-ci-jsonb"
+      SELECT id, (metadata).data as metadata FROM "protect-ci-jsonb"
       WHERE id = ${inserted.id}
     `
 
@@ -715,10 +696,9 @@ describe('searchableJson postgres integration', () => {
     const encryptedModel = await protectClient.encryptModel(model, table)
     if (encryptedModel.failure) throw new Error(encryptedModel.failure.message)
 
-    const pgData = modelToEncryptedPgComposites(encryptedModel.data)
     await sql`
       INSERT INTO "protect-ci-jsonb" (metadata, test_run_id)
-      VALUES (${sql.json(pgData.metadata)}::eql_v2_encrypted, ${TEST_RUN_ID})
+      VALUES (${sql.json(encryptedModel.data.metadata)}::eql_v2_encrypted, ${TEST_RUN_ID})
     `
 
     // Empty object query
@@ -737,7 +717,7 @@ describe('searchableJson postgres integration', () => {
 
     // Should execute without error (results are deterministic but may vary by implementation)
     const emptyObjRows = await sql`
-      SELECT id, metadata::jsonb FROM "protect-ci-jsonb"
+      SELECT id, (metadata).data as metadata FROM "protect-ci-jsonb"
       WHERE metadata @> ${emptyObjTerm}::eql_v2_encrypted
       AND test_run_id = ${TEST_RUN_ID}
     `
@@ -767,7 +747,7 @@ describe('searchableJson postgres integration', () => {
     const [emptyArrTerm] = emptyArrResult.data
 
     const emptyArrRows = await sql`
-      SELECT id, metadata::jsonb FROM "protect-ci-jsonb"
+      SELECT id, (metadata).data as metadata FROM "protect-ci-jsonb"
       WHERE metadata @> ${emptyArrTerm}::eql_v2_encrypted
       AND test_run_id = ${TEST_RUN_ID}
     `
