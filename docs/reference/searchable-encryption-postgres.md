@@ -8,6 +8,12 @@ This reference guide outlines the different query patterns you can use to search
 - [What is EQL?](#what-is-eql)
 - [Setting up your schema](#setting-up-your-schema)
 - [Search capabilities](#search-capabilities)
+  - [JSONB queries with searchableJson (recommended)](#jsonb-queries-with-searchablejson-recommended)
+    - [JSONPath selector queries](#jsonpath-selector-queries)
+    - [Containment queries](#containment-queries)
+    - [Batch JSONB queries](#batch-jsonb-queries)
+    - [Using JSONB queries in SQL](#using-jsonb-queries-in-sql)
+    - [Advanced: Explicit query types](#advanced-explicit-query-types)
   - [Exact matching](#exact-matching)
   - [Free text search](#free-text-search)
   - [Sorting and range queries](#sorting-and-range-queries)
@@ -56,7 +62,9 @@ const schema = csTable('users', {
   phone: csColumn('phone_encrypted')
     .equality(),       // Only exact matching
   age: csColumn('age_encrypted')
-    .orderAndRange()   // Only sorting and range queries
+    .orderAndRange(),  // Only sorting and range queries
+  metadata: csColumn('metadata_encrypted')
+    .searchableJson(), // Enables encrypted JSONB queries (recommended for JSON columns)
 })
 ```
 
@@ -106,49 +114,190 @@ console.log(term.data) // array of search terms
 
 ## Search capabilities
 
-### JSONB queries with searchableJson
+### JSONB queries with searchableJson (recommended)
 
-For columns storing JSON data, use `.searchableJson()` to enable encrypted JSONB queries:
+For columns storing JSON data, `.searchableJson()` is the recommended approach. It enables encrypted JSONB queries and automatically infers the correct query operation from the plaintext value type.
+
+Use `encryptQuery` to create encrypted query terms for JSONB columns:
 
 ```typescript
-const schema = csTable('documents', {
+const documents = csTable('documents', {
   metadata: csColumn('metadata_encrypted')
     .searchableJson()  // Enables JSONB path and containment queries
 })
 ```
 
-**Query types for JSONB columns:**
+**How auto-inference works:**
 
-When using `encryptQuery` on a `searchableJson()` column, the query operation is automatically inferred from the plaintext type:
+| Plaintext type | Inferred operation | Use case |
+|---|---|---|
+| `string` (e.g. `'$.user.email'`) | `steVecSelector` | JSONPath selector queries |
+| `object` (e.g. `{ role: 'admin' }`) | `steVecTerm` | Containment queries |
+| `array` (e.g. `['admin', 'user']`) | `steVecTerm` | Containment queries |
+| `null` | Returns `null` | Null handling |
 
-- **String plaintext** → `steVecSelector` (JSONPath queries like `'$.user.email'`)
-- **Object/Array plaintext** → `steVecTerm` (containment queries like `{ role: 'admin' }`)
+#### JSONPath selector queries
+
+Pass a string to `encryptQuery` to perform a JSONPath selector query. The string is automatically treated as a JSONPath selector.
 
 ```typescript
-// JSONPath selector query (string → steVecSelector inferred)
+// Simple path query
 const pathTerm = await protectClient.encryptQuery('$.user.email', {
-  column: schema.metadata,
-  table: schema,
-  // queryType is automatically inferred as 'steVecSelector'
+  column: documents.metadata,
+  table: documents,
 })
 
-// Containment query (object → steVecTerm inferred)
-const containmentTerm = await protectClient.encryptQuery({ role: 'admin' }, {
-  column: schema.metadata,
-  table: schema,
-  // queryType is automatically inferred as 'steVecTerm'
+// Nested path query
+const nestedTerm = await protectClient.encryptQuery('$.user.profile.role', {
+  column: documents.metadata,
+  table: documents,
+})
+
+// Array index path query
+const arrayTerm = await protectClient.encryptQuery('$.items[0].name', {
+  column: documents.metadata,
+  table: documents,
 })
 ```
 
-**Explicit query type:**
+> [!TIP]
+> Use the `toJsonPath` helper from `@cipherstash/protect` to convert dot-notation paths to JSONPath format:
+>
+> ```typescript
+> import { toJsonPath } from '@cipherstash/protect'
+>
+> toJsonPath('user.email')     // '$.user.email'
+> toJsonPath('$.user.email')   // '$.user.email' (unchanged)
+> toJsonPath('name')           // '$.name'
+> ```
 
-You can also specify `queryType` explicitly if needed:
+#### Containment queries
+
+Pass an object or array to `encryptQuery` to perform a containment query.
 
 ```typescript
-const term = await protectClient.encryptQuery('$.user.email', {
-  column: schema.metadata,
-  table: schema,
-  queryType: 'steVecSelector',  // Explicit
+// Key-value containment
+const roleTerm = await protectClient.encryptQuery({ role: 'admin' }, {
+  column: documents.metadata,
+  table: documents,
+})
+
+// Nested object containment
+const nestedTerm = await protectClient.encryptQuery(
+  { user: { profile: { role: 'admin' } } },
+  {
+    column: documents.metadata,
+    table: documents,
+  }
+)
+
+// Array containment
+const tagsTerm = await protectClient.encryptQuery(['admin', 'user'], {
+  column: documents.metadata,
+  table: documents,
+})
+```
+
+> [!WARNING]
+> Bare numbers and booleans are not supported as top-level `searchableJson` query values. Wrap them in an object or array.
+> For `orderAndRange` queries, bare numbers are supported directly.
+>
+> ```typescript
+> // Wrong for searchableJson - will fail (works for orderAndRange)
+> await protectClient.encryptQuery(42, { column: documents.metadata, table: documents })
+>
+> // Correct - wrap in an object
+> await protectClient.encryptQuery({ value: 42 }, { column: documents.metadata, table: documents })
+> ```
+
+<!-- -->
+
+> [!TIP]
+> Use the `buildNestedObject` helper to construct nested containment queries from dot-notation paths:
+>
+> ```typescript
+> import { buildNestedObject } from '@cipherstash/protect'
+>
+> buildNestedObject('user.role', 'admin')
+> // Returns: { user: { role: 'admin' } }
+> ```
+
+#### Batch JSONB queries
+
+Use `encryptQuery` with an array to encrypt multiple JSONB query terms in a single call. Each item can have a different plaintext type:
+
+```typescript
+const terms = await protectClient.encryptQuery([
+  {
+    value: '$.user.email',        // string → JSONPath selector
+    column: documents.metadata,
+    table: documents,
+  },
+  {
+    value: { role: 'admin' },     // object → containment
+    column: documents.metadata,
+    table: documents,
+  },
+  {
+    value: ['tag1', 'tag2'],      // array → containment
+    column: documents.metadata,
+    table: documents,
+  },
+])
+
+if (terms.failure) {
+  // Handle the error
+}
+
+console.log(terms.data) // array of encrypted query terms
+```
+
+#### Using JSONB queries in SQL
+
+To use encrypted JSONB query terms in PostgreSQL queries, specify `returnType: 'composite-literal'` to get the terms formatted for direct use in SQL:
+
+```typescript
+const term = await protectClient.encryptQuery([{
+  value: '$.user.email',
+  column: documents.metadata,
+  table: documents,
+  returnType: 'composite-literal',
+}])
+
+if (term.failure) {
+  // Handle the error
+}
+
+// Use the encrypted term in a PostgreSQL query
+const result = await client.query(
+  'SELECT * FROM documents WHERE cs_ste_vec_v2(metadata_encrypted) @> $1',
+  [term.data[0]]
+)
+```
+
+#### Advanced: Explicit query types
+
+For advanced use cases, you can specify the query type explicitly instead of relying on auto-inference:
+
+| Approach | `queryType` | When to use |
+|---|---|---|
+| **searchableJson** (recommended) | `'searchableJson'` or omitted | Auto-infers from plaintext type. Use for most JSONB queries. |
+| **steVecSelector** (explicit) | `'steVecSelector'` | When you want to be explicit about JSONPath selector queries. |
+| **steVecTerm** (explicit) | `'steVecTerm'` | When you want to be explicit about containment queries. |
+
+```typescript
+// Explicit steVecSelector
+const selectorTerm = await protectClient.encryptQuery('$.user.email', {
+  column: documents.metadata,
+  table: documents,
+  queryType: 'steVecSelector',
+})
+
+// Explicit steVecTerm
+const containTerm = await protectClient.encryptQuery({ role: 'admin' }, {
+  column: documents.metadata,
+  table: documents,
+  queryType: 'steVecTerm',
 })
 ```
 
@@ -159,8 +308,8 @@ const term = await protectClient.encryptQuery('$.user.email', {
 > ```typescript
 > // To find documents where a field contains the string "admin"
 > const term = await protectClient.encryptQuery(['admin'], {
->   column: schema.metadata,
->   table: schema,
+>   column: documents.metadata,
+>   table: documents,
 >   queryType: 'steVecTerm',  // Explicit for clarity
 > })
 > ```

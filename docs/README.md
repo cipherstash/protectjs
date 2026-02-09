@@ -11,7 +11,7 @@ The documentation for Protect.js is organized into the following sections:
 ## Reference
 
 - [Configuration and production deployment](./reference/configuration.md)
-- [Searchable encryption with PostgreSQL](./reference/searchable-encryption-postgres.md)
+- [Searchable encryption with PostgreSQL](./reference/searchable-encryption-postgres.md) (includes JSONB queries with searchableJson)
 - [Protect.js schemas](./reference/schema.md)
 - [Model operations with bulk crypto functions](./reference/model-operations.md)
 

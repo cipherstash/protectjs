@@ -12,6 +12,7 @@ Protect.js supports searching encrypted data, which enables trusted data access 
   - [Using Encrypt Query Language (EQL)](#using-encrypt-query-language-eql)
 - [How fast is CipherStash's searchable encryption?](#how-fast-is-cipherstashs-searchable-encryption)
 - [How does searchable encryption help?](#how-does-searchable-encryption-help)
+- [Searching encrypted JSON data](#searching-encrypted-json-data)
 - [Bringing everything together](#bringing-everything-together)
 
 ## What is searchable encryption? 
@@ -127,12 +128,24 @@ With searchable encryption, you can:
 - Prove to your customers that you can track exactly what data is being accessed in your application.
 - Provide evidence for compliance requirements, such as [SOC2](https://cipherstash.com/compliance/soc2) and [BDSG](https://cipherstash.com/compliance/bdsg).
 
-## Bringing everything together 
+## Searching encrypted JSON data
+
+Protect.js supports searching encrypted JSONB columns using the `.searchableJson()` schema index.
+This enables two types of queries on encrypted JSON data:
+
+- **JSONPath queries**: Search by JSON path to find and return values at that path (e.g., `$.user.email`)
+- **Containment queries**: Check if encrypted JSON contains a specific structure (e.g., `{ role: 'admin' }`)
+
+The query operation is automatically inferred from the shape of your query value.
+
+Read more about the [implementation details](../reference/searchable-encryption-postgres.md#jsonb-queries-with-searchablejson-recommended).
+
+## Bringing everything together
 
 With searchable encryption:
 
 - Data can be encrypted, stored, and searched in your existing PostgreSQL database.
-- Encrypted data can be searched using equality, free text search, and range queries.
+- Encrypted data can be searched using equality, free text search, range queries, and JSONB path/containment queries.
 - Data remains encrypted, and will be decrypted using the Protect.js library in your application.
 - Queries are blazing fast, and won't slow down your application experience.
 - Every decryption event is logged, giving you an audit trail of data access events.
