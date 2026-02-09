@@ -1,8 +1,7 @@
 import 'dotenv/config'
 import { csColumn, csTable } from '@cipherstash/schema'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { protect } from '../src'
-import { LockContext } from '../src/identify'
+import { protect, LockContext } from '../src'
 import postgres from 'postgres'
 
 if (!process.env.DATABASE_URL) {
@@ -723,6 +722,17 @@ describe('searchableJson postgres integration', () => {
     }, 30000)
 
     it('batch escaped format', async () => {
+      const plaintext = { user: { email: 'batch-escaped@test.com' }, role: 'batch-escaped-role', marker: 'batch-escaped' }
+
+      const encrypted = await protectClient.encryptModel({ metadata: plaintext }, table)
+      if (encrypted.failure) throw new Error(encrypted.failure.message)
+
+      const [inserted] = await sql`
+        INSERT INTO "protect-ci-jsonb" (metadata, test_run_id)
+        VALUES (${sql.json(encrypted.data.metadata)}::eql_v2_encrypted, ${TEST_RUN_ID})
+        RETURNING id
+      `
+
       const queryResult = await protectClient.encryptQuery([
         {
           value: '$.user.email',
@@ -732,7 +742,7 @@ describe('searchableJson postgres integration', () => {
           returnType: 'escaped-composite-literal',
         },
         {
-          value: { role: 'admin' },
+          value: { role: 'batch-escaped-role' },
           column: table.metadata,
           table: table,
           queryType: 'steVecTerm',
@@ -746,6 +756,42 @@ describe('searchableJson postgres integration', () => {
         expect(typeof item).toBe('string')
         expect(item).toMatch(/^"\(.*\)"$/)
       }
+
+      // Unwrap escaped format
+      const selectorUnwrapped = JSON.parse(queryResult.data[0] as string)
+      const containmentUnwrapped = JSON.parse(queryResult.data[1] as string)
+
+      // Selector query
+      const selectorRows = await sql`
+        SELECT id, (metadata).data as metadata
+        FROM "protect-ci-jsonb" t,
+             eql_v2.jsonb_path_query(t.metadata, ${selectorUnwrapped}::eql_v2_encrypted) as result
+        WHERE t.test_run_id = ${TEST_RUN_ID}
+      `
+
+      expect(selectorRows.length).toBeGreaterThanOrEqual(1)
+      const selectorMatch = selectorRows.find((r) => r.id === inserted.id)
+      expect(selectorMatch).toBeDefined()
+
+      const selectorDecrypted = await protectClient.decryptModel({ metadata: selectorMatch!.metadata })
+      if (selectorDecrypted.failure) throw new Error(selectorDecrypted.failure.message)
+      expect(selectorDecrypted.data.metadata).toEqual(plaintext)
+
+      // Containment query
+      const containmentRows = await sql`
+        SELECT id, (metadata).data as metadata
+        FROM "protect-ci-jsonb"
+        WHERE metadata @> ${containmentUnwrapped}::eql_v2_encrypted
+        AND test_run_id = ${TEST_RUN_ID}
+      `
+
+      expect(containmentRows.length).toBeGreaterThanOrEqual(1)
+      const containmentMatch = containmentRows.find((r) => r.id === inserted.id)
+      expect(containmentMatch).toBeDefined()
+
+      const containmentDecrypted = await protectClient.decryptModel({ metadata: containmentMatch!.metadata })
+      if (containmentDecrypted.failure) throw new Error(containmentDecrypted.failure.message)
+      expect(containmentDecrypted.data.metadata).toEqual(plaintext)
     }, 30000)
   })
 
@@ -914,7 +960,14 @@ describe('searchableJson postgres integration', () => {
       `
 
       expect(selectorRows.length).toBeGreaterThanOrEqual(1)
-      expect(selectorRows.find((r) => r.id === inserted.id)).toBeDefined()
+      const selectorMatch = selectorRows.find((r) => r.id === inserted.id)
+      expect(selectorMatch).toBeDefined()
+
+      const selectorDecrypted = await protectClient
+        .decryptModel({ metadata: selectorMatch!.metadata })
+        .withLockContext(lockContext.data)
+      if (selectorDecrypted.failure) throw new Error(selectorDecrypted.failure.message)
+      expect(selectorDecrypted.data.metadata).toEqual(plaintext)
 
       // Containment query
       const containmentRows = await sql`
@@ -925,7 +978,14 @@ describe('searchableJson postgres integration', () => {
       `
 
       expect(containmentRows.length).toBeGreaterThanOrEqual(1)
-      expect(containmentRows.find((r) => r.id === inserted.id)).toBeDefined()
+      const containmentMatch = containmentRows.find((r) => r.id === inserted.id)
+      expect(containmentMatch).toBeDefined()
+
+      const containmentDecrypted = await protectClient
+        .decryptModel({ metadata: containmentMatch!.metadata })
+        .withLockContext(lockContext.data)
+      if (containmentDecrypted.failure) throw new Error(containmentDecrypted.failure.message)
+      expect(containmentDecrypted.data.metadata).toEqual(plaintext)
     }, 60000)
   })
 
@@ -982,17 +1042,17 @@ describe('searchableJson postgres integration', () => {
       // Execute each against PG
       const [rows1, rows2, rows3] = await Promise.all([
         sql`
-          SELECT id FROM "protect-ci-jsonb" t,
+          SELECT id, (metadata).data as metadata FROM "protect-ci-jsonb" t,
                eql_v2.jsonb_path_query(t.metadata, ${q1.data}::eql_v2_encrypted) as result
           WHERE t.test_run_id = ${TEST_RUN_ID}
         `,
         sql`
-          SELECT id FROM "protect-ci-jsonb" t,
+          SELECT id, (metadata).data as metadata FROM "protect-ci-jsonb" t,
                eql_v2.jsonb_path_query(t.metadata, ${q2.data}::eql_v2_encrypted) as result
           WHERE t.test_run_id = ${TEST_RUN_ID}
         `,
         sql`
-          SELECT id FROM "protect-ci-jsonb" t,
+          SELECT id, (metadata).data as metadata FROM "protect-ci-jsonb" t,
                eql_v2.jsonb_path_query(t.metadata, ${q3.data}::eql_v2_encrypted) as result
           WHERE t.test_run_id = ${TEST_RUN_ID}
         `,
@@ -1008,6 +1068,22 @@ describe('searchableJson postgres integration', () => {
       expect(rows3.find((r) => r.id === insertedIds[2])).toBeDefined()
       expect(rows3.find((r) => r.id === insertedIds[0])).toBeUndefined()
       expect(rows3.find((r) => r.id === insertedIds[1])).toBeUndefined()
+
+      // Decrypt and validate each matched row
+      const match1 = rows1.find((r) => r.id === insertedIds[0])!
+      const decrypted1 = await protectClient.decryptModel({ metadata: match1.metadata })
+      if (decrypted1.failure) throw new Error(decrypted1.failure.message)
+      expect(decrypted1.data.metadata).toEqual(docs[0])
+
+      const match2 = rows2.find((r) => r.id === insertedIds[1])!
+      const decrypted2 = await protectClient.decryptModel({ metadata: match2.metadata })
+      if (decrypted2.failure) throw new Error(decrypted2.failure.message)
+      expect(decrypted2.data.metadata).toEqual(docs[1])
+
+      const match3 = rows3.find((r) => r.id === insertedIds[2])!
+      const decrypted3 = await protectClient.decryptModel({ metadata: match3.metadata })
+      if (decrypted3.failure) throw new Error(decrypted3.failure.message)
+      expect(decrypted3.data.metadata).toEqual(docs[2])
     }, 60000)
 
     it('parallel containment queries', async () => {
@@ -1050,12 +1126,12 @@ describe('searchableJson postgres integration', () => {
 
       const [rows1, rows2] = await Promise.all([
         sql`
-          SELECT id FROM "protect-ci-jsonb"
+          SELECT id, (metadata).data as metadata FROM "protect-ci-jsonb"
           WHERE metadata @> ${c1.data}::eql_v2_encrypted
           AND test_run_id = ${TEST_RUN_ID}
         `,
         sql`
-          SELECT id FROM "protect-ci-jsonb"
+          SELECT id, (metadata).data as metadata FROM "protect-ci-jsonb"
           WHERE metadata @> ${c2.data}::eql_v2_encrypted
           AND test_run_id = ${TEST_RUN_ID}
         `,
@@ -1066,6 +1142,17 @@ describe('searchableJson postgres integration', () => {
       expect(rows1.find((r) => r.id === insertedIds[1])).toBeUndefined()
       expect(rows2.find((r) => r.id === insertedIds[1])).toBeDefined()
       expect(rows2.find((r) => r.id === insertedIds[0])).toBeUndefined()
+
+      // Decrypt and validate each matched row
+      const match1 = rows1.find((r) => r.id === insertedIds[0])!
+      const decrypted1 = await protectClient.decryptModel({ metadata: match1.metadata })
+      if (decrypted1.failure) throw new Error(decrypted1.failure.message)
+      expect(decrypted1.data.metadata).toEqual(docs[0])
+
+      const match2 = rows2.find((r) => r.id === insertedIds[1])!
+      const decrypted2 = await protectClient.decryptModel({ metadata: match2.metadata })
+      if (decrypted2.failure) throw new Error(decrypted2.failure.message)
+      expect(decrypted2.data.metadata).toEqual(docs[1])
     }, 60000)
 
     it('parallel mixed encrypt+query', async () => {
@@ -1102,12 +1189,12 @@ describe('searchableJson postgres integration', () => {
       // Query with both terms
       const [selectorRows, containmentRows] = await Promise.all([
         sql`
-          SELECT id FROM "protect-ci-jsonb" t,
+          SELECT id, (metadata).data as metadata FROM "protect-ci-jsonb" t,
                eql_v2.jsonb_path_query(t.metadata, ${selectorResult.data}::eql_v2_encrypted) as result
           WHERE t.test_run_id = ${TEST_RUN_ID}
         `,
         sql`
-          SELECT id FROM "protect-ci-jsonb"
+          SELECT id, (metadata).data as metadata FROM "protect-ci-jsonb"
           WHERE metadata @> ${containmentResult.data}::eql_v2_encrypted
           AND test_run_id = ${TEST_RUN_ID}
         `,
@@ -1119,6 +1206,17 @@ describe('searchableJson postgres integration', () => {
       // Verify result sets are bounded (not returning all rows)
       expect(selectorRows.length).toBeGreaterThanOrEqual(1)
       expect(containmentRows.length).toBeGreaterThanOrEqual(1)
+
+      // Decrypt and validate both matched rows
+      const selectorMatch = selectorRows.find((r) => r.id === inserted.id)!
+      const selectorDecrypted = await protectClient.decryptModel({ metadata: selectorMatch.metadata })
+      if (selectorDecrypted.failure) throw new Error(selectorDecrypted.failure.message)
+      expect(selectorDecrypted.data.metadata).toEqual(plaintext)
+
+      const containmentMatch = containmentRows.find((r) => r.id === inserted.id)!
+      const containmentDecrypted = await protectClient.decryptModel({ metadata: containmentMatch.metadata })
+      if (containmentDecrypted.failure) throw new Error(containmentDecrypted.failure.message)
+      expect(containmentDecrypted.data.metadata).toEqual(plaintext)
     }, 60000)
   })
 })
