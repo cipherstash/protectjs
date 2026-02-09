@@ -203,7 +203,7 @@ const tagsTerm = await protectClient.encryptQuery(['admin', 'user'], {
 > For `orderAndRange` queries, bare numbers are supported directly.
 >
 > ```typescript
-> // Wrong - will fail
+> // Wrong for searchableJson - will fail (works for orderAndRange)
 > await protectClient.encryptQuery(42, { column: documents.metadata, table: documents })
 >
 > // Correct - wrap in an object
