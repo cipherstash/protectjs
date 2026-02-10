@@ -350,9 +350,9 @@ describe('searchableJson postgres integration', () => {
 
       const rows = await sql`
         SELECT id, (metadata).data as metadata
-        FROM "protect-ci-jsonb"
-        WHERE metadata @> ${containmentTerm}::eql_v2_encrypted
-        AND test_run_id = ${TEST_RUN_ID}
+        FROM "protect-ci-jsonb" t
+        WHERE t.metadata @> ${containmentTerm}::eql_v2_encrypted
+        AND t.test_run_id = ${TEST_RUN_ID}
       `
 
       expect(rows.length).toBeGreaterThanOrEqual(1)
@@ -388,9 +388,9 @@ describe('searchableJson postgres integration', () => {
 
       const rows = await sql`
         SELECT id, (metadata).data as metadata
-        FROM "protect-ci-jsonb"
-        WHERE metadata @> ${containmentTerm}::eql_v2_encrypted
-        AND test_run_id = ${TEST_RUN_ID}
+        FROM "protect-ci-jsonb" t
+        WHERE t.metadata @> ${containmentTerm}::eql_v2_encrypted
+        AND t.test_run_id = ${TEST_RUN_ID}
       `
 
       expect(rows.length).toBeGreaterThanOrEqual(1)
@@ -425,9 +425,9 @@ describe('searchableJson postgres integration', () => {
 
       const rows = await sql`
         SELECT id, (metadata).data as metadata
-        FROM "protect-ci-jsonb"
-        WHERE metadata @> ${containmentTerm}::eql_v2_encrypted
-        AND test_run_id = ${TEST_RUN_ID}
+        FROM "protect-ci-jsonb" t
+        WHERE t.metadata @> ${containmentTerm}::eql_v2_encrypted
+        AND t.test_run_id = ${TEST_RUN_ID}
       `
 
       expect(rows.length).toBe(0)
@@ -1246,9 +1246,9 @@ describe('searchableJson postgres integration', () => {
 
       const rows = await sql`
         SELECT id, (metadata).data as metadata
-        FROM "protect-ci-jsonb"
-        WHERE ${containmentTerm}::eql_v2_encrypted <@ metadata
-        AND test_run_id = ${TEST_RUN_ID}
+        FROM "protect-ci-jsonb" t
+        WHERE ${containmentTerm}::eql_v2_encrypted <@ t.metadata
+        AND t.test_run_id = ${TEST_RUN_ID}
       `
 
       expect(rows.length).toBeGreaterThanOrEqual(1)
@@ -1283,9 +1283,9 @@ describe('searchableJson postgres integration', () => {
 
       const rows = await sql`
         SELECT id, (metadata).data as metadata
-        FROM "protect-ci-jsonb"
-        WHERE ${containmentTerm}::eql_v2_encrypted <@ metadata
-        AND test_run_id = ${TEST_RUN_ID}
+        FROM "protect-ci-jsonb" t
+        WHERE ${containmentTerm}::eql_v2_encrypted <@ t.metadata
+        AND t.test_run_id = ${TEST_RUN_ID}
       `
 
       expect(rows.length).toBeGreaterThanOrEqual(1)
@@ -1319,9 +1319,9 @@ describe('searchableJson postgres integration', () => {
 
       const rows = await sql`
         SELECT id, (metadata).data as metadata
-        FROM "protect-ci-jsonb"
-        WHERE ${containmentTerm}::eql_v2_encrypted <@ metadata
-        AND test_run_id = ${TEST_RUN_ID}
+        FROM "protect-ci-jsonb" t
+        WHERE ${containmentTerm}::eql_v2_encrypted <@ t.metadata
+        AND t.test_run_id = ${TEST_RUN_ID}
       `
 
       expect(rows.length).toBe(0)
@@ -1350,9 +1350,10 @@ describe('searchableJson postgres integration', () => {
 
       const rows = await sql.unsafe(
         `SELECT id, (metadata).data as metadata
-         FROM "protect-ci-jsonb"
-         WHERE '${containmentTerm}'::eql_v2_encrypted <@ metadata
-         AND test_run_id = '${TEST_RUN_ID}'`
+         FROM "protect-ci-jsonb" t
+         WHERE $1::eql_v2_encrypted <@ t.metadata
+         AND t.test_run_id = $2`,
+        [containmentTerm, TEST_RUN_ID]
       )
 
       expect(rows.length).toBeGreaterThanOrEqual(1)
@@ -1387,9 +1388,10 @@ describe('searchableJson postgres integration', () => {
 
       const rows = await sql.unsafe(
         `SELECT id, (metadata).data as metadata
-         FROM "protect-ci-jsonb"
-         WHERE '${containmentTerm}'::eql_v2_encrypted <@ metadata
-         AND test_run_id = '${TEST_RUN_ID}'`
+         FROM "protect-ci-jsonb" t
+         WHERE $1::eql_v2_encrypted <@ t.metadata
+         AND t.test_run_id = $2`,
+        [containmentTerm, TEST_RUN_ID]
       )
 
       expect(rows.length).toBeGreaterThanOrEqual(1)
@@ -1423,9 +1425,10 @@ describe('searchableJson postgres integration', () => {
 
       const rows = await sql.unsafe(
         `SELECT id, (metadata).data as metadata
-         FROM "protect-ci-jsonb"
-         WHERE '${containmentTerm}'::eql_v2_encrypted <@ metadata
-         AND test_run_id = '${TEST_RUN_ID}'`
+         FROM "protect-ci-jsonb" t
+         WHERE $1::eql_v2_encrypted <@ t.metadata
+         AND t.test_run_id = $2`,
+        [containmentTerm, TEST_RUN_ID]
       )
 
       expect(rows.length).toBe(0)
