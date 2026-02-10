@@ -2507,4 +2507,151 @@ describe('searchableJson postgres integration', () => {
       expect(decrypted.data.metadata).toEqual(plaintext)
     }, 30000)
   })
+
+  // ─── Field access: -> operator ─────────────────────────────────────
+
+  describe('field access: -> operator', () => {
+    it('extracts field by text key (Extended)', async () => {
+      const plaintext = { role: 'fa-admin', dept: 'fa-eng', marker: 'fa-text' }
+
+      const encrypted = await protectClient.encryptModel({ metadata: plaintext }, table)
+      if (encrypted.failure) throw new Error(encrypted.failure.message)
+
+      const [inserted] = await sql`
+        INSERT INTO "protect-ci-jsonb" (metadata, test_run_id)
+        VALUES (${sql.json(encrypted.data.metadata)}::eql_v2_encrypted, ${TEST_RUN_ID})
+        RETURNING id
+      `
+
+      const rows = await sql`
+        SELECT t.metadata -> 'role' as extracted
+        FROM "protect-ci-jsonb" t
+        WHERE t.id = ${inserted.id}
+      `
+
+      expect(rows).toHaveLength(1)
+      expect(rows[0].extracted).not.toBeNull()
+    }, 30000)
+
+    it('extracts nested field by chained text keys (Extended)', async () => {
+      const plaintext = { user: { email: 'fa@test.com' }, marker: 'fa-nested' }
+
+      const encrypted = await protectClient.encryptModel({ metadata: plaintext }, table)
+      if (encrypted.failure) throw new Error(encrypted.failure.message)
+
+      const [inserted] = await sql`
+        INSERT INTO "protect-ci-jsonb" (metadata, test_run_id)
+        VALUES (${sql.json(encrypted.data.metadata)}::eql_v2_encrypted, ${TEST_RUN_ID})
+        RETURNING id
+      `
+
+      const rows = await sql`
+        SELECT (t.metadata -> 'user') -> 'email' as extracted
+        FROM "protect-ci-jsonb" t
+        WHERE t.id = ${inserted.id}
+      `
+
+      expect(rows).toHaveLength(1)
+      expect(rows[0].extracted).not.toBeNull()
+    }, 30000)
+
+    it('returns null for missing field (Extended)', async () => {
+      const plaintext = { exists: true, marker: 'fa-miss' }
+
+      const encrypted = await protectClient.encryptModel({ metadata: plaintext }, table)
+      if (encrypted.failure) throw new Error(encrypted.failure.message)
+
+      const [inserted] = await sql`
+        INSERT INTO "protect-ci-jsonb" (metadata, test_run_id)
+        VALUES (${sql.json(encrypted.data.metadata)}::eql_v2_encrypted, ${TEST_RUN_ID})
+        RETURNING id
+      `
+
+      const rows = await sql`
+        SELECT t.metadata -> 'nonexistent' as extracted
+        FROM "protect-ci-jsonb" t
+        WHERE t.id = ${inserted.id}
+      `
+
+      expect(rows).toHaveLength(1)
+      expect(rows[0].extracted).toBeNull()
+    }, 30000)
+
+    it('extracts field by encrypted selector (Extended)', async () => {
+      const plaintext = { role: 'fa-enc', dept: 'fa-dept', marker: 'fa-enc-sel' }
+
+      const encrypted = await protectClient.encryptModel({ metadata: plaintext }, table)
+      if (encrypted.failure) throw new Error(encrypted.failure.message)
+
+      const [inserted] = await sql`
+        INSERT INTO "protect-ci-jsonb" (metadata, test_run_id)
+        VALUES (${sql.json(encrypted.data.metadata)}::eql_v2_encrypted, ${TEST_RUN_ID})
+        RETURNING id
+      `
+
+      const queryResult = await protectClient.encryptQuery('$.role', {
+        column: table.metadata,
+        table: table,
+        queryType: 'steVecSelector',
+        returnType: 'composite-literal',
+      })
+      if (queryResult.failure) throw new Error(queryResult.failure.message)
+      const selectorTerm = queryResult.data
+
+      const rows = await sql`
+        SELECT t.metadata -> ${selectorTerm}::eql_v2_encrypted as extracted
+        FROM "protect-ci-jsonb" t
+        WHERE t.id = ${inserted.id}
+      `
+
+      expect(rows).toHaveLength(1)
+      expect(rows[0].extracted).not.toBeNull()
+    }, 30000)
+
+    it('extracts field by text key (Simple)', async () => {
+      const plaintext = { role: 'fa-simple', dept: 'fa-s-dept', marker: 'fa-simple-text' }
+
+      const encrypted = await protectClient.encryptModel({ metadata: plaintext }, table)
+      if (encrypted.failure) throw new Error(encrypted.failure.message)
+
+      const [inserted] = await sql`
+        INSERT INTO "protect-ci-jsonb" (metadata, test_run_id)
+        VALUES (${sql.json(encrypted.data.metadata)}::eql_v2_encrypted, ${TEST_RUN_ID})
+        RETURNING id
+      `
+
+      const rows = await sql.unsafe(
+        `SELECT t.metadata -> 'role' as extracted
+         FROM "protect-ci-jsonb" t
+         WHERE t.id = $1`,
+        [inserted.id]
+      )
+
+      expect(rows).toHaveLength(1)
+      expect(rows[0].extracted).not.toBeNull()
+    }, 30000)
+
+    it('returns null for missing field (Simple)', async () => {
+      const plaintext = { exists: true, marker: 'fa-s-miss' }
+
+      const encrypted = await protectClient.encryptModel({ metadata: plaintext }, table)
+      if (encrypted.failure) throw new Error(encrypted.failure.message)
+
+      const [inserted] = await sql`
+        INSERT INTO "protect-ci-jsonb" (metadata, test_run_id)
+        VALUES (${sql.json(encrypted.data.metadata)}::eql_v2_encrypted, ${TEST_RUN_ID})
+        RETURNING id
+      `
+
+      const rows = await sql.unsafe(
+        `SELECT t.metadata -> 'nonexistent' as extracted
+         FROM "protect-ci-jsonb" t
+         WHERE t.id = $1`,
+        [inserted.id]
+      )
+
+      expect(rows).toHaveLength(1)
+      expect(rows[0].extracted).toBeNull()
+    }, 30000)
+  })
 })
