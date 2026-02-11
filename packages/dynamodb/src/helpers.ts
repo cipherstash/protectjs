@@ -2,7 +2,9 @@ import type {
   Encrypted,
   EncryptedTable,
   EncryptedTableColumn,
+  ProtectErrorCode,
 } from '@cipherstash/stack'
+import { FfiProtectError } from '@cipherstash/stack'
 import type { ProtectDynamoDBError } from './types'
 export const ciphertextAttrSuffix = '__source'
 export const searchTermAttrSuffix = '__hmac'
@@ -13,7 +15,7 @@ export class ProtectDynamoDBErrorImpl
 {
   constructor(
     message: string,
-    public code: string,
+    public code: ProtectErrorCode | 'PROTECT_DYNAMODB_ERROR',
     public details?: Record<string, unknown>,
   ) {
     super(message)
@@ -22,7 +24,7 @@ export class ProtectDynamoDBErrorImpl
 }
 
 export function handleError(
-  error: Error,
+  error: unknown,
   context: string,
   options?: {
     logger?: {
@@ -31,11 +33,29 @@ export function handleError(
     errorHandler?: (error: ProtectDynamoDBError) => void
   },
 ): ProtectDynamoDBError {
-  const protectError = new ProtectDynamoDBErrorImpl(
-    error.message,
-    'PROTECT_DYNAMODB_ERROR',
-    { context },
-  )
+  // Preserve FFI error code if available, otherwise use generic DynamoDB error code
+  // Check for FfiProtectError instance or plain ProtectError objects with code property
+  const errorObj = error as Record<string, unknown>
+  const errorCode =
+    error instanceof FfiProtectError
+      ? error.code
+      : errorObj &&
+          typeof errorObj === 'object' &&
+          'code' in errorObj &&
+          typeof errorObj.code === 'string'
+        ? (errorObj.code as ProtectErrorCode)
+        : 'PROTECT_DYNAMODB_ERROR'
+
+  const errorMessage =
+    error instanceof Error
+      ? error.message
+      : errorObj && typeof errorObj.message === 'string'
+        ? errorObj.message
+        : String(error)
+
+  const protectError = new ProtectDynamoDBErrorImpl(errorMessage, errorCode, {
+    context,
+  })
 
   if (options?.errorHandler) {
     options.errorHandler(protectError)

@@ -5,10 +5,10 @@ import { Hono } from 'hono'
 
 // Consolidated protect and it's schemas into a single file
 import {
+  Encryption,
   type EncryptionClientConfig,
   encryptedColumn,
   encryptedTable,
-  Encryption,
 } from '@cipherstash/stack'
 
 export const users = encryptedTable('users', {

@@ -1,11 +1,11 @@
 import 'dotenv/config'
 import {
   type CtsToken,
-  LockContext,
+  Encryption,
   type EncryptionClientConfig,
+  LockContext,
   encryptedColumn,
   encryptedTable,
-  Encryption,
 } from '@cipherstash/stack'
 
 export const users = encryptedTable('users', {

@@ -4,6 +4,7 @@ import { type EncryptionError, EncryptionErrorTypes } from '../..'
 import { logger } from '../../../../utils/logger'
 import type { LockContext } from '../../identify'
 import type { Client, Decrypted } from '../../types'
+import { getErrorCode } from '../helpers/error-code'
 import { noClientError } from '../index'
 import {
   encryptModelFields,
@@ -55,9 +56,10 @@ export class EncryptModelOperation<
           auditData,
         )
       },
-      (error) => ({
+      (error: unknown) => ({
         type: EncryptionErrorTypes.EncryptionError,
-        message: error.message,
+        message: (error as Error).message,
+        code: getErrorCode(error),
       }),
     )
   }
@@ -116,9 +118,10 @@ export class EncryptModelOperationWithLockContext<
           auditData,
         )
       },
-      (error) => ({
+      (error: unknown) => ({
         type: EncryptionErrorTypes.EncryptionError,
-        message: error.message,
+        message: (error as Error).message,
+        code: getErrorCode(error),
       }),
     )
   }

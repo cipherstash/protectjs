@@ -16,6 +16,7 @@ import type {
   EncryptOptions,
   Encrypted,
 } from '../../types'
+import { getErrorCode } from '../helpers/error-code'
 import { noClientError } from '../index'
 import { ProtectOperation } from './base-operation'
 
@@ -128,6 +129,7 @@ export class BulkEncryptOperation extends ProtectOperation<BulkEncryptedData> {
       (error: unknown) => ({
         type: ProtectErrorTypes.EncryptionError,
         message: (error as Error).message,
+        code: getErrorCode(error),
       }),
     )
   }
@@ -204,6 +206,7 @@ export class BulkEncryptOperationWithLockContext extends ProtectOperation<BulkEn
       (error: unknown) => ({
         type: ProtectErrorTypes.EncryptionError,
         message: (error as Error).message,
+        code: getErrorCode(error),
       }),
     )
   }

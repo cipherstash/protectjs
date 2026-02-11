@@ -1,4 +1,4 @@
-import { type EncryptionClientConfig, Encryption } from '@cipherstash/stack'
+import { Encryption, type EncryptionClientConfig } from '@cipherstash/stack'
 import { users } from './schema'
 
 const config: EncryptionClientConfig = {

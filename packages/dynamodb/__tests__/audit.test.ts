@@ -1,5 +1,10 @@
 import 'dotenv/config'
-import { encryptedColumn, encryptedTable, encryptedValue, Encryption } from '@cipherstash/stack'
+import {
+  Encryption,
+  encryptedColumn,
+  encryptedTable,
+  encryptedValue,
+} from '@cipherstash/stack'
 import { beforeAll, describe, expect, it } from 'vitest'
 import { protectDynamoDB } from '../src'
 

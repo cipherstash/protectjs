@@ -2,10 +2,10 @@ import { type ExecutionContext, createParamDecorator } from '@nestjs/common'
 import { getProtectService } from '../utils/get-protect-service.util'
 
 import type {
-  ProtectColumn,
   EncryptedTable,
   EncryptedTableColumn,
   EncryptedValue,
+  ProtectColumn,
 } from '@cipherstash/stack'
 
 export interface DecryptOptions {

@@ -33,6 +33,24 @@ export const metadata = encryptedTable('metadata', {
   raw: encryptedColumn('raw'),
 })
 
+/**
+ * Documents table with searchable JSON column (for STE Vec queries)
+ */
+export const jsonbSchema = encryptedTable('documents', {
+  id: encryptedColumn('id'),
+  metadata: encryptedColumn('metadata').searchableJson(),
+})
+
+/**
+ * Schema fixture with mixed column types including JSON.
+ */
+export const mixedSchema = encryptedTable('records', {
+  id: encryptedColumn('id'),
+  email: encryptedColumn('email').equality(),
+  name: encryptedColumn('name').freeTextSearch(),
+  metadata: encryptedColumn('metadata').searchableJson(),
+})
+
 // ============ Mock Factories ============
 
 /**

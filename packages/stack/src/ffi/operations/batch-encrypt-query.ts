@@ -13,6 +13,7 @@ import {
 } from '../../helpers'
 import type { Context, LockContext } from '../../identify'
 import type { Client, EncryptedQueryResult, ScalarQueryTerm } from '../../types'
+import { getErrorCode } from '../helpers/error-code'
 import { resolveIndexType } from '../helpers/infer-index-type'
 import {
   assertValidNumericValue,
@@ -22,8 +23,8 @@ import { noClientError } from '../index'
 import { EncryptionOperation } from './base-operation'
 
 /**
- * Separates null values from non-null terms in the input array.
- * Returns a set of indices where values are null and an array of non-null terms with their original indices.
+ * Separates null/undefined values from non-null terms in the input array.
+ * Returns a set of indices where values are null/undefined and an array of non-null terms with their original indices.
  */
 function filterNullTerms(terms: readonly ScalarQueryTerm[]): {
   nullIndices: Set<number>
@@ -33,7 +34,7 @@ function filterNullTerms(terms: readonly ScalarQueryTerm[]): {
   const nonNullTerms: { term: ScalarQueryTerm; originalIndex: number }[] = []
 
   terms.forEach((term, index) => {
-    if (term.value === null) {
+    if (term.value === null || term.value === undefined) {
       nullIndices.add(index)
     } else {
       nonNullTerms.push({ term, originalIndex: index })
@@ -54,7 +55,11 @@ function buildQueryPayload(
 ): QueryPayload {
   assertValidNumericValue(term.value)
 
-  const indexType = resolveIndexType(term.column, term.queryType)
+  const { indexType, queryOp } = resolveIndexType(
+    term.column,
+    term.queryType,
+    term.value,
+  )
 
   // Validate value/index compatibility
   assertValueIndexCompatibility(term.value, indexType, term.column.getName())
@@ -64,6 +69,7 @@ function buildQueryPayload(
     column: term.column.getName(),
     table: term.table.tableName,
     indexType,
+    queryOp,
   }
 
   if (lockContext != null) {
@@ -102,7 +108,7 @@ function assembleResults(
 }
 
 /**
- * @internal Use {@link ProtectClient.encryptQuery} with array input instead.
+ * @internal Use {@link EncryptionClient.encryptQuery} with array input instead.
  */
 export class BatchEncryptQueryOperation extends EncryptionOperation<
   EncryptedQueryResult[]
@@ -157,16 +163,17 @@ export class BatchEncryptQueryOperation extends EncryptionOperation<
 
         return assembleResults(this.terms.length, encrypted, nonNullTerms)
       },
-      (error) => ({
+      (error: unknown) => ({
         type: EncryptionErrorTypes.EncryptionError,
-        message: error.message,
+        message: (error as Error).message,
+        code: getErrorCode(error),
       }),
     )
   }
 }
 
 /**
- * @internal Use {@link ProtectClient.encryptQuery} with array input and `.withLockContext()` instead.
+ * @internal Use {@link EncryptionClient.encryptQuery} with array input and `.withLockContext()` instead.
  */
 export class BatchEncryptQueryOperationWithLockContext extends EncryptionOperation<
   EncryptedQueryResult[]
@@ -224,9 +231,10 @@ export class BatchEncryptQueryOperationWithLockContext extends EncryptionOperati
 
         return assembleResults(this.terms.length, encrypted, nonNullTerms)
       },
-      (error) => ({
+      (error: unknown) => ({
         type: EncryptionErrorTypes.EncryptionError,
-        message: error.message,
+        message: (error as Error).message,
+        code: getErrorCode(error),
       }),
     )
   }

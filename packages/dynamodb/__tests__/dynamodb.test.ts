@@ -1,5 +1,10 @@
 import 'dotenv/config'
-import { encryptedColumn, encryptedTable, encryptedValue, Encryption } from '@cipherstash/stack'
+import {
+  Encryption,
+  encryptedColumn,
+  encryptedTable,
+  encryptedValue,
+} from '@cipherstash/stack'
 import { beforeAll, describe, expect, it } from 'vitest'
 import { protectDynamoDB } from '../src'
 
@@ -15,9 +20,9 @@ const schema = encryptedTable('dynamo_cipherstash_test', {
     protected: encryptedValue('example.protected'),
     deep: {
       protected: encryptedValue('example.deep.protected'),
-      protectNestedJson: encryptedValue('example.deep.protectNestedJson').dataType(
-        'json',
-      ),
+      protectNestedJson: encryptedValue(
+        'example.deep.protectNestedJson',
+      ).dataType('json'),
     },
   },
 })

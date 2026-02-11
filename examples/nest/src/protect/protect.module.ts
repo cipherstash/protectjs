@@ -1,9 +1,9 @@
 import {
-  type EncryptionClient,
-  type EncryptionClientConfig,
   type EncryptedTable,
   type EncryptedTableColumn,
   Encryption,
+  type EncryptionClient,
+  type EncryptionClientConfig,
 } from '@cipherstash/stack'
 import { type DynamicModule, Global, Module } from '@nestjs/common'
 import { ConfigModule, ConfigService } from '@nestjs/config'
@@ -63,7 +63,9 @@ export class ProtectModule {
         },
         {
           provide: PROTECT_CLIENT,
-          useFactory: async (config: ProtectConfig): Promise<EncryptionClient> => {
+          useFactory: async (
+            config: ProtectConfig,
+          ): Promise<EncryptionClient> => {
             const protectConfig: EncryptionClientConfig = {
               schemas: (config.schemas && config.schemas.length > 0
                 ? config.schemas
@@ -98,7 +100,9 @@ export class ProtectModule {
         },
         {
           provide: PROTECT_CLIENT,
-          useFactory: async (config: ProtectConfig): Promise<EncryptionClient> => {
+          useFactory: async (
+            config: ProtectConfig,
+          ): Promise<EncryptionClient> => {
             const protectConfig: EncryptionClientConfig = {
               schemas: (config.schemas && config.schemas.length > 0
                 ? config.schemas

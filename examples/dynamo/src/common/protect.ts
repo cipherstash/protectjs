@@ -1,4 +1,4 @@
-import { encryptedColumn, encryptedTable, Encryption } from '@cipherstash/stack'
+import { Encryption, encryptedColumn, encryptedTable } from '@cipherstash/stack'
 
 export const users = encryptedTable('users', {
   email: encryptedColumn('email').equality(),

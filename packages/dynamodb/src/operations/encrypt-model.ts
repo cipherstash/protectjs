@@ -1,8 +1,8 @@
 import { type Result, withResult } from '@byteslice/result'
 import type {
+  EncryptedTable,
+  EncryptedTableColumn,
   EncryptionClient,
-  ProtectTable,
-  ProtectTableColumn,
 } from '@cipherstash/stack'
 import { deepClone, handleError, toEncryptedDynamoItem } from '../helpers'
 import type { ProtectDynamoDBError } from '../types'
@@ -38,7 +38,13 @@ export class EncryptModelOperation<
           .audit(this.getAuditData())
 
         if (encryptResult.failure) {
-          throw new Error(`encryption error: ${encryptResult.failure.message}`)
+          // Create an Error object that preserves the FFI error code
+          // This is necessary because withResult's ensureError wraps non-Error objects
+          const error = new Error(encryptResult.failure.message) as Error & {
+            code?: string
+          }
+          error.code = encryptResult.failure.code
+          throw error
         }
 
         const data = deepClone(encryptResult.data)

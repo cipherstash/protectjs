@@ -3,6 +3,12 @@ import { buildEncryptConfig } from '@cipherstash/schema'
 import { EncryptionClient } from './ffi'
 import type { KeysetIdentifier } from './types'
 
+// Re-export FFI error types for programmatic error handling
+export {
+  ProtectError as FfiProtectError,
+  type ProtectErrorCode,
+} from '@cipherstash/protect-ffi'
+
 export const EncryptionErrorTypes = {
   ClientInitError: 'ClientInitError',
   EncryptionError: 'EncryptionError',
@@ -17,6 +23,7 @@ export const ProtectErrorTypes = EncryptionErrorTypes
 export interface EncryptionError {
   type: (typeof EncryptionErrorTypes)[keyof typeof EncryptionErrorTypes]
   message: string
+  code?: import('@cipherstash/protect-ffi').ProtectErrorCode
 }
 
 /** @deprecated Use EncryptionError */
@@ -128,6 +135,7 @@ export {
 // Helpers
 export {
   inferIndexType,
+  inferQueryOpFromPlaintext,
   validateIndexType,
 } from './ffi/helpers/infer-index-type'
 

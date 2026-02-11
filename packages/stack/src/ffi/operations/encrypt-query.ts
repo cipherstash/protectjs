@@ -7,6 +7,7 @@ import { type EncryptionError, EncryptionErrorTypes } from '../..'
 import { logger } from '../../../../utils/logger'
 import type { LockContext } from '../../identify'
 import type { Client, EncryptQueryOptions, Encrypted } from '../../types'
+import { getErrorCode } from '../helpers/error-code'
 import { resolveIndexType } from '../helpers/infer-index-type'
 import {
   assertValueIndexCompatibility,
@@ -16,7 +17,7 @@ import { noClientError } from '../index'
 import { EncryptionOperation } from './base-operation'
 
 /**
- * @internal Use {@link ProtectClient.encryptQuery} instead.
+ * @internal Use {@link EncryptionClient.encryptQuery} instead.
  */
 export class EncryptQueryOperation extends EncryptionOperation<Encrypted> {
   constructor(
@@ -46,7 +47,7 @@ export class EncryptQueryOperation extends EncryptionOperation<Encrypted> {
       queryType: this.opts.queryType,
     })
 
-    if (this.plaintext === null) {
+    if (this.plaintext === null || this.plaintext === undefined) {
       return { data: null }
     }
 
@@ -61,9 +62,10 @@ export class EncryptQueryOperation extends EncryptionOperation<Encrypted> {
 
         const { metadata } = this.getAuditData()
 
-        const indexType = resolveIndexType(
+        const { indexType, queryOp } = resolveIndexType(
           this.opts.column,
           this.opts.queryType,
+          this.plaintext,
         )
 
         // Validate value/index compatibility
@@ -78,12 +80,14 @@ export class EncryptQueryOperation extends EncryptionOperation<Encrypted> {
           column: this.opts.column.getName(),
           table: this.opts.table.tableName,
           indexType,
+          queryOp,
           unverifiedContext: metadata,
         })
       },
-      (error) => ({
+      (error: unknown) => ({
         type: EncryptionErrorTypes.EncryptionError,
-        message: error.message,
+        message: (error as Error).message,
+        code: getErrorCode(error),
       }),
     )
   }
@@ -94,7 +98,7 @@ export class EncryptQueryOperation extends EncryptionOperation<Encrypted> {
 }
 
 /**
- * @internal Use {@link ProtectClient.encryptQuery} with `.withLockContext()` instead.
+ * @internal Use {@link EncryptionClient.encryptQuery} with `.withLockContext()` instead.
  */
 export class EncryptQueryOperationWithLockContext extends EncryptionOperation<Encrypted> {
   constructor(
@@ -109,7 +113,7 @@ export class EncryptQueryOperationWithLockContext extends EncryptionOperation<En
   }
 
   public async execute(): Promise<Result<Encrypted, EncryptionError>> {
-    if (this.plaintext === null) {
+    if (this.plaintext === null || this.plaintext === undefined) {
       return { data: null }
     }
 
@@ -131,9 +135,10 @@ export class EncryptQueryOperationWithLockContext extends EncryptionOperation<En
 
         const { metadata } = this.getAuditData()
 
-        const indexType = resolveIndexType(
+        const { indexType, queryOp } = resolveIndexType(
           this.opts.column,
           this.opts.queryType,
+          this.plaintext,
         )
 
         // Validate value/index compatibility
@@ -148,14 +153,16 @@ export class EncryptQueryOperationWithLockContext extends EncryptionOperation<En
           column: this.opts.column.getName(),
           table: this.opts.table.tableName,
           indexType,
+          queryOp,
           lockContext: context,
           serviceToken: ctsToken,
           unverifiedContext: metadata,
         })
       },
-      (error) => ({
+      (error: unknown) => ({
         type: EncryptionErrorTypes.EncryptionError,
-        message: error.message,
+        message: (error as Error).message,
+        code: getErrorCode(error),
       }),
     )
   }

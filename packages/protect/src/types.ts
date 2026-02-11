@@ -1,6 +1,7 @@
 import type {
   Encrypted as CipherStashEncrypted,
   JsPlaintext,
+  QueryOpName,
   newClient,
 } from '@cipherstash/protect-ffi'
 import type {
@@ -135,14 +136,29 @@ export type DecryptionResult<T> = DecryptionSuccess<T> | DecryptionError<T>
  * - `'equality'`: For exact match queries. {@link https://cipherstash.com/docs/platform/searchable-encryption/supported-queries/exact | Exact Queries}
  * - `'freeTextSearch'`: For text search queries. {@link https://cipherstash.com/docs/platform/searchable-encryption/supported-queries/match | Match Queries}
  * - `'orderAndRange'`: For comparison and range queries. {@link https://cipherstash.com/docs/platform/searchable-encryption/supported-queries/range | Range Queries}
+ * - `'steVecSelector'`: For JSONPath selector queries (e.g., '$.user.email')
+ * - `'steVecTerm'`: For containment queries (e.g., { role: 'admin' })
+ * - `'searchableJson'`: Auto-infers selector or term based on plaintext type (recommended)
+ *   - String values → ste_vec_selector (JSONPath queries)
+ *   - Object/Array/Number/Boolean → ste_vec_term (containment queries)
+ *
+ * Note: For columns with an ste_vec index, `'searchableJson'` behaves identically to omitting
+ * `queryType` entirely - both auto-infer the query operation from the plaintext type. Using
+ * `'searchableJson'` explicitly is useful for code clarity and self-documenting intent.
  */
-export type QueryTypeName = 'orderAndRange' | 'freeTextSearch' | 'equality'
+export type QueryTypeName =
+  | 'orderAndRange'
+  | 'freeTextSearch'
+  | 'equality'
+  | 'steVecSelector'
+  | 'steVecTerm'
+  | 'searchableJson'
 
 /**
  * Internal FFI index type names.
  * @internal
  */
-export type FfiIndexTypeName = 'ore' | 'match' | 'unique'
+export type FfiIndexTypeName = 'ore' | 'match' | 'unique' | 'ste_vec'
 
 /**
  * Query type constants for use with encryptQuery().
@@ -151,6 +167,9 @@ export const queryTypes = {
   orderAndRange: 'orderAndRange',
   freeTextSearch: 'freeTextSearch',
   equality: 'equality',
+  steVecSelector: 'steVecSelector',
+  steVecTerm: 'steVecTerm',
+  searchableJson: 'searchableJson',
 } as const satisfies Record<string, QueryTypeName>
 
 /**
@@ -161,6 +180,19 @@ export const queryTypeToFfi: Record<QueryTypeName, FfiIndexTypeName> = {
   orderAndRange: 'ore',
   freeTextSearch: 'match',
   equality: 'unique',
+  steVecSelector: 'ste_vec',
+  steVecTerm: 'ste_vec',
+  searchableJson: 'ste_vec',
+}
+
+/**
+ * Maps query type names to FFI query operation names.
+ * Returns undefined for query types that don't need a specific queryOp.
+ * @internal
+ */
+export const queryTypeToQueryOp: Partial<Record<QueryTypeName, QueryOpName>> = {
+  steVecSelector: 'ste_vec_selector',
+  steVecTerm: 'ste_vec_term',
 }
 
 /**

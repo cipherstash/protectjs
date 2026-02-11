@@ -7,6 +7,7 @@ import { type ProtectError, ProtectErrorTypes } from '../..'
 import { logger } from '../../../../utils/logger'
 import type { LockContext } from '../../identify'
 import type { Client, EncryptQueryOptions, Encrypted } from '../../types'
+import { getErrorCode } from '../helpers/error-code'
 import { resolveIndexType } from '../helpers/infer-index-type'
 import {
   assertValueIndexCompatibility,
@@ -46,7 +47,7 @@ export class EncryptQueryOperation extends ProtectOperation<Encrypted> {
       queryType: this.opts.queryType,
     })
 
-    if (this.plaintext === null) {
+    if (this.plaintext === null || this.plaintext === undefined) {
       return { data: null }
     }
 
@@ -61,9 +62,10 @@ export class EncryptQueryOperation extends ProtectOperation<Encrypted> {
 
         const { metadata } = this.getAuditData()
 
-        const indexType = resolveIndexType(
+        const { indexType, queryOp } = resolveIndexType(
           this.opts.column,
           this.opts.queryType,
+          this.plaintext,
         )
 
         // Validate value/index compatibility
@@ -78,12 +80,14 @@ export class EncryptQueryOperation extends ProtectOperation<Encrypted> {
           column: this.opts.column.getName(),
           table: this.opts.table.tableName,
           indexType,
+          queryOp,
           unverifiedContext: metadata,
         })
       },
-      (error) => ({
+      (error: unknown) => ({
         type: ProtectErrorTypes.EncryptionError,
-        message: error.message,
+        message: (error as Error).message,
+        code: getErrorCode(error),
       }),
     )
   }
@@ -109,7 +113,7 @@ export class EncryptQueryOperationWithLockContext extends ProtectOperation<Encry
   }
 
   public async execute(): Promise<Result<Encrypted, ProtectError>> {
-    if (this.plaintext === null) {
+    if (this.plaintext === null || this.plaintext === undefined) {
       return { data: null }
     }
 
@@ -131,9 +135,10 @@ export class EncryptQueryOperationWithLockContext extends ProtectOperation<Encry
 
         const { metadata } = this.getAuditData()
 
-        const indexType = resolveIndexType(
+        const { indexType, queryOp } = resolveIndexType(
           this.opts.column,
           this.opts.queryType,
+          this.plaintext,
         )
 
         // Validate value/index compatibility
@@ -148,14 +153,16 @@ export class EncryptQueryOperationWithLockContext extends ProtectOperation<Encry
           column: this.opts.column.getName(),
           table: this.opts.table.tableName,
           indexType,
+          queryOp,
           lockContext: context,
           serviceToken: ctsToken,
           unverifiedContext: metadata,
         })
       },
-      (error) => ({
+      (error: unknown) => ({
         type: ProtectErrorTypes.EncryptionError,
-        message: error.message,
+        message: (error as Error).message,
+        code: getErrorCode(error),
       }),
     )
   }

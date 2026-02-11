@@ -3,6 +3,7 @@ import type {
   EncryptedTable,
   EncryptedTableColumn,
   EncryptionClient,
+  ProtectErrorCode,
   SearchTerm,
 } from '@cipherstash/stack'
 import type { BulkDecryptModelsOperation } from './operations/bulk-decrypt-models'
@@ -22,7 +23,7 @@ export interface ProtectDynamoDBConfig {
 }
 
 export interface ProtectDynamoDBError extends Error {
-  code: string
+  code: ProtectErrorCode | 'PROTECT_DYNAMODB_ERROR'
   details?: Record<string, unknown>
 }
 

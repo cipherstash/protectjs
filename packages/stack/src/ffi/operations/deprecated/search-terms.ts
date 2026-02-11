@@ -5,6 +5,7 @@ import { type EncryptionError, EncryptionErrorTypes } from '../../..'
 import { logger } from '../../../../../utils/logger'
 import type { LockContext } from '../../../identify'
 import type { Client, EncryptedSearchTerm, SearchTerm } from '../../../types'
+import { getErrorCode } from '../../helpers/error-code'
 import { inferIndexType } from '../../helpers/infer-index-type'
 import { EncryptionOperation } from '../base-operation'
 
@@ -63,9 +64,10 @@ export class SearchTermsOperation extends EncryptionOperation<
           return encryptedTerms[index]
         })
       },
-      (error) => ({
+      (error: unknown) => ({
         type: EncryptionErrorTypes.EncryptionError,
-        message: error.message,
+        message: (error as Error).message,
+        code: getErrorCode(error),
       }),
     )
   }
@@ -123,9 +125,10 @@ export class SearchTermsOperationWithLockContext extends EncryptionOperation<
           return encryptedTerms[index]
         })
       },
-      (error) => ({
+      (error: unknown) => ({
         type: EncryptionErrorTypes.EncryptionError,
-        message: error.message,
+        message: (error as Error).message,
+        code: getErrorCode(error),
       }),
     )
   }

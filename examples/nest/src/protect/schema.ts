@@ -5,7 +5,9 @@ export const users = encryptedTable('users', {
     .equality()
     .orderAndRange()
     .freeTextSearch(),
-  phone_encrypted: encryptedColumn('phone_encrypted').equality().orderAndRange(),
+  phone_encrypted: encryptedColumn('phone_encrypted')
+    .equality()
+    .orderAndRange(),
   ssn_encrypted: encryptedColumn('ssn_encrypted').equality(),
 })
 

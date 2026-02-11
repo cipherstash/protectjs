@@ -4,10 +4,10 @@ import { users } from '../schema'
 import { getProtectService } from '../utils/get-protect-service.util'
 
 import type {
-  ProtectColumn,
   EncryptedTable,
   EncryptedTableColumn,
   EncryptedValue,
+  ProtectColumn,
 } from '@cipherstash/stack'
 
 export interface EncryptOptions {

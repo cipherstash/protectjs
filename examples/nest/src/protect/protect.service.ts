@@ -2,10 +2,10 @@ import type {
   Decrypted,
   EncryptOptions,
   EncryptedPayload,
-  LockContext,
-  EncryptionClient,
   EncryptedTable,
   EncryptedTableColumn,
+  EncryptionClient,
+  LockContext,
 } from '@cipherstash/stack'
 import { Inject, Injectable } from '@nestjs/common'
 import { PROTECT_CLIENT } from './protect.constants'

@@ -7,6 +7,7 @@ import { type EncryptionError, EncryptionErrorTypes } from '../..'
 import { logger } from '../../../../utils/logger'
 import type { LockContext } from '../../identify'
 import type { Client, Encrypted } from '../../types'
+import { getErrorCode } from '../helpers/error-code'
 import { noClientError } from '../index'
 import { EncryptionOperation } from './base-operation'
 
@@ -52,9 +53,10 @@ export class DecryptOperation extends EncryptionOperation<JsPlaintext | null> {
           unverifiedContext: metadata,
         })
       },
-      (error) => ({
+      (error: unknown) => ({
         type: EncryptionErrorTypes.DecryptionError,
-        message: error.message,
+        message: (error as Error).message,
+        code: getErrorCode(error),
       }),
     )
   }
@@ -118,9 +120,10 @@ export class DecryptOperationWithLockContext extends EncryptionOperation<JsPlain
           serviceToken: context.data.ctsToken,
         })
       },
-      (error) => ({
+      (error: unknown) => ({
         type: EncryptionErrorTypes.DecryptionError,
-        message: error.message,
+        message: (error as Error).message,
+        code: getErrorCode(error),
       }),
     )
   }

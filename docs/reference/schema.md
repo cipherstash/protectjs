@@ -124,6 +124,10 @@ The following index options are available for your schema:
 | equality   | Enables a exact index for equality queries. | `WHERE email = 'example@example.com'` |
 | freeTextSearch   | Enables a match index for free text queries. | `WHERE description LIKE '%example%'` |
 | orderAndRange   | Enables an sorting and range queries index. | `ORDER BY price ASC` |
+| searchableJson | Enables encrypted JSONB path and containment queries (recommended for JSON columns). | `WHERE metadata @> '{"role":"admin"}'` |
+
+> [!TIP]
+> For columns storing JSON data, `.searchableJson()` is the recommended index. It automatically configures the column for encrypted JSONB path and containment queries. Read more in the [JSONB queries reference](./searchable-encryption-postgres.md#jsonb-queries-with-searchablejson-recommended).
 
 You can chain these methods to your column to configure them in any combination.
 

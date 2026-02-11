@@ -3,6 +3,7 @@ import { encryptBulk } from '@cipherstash/protect-ffi'
 import { type EncryptionError, EncryptionErrorTypes } from '../..'
 import { logger } from '../../../../utils/logger'
 import type { Client, EncryptedSearchTerm, SearchTerm } from '../../types'
+import { getErrorCode } from '../helpers/error-code'
 import { noClientError } from '../index'
 import { EncryptionOperation } from './base-operation'
 
@@ -54,9 +55,10 @@ export class SearchTermsOperation extends EncryptionOperation<
           return encryptedSearchTerms[index]
         })
       },
-      (error) => ({
+      (error: unknown) => ({
         type: EncryptionErrorTypes.EncryptionError,
-        message: error.message,
+        message: (error as Error).message,
+        code: getErrorCode(error),
       }),
     )
   }

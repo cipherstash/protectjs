@@ -8,6 +8,7 @@ import { type ProtectError, ProtectErrorTypes } from '../..'
 import { logger } from '../../../../utils/logger'
 import type { Context, LockContext } from '../../identify'
 import type { BulkDecryptPayload, BulkDecryptedData, Client } from '../../types'
+import { getErrorCode } from '../helpers/error-code'
 import { noClientError } from '../index'
 import { ProtectOperation } from './base-operation'
 
@@ -108,6 +109,7 @@ export class BulkDecryptOperation extends ProtectOperation<BulkDecryptedData> {
       (error: unknown) => ({
         type: ProtectErrorTypes.DecryptionError,
         message: (error as Error).message,
+        code: getErrorCode(error),
       }),
     )
   }
@@ -169,6 +171,7 @@ export class BulkDecryptOperationWithLockContext extends ProtectOperation<BulkDe
       (error: unknown) => ({
         type: ProtectErrorTypes.DecryptionError,
         message: (error as Error).message,
+        code: getErrorCode(error),
       }),
     )
   }
