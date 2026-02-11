@@ -1,10 +1,10 @@
-# Using CipherStash Protect.js with Supabase SDK
+# Using CipherStash Stash Encryption with Supabase SDK
 
-You can encrypt data [in-use](../concepts/searchable-encryption.md) with Protect.js and store it in your Supabase project all while maintaining the ability to search the data without decryption.
+You can encrypt data [in-use](../concepts/searchable-encryption.md) with Stash Encryption and store it in your Supabase project all while maintaining the ability to search the data without decryption.
 This reference guide will show you how to do this with the Supabase SDK.
 
 > [!NOTE]
-> The following assumes you have installed the [latest version of the EQL v2 extension](https://github.com/cipherstash/encrypt-query-language/releases) which has a specific release for Supabase, and gone through the [Protect.js setup guide](https://github.com/cipherstash/protectjs).
+> The following assumes you have installed the [latest version of the EQL v2 extension](https://github.com/cipherstash/encrypt-query-language/releases) which has a specific release for Supabase, and gone through the [Stash Encryption setup guide](https://github.com/cipherstash/protectjs).
 
 ## Defining your column types
 
@@ -22,27 +22,27 @@ Under the hood, the EQL payload is a JSON object that is stored as a composite t
 
 ## Inserting data
 
-You can insert encrypted data into the table using Protect.js and the Supabase SDK. Since the `eql_v2_encrypted` column is a composite type, you'll need to use the `encryptedToPgComposite` helper to properly format the data:
+You can insert encrypted data into the table using Stash Encryption and the Supabase SDK. Since the `eql_v2_encrypted` column is a composite type, you'll need to use the `encryptedToPgComposite` helper to properly format the data:
 
 ```typescript
-import { 
-  protect, 
-  csTable, 
-  csColumn, 
-  encryptedToPgComposite, 
-  type ProtectClientConfig 
-} from '@cipherstash/protect'
+import {
+  Encryption,
+  encryptedTable,
+  encryptedColumn,
+  encryptedToPgComposite,
+  type EncryptionClientConfig
+} from '@cipherstash/stack'
 
-const users = csTable('users', {
-  name: csColumn('name').freeTextSearch().equality(),
-  email: csColumn('email').freeTextSearch().equality()
+const users = encryptedTable('users', {
+  name: encryptedColumn('name').freeTextSearch().equality(),
+  email: encryptedColumn('email').freeTextSearch().equality()
 })
 
-const config: ProtectClientConfig = {
+const config: EncryptionClientConfig = {
   schemas: [users],
 }
 
-const protectClient = await protect(config)
+const protectClient = await Encryption(config)
 
 const encryptedResult = await protectClient.encryptModel(
   {
@@ -71,7 +71,7 @@ const { data, error } = await supabase
   .select('id, email::jsonb, name::jsonb')
 ```
 
-Without the `::jsonb` cast, the encrypted payload would be wrapped in an object with a `data` key, which would require additional handling before decryption. The cast ensures you get the raw encrypted payload that can be directly used with Protect.js for decryption:
+Without the `::jsonb` cast, the encrypted payload would be wrapped in an object with a `data` key, which would require additional handling before decryption. The cast ensures you get the raw encrypted payload that can be directly used with Stash Encryption for decryption:
 
 ```typescript
 const decryptedResult = await protectClient.decryptModel(data[0])
@@ -88,24 +88,24 @@ console.log('Decrypted user:', decryptedResult.data)
 When working with models that contain multiple encrypted fields, you can use the `modelToEncryptedPgComposites` helper to handle the conversion to PostgreSQL composite types:
 
 ```typescript
-import { 
-  protect, 
-  csTable, 
-  csColumn, 
-  modelToEncryptedPgComposites, 
-  type ProtectClientConfig 
-} from '@cipherstash/protect'
+import {
+  Encryption,
+  encryptedTable,
+  encryptedColumn,
+  modelToEncryptedPgComposites,
+  type EncryptionClientConfig
+} from '@cipherstash/stack'
 
-const users = csTable('users', {
-  name: csColumn('name').freeTextSearch().equality(),
-  email: csColumn('email').freeTextSearch().equality()
+const users = encryptedTable('users', {
+  name: encryptedColumn('name').freeTextSearch().equality(),
+  email: encryptedColumn('email').freeTextSearch().equality()
 })
 
-const config: ProtectClientConfig = {
+const config: EncryptionClientConfig = {
   schemas: [users],
 }
 
-const protectClient = await protect(config)
+const protectClient = await Encryption(config)
 
 const model = {
   name: 'John Doe',

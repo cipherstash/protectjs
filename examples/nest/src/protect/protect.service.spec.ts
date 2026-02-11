@@ -1,4 +1,4 @@
-import type { EncryptedPayload, ProtectClient } from '@cipherstash/protect'
+import type { EncryptedPayload, EncryptionClient } from '@cipherstash/stack'
 import { Test, type TestingModule } from '@nestjs/testing'
 import { PROTECT_CLIENT } from './protect.constants'
 import { ProtectService } from './protect.service'
@@ -6,7 +6,7 @@ import { users } from './schema'
 
 describe('ProtectService', () => {
   let service: ProtectService
-  let mockClient: jest.Mocked<ProtectClient>
+  let mockClient: jest.Mocked<EncryptionClient>
 
   const mockEncryptedPayload: EncryptedPayload = {
     c: 'mock-encrypted-data',
@@ -23,7 +23,7 @@ describe('ProtectService', () => {
       bulkDecrypt: jest.fn(),
       bulkEncryptModels: jest.fn(),
       bulkDecryptModels: jest.fn(),
-    } as jest.Mocked<ProtectClient>
+    } as jest.Mocked<EncryptionClient>
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [

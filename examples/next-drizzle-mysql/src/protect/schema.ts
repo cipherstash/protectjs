@@ -1,6 +1,6 @@
-import { csColumn, csTable } from '@cipherstash/protect'
+import { encryptedColumn, encryptedTable } from '@cipherstash/stack'
 
-export const users = csTable('users', {
-  email: csColumn('email'),
-  name: csColumn('name'),
+export const users = encryptedTable('users', {
+  email: encryptedColumn('email'),
+  name: encryptedColumn('name'),
 })

@@ -1,7 +1,7 @@
 import {
-  type ProtectClient,
+  type EncryptionClientConfig,
   encryptedToPgComposite,
-} from '@cipherstash/protect'
+} from '@cipherstash/stack'
 import type { EntityTarget } from 'typeorm'
 import { AppDataSource } from '../data-source'
 
@@ -9,7 +9,7 @@ import { AppDataSource } from '../data-source'
  * Helper functions for working with encrypted entities in TypeORM
  */
 export class ProtectEntityHelper {
-  constructor(private protectClient: ProtectClient) {}
+  constructor(private protectClient: EncryptionClientConfig) {}
 
   /**
    * Bulk encrypt and save entities to the database
@@ -33,7 +33,7 @@ export class ProtectEntityHelper {
     entityClass: EntityTarget<T>,
     // biome-ignore lint/suspicious/noExplicitAny: Required for dynamic entity types
     entities: Array<Record<string, any>>,
-    // biome-ignore lint/suspicious/noExplicitAny: Required for Protect.js schema types
+    // biome-ignore lint/suspicious/noExplicitAny: Required for Stash Encryption schema types
     encryptFields: Record<string, { table: any; column: any }>,
   ): Promise<T[]> {
     // First, prepare all entities for encryption
@@ -108,7 +108,7 @@ export class ProtectEntityHelper {
   // biome-ignore lint/suspicious/noExplicitAny: Required for dynamic entity types
   async bulkDecrypt<T extends Record<string, any>>(
     entities: T[],
-    // biome-ignore lint/suspicious/noExplicitAny: Required for Protect.js schema types
+    // biome-ignore lint/suspicious/noExplicitAny: Required for Stash Encryption schema types
     decryptFields: Record<string, { table: any; column: any }>,
   ): Promise<T[]> {
     // Prepare encrypted data for bulk decryption
@@ -199,7 +199,7 @@ export class ProtectEntityHelper {
     entityClass: EntityTarget<T>,
     fieldName: string,
     searchValue: string,
-    // biome-ignore lint/suspicious/noExplicitAny: Required for Protect.js schema types
+    // biome-ignore lint/suspicious/noExplicitAny: Required for Stash Encryption schema types
     fieldConfig: { table: any; column: any },
   ): Promise<T | null> {
     // Use encryptQuery instead of deprecated createSearchTerms

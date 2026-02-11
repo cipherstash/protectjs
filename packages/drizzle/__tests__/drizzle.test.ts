@@ -1,5 +1,5 @@
 import 'dotenv/config'
-import { protect } from '@cipherstash/protect'
+import { Encryption } from '@cipherstash/stack'
 import { and, eq, inArray, sql } from 'drizzle-orm'
 import { integer, pgTable, text, timestamp } from 'drizzle-orm/pg-core'
 import { drizzle } from 'drizzle-orm/postgres-js'
@@ -56,7 +56,7 @@ const drizzleUsersTable = pgTable('protect-ci', {
   testRunId: text('test_run_id'),
 })
 
-// Extract Protect.js schema from Drizzle table
+// Extract Stash Encryption schema from Drizzle table
 const users = extractProtectSchema(drizzleUsersTable)
 
 // Hard code this as the CI database doesn't support order by on encrypted columns
@@ -78,14 +78,14 @@ interface DecryptedUser {
   }
 }
 
-let protectClient: Awaited<ReturnType<typeof protect>>
+let protectClient: Awaited<ReturnType<typeof Encryption>>
 let protectOps: ReturnType<typeof createProtectOperators>
 let db: ReturnType<typeof drizzle>
 const testData: TestUser[] = []
 
 beforeAll(async () => {
-  // Initialize Protect.js client using schema extracted from Drizzle table
-  protectClient = await protect({ schemas: [users] })
+  // Initialize Stash Encryption client using schema extracted from Drizzle table
+  protectClient = await Encryption({ schemas: [users] })
   protectOps = createProtectOperators(protectClient)
 
   const client = postgres(process.env.DATABASE_URL as string)
@@ -180,7 +180,7 @@ afterAll(async () => {
     .where(eq(drizzleUsersTable.testRunId, TEST_RUN_ID))
 }, 30000)
 
-describe('Drizzle ORM Integration with Protect.js', () => {
+describe('Drizzle ORM Integration with Stash Encryption', () => {
   it('should perform equality search using Protect operators', async () => {
     const searchEmail = 'jane.smith@example.com'
 

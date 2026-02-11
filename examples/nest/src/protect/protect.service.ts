@@ -3,10 +3,10 @@ import type {
   EncryptOptions,
   EncryptedPayload,
   LockContext,
-  ProtectClient,
-  ProtectTable,
-  ProtectTableColumn,
-} from '@cipherstash/protect'
+  EncryptionClient,
+  EncryptedTable,
+  EncryptedTableColumn,
+} from '@cipherstash/stack'
 import { Inject, Injectable } from '@nestjs/common'
 import { PROTECT_CLIENT } from './protect.constants'
 
@@ -14,7 +14,7 @@ import { PROTECT_CLIENT } from './protect.constants'
 export class ProtectService {
   constructor(
     @Inject(PROTECT_CLIENT)
-    private readonly client: ProtectClient,
+    private readonly client: EncryptionClient,
   ) {}
 
   async encrypt(plaintext: string, options: EncryptOptions) {
@@ -27,7 +27,7 @@ export class ProtectService {
 
   async encryptModel<T extends Record<string, unknown>>(
     model: Decrypted<T>,
-    table: ProtectTable<ProtectTableColumn>,
+    table: EncryptedTable<EncryptedTableColumn>,
   ) {
     return this.client.encryptModel<T>(model, table)
   }
@@ -51,7 +51,7 @@ export class ProtectService {
 
   async bulkEncryptModels<T extends Record<string, unknown>>(
     models: Decrypted<T>[],
-    table: ProtectTable<ProtectTableColumn>,
+    table: EncryptedTable<EncryptedTableColumn>,
   ) {
     return this.client.bulkEncryptModels<T>(models, table)
   }
@@ -78,7 +78,7 @@ export class ProtectService {
 
   async encryptModelWithLockContext<T extends Record<string, unknown>>(
     model: Decrypted<T>,
-    table: ProtectTable<ProtectTableColumn>,
+    table: EncryptedTable<EncryptedTableColumn>,
     lockContext: LockContext,
   ) {
     return this.client

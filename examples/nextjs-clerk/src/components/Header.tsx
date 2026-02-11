@@ -27,7 +27,7 @@ export default function Header() {
           </span>
         </div>
         <span className="text-4xl font-extralight text-gray-200">/</span>
-        <h1 className="text-2xl font-mono">protect.js</h1>
+        <h1 className="text-2xl font-mono">stash encryption</h1>
         <span className="text-4xl font-extralight text-gray-200">/</span>
         <Breadcrumb>
           <BreadcrumbList>

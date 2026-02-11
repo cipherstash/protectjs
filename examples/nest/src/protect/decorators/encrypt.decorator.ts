@@ -5,14 +5,14 @@ import { getProtectService } from '../utils/get-protect-service.util'
 
 import type {
   ProtectColumn,
-  ProtectTable,
-  ProtectTableColumn,
-  ProtectValue,
-} from '@cipherstash/protect'
+  EncryptedTable,
+  EncryptedTableColumn,
+  EncryptedValue,
+} from '@cipherstash/stack'
 
 export interface EncryptOptions {
-  table: ProtectTable<ProtectTableColumn>
-  column: ProtectColumn | ProtectValue
+  table: EncryptedTable<EncryptedTableColumn>
+  column: ProtectColumn | EncryptedValue
   lockContext?: unknown // JWT or LockContext
 }
 

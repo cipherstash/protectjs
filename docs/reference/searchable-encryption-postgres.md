@@ -1,6 +1,6 @@
-# Searchable encryption with Protect.js and PostgreSQL
+# Searchable encryption with Stash Encryption and PostgreSQL
 
-This reference guide outlines the different query patterns you can use to search encrypted data with Protect.js.
+This reference guide outlines the different query patterns you can use to search encrypted data with Stash Encryption.
 
 ## Table of contents
 
@@ -22,11 +22,11 @@ This reference guide outlines the different query patterns you can use to search
 Before you can use searchable encryption with PostgreSQL, you need to:
 
 1. Install the [EQL custom types and functions](https://github.com/cipherstash/encrypt-query-language?tab=readme-ov-file#installation)
-2. Set up your Protect.js schema with the appropriate search capabilities
+2. Set up your Stash Encryption schema with the appropriate search capabilities
 
 > [!WARNING]
 > The formal EQL repo documentation is heavily focused on the underlying custom function implementation. 
-> It also has a bias towards the [CipherStash Proxy](https://github.com/cipherstash/proxy) product, so this guide is the best place to get started when using Protect.js.
+> It also has a bias towards the [CipherStash Proxy](https://github.com/cipherstash/proxy) product, so this guide is the best place to get started when using Stash Encryption.
 
 ## What is EQL?
 
@@ -36,26 +36,26 @@ EQL (Encrypt Query Language) is a set of PostgreSQL extensions that enable searc
 - Functions for comparing and searching encrypted values
 - Support for range queries and sorting on encrypted data
 
-When you install EQL, it adds these capabilities to your PostgreSQL database, allowing Protect.js to perform operations on encrypted data without decrypting it first.
+When you install EQL, it adds these capabilities to your PostgreSQL database, allowing Stash Encryption to perform operations on encrypted data without decrypting it first.
 
 > [!IMPORTANT]
 > Any column that is encrypted with EQL must be of type `eql_v2_encrypted` which is included in the EQL extension.
 
 ## Setting up your schema
 
-Define your Protect.js schema using `csTable` and `csColumn` to specify how each field should be encrypted and searched:
+Define your Stash Encryption schema using `encryptedTable` and `encryptedColumn` to specify how each field should be encrypted and searched:
 
 ```typescript
-import { protect, csTable, csColumn } from '@cipherstash/protect'
+import { Encryption, encryptedTable, encryptedColumn } from '@cipherstash/stack'
 
-const schema = csTable('users', {
-  email: csColumn('email_encrypted')
+const schema = encryptedTable('users', {
+  email: encryptedColumn('email_encrypted')
     .equality()        // Enables exact matching
     .freeTextSearch()  // Enables text search
     .orderAndRange(),  // Enables sorting and range queries
-  phone: csColumn('phone_encrypted')
+  phone: encryptedColumn('phone_encrypted')
     .equality(),       // Only exact matching
-  age: csColumn('age_encrypted')
+  age: encryptedColumn('age_encrypted')
     .orderAndRange()   // Only sorting and range queries
 })
 ```
@@ -174,10 +174,10 @@ const result = await client.query(
 
 ```typescript
 import { Client } from 'pg'
-import { protect, csTable, csColumn } from '@cipherstash/protect'
+import { Encryption, encryptedTable, encryptedColumn } from '@cipherstash/stack'
 
-const schema = csTable('users', {
-  email: csColumn('email_encrypted')
+const schema = encryptedTable('users', {
+  email: encryptedColumn('email_encrypted')
     .equality()
     .freeTextSearch()
     .orderAndRange()
@@ -187,7 +187,7 @@ const client = new Client({
   // your connection details
 })
 
-const protectClient = await protect({
+const protectClient = await Encryption({
   schemas: [schema]
 })
 
@@ -228,7 +228,7 @@ const decryptedData = await protectClient.bulkDecryptModels(result.rows)
 
 ### Using Supabase SDK
 
-For Supabase users, we provide a specific implementation guide. [Read more about using Protect.js with Supabase](./supabase-sdk.md).
+For Supabase users, we provide a specific implementation guide. [Read more about using Stash Encryption with Supabase](./supabase-sdk.md).
 
 ## Best practices
 
@@ -253,7 +253,7 @@ For Supabase users, we provide a specific implementation guide. [Read more about
    - Cache frequently accessed data
 
 4. **Error Handling**
-   - Always check for failures with any Protect.js method
+   - Always check for failures with any Stash Encryption method
    - Handle encryption errors aggressively
    - Handle decryption errors gracefully
 

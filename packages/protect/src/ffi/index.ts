@@ -10,7 +10,6 @@ import { type ProtectError, ProtectErrorTypes } from '..'
 import { loadWorkSpaceId } from '../../../utils/config'
 import { logger } from '../../../utils/logger'
 import { toFfiKeysetIdentifier } from '../helpers'
-import { isScalarQueryTermArray } from './helpers/type-guards'
 import type {
   BulkDecryptPayload,
   BulkEncryptPayload,
@@ -23,17 +22,18 @@ import type {
   ScalarQueryTerm,
   SearchTerm,
 } from '../types'
+import { isScalarQueryTermArray } from './helpers/type-guards'
+import { BatchEncryptQueryOperation } from './operations/batch-encrypt-query'
 import { BulkDecryptOperation } from './operations/bulk-decrypt'
 import { BulkDecryptModelsOperation } from './operations/bulk-decrypt-models'
 import { BulkEncryptOperation } from './operations/bulk-encrypt'
 import { BulkEncryptModelsOperation } from './operations/bulk-encrypt-models'
-import { BatchEncryptQueryOperation } from './operations/batch-encrypt-query'
 import { DecryptOperation } from './operations/decrypt'
 import { DecryptModelOperation } from './operations/decrypt-model'
+import { SearchTermsOperation } from './operations/deprecated/search-terms'
 import { EncryptOperation } from './operations/encrypt'
 import { EncryptModelOperation } from './operations/encrypt-model'
 import { EncryptQueryOperation } from './operations/encrypt-query'
-import { SearchTermsOperation } from './operations/deprecated/search-terms'
 
 export const noClientError = () =>
   new Error(
@@ -239,9 +239,7 @@ export class ProtectClient {
    * Encrypt multiple values for use in queries (batch operation).
    * @param terms - Array of query terms to encrypt
    */
-  encryptQuery(
-    terms: readonly ScalarQueryTerm[],
-  ): BatchEncryptQueryOperation
+  encryptQuery(terms: readonly ScalarQueryTerm[]): BatchEncryptQueryOperation
 
   encryptQuery(
     plaintextOrTerms: JsPlaintext | null | readonly ScalarQueryTerm[],
@@ -256,8 +254,15 @@ export class ProtectClient {
     // Handle empty arrays: if opts provided, treat as single value; otherwise batch mode
     // This maintains backward compatibility for encryptQuery([]) while allowing
     // encryptQuery([], opts) to encrypt an empty array as a single value
-    if (Array.isArray(plaintextOrTerms) && plaintextOrTerms.length === 0 && !opts) {
-      return new BatchEncryptQueryOperation(this.client, [] as readonly ScalarQueryTerm[])
+    if (
+      Array.isArray(plaintextOrTerms) &&
+      plaintextOrTerms.length === 0 &&
+      !opts
+    ) {
+      return new BatchEncryptQueryOperation(
+        this.client,
+        [] as readonly ScalarQueryTerm[],
+      )
     }
 
     return new EncryptQueryOperation(

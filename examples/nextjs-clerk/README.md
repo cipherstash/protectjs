@@ -1,6 +1,6 @@
-# Protect.js + Next.js + Clerk example
+# Stash Encryption + Next.js + Clerk example
 
-This example demonstrates how to use Protect.js with Next.js. It also demonstrates how to use Lock Contexts to ensure that only the intended users can access sensitive data, by using Clerk for authentication.
+This example demonstrates how to use Stash Encryption with Next.js. It also demonstrates how to use Lock Contexts to ensure that only the intended users can access sensitive data, by using Clerk for authentication.
 
 This project uses the following technologies:
 
@@ -49,7 +49,7 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 The database is hosted on Supabase and has the following schema which is defined using the Drizzle ORM:
 
 ```ts
-// Data that is encrypted using protect.js is stored as jsonb in postgres
+// Data that is encrypted using Stash Encryption is stored as jsonb in postgres
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -65,20 +65,20 @@ export const users = pgTable("users", {
 > The EQL library ships with custom types that are used to define encrypted fields.
 > See the [EQL documentation](https://github.com/cipherstash/encrypted-query-language) for more information.
 
-## @cipherstash/protect
+## @cipherstash/stack
 
-All the email data is encrypted using Protect.js.
+All the email data is encrypted using Stash Encryption.
 The cipherstext is stored in the `email` column of the `users` table.
 The application is configured to only decrypt the data when the user is signed in, otherwise it will display the encrypted data.
 
 ### Npm package
 
-`@cipherstash/protect` uses custom Rust bindings to the CipherStash Client in order to perform encryptions and decryptions.
+`@cipherstash/stack` uses custom Rust bindings to the CipherStash Client in order to perform encryptions and decryptions.
 We leverage the [Neon project](https://neon-rs.dev/) to provide a JavaScript API for these bindings.
 
 ### Encryption
 
-When a user is added to the database, the email address is encrypted using Protect.js.
+When a user is added to the database, the email address is encrypted using Stash Encryption.
 To view the encryption implementation, see the `addUser` function in [src/lib/actions.ts](src/lib/actions.ts).
 
 ### Decryption
@@ -87,7 +87,7 @@ To view the decrpytion implementation, see the `getUsers` function in [src/app/p
 
 ### Next.js
 
-Since `@cipherstash/protect` is a native Node.js module, you need to opt-out from the Server Components bundling and use native Node.js `require` instead.
+Since `@cipherstash/stack` is a native Node.js module, you need to opt-out from the Server Components bundling and use native Node.js `require` instead.
 
 #### Using version 15 or later
 
@@ -96,7 +96,7 @@ Since `@cipherstash/protect` is a native Node.js module, you need to opt-out fro
 ```js
 const nextConfig = {
   ...
-  serverExternalPackages: ['@cipherstash/protect'],
+  serverExternalPackages: ['@cipherstash/stack'],
 }
 ```
 
@@ -108,7 +108,7 @@ const nextConfig = {
 const nextConfig = {
   ...
   experimental: {
-    serverComponentsExternalPackages: ['@cipherstash/protect'],
+    serverComponentsExternalPackages: ['@cipherstash/stack'],
   },
 }
 ```
@@ -118,4 +118,4 @@ const nextConfig = {
 `serverExternalPackages` does not work with workspace packages and the issues is being tracked [here](https://github.com/vercel/next.js/issues/43433).
 
 Once this is fixed upstream, this application can use the workspace package for development.
-For the time being, it used `@cipherstash/protect` from the npm registry.
+For the time being, it used `@cipherstash/stack` from the npm registry.

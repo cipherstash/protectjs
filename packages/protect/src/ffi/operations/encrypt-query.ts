@@ -6,11 +6,14 @@ import {
 import { type ProtectError, ProtectErrorTypes } from '../..'
 import { logger } from '../../../../utils/logger'
 import type { LockContext } from '../../identify'
-import type { Client, Encrypted, EncryptQueryOptions } from '../../types'
+import type { Client, EncryptQueryOptions, Encrypted } from '../../types'
+import { resolveIndexType } from '../helpers/infer-index-type'
+import {
+  assertValueIndexCompatibility,
+  validateNumericValue,
+} from '../helpers/validation'
 import { noClientError } from '../index'
 import { ProtectOperation } from './base-operation'
-import { resolveIndexType } from '../helpers/infer-index-type'
-import { validateNumericValue, assertValueIndexCompatibility } from '../helpers/validation'
 
 /**
  * @internal Use {@link ProtectClient.encryptQuery} instead.
@@ -24,8 +27,16 @@ export class EncryptQueryOperation extends ProtectOperation<Encrypted> {
     super()
   }
 
-  public withLockContext(lockContext: LockContext): EncryptQueryOperationWithLockContext {
-    return new EncryptQueryOperationWithLockContext(this.client, this.plaintext, this.opts, lockContext, this.auditMetadata)
+  public withLockContext(
+    lockContext: LockContext,
+  ): EncryptQueryOperationWithLockContext {
+    return new EncryptQueryOperationWithLockContext(
+      this.client,
+      this.plaintext,
+      this.opts,
+      lockContext,
+      this.auditMetadata,
+    )
   }
 
   public async execute(): Promise<Result<Encrypted, ProtectError>> {
@@ -50,13 +61,16 @@ export class EncryptQueryOperation extends ProtectOperation<Encrypted> {
 
         const { metadata } = this.getAuditData()
 
-        const indexType = resolveIndexType(this.opts.column, this.opts.queryType)
+        const indexType = resolveIndexType(
+          this.opts.column,
+          this.opts.queryType,
+        )
 
         // Validate value/index compatibility
         assertValueIndexCompatibility(
           this.plaintext,
           indexType,
-          this.opts.column.getName()
+          this.opts.column.getName(),
         )
 
         return await ffiEncryptQuery(this.client, {
@@ -117,13 +131,16 @@ export class EncryptQueryOperationWithLockContext extends ProtectOperation<Encry
 
         const { metadata } = this.getAuditData()
 
-        const indexType = resolveIndexType(this.opts.column, this.opts.queryType)
+        const indexType = resolveIndexType(
+          this.opts.column,
+          this.opts.queryType,
+        )
 
         // Validate value/index compatibility
         assertValueIndexCompatibility(
           this.plaintext,
           indexType,
-          this.opts.column.getName()
+          this.opts.column.getName(),
         )
 
         return await ffiEncryptQuery(this.client, {

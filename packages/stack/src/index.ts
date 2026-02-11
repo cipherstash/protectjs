@@ -1,0 +1,177 @@
+import type { EncryptedTable, EncryptedTableColumn } from '@cipherstash/schema'
+import { buildEncryptConfig } from '@cipherstash/schema'
+import { EncryptionClient } from './ffi'
+import type { KeysetIdentifier } from './types'
+
+export const EncryptionErrorTypes = {
+  ClientInitError: 'ClientInitError',
+  EncryptionError: 'EncryptionError',
+  DecryptionError: 'DecryptionError',
+  LockContextError: 'LockContextError',
+  CtsTokenError: 'CtsTokenError',
+}
+
+/** @deprecated Use EncryptionErrorTypes */
+export const ProtectErrorTypes = EncryptionErrorTypes
+
+export interface EncryptionError {
+  type: (typeof EncryptionErrorTypes)[keyof typeof EncryptionErrorTypes]
+  message: string
+}
+
+/** @deprecated Use EncryptionError */
+export type ProtectError = EncryptionError
+
+type AtLeastOneCsTable<T> = [T, ...T[]]
+
+export type EncryptionClientConfig = {
+  schemas: AtLeastOneCsTable<EncryptedTable<EncryptedTableColumn>>
+  workspaceCrn?: string
+  accessKey?: string
+  clientId?: string
+  clientKey?: string
+  keyset?: KeysetIdentifier
+}
+
+/** @deprecated Use EncryptionClientConfig */
+export type ProtectClientConfig = EncryptionClientConfig
+
+function isValidUuid(uuid: string): boolean {
+  const uuidRegex =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+  return uuidRegex.test(uuid)
+}
+
+/* Initialize an Encryption client with the provided configuration.
+
+  @param config - The configuration object for initializing the Encryption client.
+
+  @see {@link EncryptionClientConfig} for details on the configuration options.
+
+  @returns A Promise that resolves to an instance of EncryptionClient.
+
+  @throws Will throw an error if no schemas are provided or if the keyset ID is not a valid UUID.
+*/
+export const Encryption = async (
+  config: EncryptionClientConfig,
+): Promise<EncryptionClient> => {
+  const { schemas } = config
+
+  if (!schemas.length) {
+    throw new Error(
+      '[encryption]: At least one encryptedTable must be provided to initialize the encryption client',
+    )
+  }
+
+  if (
+    config.keyset &&
+    'id' in config.keyset &&
+    !isValidUuid(config.keyset.id)
+  ) {
+    throw new Error(
+      '[encryption]: Invalid UUID provided for keyset id. Must be a valid UUID.',
+    )
+  }
+
+  const clientConfig = {
+    workspaceCrn: config.workspaceCrn,
+    accessKey: config.accessKey,
+    clientId: config.clientId,
+    clientKey: config.clientKey,
+    keyset: config.keyset,
+  }
+
+  const client = new EncryptionClient(clientConfig.workspaceCrn)
+  const encryptConfig = buildEncryptConfig(...schemas)
+
+  const result = await client.init({
+    encryptConfig,
+    ...clientConfig,
+  })
+
+  if (result.failure) {
+    throw new Error(`[encryption]: ${result.failure.message}`)
+  }
+
+  return result.data
+}
+
+/** @deprecated Use Encryption */
+export const protect = Encryption
+
+export type { Result } from '@byteslice/result'
+export type { EncryptionClient } from './ffi'
+/** @deprecated Use EncryptionClient */
+export type { EncryptionClient as ProtectClient } from './ffi'
+export type { EncryptionOperation } from './ffi/operations/base-operation'
+/** @deprecated Use EncryptionOperation */
+export type { EncryptionOperation as ProtectOperation } from './ffi/operations/base-operation'
+export type { BulkEncryptOperation } from './ffi/operations/bulk-encrypt'
+export type { BulkDecryptOperation } from './ffi/operations/bulk-decrypt'
+export type { BulkEncryptModelsOperation } from './ffi/operations/bulk-encrypt-models'
+export type { BulkDecryptModelsOperation } from './ffi/operations/bulk-decrypt-models'
+export type { DecryptOperation } from './ffi/operations/decrypt'
+export type { DecryptModelOperation } from './ffi/operations/decrypt-model'
+export type { EncryptModelOperation } from './ffi/operations/encrypt-model'
+export type { EncryptOperation } from './ffi/operations/encrypt'
+
+// Operations
+export {
+  EncryptQueryOperation,
+  EncryptQueryOperationWithLockContext,
+} from './ffi/operations/encrypt-query'
+export {
+  BatchEncryptQueryOperation,
+  BatchEncryptQueryOperationWithLockContext,
+} from './ffi/operations/batch-encrypt-query'
+
+// Helpers
+export {
+  inferIndexType,
+  validateIndexType,
+} from './ffi/helpers/infer-index-type'
+
+// Types
+export type {
+  QueryTypeName,
+  FfiIndexTypeName,
+  EncryptQueryOptions,
+  ScalarQueryTerm,
+} from './types'
+
+export { queryTypes, queryTypeToFfi } from './types'
+
+// Schema re-exports (new names)
+export {
+  encryptedTable,
+  encryptedColumn,
+  encryptedValue,
+  csTable,
+  csColumn,
+  csValue,
+} from '@cipherstash/schema'
+export type {
+  EncryptedTable,
+  EncryptedColumn,
+  EncryptedValue,
+  EncryptedTableColumn,
+  ProtectTable,
+  ProtectColumn,
+  ProtectTableColumn,
+  ProtectValue,
+} from '@cipherstash/schema'
+
+// LockContext class export (value export for instantiation)
+export { LockContext } from './identify'
+
+// LockContext related type exports
+export type {
+  CtsRegions,
+  IdentifyOptions,
+  CtsToken,
+  Context,
+  LockContextOptions,
+  GetLockContextResponse,
+} from './identify'
+export * from './helpers'
+export * from './types'

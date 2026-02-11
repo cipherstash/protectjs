@@ -1,44 +1,44 @@
-# Implementing Protect.js into a Node.js application
+# Implementing Stash Encryption into a Node.js application
 
-Your task is to introduce Protect.js into a Node.js application. Protect.js requires the Node.js runtime so it will still work with framweworks like Next.js and Tanstack Start, since they support running code that only executes on the server.
+Your task is to introduce Stash Encryption into a Node.js application. Stash Encryption requires the Node.js runtime so it will still work with framweworks like Next.js and Tanstack Start, since they support running code that only executes on the server.
 
 ---
 
-## Installing Protect.js
+## Installing Stash Encryption
 
-Determine what package manager the application is using. This will either be `pnpm`, `npm`, or `bun` and then use the appropriate package manager to add Protect.js to the application:
+Determine what package manager the application is using. This will either be `pnpm`, `npm`, or `bun` and then use the appropriate package manager to add Stash Encryption to the application:
 
 ```bash
-npm install @cipehrstash/protect
+npm install @cipherstash/stack
 # or
-pnpm add @cipehrstash/protect
+pnpm add @cipherstash/stack
 # or
-bun add @cipehrstash/protect
+bun add @cipherstash/stack
 ```
 
-If you detect a mono repo, you need to ask the user which application they want Protect.js installed in.
+If you detect a mono repo, you need to ask the user which application they want Stash Encryption installed in.
 
 ---
 
-## Adding scafolding for the Protect.js client, schemas, and example code
+## Adding scafolding for the Stash Encryption client, schemas, and example code
 
 In the rool of the application (if the application is configred to use something like `src` then this is where these operations will occur), you need to add a `protect` directory with the following files/content. If the application uses TypeScript use the `.ts` extension, else use the `.js` extension.
 
 `protect/schemas.(ts/js)`
 ```js
-import { csTable, csColumn } from '@cipherstash/protect`
+import { encryptedTable, encryptedColumn } from '@cipherstash/stack'
 
-export const protectedExample = csTable('example_table', {
-  sensitiveData: csColumn('sensitiveData'),
+export const protectedExample = encryptedTable('example_table', {
+  sensitiveData: encryptedColumn('sensitiveData'),
 }
 ```
 
 `protect/index.(ts/js)`
 ```js
-import { protect } from '@cipehrstash/protect'
+import { Encryption } from '@cipherstash/stack'
 import { * as protectSchemas } from './schemas'
 
-export const protectClient = protect({
+export const protectClient = Encryption({
   schemas: [...protectSchemas]
 })
 ```

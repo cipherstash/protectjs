@@ -1,10 +1,10 @@
 import {
-  type ProtectClient,
-  type ProtectClientConfig,
-  type ProtectTable,
-  type ProtectTableColumn,
-  protect,
-} from '@cipherstash/protect'
+  type EncryptionClient,
+  type EncryptionClientConfig,
+  type EncryptedTable,
+  type EncryptedTableColumn,
+  Encryption,
+} from '@cipherstash/stack'
 import { type DynamicModule, Global, Module } from '@nestjs/common'
 import { ConfigModule, ConfigService } from '@nestjs/config'
 import type { ProtectConfig } from './interfaces/protect-config.interface'
@@ -63,17 +63,17 @@ export class ProtectModule {
         },
         {
           provide: PROTECT_CLIENT,
-          useFactory: async (config: ProtectConfig): Promise<ProtectClient> => {
-            const protectConfig: ProtectClientConfig = {
+          useFactory: async (config: ProtectConfig): Promise<EncryptionClient> => {
+            const protectConfig: EncryptionClientConfig = {
               schemas: (config.schemas && config.schemas.length > 0
                 ? config.schemas
                 : [users]) as [
-                ProtectTable<ProtectTableColumn>,
-                ...ProtectTable<ProtectTableColumn>[],
+                EncryptedTable<EncryptedTableColumn>,
+                ...EncryptedTable<EncryptedTableColumn>[],
               ],
             }
 
-            return await protect(protectConfig)
+            return await Encryption(protectConfig)
           },
           inject: [PROTECT_CONFIG],
         },
@@ -98,17 +98,17 @@ export class ProtectModule {
         },
         {
           provide: PROTECT_CLIENT,
-          useFactory: async (config: ProtectConfig): Promise<ProtectClient> => {
-            const protectConfig: ProtectClientConfig = {
+          useFactory: async (config: ProtectConfig): Promise<EncryptionClient> => {
+            const protectConfig: EncryptionClientConfig = {
               schemas: (config.schemas && config.schemas.length > 0
                 ? config.schemas
                 : [users]) as [
-                ProtectTable<ProtectTableColumn>,
-                ...ProtectTable<ProtectTableColumn>[],
+                EncryptedTable<EncryptedTableColumn>,
+                ...EncryptedTable<EncryptedTableColumn>[],
               ],
             }
 
-            return await protect(protectConfig)
+            return await Encryption(protectConfig)
           },
           inject: [PROTECT_CONFIG],
         },

@@ -1,6 +1,6 @@
 # Searchable encryption
 
-Protect.js supports searching encrypted data, which enables trusted data access so that you can:
+Stash Encryption supports searching encrypted data, which enables trusted data access so that you can:
 
 1. Prove to your customers that you can track exactly what data is being accessed in your application.
 2. Provide evidence for compliance requirements, such as [SOC 2](https://cipherstash.com/compliance/soc2) and [BDSG](https://cipherstash.com/compliance/bdsg).
@@ -63,7 +63,7 @@ CipherStash's approach to searchable encryption solves the performance problem w
 
 ### Using Encrypt Query Language (EQL)
 
-CipherStash uses [EQL](https://github.com/cipherstash/encrypt-query-language) to perform queries on encrypted data, and Protect.js makes it easy to use EQL with any TypeScipt application.
+CipherStash uses [EQL](https://github.com/cipherstash/encrypt-query-language) to perform queries on encrypted data, and Stash Encryption makes it easy to use EQL with any TypeScipt application.
 
 ```ts
 // 1) Encrypt the search term
@@ -92,7 +92,7 @@ const equalitySQL = `
 const result = await client.query(equalitySQL, [ protectedUser.email.getName(), encryptedParam.data ])
 ```
 
-Using the above approach, Protect.js is generating the EQL payloads and which means you never have to drop down to writing complex SQL queries.
+Using the above approach, Stash Encryption is generating the EQL payloads and which means you never have to drop down to writing complex SQL queries.
 
 So does this solve the original problem of searching on encrypted data?
 
@@ -103,7 +103,7 @@ So does this solve the original problem of searching on encrypted data?
   1 | Alice Johnson  | mBbKmsMMkbKBSN...
 ```
 
-The answer is yes! And you can use Protect.js to [decrypt the results in your application](../../README.md#decrypting-data).
+The answer is yes! And you can use Stash Encryption to [decrypt the results in your application](../../README.md#decrypting-data).
 
 ## How fast is CipherStash's searchable encryption?
 
@@ -133,7 +133,7 @@ With searchable encryption:
 
 - Data can be encrypted, stored, and searched in your existing PostgreSQL database.
 - Encrypted data can be searched using equality, free text search, and range queries.
-- Data remains encrypted, and will be decrypted using the Protect.js library in your application.
+- Data remains encrypted, and will be decrypted using the Stash Encryption library in your application.
 - Queries are blazing fast, and won't slow down your application experience.
 - Every decryption event is logged, giving you an audit trail of data access events.
 

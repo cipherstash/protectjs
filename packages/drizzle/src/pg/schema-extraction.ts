@@ -1,18 +1,18 @@
 import {
-  type ProtectColumn,
-  csColumn,
-  csTable,
-} from '@cipherstash/protect/client'
+  type EncryptedColumn,
+  encryptedColumn,
+  encryptedTable,
+} from '@cipherstash/stack/client'
 import type { PgTable } from 'drizzle-orm/pg-core'
 import { getEncryptedColumnConfig } from './index.js'
 
 /**
- * Extracts a Protect.js schema from a Drizzle table definition.
+ * Extracts an encryption schema from a Drizzle table definition.
  * This function identifies columns created with `encryptedType` and
- * builds a corresponding `ProtectTable` with `csColumn` definitions.
+ * builds a corresponding table schema with `encryptedColumn` definitions.
  *
  * @param table - The Drizzle table definition
- * @returns A ProtectTable that can be used with `protect()` initialization
+ * @returns An EncryptedTable that can be used with `Encryption()` initialization
  *
  * @example
  * ```ts
@@ -22,14 +22,14 @@ import { getEncryptedColumnConfig } from './index.js'
  * })
  *
  * const protectSchema = extractProtectSchema(drizzleUsersTable)
- * const protectClient = await protect({ schemas: [protectSchema.build()] })
+ * const encryptionClient = await Encryption({ schemas: [protectSchema.build()] })
  * ```
  */
 // We use any for the PgTable generic because we need to access Drizzle's internal properties
 // biome-ignore lint/suspicious/noExplicitAny: Drizzle table types don't expose Symbol properties
 export function extractProtectSchema<T extends PgTable<any>>(
   table: T,
-): ReturnType<typeof csTable<Record<string, ProtectColumn>>> {
+): ReturnType<typeof encryptedTable<Record<string, EncryptedColumn>>> {
   // Drizzle tables store the name in a Symbol property
   // biome-ignore lint/suspicious/noExplicitAny: Drizzle tables don't expose Symbol properties in types
   const tableName = (table as any)[Symbol.for('drizzle:Name')] as
@@ -41,7 +41,7 @@ export function extractProtectSchema<T extends PgTable<any>>(
     )
   }
 
-  const columns: Record<string, ProtectColumn> = {}
+  const columns: Record<string, EncryptedColumn> = {}
 
   // Iterate through table columns
   for (const [columnName, column] of Object.entries(table)) {
@@ -58,40 +58,40 @@ export function extractProtectSchema<T extends PgTable<any>>(
       // Drizzle columns have a 'name' property that contains the actual database column name
       const actualColumnName = column.name || config.name
 
-      // This is an encrypted column - build csColumn using the actual column name
-      const csCol = csColumn(actualColumnName)
+      // This is an encrypted column - build encryptedColumn using the actual column name
+      const col = encryptedColumn(actualColumnName)
 
       // Apply data type
       if (config.dataType && config.dataType !== 'string') {
-        csCol.dataType(config.dataType)
+        col.dataType(config.dataType)
       }
 
       // Apply indexes based on configuration
       if (config.orderAndRange) {
-        csCol.orderAndRange()
+        col.orderAndRange()
       }
 
       if (config.equality) {
         if (Array.isArray(config.equality)) {
           // Custom token filters
-          csCol.equality(config.equality)
+          col.equality(config.equality)
         } else {
           // Default equality (boolean true)
-          csCol.equality()
+          col.equality()
         }
       }
 
       if (config.freeTextSearch) {
         if (typeof config.freeTextSearch === 'object') {
           // Custom match options
-          csCol.freeTextSearch(config.freeTextSearch)
+          col.freeTextSearch(config.freeTextSearch)
         } else {
           // Default freeTextSearch (boolean true)
-          csCol.freeTextSearch()
+          col.freeTextSearch()
         }
       }
 
-      columns[actualColumnName] = csCol
+      columns[actualColumnName] = col
     }
   }
 
@@ -101,5 +101,5 @@ export function extractProtectSchema<T extends PgTable<any>>(
     )
   }
 
-  return csTable(tableName, columns)
+  return encryptedTable(tableName, columns)
 }

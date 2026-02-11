@@ -1,6 +1,6 @@
 # DynamoDB Examples
 
-Examples of using Protect.js with DynamoDB.
+Examples of using Stash Encryption with DynamoDB.
 
 ## Prereqs
 - [Node.js](https://nodejs.org/en) (tested with v22.11.0)
@@ -10,7 +10,7 @@ Examples of using Protect.js with DynamoDB.
 
 ## Setup
 
-Install the workspace dependencies and build Protect.js:
+Install the workspace dependencies and build Stash Encryption:
 ```
 # change to the workspace root directory
 cd ../..

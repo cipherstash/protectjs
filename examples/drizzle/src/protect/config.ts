@@ -3,14 +3,14 @@ import {
   createProtectOperators,
   extractProtectSchema,
 } from '@cipherstash/drizzle/pg'
-import { protect } from '@cipherstash/protect'
+import { Encryption } from '@cipherstash/stack'
 import { transactions } from '../db/schema'
 
-// Extract Protect.js schema from Drizzle table
+// Extract Stash Encryption schema from Drizzle table
 export const transactionsSchema = extractProtectSchema(transactions)
 
-// Initialize Protect.js client
-export const protectClient = await protect({
+// Initialize Stash Encryption client
+export const protectClient = await Encryption({
   schemas: [transactionsSchema],
 })
 

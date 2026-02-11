@@ -13,7 +13,7 @@ const nextConfig: NextConfig = {
   // https://github.com/vercel/next.js/issues/43433
   // ---
   // TODO: Once this is fixed upstream, we can use the workspace packages
-  serverExternalPackages: ['@cipherstash/protect'],
+  serverExternalPackages: ['@cipherstash/stack'],
 }
 
 export default nextConfig

@@ -1,7 +1,7 @@
 import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ['@cipherstash/protect', 'mysql2'],
+  serverExternalPackages: ['@cipherstash/stack', 'mysql2'],
 }
 
 export default nextConfig

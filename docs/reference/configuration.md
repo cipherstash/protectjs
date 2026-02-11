@@ -1,6 +1,6 @@
-# Protect.js configuration
+# Stash Encryption configuration
 
-Protect.js is configured with [toml](https://toml.io/en/) files or environment variables, and is used to initialize the client when Protect.js is initialized.
+Stash Encryption is configured with [toml](https://toml.io/en/) files or environment variables, and is used to initialize the client when Stash Encryption is initialized.
 
 Environment variables will take precedence over configuration files and it's recommented to use them for sensitive values.
 
@@ -12,7 +12,7 @@ Environment variables will take precedence over configuration files and it's rec
     - [`[auth]` section](#auth-section)
 - [cipherstash.secret.toml](#cipherstashsecrettoml)
 - [Environment variables](#environment-variables)
-- [Configuring the Protect client directly](#configuring-the-protect-client-directly)
+- [Configuring the Encryption client directly](#configuring-the-encryption-client-directly)
 - [Deploying to production](#deploying-to-production)
   - [Region configuration](#region-configuration)
   - [File system write permissions](#file-system-write-permissions)
@@ -86,7 +86,7 @@ This is critical for encrypting/decrypting data.
 
 ## Environment variables
 
-You can also use environment variables to configure Protect.js.
+You can also use environment variables to configure Stash Encryption.
 The following environment variables are supported:
 
 |      Variable name     |                           Description                           | Required |                    Default                   |
@@ -97,16 +97,16 @@ The following environment variables are supported:
 | `CS_CLIENT_ACCESS_KEY` | The access key for your CipherStash account.                    | Yes      |                                              |
 | `CS_CONFIG_PATH`       | A temporary path to store the CipherStash client configuration. | No       | `/home/{username}/.cipherstash`              |
 
-## Configuring the Protect client directly
+## Configuring the Encryption client directly
 
-You can also configure the Protect client directly by passing a `ProtectClientConfig` object to the `protect` function during initialization.
-This is useful if you want to configure the Protect client specific to your application.
+You can also configure the Encryption client directly by passing an `EncryptionClientConfig` object to the `Encryption` function during initialization.
+This is useful if you want to configure the Encryption client specific to your application.
 An exmaple of this might be if you want to use a secret manager to store your client key and access key rather than relying on environment variables or configuration files.
 
 ```ts
-import { protect, type ProtectClientConfig } from "@cipherstash/protect";
+import { Encryption, type EncryptionClientConfig } from "@cipherstash/stack";
 
-const config: ProtectClientConfig = {
+const config: EncryptionClientConfig = {
   schemas: [users, orders],
   workspaceCrn: "your-workspace-crn",
   accessKey: "your-access-key",
@@ -114,13 +114,13 @@ const config: ProtectClientConfig = {
   clientKey: "your-client-key",
 }
 
-const protectClient = await protect(config);
+const protectClient = await Encryption(config);
 ```
 
 ## Deploying to production
 
 > [!TIP]
-> There are some configuration details you should take note of when deploying `@cipherstash/protect` in your production examples.
+> There are some configuration details you should take note of when deploying `@cipherstash/stack` in your production examples.
 
 ### File system write permissions
 

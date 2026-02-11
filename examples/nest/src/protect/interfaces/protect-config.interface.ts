@@ -1,4 +1,4 @@
-import type { ProtectTable, ProtectTableColumn } from '@cipherstash/protect'
+import type { EncryptedTable, EncryptedTableColumn } from '@cipherstash/stack'
 
 export interface ProtectConfig {
   workspaceCrn: string
@@ -6,5 +6,5 @@ export interface ProtectConfig {
   clientKey: string
   clientAccessKey: string
   logLevel?: 'debug' | 'info' | 'error'
-  schemas?: ProtectTable<ProtectTableColumn>[]
+  schemas?: EncryptedTable<EncryptedTableColumn>[]
 }

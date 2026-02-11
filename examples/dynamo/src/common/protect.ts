@@ -1,9 +1,9 @@
-import { csColumn, csTable, protect } from '@cipherstash/protect'
+import { encryptedColumn, encryptedTable, Encryption } from '@cipherstash/stack'
 
-export const users = csTable('users', {
-  email: csColumn('email').equality(),
+export const users = encryptedTable('users', {
+  email: encryptedColumn('email').equality(),
 })
 
-export const protectClient = await protect({
+export const protectClient = await Encryption({
   schemas: [users],
 })

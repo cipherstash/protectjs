@@ -1,6 +1,6 @@
-# Protect.js documentation
+# Stash Encryption documentation
 
-The documentation for Protect.js is organized into the following sections:
+The documentation for Stash Encryption is organized into the following sections:
 
 - [Getting started](./getting-started.md)
 
@@ -12,7 +12,7 @@ The documentation for Protect.js is organized into the following sections:
 
 - [Configuration and production deployment](./reference/configuration.md)
 - [Searchable encryption with PostgreSQL](./reference/searchable-encryption-postgres.md)
-- [Protect.js schemas](./reference/schema.md)
+- [Stash Encryption schemas](./reference/schema.md)
 - [Model operations with bulk crypto functions](./reference/model-operations.md)
 
 ### ORMs and frameworks

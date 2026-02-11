@@ -1,17 +1,17 @@
-import { csColumn, csTable } from '@cipherstash/protect'
+import { encryptedColumn, encryptedTable } from '@cipherstash/stack'
 
-export const users = csTable('users', {
-  email_encrypted: csColumn('email_encrypted')
+export const users = encryptedTable('users', {
+  email_encrypted: encryptedColumn('email_encrypted')
     .equality()
     .orderAndRange()
     .freeTextSearch(),
-  phone_encrypted: csColumn('phone_encrypted').equality().orderAndRange(),
-  ssn_encrypted: csColumn('ssn_encrypted').equality(),
+  phone_encrypted: encryptedColumn('phone_encrypted').equality().orderAndRange(),
+  ssn_encrypted: encryptedColumn('ssn_encrypted').equality(),
 })
 
-export const orders = csTable('orders', {
-  address_encrypted: csColumn('address_encrypted').freeTextSearch(),
-  creditCard_encrypted: csColumn('creditCard_encrypted').equality(),
+export const orders = encryptedTable('orders', {
+  address_encrypted: encryptedColumn('address_encrypted').freeTextSearch(),
+  creditCard_encrypted: encryptedColumn('creditCard_encrypted').equality(),
 })
 
 // Export all schemas for easy import

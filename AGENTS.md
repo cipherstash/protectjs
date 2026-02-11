@@ -1,4 +1,4 @@
-This is the Protect.js repository - End-to-end, per-value encryption for JavaScript/TypeScript with zero‑knowledge key management (via CipherStash ZeroKMS). Encrypted data is stored as EQL JSON payloads; searchable encryption is currently supported for PostgreSQL.
+This is the Stash Encryption repository (protectjs) - End-to-end, per-value encryption for JavaScript/TypeScript with zero‑knowledge key management (via CipherStash ZeroKMS). Encrypted data is stored as EQL JSON payloads; searchable encryption is currently supported for PostgreSQL.
 
 ## Prerequisites
 
@@ -43,7 +43,7 @@ pnpm test
 - Filter to a single package (recommended for fast iteration):
 
 ```bash
-pnpm --filter @cipherstash/protect test
+pnpm --filter @cipherstash/stack test
 pnpm --filter @cipherstash/nextjs test
 ```
 
@@ -71,22 +71,23 @@ If these variables are missing, tests that require live encryption will fail or 
 
 ## Repository Layout
 
-- `packages/protect`: Core library
-  - `src/index.ts`: Public API (`protect`, exports)
-  - `src/ffi/index.ts`: `ProtectClient` implementation, bridges to `@cipherstash/protect-ffi`
+- `packages/stack`: Core library (published as `@cipherstash/stack`)
+  - `src/index.ts`: Public API (`Encryption`, exports)
+  - `src/ffi/index.ts`: `EncryptionClient` implementation, bridges to `@cipherstash/protect-ffi`
   - `src/ffi/operations/*`: Encrypt/decrypt/model/bulk/search-terms operations (thenable pattern with optional `.withLockContext()`)
   - `__tests__/*`: End-to-end and API contract tests (Vitest)
-- `packages/schema`: Schema builder utilities and types (`csTable`, `csColumn`, `buildEncryptConfig`)
+- `packages/protect`: Deprecated — re-exports from `stack` for backward compatibility
+- `packages/schema`: Schema builder utilities and types (`encryptedTable`, `encryptedColumn`, `buildEncryptConfig`)
 - `packages/nextjs`: Next.js helpers and Clerk integration (`./clerk` export)
-- `packages/protect-dynamodb`: DynamoDB helpers for Protect.js
+- `packages/dynamodb`: DynamoDB helpers (published as `@cipherstash/protect-dynamodb`)
 - `packages/utils`: Shared config (`utils/config`) and logger (`utils/logger`)
 - `examples/*`: Working apps (basic, drizzle, nextjs-clerk, next-drizzle-mysql, dynamo, hono-supabase)
 - `docs/*`: Concepts, how-to guides (Next.js bundling, SST, npm lockfile v3), reference
 
 ## Key Concepts and APIs
 
-- **Initialization**: `protect({ schemas })` returns an initialized `ProtectClient`. Provide at least one `csTable`.
-- **Schema**: Define tables/columns with `csTable` and `csColumn`. Add `.freeTextSearch().equality().orderAndRange()` to enable searchable encryption on PostgreSQL.
+- **Initialization**: `Encryption({ schemas })` returns an initialized `EncryptionClient`. Provide at least one `encryptedTable`.
+- **Schema**: Define tables/columns with `encryptedTable` and `encryptedColumn`. Add `.freeTextSearch().equality().orderAndRange()` to enable searchable encryption on PostgreSQL.
 - **Operations** (all return Result-like objects and support chaining `.withLockContext(lockContext)` when applicable):
   - `encrypt(plaintext, { table, column })`
   - `decrypt(encryptedPayload)`
@@ -94,17 +95,17 @@ If these variables are missing, tests that require live encryption will fail or 
   - `bulkEncrypt(plaintexts[], { table, column })` / `bulkDecrypt(encrypted[])`
   - `bulkEncryptModels(models[], table)` / `bulkDecryptModels(models[])`
   - `createSearchTerms(terms)` for searchable queries
-- **Identity-aware encryption**: Use `LockContext` from `@cipherstash/protect/identify` and chain `.withLockContext()` on operations. Same context must be used for both encrypt and decrypt.
+- **Identity-aware encryption**: Use `LockContext` from `@cipherstash/stack/identity` and chain `.withLockContext()` on operations. Same context must be used for both encrypt and decrypt.
 
 ## Critical Gotchas (read before coding)
 
-- **Native Node.js module**: Protect.js relies on `@cipherstash/protect-ffi` (Node-API). It must be loaded via native Node.js `require`. Do NOT bundle this module; configure bundlers to externalize it.
+- **Native Node.js module**: Stash Encryption relies on `@cipherstash/protect-ffi` (Node-API). It must be loaded via native Node.js `require`. Do NOT bundle this module; configure bundlers to externalize it.
   - Next.js: see `docs/how-to/nextjs-external-packages.md`
   - SST/Serverless: see `docs/how-to/sst-external-packages.md`
   - npm lockfile v3 on Linux: see `docs/how-to/npm-lockfile-v3.md`
 - **Bun is not supported**: Due to Node-API compatibility gaps. Use Node.js.
 - **Do not log plaintext**: The library never logs plaintext by design. Don’t add logs that risk leaking sensitive data.
-- **Result shape is contract**: Operations return `{ data }` or `{ failure }`. Preserve this shape and error `type` values in `ProtectErrorTypes`.
+- **Result shape is contract**: Operations return `{ data }` or `{ failure }`. Preserve this shape and error `type` values in `EncryptionErrorTypes`.
 - **Encrypted payload shape is contract**: Keys like `c` in the EQL payload are validated by tests and downstream tools. Don’t change them.
 - **Exports must support ESM and CJS**: Each package’s `exports` maps must keep both `import` and `require` fields. Don’t remove CJS.
 
@@ -142,11 +143,11 @@ pnpm changeset:publish
 ## Adding Features Safely (LLM checklist)
 
 1. Identify the target package(s) in `packages/*` and confirm whether changes affect public APIs or payload shapes.
-2. If modifying `packages/protect` operations or `ProtectClient`, ensure:
+2. If modifying `packages/stack` operations or `EncryptionClient`, ensure:
    - The Result contract and error type strings remain stable.
    - `.withLockContext()` remains available for affected operations.
    - ESM/CJS exports continue to work (don’t break `require`).
-3. If changing schema behavior (`packages/schema`), update type definitions and ensure `buildEncryptConfig` still validates with Zod in `ProtectClient.init`.
+3. If changing schema behavior (`packages/schema`), update type definitions and ensure `buildEncryptConfig` still validates with Zod in `EncryptionClient.init`.
 4. Add/extend tests in the same package. For features that require live credentials, guard with env checks or provide mock-friendly paths.
 5. Run:
    - `pnpm run code:fix`

@@ -1,6 +1,6 @@
 # SST and esbuild
 
-Using `@cipherstash/protect` in a serverless function deployed with [SST](https://sst.dev/)?
+Using `@cipherstash/stack` in a serverless function deployed with [SST](https://sst.dev/)?
 
 You need to configure the `nodejs.esbuild.external` and `nodejs.install` options in your `sst.config.ts` file as documented [here](https://sst.dev/docs/component/aws/function/#nodejs):
 
@@ -8,9 +8,9 @@ You need to configure the `nodejs.esbuild.external` and `nodejs.install` options
 ...
 nodejs: {
   esbuild: {
-    external: ['@cipherstash/protect'],
+    external: ['@cipherstash/stack'],
   },
-  install: ['@cipherstash/protect'],
+  install: ['@cipherstash/stack'],
 },
 ...
 ```

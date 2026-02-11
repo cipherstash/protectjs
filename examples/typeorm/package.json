@@ -2,7 +2,7 @@
    "name": "@cipherstash/typeorm-example",
    "version": "0.1.9",
    "private": true,
-   "description": "Protect.js with TypeORM example",
+   "description": "Stash Encryption with TypeORM example",
    "type": "commonjs",
    "devDependencies": {
       "@types/node": "^22.13.10",
@@ -11,7 +11,7 @@
       "typescript": "^5.8.2"
    },
    "dependencies": {
-      "@cipherstash/protect": "workspace:*",
+      "@cipherstash/stack": "workspace:*",
       "dotenv": "^16.4.7",
       "pg": "^8.14.1",
       "reflect-metadata": "^0.2.2",

@@ -1,4 +1,4 @@
-import type { EncryptedPayload } from '@cipherstash/protect'
+import type { EncryptedPayload } from '@cipherstash/stack'
 import type { INestApplication } from '@nestjs/common'
 import { Test, type TestingModule } from '@nestjs/testing'
 import request from 'supertest'

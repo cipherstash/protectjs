@@ -1,7 +1,7 @@
 import 'dotenv/config'
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { protect } from '@cipherstash/protect'
+import { Encryption } from '@cipherstash/stack'
 import * as drizzleOrm from 'drizzle-orm'
 import { integer, pgTable } from 'drizzle-orm/pg-core'
 import { drizzle } from 'drizzle-orm/postgres-js'
@@ -67,14 +67,14 @@ const protectTransactions = extractProtectSchema(transactions)
 describe('Documentation Drift Tests', () => {
   let db: ReturnType<typeof drizzle>
   let client: ReturnType<typeof postgres>
-  let protectClient: Awaited<ReturnType<typeof protect>>
+  let protectClient: Awaited<ReturnType<typeof Encryption>>
   let protectOps: ReturnType<typeof createProtectOperators>
   let seedDataIds: number[] = []
 
   beforeAll(async () => {
     client = postgres(process.env.DATABASE_URL as string)
     db = drizzle({ client })
-    protectClient = await protect({ schemas: [protectTransactions] })
+    protectClient = await Encryption({ schemas: [protectTransactions] })
     protectOps = createProtectOperators(protectClient)
 
     // Create test table with EQL encrypted columns (drop if exists for clean state)

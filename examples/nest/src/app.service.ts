@@ -1,4 +1,4 @@
-import type { Decrypted, EncryptedPayload } from '@cipherstash/protect'
+import type { Decrypted, EncryptedPayload } from '@cipherstash/stack'
 import { Injectable } from '@nestjs/common'
 import type { ProtectService } from './protect'
 import { users } from './protect'

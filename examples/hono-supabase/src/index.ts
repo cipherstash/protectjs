@@ -5,21 +5,21 @@ import { Hono } from 'hono'
 
 // Consolidated protect and it's schemas into a single file
 import {
-  type ProtectClientConfig,
-  csColumn,
-  csTable,
-  protect,
-} from '@cipherstash/protect'
+  type EncryptionClientConfig,
+  encryptedColumn,
+  encryptedTable,
+  Encryption,
+} from '@cipherstash/stack'
 
-export const users = csTable('users', {
-  email: csColumn('email'),
+export const users = encryptedTable('users', {
+  email: encryptedColumn('email'),
 })
 
-const config: ProtectClientConfig = {
+const config: EncryptionClientConfig = {
   schemas: [users],
 }
 
-export const protectClient = await protect(config)
+export const protectClient = await Encryption(config)
 
 // Create a single supabase client for interacting with the database
 const supabaseUrl = process.env.SUPABASE_URL

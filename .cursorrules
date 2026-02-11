@@ -1,11 +1,11 @@
-## Protect.js Cursor Rules
+## Stash Encryption Cursor Rules
 
 These rules guide agents when creating or updating example apps under `examples/*` in this repository.
 
 ### Example App Prompt (for agents)
 
 - **Goals**
-  - Show end-to-end usage of Protect.js with clear, minimal code.
+  - Show end-to-end usage of Stash Encryption with clear, minimal code.
   - Demonstrate schema, encrypt/decrypt, and (when relevant) searchable encryption on PostgreSQL.
 
 - **Hard guardrails (do not violate)**
@@ -33,7 +33,7 @@ These rules guide agents when creating or updating example apps under `examples/
   - `docs/concepts/searchable-encryption.md`
 
 - **Deliverables checklist for a new example**
-  - A `protect.ts` (or equivalent) that initializes `protect({ schemas })` using `csTable`/`csColumn`.
+  - A `protect.ts` (or equivalent) that initializes `Encryption({ schemas })` using `encryptedTable`/`encryptedColumn`.
   - If targeting Postgres searchable encryption, include `.freeTextSearch().equality().orderAndRange()` on appropriate columns.
   - A minimal script or route/handler that encrypts and decrypts at least one value.
   - A README covering:

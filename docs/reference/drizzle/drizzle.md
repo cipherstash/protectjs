@@ -1,7 +1,7 @@
-# Drizzle + Protect.js Query Examples
+# Drizzle + Stash Encryption Query Examples
 ## Protect Operators Pattern (Recommended)
 
-This page demonstrates how to perform queries on encrypted data using **Drizzle ORM** with **CipherStash Protect.js** using the **protect operators pattern**.
+This page demonstrates how to perform queries on encrypted data using **Drizzle ORM** with **CipherStash Stash Encryption** using the **protect operators pattern**.
 
 **Pattern:** Auto-encrypting operators from `createProtectOperators()` provide clean syntax with automatic encryption.
 
@@ -234,7 +234,7 @@ return results
 
 ## Order by encrypted data
 
-Protect.js supports ordering on encrypted fields using Order-Revealing Encryption (ORE). This allows the database to sort encrypted values without decrypting them, while preserving the original sort order.
+Stash Encryption supports ordering on encrypted fields using Order-Revealing Encryption (ORE). This allows the database to sort encrypted values without decrypting them, while preserving the original sort order.
 
 ### Order by encrypted number
 
@@ -313,7 +313,7 @@ return result
 
 ## Understanding the results
 
-All results are automatically **decrypted** by Protect.js before being returned to you. The data remains encrypted in the database at all times.
+All results are automatically **decrypted** by Stash Encryption before being returned to you. The data remains encrypted in the database at all times.
 
 ### What's happening behind the scenes
 
@@ -337,7 +337,7 @@ All results are automatically **decrypted** by Protect.js before being returned 
 
 - **Explore the code**: Check out the source code in the repository
 - **Try different queries**: Modify the examples above and run them
-- **Read the docs**: Visit [CipherStash Protect.js documentation](https://docs.cipherstash.com/)
+- **Read the docs**: Visit [CipherStash Stash Encryption documentation](https://docs.cipherstash.com/)
 - **Integrate into your app**: Use these patterns in your own applications
 
 ---

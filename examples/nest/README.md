@@ -1,4 +1,4 @@
-# Protect.js Example with NestJS
+# Stash Encryption Example with NestJS
 
 > ⚠️ **Heads-up:** This example was generated with AI with some very specific prompting to make it as useful as possible for you :)
 > If you find any issues, think this example is absolutely terrible, or would like to speak with a human, book a call with the [CipherStash solutions engineering team](https://calendly.com/cipherstash-gtm/cipherstash-discovery-call?month=2025-09)
@@ -43,7 +43,7 @@ CS_CLIENT_ACCESS_KEY=
 - If you integrate bundlers, externalize `@cipherstash/protect-ffi` (native module).
 
 ### References
-- Protect.js: see repo root `README.md`
+- Stash Encryption: see repo root `README.md`
 - NestJS docs: `https://docs.nestjs.com/`
 - Next.js external packages: `docs/how-to/nextjs-external-packages.md`
 - SST external packages: `docs/how-to/sst-external-packages.md`

@@ -11,7 +11,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "@cipherstash/protect": "workspace:*",
+    "@cipherstash/stack": "workspace:*",
     "dotenv": "^16.4.7"
   },
   "devDependencies": {

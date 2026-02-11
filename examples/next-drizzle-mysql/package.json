@@ -10,7 +10,7 @@
     "db:migrate": "drizzle-kit migrate"
   },
   "dependencies": {
-    "@cipherstash/protect": "workspace:*",
+    "@cipherstash/stack": "workspace:*",
     "@hookform/resolvers": "^5.0.1",
     "drizzle-orm": "^0.44.0",
     "mysql2": "^3.14.1",

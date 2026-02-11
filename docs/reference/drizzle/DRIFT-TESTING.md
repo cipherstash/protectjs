@@ -1,6 +1,6 @@
 # Documentation Drift Testing
 
-This document describes the documentation drift detection system for the Drizzle + Protect.js integration. The system ensures that code examples in documentation remain executable and accurate as the codebase evolves.
+This document describes the documentation drift detection system for the Drizzle + Stash Encryption integration. The system ensures that code examples in documentation remain executable and accurate as the codebase evolves.
 
 ## Overview
 

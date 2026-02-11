@@ -1,5 +1,5 @@
 import { csColumn, csTable } from '@cipherstash/schema'
-import { vi, expect } from 'vitest'
+import { expect, vi } from 'vitest'
 
 // ============ Schema Fixtures ============
 
@@ -78,7 +78,10 @@ export function createMockLockContextWithNullContext() {
 /**
  * Creates a mock LockContext that returns a failure
  */
-export function createFailingMockLockContext(errorType: string, message: string) {
+export function createFailingMockLockContext(
+  errorType: string,
+  message: string,
+) {
   return {
     getLockContext: vi.fn().mockResolvedValue({
       failure: { type: errorType, message },
@@ -92,7 +95,10 @@ export function createFailingMockLockContext(errorType: string, message: string)
  * Unwraps a Result type, throwing an error if it's a failure.
  * Use this to simplify test assertions when you expect success.
  */
-export function unwrapResult<T>(result: { data?: T; failure?: { message: string } }): T {
+export function unwrapResult<T>(result: {
+  data?: T
+  failure?: { message: string }
+}): T {
   if (result.failure) {
     throw new Error(result.failure.message)
   }
@@ -105,7 +111,7 @@ export function unwrapResult<T>(result: { data?: T; failure?: { message: string 
 export function expectFailure(
   result: { failure?: { message: string; type?: string } },
   messagePattern?: string | RegExp,
-  expectedType?: string
+  expectedType?: string,
 ) {
   expect(result.failure).toBeDefined()
   if (messagePattern) {

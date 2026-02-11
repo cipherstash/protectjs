@@ -170,7 +170,7 @@ export const queryTypeToFfi: Record<QueryTypeName, FfiIndexTypeName> = {
 export type QueryTermBase = {
   column: ProtectColumn
   table: ProtectTable<ProtectTableColumn>
-  queryType?: QueryTypeName  // Optional - auto-infers if omitted
+  queryType?: QueryTypeName // Optional - auto-infers if omitted
   /**
    * The format for the returned encrypted value:
    * - `'eql'` (default) - Returns raw Encrypted object

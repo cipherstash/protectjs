@@ -1,5 +1,5 @@
-import { type ProtectError, ProtectErrorTypes } from '../..'
 import type { Result } from '@byteslice/result'
+import { type ProtectError, ProtectErrorTypes } from '../..'
 import type { FfiIndexTypeName } from '../../types'
 
 /**
@@ -12,7 +12,7 @@ import type { FfiIndexTypeName } from '../../types'
  * @internal
  */
 export function validateNumericValue(
-  value: unknown
+  value: unknown,
 ): Result<never, ProtectError> | undefined {
   if (typeof value === 'number' && Number.isNaN(value)) {
     return {
@@ -60,7 +60,7 @@ export function assertValidNumericValue(value: unknown): void {
 export function validateValueIndexCompatibility(
   value: unknown,
   indexType: FfiIndexTypeName,
-  columnName: string
+  columnName: string,
 ): Result<never, ProtectError> | undefined {
   if (typeof value === 'number' && indexType === 'match') {
     return {
@@ -84,11 +84,11 @@ export function validateValueIndexCompatibility(
 export function assertValueIndexCompatibility(
   value: unknown,
   indexType: FfiIndexTypeName,
-  columnName: string
+  columnName: string,
 ): void {
   if (typeof value === 'number' && indexType === 'match') {
     throw new Error(
-      `[protect]: Cannot use 'match' index with numeric value on column "${columnName}". The 'freeTextSearch' index only supports string values. Configure the column with 'orderAndRange()' or 'equality()' for numeric queries.`
+      `[protect]: Cannot use 'match' index with numeric value on column "${columnName}". The 'freeTextSearch' index only supports string values. Configure the column with 'orderAndRange()' or 'equality()' for numeric queries.`,
     )
   }
 }

@@ -1,0 +1,56 @@
+import { type Result, withResult } from '@byteslice/result'
+import type {
+  EncryptionClient,
+  ProtectTable,
+  ProtectTableColumn,
+} from '@cipherstash/stack'
+import { deepClone, handleError, toEncryptedDynamoItem } from '../helpers'
+import type { ProtectDynamoDBError } from '../types'
+import {
+  DynamoDBOperation,
+  type DynamoDBOperationOptions,
+} from './base-operation'
+
+export class EncryptModelOperation<
+  T extends Record<string, unknown>,
+> extends DynamoDBOperation<T> {
+  private protectClient: EncryptionClient
+  private item: T
+  private protectTable: EncryptedTable<EncryptedTableColumn>
+
+  constructor(
+    protectClient: EncryptionClient,
+    item: T,
+    protectTable: EncryptedTable<EncryptedTableColumn>,
+    options?: DynamoDBOperationOptions,
+  ) {
+    super(options)
+    this.protectClient = protectClient
+    this.item = item
+    this.protectTable = protectTable
+  }
+
+  public async execute(): Promise<Result<T, ProtectDynamoDBError>> {
+    return await withResult(
+      async () => {
+        const encryptResult = await this.protectClient
+          .encryptModel(deepClone(this.item), this.protectTable)
+          .audit(this.getAuditData())
+
+        if (encryptResult.failure) {
+          throw new Error(`encryption error: ${encryptResult.failure.message}`)
+        }
+
+        const data = deepClone(encryptResult.data)
+        const encryptedAttrs = Object.keys(this.protectTable.build().columns)
+
+        return toEncryptedDynamoItem(data, encryptedAttrs) as T
+      },
+      (error) =>
+        handleError(error, 'encryptModel', {
+          logger: this.logger,
+          errorHandler: this.errorHandler,
+        }),
+    )
+  }
+}

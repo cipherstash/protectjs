@@ -11,14 +11,14 @@ async function main() {
     await AppDataSource.initialize()
     console.log('✅ Database connection established')
 
-    // Initialize the Protect client
+    // Initialize the Encryption client
     const protectClient = await initializeProtectClient()
-    console.log('✅ Protect client initialized')
+    console.log('✅ Encryption client initialized')
 
     // Initialize the helper for streamlined operations
     const helper = new ProtectEntityHelper(protectClient)
 
-    console.log('\n🔐 Protect.js TypeORM Integration Demo')
+    console.log('\n🔐 Stash Encryption TypeORM Integration Demo')
     console.log('=====================================')
 
     // Example 1: Single user encryption and saving

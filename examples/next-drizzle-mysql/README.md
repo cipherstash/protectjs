@@ -1,16 +1,16 @@
-# Next.js + Drizzle ORM + MySQL + Protect.js Example
+# Next.js + Drizzle ORM + MySQL + Stash Encryption Example
 
 This example demonstrates how to build a modern web application using:
 - [Next.js](https://nextjs.org/) - React framework for production
 - [Drizzle ORM](https://orm.drizzle.team/) - TypeScript ORM for SQL databases
 - [MySQL](https://www.mysql.com/) - Popular open-source relational database
-- [Protect.js](https://cipherstash.com/protect) - Data protection and encryption library
+- [Stash Encryption](https://cipherstash.com/protect) - Data protection and encryption library
 
 ## Features
 
 - Full-stack TypeScript application
 - Database migrations and schema management with Drizzle
-- Data protection and encryption with Protect.js
+- Data protection and encryption with Stash Encryption
 - Modern UI with Tailwind CSS
 - Form handling with React Hook Form and Zod validation
 - Docker-based MySQL database setup
@@ -33,7 +33,7 @@ This example demonstrates how to build a modern web application using:
    ```bash
    cp .env.example .env.local
    ```
-   Then update the environment variables in `.env.local` with your Protect.js configuration values.
+   Then update the environment variables in `.env.local` with your Stash Encryption configuration values.
 
 3. Start the MySQL database using Docker:
    ```bash
@@ -73,5 +73,5 @@ The application will be available at `http://localhost:3000`.
 
 - [Next.js Documentation](https://nextjs.org/docs)
 - [Drizzle ORM Documentation](https://orm.drizzle.team/docs/overview)
-- [Protect.js Documentation](https://cipherstash.com/protect/docs)
+- [Stash Encryption Documentation](https://cipherstash.com/protect/docs)
 - [MySQL Documentation](https://dev.mysql.com/doc/)

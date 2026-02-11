@@ -1,8 +1,8 @@
-# Protect.js Drizzle ORM Integration
+# Stash Encryption — Drizzle ORM Integration
 
 **Type-safe encryption for Drizzle ORM with searchable queries**
 
-Seamlessly integrate Protect.js with Drizzle ORM and PostgreSQL to encrypt your data while maintaining full query capabilities—equality, range queries, text search, and sorting—all with complete TypeScript type safety.
+Seamlessly integrate Stash Encryption with Drizzle ORM and PostgreSQL to encrypt your data while maintaining full query capabilities—equality, range queries, text search, and sorting—all with complete TypeScript type safety.
 
 ## Features
 
@@ -14,8 +14,11 @@ Seamlessly integrate Protect.js with Drizzle ORM and PostgreSQL to encrypt your 
 ## Installation
 
 ```bash
-npm install @cipherstash/protect @cipherstash/drizzle drizzle-orm
+npm install @cipherstash/stack @cipherstash/drizzle drizzle-orm
 ```
+
+> [!NOTE]
+> **Migrating from `@cipherstash/protect`?** Replace `@cipherstash/protect` with `@cipherstash/stack` in your imports. The `protect()` function is now `Encryption()`. All old names remain available as deprecated aliases.
 
 ## Database Setup
 
@@ -109,19 +112,19 @@ export const usersTable = pgTable('users', {
 >
 > This is because the database only stores and returns encrypted ciphertext, so it doesn't know the underlying original type. You must specify the decrypted type in your ORM schema for full type safety.
 
-### 2. Initialize Protect.js
+### 2. Initialize Stash Encryption
 
 ```typescript
 // protect/config.ts
-import { protect } from '@cipherstash/protect'
+import { Encryption } from '@cipherstash/stack'
 import { extractProtectSchema } from '@cipherstash/drizzle/pg'
 import { usersTable } from '../db/schema'
 
-// Extract Protect.js schema from Drizzle table
+// Extract Stash Encryption schema from Drizzle table
 export const users = extractProtectSchema(usersTable)
 
-// Initialize Protect.js client
-export const protectClient = await protect({
+// Initialize Stash Encryption client
+export const protectClient = await Encryption({
   schemas: [users]
 })
 ```
@@ -307,18 +310,18 @@ Creates an encrypted column type for Drizzle schemas.
 
 ### `extractProtectSchema(table)`
 
-Extracts a Protect.js schema from a Drizzle table definition.
+Extracts a Stash Encryption schema from a Drizzle table definition.
 
 **Parameters:**
 - `table` - Drizzle table definition with encrypted columns
 
-**Returns:** Protect.js schema object
+**Returns:** Stash Encryption schema object
 
 ### `createProtectOperators(protectClient)`
 
 Creates Drizzle-compatible operators that automatically handle encryption.
 
 **Parameters:**
-- `protectClient` - Initialized Protect.js client
+- `protectClient` - Initialized Stash Encryption client
 
 **Returns:** Object with all operator functions

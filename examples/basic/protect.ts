@@ -1,17 +1,17 @@
 import 'dotenv/config'
 import {
-  type ProtectClientConfig,
-  csColumn,
-  csTable,
-  protect,
-} from '@cipherstash/protect'
+  type EncryptionClientConfig,
+  encryptedColumn,
+  encryptedTable,
+  Encryption,
+} from '@cipherstash/stack'
 
-export const users = csTable('users', {
-  name: csColumn('name'),
+export const users = encryptedTable('users', {
+  name: encryptedColumn('name'),
 })
 
-const config: ProtectClientConfig = {
+const config: EncryptionClientConfig = {
   schemas: [users],
 }
 
-export const protectClient = await protect(config)
+export const protectClient = await Encryption(config)

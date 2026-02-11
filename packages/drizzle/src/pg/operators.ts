@@ -1,10 +1,10 @@
+import type { QueryTypeName } from '@cipherstash/stack'
 import type {
-  ProtectClient,
-  ProtectColumn,
-  ProtectTable,
-  ProtectTableColumn,
-} from '@cipherstash/protect/client'
-import type { QueryTypeName } from '@cipherstash/protect'
+  EncryptedColumn,
+  EncryptedTable,
+  EncryptedTableColumn,
+  EncryptionClient,
+} from '@cipherstash/stack/client'
 import {
   type SQL,
   type SQLWrapper,
@@ -131,8 +131,8 @@ function getDrizzleTableFromColumn(drizzleColumn: SQLWrapper): unknown {
  */
 function getProtectTableFromColumn(
   drizzleColumn: SQLWrapper,
-  protectTableCache: Map<string, ProtectTable<ProtectTableColumn>>,
-): ProtectTable<ProtectTableColumn> | undefined {
+  protectTableCache: Map<string, EncryptedTable<EncryptedTableColumn>>,
+): EncryptedTable<EncryptedTableColumn> | undefined {
   const drizzleTable = getDrizzleTableFromColumn(drizzleColumn)
   if (!drizzleTable) {
     return undefined
@@ -162,12 +162,12 @@ function getProtectTableFromColumn(
 }
 
 /**
- * Helper to get the ProtectColumn for a Drizzle column from the ProtectTable
+ * Helper to get the EncryptedColumn for a Drizzle column from the ProtectTable
  */
-function getProtectColumn(
+function getEncryptedColumn(
   drizzleColumn: SQLWrapper,
-  protectTable: ProtectTable<ProtectTableColumn>,
-): ProtectColumn | undefined {
+  protectTable: EncryptedTable<EncryptedTableColumn>,
+): EncryptedColumn | undefined {
   const column = drizzleColumn as unknown as Record<string, unknown>
   const columnName = column.name as string | undefined
   if (!columnName) {
@@ -175,28 +175,28 @@ function getProtectColumn(
   }
 
   const protectTableAny = protectTable as unknown as Record<string, unknown>
-  return protectTableAny[columnName] as ProtectColumn | undefined
+  return protectTableAny[columnName] as EncryptedColumn | undefined
 }
 
 /**
  * Column metadata extracted from a Drizzle column
  */
 interface ColumnInfo {
-  readonly protectColumn: ProtectColumn | undefined
+  readonly protectColumn: EncryptedColumn | undefined
   readonly config: (EncryptedColumnConfig & { name: string }) | undefined
-  readonly protectTable: ProtectTable<ProtectTableColumn> | undefined
+  readonly protectTable: EncryptedTable<EncryptedTableColumn> | undefined
   readonly columnName: string
   readonly tableName: string | undefined
 }
 
 /**
- * Helper to get the ProtectColumn and column config for a Drizzle column
+ * Helper to get the EncryptedColumn and column config for a Drizzle column
  * If protectTable is not provided, it will be derived from the column
  */
 function getColumnInfo(
   drizzleColumn: SQLWrapper,
-  protectTable: ProtectTable<ProtectTableColumn> | undefined,
-  protectTableCache: Map<string, ProtectTable<ProtectTableColumn>>,
+  protectTable: EncryptedTable<EncryptedTableColumn> | undefined,
+  protectTableCache: Map<string, EncryptedTable<EncryptedTableColumn>>,
 ): ColumnInfo {
   const column = drizzleColumn as unknown as Record<string, unknown>
   const columnName = (column.name as string | undefined) || 'unknown'
@@ -225,7 +225,7 @@ function getColumnInfo(
     }
   }
 
-  const protectColumn = getProtectColumn(drizzleColumn, resolvedProtectTable)
+  const protectColumn = getEncryptedColumn(drizzleColumn, resolvedProtectTable)
   const config = getEncryptedColumnConfig(columnName, drizzleColumn)
 
   return {
@@ -268,10 +268,14 @@ interface ValueToEncrypt {
  * Returns an array of encrypted search terms or original values if not encrypted
  */
 async function encryptValues(
-  protectClient: ProtectClient,
-  values: Array<{ value: unknown; column: SQLWrapper; queryType?: QueryTypeName }>,
-  protectTable: ProtectTable<ProtectTableColumn> | undefined,
-  protectTableCache: Map<string, ProtectTable<ProtectTableColumn>>,
+  protectClient: EncryptionClient,
+  values: Array<{
+    value: unknown
+    column: SQLWrapper
+    queryType?: QueryTypeName
+  }>,
+  protectTable: EncryptedTable<EncryptedTableColumn> | undefined,
+  protectTableCache: Map<string, EncryptedTable<EncryptedTableColumn>>,
 ): Promise<unknown[]> {
   if (values.length === 0) {
     return []
@@ -312,9 +316,13 @@ async function encryptValues(
   const columnGroups = new Map<
     string,
     {
-      column: ProtectColumn
-      table: ProtectTable<ProtectTableColumn>
-      values: Array<{ value: string | number; index: number; queryType?: QueryTypeName }>
+      column: EncryptedColumn
+      table: EncryptedTable<EncryptedTableColumn>
+      values: Array<{
+        value: string | number
+        index: number
+        queryType?: QueryTypeName
+      }>
       resultIndices: number[]
     }
   >()
@@ -402,11 +410,11 @@ async function encryptValues(
  * Returns the encrypted search term or the original value if not encrypted
  */
 async function encryptValue(
-  protectClient: ProtectClient,
+  protectClient: EncryptionClient,
   value: unknown,
   drizzleColumn: SQLWrapper,
-  protectTable: ProtectTable<ProtectTableColumn> | undefined,
-  protectTableCache: Map<string, ProtectTable<ProtectTableColumn>>,
+  protectTable: EncryptedTable<EncryptedTableColumn> | undefined,
+  protectTableCache: Map<string, EncryptedTable<EncryptedTableColumn>>,
   queryType?: QueryTypeName,
 ): Promise<unknown> {
   const results = await encryptValues(
@@ -468,9 +476,9 @@ function createLazyOperator(
   ) => SQL,
   needsEncryption: boolean,
   columnInfo: ColumnInfo,
-  protectClient: ProtectClient,
-  defaultProtectTable: ProtectTable<ProtectTableColumn> | undefined,
-  protectTableCache: Map<string, ProtectTable<ProtectTableColumn>>,
+  protectClient: EncryptionClient,
+  defaultProtectTable: EncryptedTable<EncryptedTableColumn> | undefined,
+  protectTableCache: Map<string, EncryptedTable<EncryptedTableColumn>>,
   min?: unknown,
   max?: unknown,
   queryType?: QueryTypeName,
@@ -602,9 +610,9 @@ async function executeLazyOperator(
  */
 async function executeLazyOperatorDirect(
   lazyOp: LazyOperator,
-  protectClient: ProtectClient,
-  defaultProtectTable: ProtectTable<ProtectTableColumn> | undefined,
-  protectTableCache: Map<string, ProtectTable<ProtectTableColumn>>,
+  protectClient: EncryptionClient,
+  defaultProtectTable: EncryptedTable<EncryptedTableColumn> | undefined,
+  protectTableCache: Map<string, EncryptedTable<EncryptedTableColumn>>,
 ): Promise<SQL> {
   if (!lazyOp.needsEncryption) {
     return lazyOp.execute(lazyOp.right)
@@ -649,9 +657,9 @@ function createComparisonOperator(
   left: SQLWrapper,
   right: unknown,
   columnInfo: ColumnInfo,
-  protectClient: ProtectClient,
-  defaultProtectTable: ProtectTable<ProtectTableColumn> | undefined,
-  protectTableCache: Map<string, ProtectTable<ProtectTableColumn>>,
+  protectClient: EncryptionClient,
+  defaultProtectTable: EncryptedTable<EncryptedTableColumn> | undefined,
+  protectTableCache: Map<string, EncryptedTable<EncryptedTableColumn>>,
 ): Promise<SQL> | SQL {
   const { config } = columnInfo
 
@@ -698,8 +706,8 @@ function createComparisonOperator(
       protectClient,
       defaultProtectTable,
       protectTableCache,
-      undefined,  // min
-      undefined,  // max
+      undefined, // min
+      undefined, // max
       'orderAndRange',
     ) as Promise<SQL>
   }
@@ -732,8 +740,8 @@ function createComparisonOperator(
       protectClient,
       defaultProtectTable,
       protectTableCache,
-      undefined,  // min
-      undefined,  // max
+      undefined, // min
+      undefined, // max
       'equality',
     ) as Promise<SQL>
   }
@@ -751,9 +759,9 @@ function createRangeOperator(
   min: unknown,
   max: unknown,
   columnInfo: ColumnInfo,
-  protectClient: ProtectClient,
-  defaultProtectTable: ProtectTable<ProtectTableColumn> | undefined,
-  protectTableCache: Map<string, ProtectTable<ProtectTableColumn>>,
+  protectClient: EncryptionClient,
+  defaultProtectTable: EncryptedTable<EncryptedTableColumn> | undefined,
+  protectTableCache: Map<string, EncryptedTable<EncryptedTableColumn>>,
 ): Promise<SQL> | SQL {
   const { config } = columnInfo
 
@@ -810,9 +818,9 @@ function createTextSearchOperator(
   left: SQLWrapper,
   right: unknown,
   columnInfo: ColumnInfo,
-  protectClient: ProtectClient,
-  defaultProtectTable: ProtectTable<ProtectTableColumn> | undefined,
-  protectTableCache: Map<string, ProtectTable<ProtectTableColumn>>,
+  protectClient: EncryptionClient,
+  defaultProtectTable: EncryptedTable<EncryptedTableColumn> | undefined,
+  protectTableCache: Map<string, EncryptedTable<EncryptedTableColumn>>,
 ): Promise<SQL> | SQL {
   const { config } = columnInfo
 
@@ -855,8 +863,8 @@ function createTextSearchOperator(
     protectClient,
     defaultProtectTable,
     protectTableCache,
-    undefined,  // min
-    undefined,  // max
+    undefined, // min
+    undefined, // max
     'freeTextSearch',
   ) as Promise<SQL>
 }
@@ -866,7 +874,7 @@ function createTextSearchOperator(
 // ============================================================================
 
 /**
- * Creates a set of Protect.js-aware operators that automatically encrypt values
+ * Creates a set of Stash Encryption-aware operators that automatically encrypt values
  * for encrypted columns before using them with Drizzle operators.
  *
  * For equality and text search operators (eq, ne, like, ilike, inArray, etc.):
@@ -877,7 +885,7 @@ function createTextSearchOperator(
  * Values are encrypted and then use eql_v2.* functions (eql_v2.gt(), eql_v2.gte(), etc.)
  * which are required for ORE (Order-Revealing Encryption) comparisons.
  *
- * @param protectClient - The Protect.js client instance
+ * @param protectClient - The Stash Encryption client instance
  * @returns An object with all Drizzle operators wrapped for encrypted columns
  *
  * @example
@@ -898,7 +906,7 @@ function createTextSearchOperator(
  *   .where(await protectOps.gte(usersTable.age, 25))
  * ```
  */
-export function createProtectOperators(protectClient: ProtectClient): {
+export function createProtectOperators(protectClient: EncryptionClient): {
   // Comparison operators
   /**
    * Equality operator - encrypts value for encrypted columns.
@@ -1066,8 +1074,11 @@ export function createProtectOperators(protectClient: ProtectClient): {
   arrayOverlaps: typeof arrayOverlaps
 } {
   // Create a cache for protect tables keyed by table name
-  const protectTableCache = new Map<string, ProtectTable<ProtectTableColumn>>()
-  const defaultProtectTable: ProtectTable<ProtectTableColumn> | undefined =
+  const protectTableCache = new Map<
+    string,
+    EncryptedTable<EncryptedTableColumn>
+  >()
+  const defaultProtectTable: EncryptedTable<EncryptedTableColumn> | undefined =
     undefined
 
   /**
@@ -1334,7 +1345,11 @@ export function createProtectOperators(protectClient: ProtectClient): {
     // Encrypt all values in the array in a single batch
     const encryptedValues = await encryptValues(
       protectClient,
-      right.map((value) => ({ value, column: left, queryType: 'equality' as const })),
+      right.map((value) => ({
+        value,
+        column: left,
+        queryType: 'equality' as const,
+      })),
       defaultProtectTable,
       protectTableCache,
     )
@@ -1380,7 +1395,11 @@ export function createProtectOperators(protectClient: ProtectClient): {
     // Encrypt all values in the array in a single batch
     const encryptedValues = await encryptValues(
       protectClient,
-      right.map((value) => ({ value, column: left, queryType: 'equality' as const })),
+      right.map((value) => ({
+        value,
+        column: left,
+        queryType: 'equality' as const,
+      })),
       defaultProtectTable,
       protectTableCache,
     )
@@ -1519,7 +1538,11 @@ export function createProtectOperators(protectClient: ProtectClient): {
     // Batch encrypt all values
     const encryptedResults = await encryptValues(
       protectClient,
-      valuesToEncrypt.map((v) => ({ value: v.value, column: v.column, queryType: v.queryType })),
+      valuesToEncrypt.map((v) => ({
+        value: v.value,
+        column: v.column,
+        queryType: v.queryType,
+      })),
       defaultProtectTable,
       protectTableCache,
     )
@@ -1674,7 +1697,11 @@ export function createProtectOperators(protectClient: ProtectClient): {
 
     const encryptedResults = await encryptValues(
       protectClient,
-      valuesToEncrypt.map((v) => ({ value: v.value, column: v.column, queryType: v.queryType })),
+      valuesToEncrypt.map((v) => ({
+        value: v.value,
+        column: v.column,
+        queryType: v.queryType,
+      })),
       defaultProtectTable,
       protectTableCache,
     )

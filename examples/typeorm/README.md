@@ -1,4 +1,4 @@
-# Protect.js Example with TypeORM
+# Stash Encryption Example with TypeORM
 
 > ⚠️ **Heads-up:** This example was generated with AI with some very specific prompting to make it as useful as possible for you :)
 > If you find any issues, think this example is absolutely terrible, or would like to speak with a human, book a call with the [CipherStash solutions engineering team](https://calendly.com/cipherstash-gtm/cipherstash-discovery-call?month=2025-09)
@@ -33,7 +33,7 @@ DB_DATABASE=cipherstash
 ```typescript
 // src/entity/User.ts
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm'
-import type { EncryptedData } from '@cipherstash/protect'
+import type { EncryptedData } from '@cipherstash/stack'
 import { EncryptedColumn } from '../decorators/encrypted-column'
 
 @Entity()
@@ -68,19 +68,19 @@ export class User {
 }
 ```
 
-### 4. Configure Protect.js
+### 4. Configure Stash Encryption
 
 ```typescript
 // src/protect.ts
-import { protect, csTable, csColumn } from '@cipherstash/protect'
+import { Encryption, encryptedTable, encryptedColumn } from '@cipherstash/stack'
 
-export const protectedUser = csTable('user', {
-  email: csColumn('email').equality().orderAndRange(),
-  ssn: csColumn('ssn').equality(),
-  phone: csColumn('phone').equality(),
+export const protectedUser = encryptedTable('user', {
+  email: encryptedColumn('email').equality().orderAndRange(),
+  ssn: encryptedColumn('ssn').equality(),
+  phone: encryptedColumn('phone').equality(),
 })
 
-export const protectClient = await protect({
+export const protectClient = await Encryption({
   schemas: [protectedUser],
 })
 ```
@@ -298,7 +298,7 @@ if (result.failure) {
 ### 3. Environment Configuration
 ```typescript
 // Use environment variables for all sensitive data
-export const protectClient = await protect({
+export const protectClient = await Encryption({
   schemas: [protectedUser],
 })
 ```
@@ -358,7 +358,7 @@ The demo will show:
 ## 🔗 Next Steps
 
 - **Explore the demo**: Run `npm start` to see all features in action
-- **Read the docs**: Check out [Protect.js documentation](https://github.com/cipherstash/protectjs/tree/main/docs)
+- **Read the docs**: Check out [Stash Encryption documentation](https://github.com/cipherstash/protectjs/tree/main/docs)
 - **Learn concepts**: Understand [searchable encryption](https://github.com/cipherstash/protectjs/blob/main/docs/concepts/searchable-encryption.md)
 - **See other examples**: Browse the [examples directory](https://github.com/cipherstash/protectjs/tree/main/examples)
 
@@ -380,7 +380,7 @@ The demo will show:
 
 ### Getting Help
 
-- 📚 [Protect.js Documentation](https://github.com/cipherstash/protectjs/tree/main/docs)
+- 📚 [Stash Encryption Documentation](https://github.com/cipherstash/protectjs/tree/main/docs)
 - 🐛 [GitHub Issues](https://github.com/cipherstash/protectjs/issues)
 - 💬 [Community Support](https://cipherstash.com)
 

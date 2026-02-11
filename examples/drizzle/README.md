@@ -1,6 +1,6 @@
-# Express REST API with Drizzle ORM and Protect.js
+# Express REST API with Drizzle ORM and Stash Encryption
 
-This example demonstrates a FinTech REST API built with Express.js, Drizzle ORM, and Protect.js. It showcases how to encrypt sensitive financial data (account numbers, amounts, transaction descriptions) while maintaining the ability to search and query encrypted fields.
+This example demonstrates a FinTech REST API built with Express.js, Drizzle ORM, and Stash Encryption. It showcases how to encrypt sensitive financial data (account numbers, amounts, transaction descriptions) while maintaining the ability to search and query encrypted fields.
 
 ## Prerequisites
 
@@ -12,7 +12,7 @@ This example demonstrates a FinTech REST API built with Express.js, Drizzle ORM,
 
 - [Express](https://expressjs.com/) - Web framework
 - [Drizzle ORM](https://orm.drizzle.team/) - TypeScript ORM
-- [Protect.js](https://github.com/cipherstash/protectjs) - End-to-end encryption
+- [Stash Encryption](https://github.com/cipherstash/protectjs) - End-to-end encryption
 - [PostgreSQL](https://www.postgresql.org/) - Database
 
 ## Setup
@@ -291,7 +291,7 @@ The `transactions` table has the following structure:
 
 ### Encryption
 
-- Sensitive fields (`accountNumber`, `amount`, `description`) are encrypted using Protect.js before being stored in the database
+- Sensitive fields (`accountNumber`, `amount`, `description`) are encrypted using Stash Encryption before being stored in the database
 - The `@cipherstash/drizzle` package provides `encryptedType` helper to define encrypted columns in Drizzle schemas
 - Data is automatically encrypted when inserting/updating and decrypted when reading
 
@@ -301,7 +301,7 @@ The `transactions` table has the following structure:
   - **Text search** on `accountNumber` and `description` using `ilike` operator
   - **Range queries** on `amount` using `gte` and `lte` operators
   - **Equality queries** on `accountNumber` and `amount`
-- All encrypted field queries use Protect.js operators that automatically handle encryption
+- All encrypted field queries use Stash Encryption operators that automatically handle encryption
 
 ### Type Safety
 
@@ -310,8 +310,8 @@ The `transactions` table has the following structure:
 
 ## Notes
 
-- **Native Module**: Protect.js uses `@cipherstash/protect-ffi`, a native Node-API module. Express doesn't bundle code, so no special configuration is needed. If deploying to serverless platforms, ensure the native module is properly externalized.
-- **Error Handling**: All Protect.js operations return a Result type (`{ data }` or `{ failure }`). The API properly handles these results and returns appropriate HTTP status codes.
+- **Native Module**: Stash Encryption uses `@cipherstash/protect-ffi`, a native Node-API module. Express doesn't bundle code, so no special configuration is needed. If deploying to serverless platforms, ensure the native module is properly externalized.
+- **Error Handling**: All Stash Encryption operations return a Result type (`{ data }` or `{ failure }`). The API properly handles these results and returns appropriate HTTP status codes.
 - **Bulk Operations**: The API uses `bulkEncryptModels` and `bulkDecryptModels` for efficient batch operations when querying multiple transactions.
 
 ## License

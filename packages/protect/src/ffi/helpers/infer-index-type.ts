@@ -1,6 +1,6 @@
+import type { ProtectColumn } from '@cipherstash/schema'
 import type { FfiIndexTypeName, QueryTypeName } from '../../types'
 import { queryTypeToFfi } from '../../types'
-import type { ProtectColumn } from '@cipherstash/schema'
 
 /**
  * Infer the primary index type from a column's configured indexes.
@@ -19,14 +19,17 @@ export function inferIndexType(column: ProtectColumn): FfiIndexTypeName {
   if (indexes.ore) return 'ore'
 
   throw new Error(
-    `Column "${column.getName()}" has no suitable index for scalar queries`
+    `Column "${column.getName()}" has no suitable index for scalar queries`,
   )
 }
 
 /**
  * Validate that the specified index type is configured on the column
  */
-export function validateIndexType(column: ProtectColumn, indexType: FfiIndexTypeName): void {
+export function validateIndexType(
+  column: ProtectColumn,
+  indexType: FfiIndexTypeName,
+): void {
   const config = column.build()
   const indexes = config.indexes ?? {}
 
@@ -38,7 +41,7 @@ export function validateIndexType(column: ProtectColumn, indexType: FfiIndexType
 
   if (!indexMap[indexType]) {
     throw new Error(
-      `Index type "${indexType}" is not configured on column "${column.getName()}"`
+      `Index type "${indexType}" is not configured on column "${column.getName()}"`,
     )
   }
 }
@@ -53,7 +56,7 @@ export function validateIndexType(column: ProtectColumn, indexType: FfiIndexType
  */
 export function resolveIndexType(
   column: ProtectColumn,
-  queryType?: QueryTypeName
+  queryType?: QueryTypeName,
 ): FfiIndexTypeName {
   const indexType = queryType
     ? queryTypeToFfi[queryType]

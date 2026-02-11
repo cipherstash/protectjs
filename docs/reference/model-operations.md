@@ -1,6 +1,6 @@
 # Model operations
 
-Model operations in Protect.js provide a high-level interface for encrypting and decrypting entire objects. 
+Model operations in Stash Encryption provide a high-level interface for encrypting and decrypting entire objects. 
 These operations automatically handle the encryption of fields defined in your schema while preserving other fields.
 
 ## Table of contents
@@ -115,7 +115,7 @@ const decryptedUsers = decryptedResult.data;
 
 ### Using type parameters
 
-Protect.js provides strong TypeScript support through generic type parameters:
+Stash Encryption provides strong TypeScript support through generic type parameters:
 
 ```typescript
 // Define your model type
@@ -157,9 +157,9 @@ The type system ensures:
 The model operations can infer types from your schema definition:
 
 ```typescript
-const users = csTable("users", {
-  email: csColumn("email").freeTextSearch(),
-  address: csColumn("address"),
+const users = encryptedTable("users", {
+  email: encryptedColumn("email").freeTextSearch(),
+  address: encryptedColumn("address"),
 });
 
 // Types are inferred from the schema
@@ -201,10 +201,10 @@ const result = await protectClient.encryptModel(user, users);
 if (result.failure) {
   // Handle specific error types
   switch (result.failure.type) {
-    case ProtectErrorTypes.EncryptionError:
+    case EncryptionErrorTypes.EncryptionError:
       console.error("Encryption failed:", result.failure.message);
       break;
-    case ProtectErrorTypes.ClientInitError:
+    case EncryptionErrorTypes.ClientInitError:
       console.error("Client not initialized:", result.failure.message);
       break;
     default:

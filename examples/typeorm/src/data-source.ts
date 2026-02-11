@@ -3,7 +3,7 @@ import { User } from './entity/User'
 
 const originalConnectionConnectFunction = DataSource.prototype.initialize
 
-// Patch DataSource to support custom column type for Protect.js
+// Patch DataSource to support custom column type for Stash Encryption
 DataSource.prototype.initialize = async function (...params) {
   // TypeORM's supportedDataTypes is typed as ColumnType[], but we need to add our custom type.
   // Use 'as any' to bypass the type error for custom types.

@@ -1,21 +1,18 @@
 {
-  "name": "@cipherstash/protectjs",
-  "description": "CipherStash Protect for JavaScript/TypeScript",
+  "name": "@cipherstash/stack",
+  "description": "CipherStash Stack",
   "author": "CipherStash <hello@cipherstash.com>",
   "keywords": [
-    "encrypted",
-    "query",
-    "language",
-    "typescript",
-    "ts",
-    "eql"
+    "encryption",
+    "secrets",
+    "typescript"
   ],
   "bugs": {
-    "url": "https://github.com/cipherstash/protectjs/issues"
+    "url": "https://github.com/cipherstash/stack/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/cipherstash/protectjs.git"
+    "url": "git+https://github.com/cipherstash/stack.git"
   },
   "license": "MIT",
   "workspaces": [
@@ -24,7 +21,7 @@
   ],
   "scripts": {
     "build": "turbo build --filter './packages/*'",
-    "build:js": "turbo build --filter './packages/protect' --filter './packages/nextjs'",
+    "build:js": "turbo build --filter './packages/stack' --filter './packages/nextjs'",
     "changeset": "changeset",
     "changeset:version": "changeset version",
     "changeset:publish": "changeset publish",

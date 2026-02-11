@@ -3,17 +3,20 @@
 	"version": "2.0.2",
 	"description": "CipherStash schema builder for TypeScript",
 	"keywords": [
-		"encrypted",
-		"protect",
+		"encryption",
+		"kms",
+		"typescript",
+		"searchable-encryption",
+		"zero-trust",
 		"schema",
 		"builder"
 	],
 	"bugs": {
-		"url": "https://github.com/cipherstash/protectjs/issues"
+		"url": "https://github.com/cipherstash/stack/issues"
 	},
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/cipherstash/protectjs.git"
+		"url": "git+https://github.com/cipherstash/stack.git"
 	},
 	"license": "MIT",
 	"author": "CipherStash <hello@cipherstash.com>",

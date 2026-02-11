@@ -5,7 +5,7 @@ This document describes the security posture, reporting process, and guidelines 
 
 ## Supported Packages
 
-This repository contains the JavaScript/TypeScript SDK for CipherStash Protect and related packages.
+This repository contains the JavaScript/TypeScript SDK for CipherStash Stash Encryption and related packages.
 
 The below tables list each package along with the currently supported (receiving security updates).
 
@@ -91,8 +91,8 @@ We will never take legal action against good-faith security researchers who foll
 The following are **in scope**:
 
 - The `cipherstash/protectjs` GitHub repository
-- All published NPM packages under the `@cipherstash/protect*` namespace
-- Protect.js cryptographic implementations, configuration layers, and CLI tooling
+- All published NPM packages under the `@cipherstash/*` namespace
+- Stash Encryption cryptographic implementations, configuration layers, and CLI tooling
 - Key-handling, authenticated encryption behaviour, JSON/JSONB field-level encryption flows
 - Documentation or code examples that could lead to insecure usage
 - CipherStash’s internal infrastructure  
