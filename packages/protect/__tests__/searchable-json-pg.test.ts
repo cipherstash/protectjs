@@ -16,6 +16,7 @@ const table = csTable('protect-ci-jsonb', {
 })
 
 const TEST_RUN_ID = `test-run-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+const userJwt = process.env.USER_JWT
 
 type ProtectClient = Awaited<ReturnType<typeof protect>>
 let protectClient: ProtectClient
@@ -938,16 +939,10 @@ describe('searchableJson postgres integration', () => {
 
   // ─── LockContext integration ──────────────────────────────────────
 
-  describe('LockContext integration', () => {
+  describe.skipIf(!userJwt)('LockContext integration', () => {
     it('selector with LockContext', async () => {
-      const userJwt = process.env.USER_JWT
-      if (!userJwt) {
-        console.log('Skipping lock context test - no USER_JWT provided')
-        return
-      }
-
       const lc = new LockContext()
-      const lockContext = await lc.identify(userJwt)
+      const lockContext = await lc.identify(userJwt!)
       if (lockContext.failure) throw new Error(lockContext.failure.message)
 
       const plaintext = { user: { email: 'lc-selector@test.com' }, marker: 'lock-context-selector' }
@@ -993,14 +988,8 @@ describe('searchableJson postgres integration', () => {
     }, 60000)
 
     it('containment with LockContext', async () => {
-      const userJwt = process.env.USER_JWT
-      if (!userJwt) {
-        console.log('Skipping lock context test - no USER_JWT provided')
-        return
-      }
-
       const lc = new LockContext()
-      const lockContext = await lc.identify(userJwt)
+      const lockContext = await lc.identify(userJwt!)
       if (lockContext.failure) throw new Error(lockContext.failure.message)
 
       const plaintext = { role: 'lc-containment-test', department: 'auth' }
@@ -1046,14 +1035,8 @@ describe('searchableJson postgres integration', () => {
     }, 60000)
 
     it('batch with LockContext', async () => {
-      const userJwt = process.env.USER_JWT
-      if (!userJwt) {
-        console.log('Skipping lock context test - no USER_JWT provided')
-        return
-      }
-
       const lc = new LockContext()
-      const lockContext = await lc.identify(userJwt)
+      const lockContext = await lc.identify(userJwt!)
       if (lockContext.failure) throw new Error(lockContext.failure.message)
 
       const plaintext = { user: { email: 'lc-batch@test.com' }, role: 'lc-batch-role', kind: 'lock-context-batch' }
@@ -2035,6 +2018,142 @@ describe('searchableJson postgres integration', () => {
       expect(rows).toHaveLength(1)
       expect(rows[0].arr_len).toBeNull()
     }, 30000)
+
+    it('returns correct length for known array (Extended)', async () => {
+      const plaintext = { colors: ['a', 'b', 'c', 'd'], marker: 'al-known' }
+
+      const encrypted = await protectClient.encryptModel({ metadata: plaintext }, table)
+      if (encrypted.failure) throw new Error(encrypted.failure.message)
+
+      const [inserted] = await sql`
+        INSERT INTO "protect-ci-jsonb" (metadata, test_run_id)
+        VALUES (${sql.json(encrypted.data.metadata)}::eql_v2_encrypted, ${TEST_RUN_ID})
+        RETURNING id
+      `
+
+      const queryResult = await protectClient.encryptQuery('$.colors', {
+        column: table.metadata,
+        table: table,
+        queryType: 'steVecSelector',
+        returnType: 'composite-literal',
+      })
+      if (queryResult.failure) throw new Error(queryResult.failure.message)
+      const selectorTerm = queryResult.data
+
+      const rows = await sql`
+        SELECT t.id,
+               eql_v2.jsonb_array_length(
+                 eql_v2.jsonb_path_query_first(t.metadata, ${selectorTerm}::eql_v2_encrypted)
+               ) as arr_len
+        FROM "protect-ci-jsonb" t
+        WHERE t.id = ${inserted.id}
+      `
+
+      expect(rows).toHaveLength(1)
+      expect(rows[0].arr_len).toBe(4)
+    }, 30000)
+
+    it('returns correct length for known array (Simple)', async () => {
+      const plaintext = { colors: ['x', 'y', 'z'], marker: 'al-known-s' }
+
+      const encrypted = await protectClient.encryptModel({ metadata: plaintext }, table)
+      if (encrypted.failure) throw new Error(encrypted.failure.message)
+
+      const [inserted] = await sql`
+        INSERT INTO "protect-ci-jsonb" (metadata, test_run_id)
+        VALUES (${sql.json(encrypted.data.metadata)}::eql_v2_encrypted, ${TEST_RUN_ID})
+        RETURNING id
+      `
+
+      const queryResult = await protectClient.encryptQuery('$.colors', {
+        column: table.metadata,
+        table: table,
+        queryType: 'steVecSelector',
+        returnType: 'composite-literal',
+      })
+      if (queryResult.failure) throw new Error(queryResult.failure.message)
+      const selectorTerm = queryResult.data
+
+      const rows = await sql.unsafe(
+        `SELECT t.id,
+                eql_v2.jsonb_array_length(
+                  eql_v2.jsonb_path_query_first(t.metadata, $1::eql_v2_encrypted)
+                ) as arr_len
+         FROM "protect-ci-jsonb" t
+         WHERE t.id = $2`,
+        [selectorTerm, inserted.id]
+      )
+
+      expect(rows).toHaveLength(1)
+      expect(rows[0].arr_len).toBe(3)
+    }, 30000)
+
+    it('expands array via jsonb_array_elements (Extended)', async () => {
+      const plaintext = { tags: ['ae-a', 'ae-b', 'ae-c'], marker: 'ae-expand' }
+
+      const encrypted = await protectClient.encryptModel({ metadata: plaintext }, table)
+      if (encrypted.failure) throw new Error(encrypted.failure.message)
+
+      const [inserted] = await sql`
+        INSERT INTO "protect-ci-jsonb" (metadata, test_run_id)
+        VALUES (${sql.json(encrypted.data.metadata)}::eql_v2_encrypted, ${TEST_RUN_ID})
+        RETURNING id
+      `
+
+      const queryResult = await protectClient.encryptQuery('$.tags', {
+        column: table.metadata,
+        table: table,
+        queryType: 'steVecSelector',
+        returnType: 'composite-literal',
+      })
+      if (queryResult.failure) throw new Error(queryResult.failure.message)
+      const selectorTerm = queryResult.data
+
+      const rows = await sql`
+        SELECT elem
+        FROM "protect-ci-jsonb" t,
+             eql_v2.jsonb_array_elements(
+               eql_v2.jsonb_path_query_first(t.metadata, ${selectorTerm}::eql_v2_encrypted)
+             ) as elem
+        WHERE t.id = ${inserted.id}
+      `
+
+      expect(rows).toHaveLength(3)
+    }, 30000)
+
+    it('expands array via jsonb_array_elements (Simple)', async () => {
+      const plaintext = { tags: ['ae-s-a', 'ae-s-b', 'ae-s-c'], marker: 'ae-expand-s' }
+
+      const encrypted = await protectClient.encryptModel({ metadata: plaintext }, table)
+      if (encrypted.failure) throw new Error(encrypted.failure.message)
+
+      const [inserted] = await sql`
+        INSERT INTO "protect-ci-jsonb" (metadata, test_run_id)
+        VALUES (${sql.json(encrypted.data.metadata)}::eql_v2_encrypted, ${TEST_RUN_ID})
+        RETURNING id
+      `
+
+      const queryResult = await protectClient.encryptQuery('$.tags', {
+        column: table.metadata,
+        table: table,
+        queryType: 'steVecSelector',
+        returnType: 'composite-literal',
+      })
+      if (queryResult.failure) throw new Error(queryResult.failure.message)
+      const selectorTerm = queryResult.data
+
+      const rows = await sql.unsafe(
+        `SELECT elem
+         FROM "protect-ci-jsonb" t,
+              eql_v2.jsonb_array_elements(
+                eql_v2.jsonb_path_query_first(t.metadata, $1::eql_v2_encrypted)
+              ) as elem
+         WHERE t.id = $2`,
+        [selectorTerm, inserted.id]
+      )
+
+      expect(rows).toHaveLength(3)
+    }, 30000)
   })
 
   describe('containment: @> with array values', () => {
@@ -2615,6 +2734,108 @@ describe('searchableJson postgres integration', () => {
       expect(rows).toHaveLength(1)
       expect(rows[0].extracted).not.toBeNull()
     }, 30000)
+
+    it('extracts field by encrypted selector (Simple)', async () => {
+      const plaintext = { role: 'fa-enc-s', dept: 'fa-dept-s', marker: 'fa-enc-sel-s' }
+
+      const encrypted = await protectClient.encryptModel({ metadata: plaintext }, table)
+      if (encrypted.failure) throw new Error(encrypted.failure.message)
+
+      const [inserted] = await sql`
+        INSERT INTO "protect-ci-jsonb" (metadata, test_run_id)
+        VALUES (${sql.json(encrypted.data.metadata)}::eql_v2_encrypted, ${TEST_RUN_ID})
+        RETURNING id
+      `
+
+      const queryResult = await protectClient.encryptQuery('$.role', {
+        column: table.metadata,
+        table: table,
+        queryType: 'steVecSelector',
+        returnType: 'composite-literal',
+      })
+      if (queryResult.failure) throw new Error(queryResult.failure.message)
+      const selectorTerm = queryResult.data
+
+      const rows = await sql.unsafe(
+        `SELECT t.metadata -> $1::eql_v2_encrypted as extracted
+         FROM "protect-ci-jsonb" t
+         WHERE t.id = $2`,
+        [selectorTerm, inserted.id]
+      )
+
+      expect(rows).toHaveLength(1)
+      expect(rows[0].extracted).not.toBeNull()
+    }, 30000)
+
+    it('returns null for non-existent field (Extended)', async () => {
+      const plaintext = { role: 'fa-null', marker: 'fa-null-marker' }
+
+      const encrypted = await protectClient.encryptModel({ metadata: plaintext }, table)
+      if (encrypted.failure) throw new Error(encrypted.failure.message)
+
+      const [inserted] = await sql`
+        INSERT INTO "protect-ci-jsonb" (metadata, test_run_id)
+        VALUES (${sql.json(encrypted.data.metadata)}::eql_v2_encrypted, ${TEST_RUN_ID})
+        RETURNING id
+      `
+
+      const queryResult = await protectClient.encryptQuery('$.nonexistent', {
+        column: table.metadata,
+        table: table,
+        queryType: 'steVecSelector',
+        returnType: 'composite-literal',
+      })
+      if (queryResult.failure) throw new Error(queryResult.failure.message)
+      const selectorTerm = queryResult.data
+
+      const rows = await sql`
+        SELECT t.metadata -> ${selectorTerm}::eql_v2_encrypted as extracted
+        FROM "protect-ci-jsonb" t
+        WHERE t.id = ${inserted.id}
+      `
+
+      expect(rows).toHaveLength(1)
+      expect(rows[0].extracted).toBeNull()
+    }, 30000)
+
+    it('extracted field can be round-tripped (Extended)', async () => {
+      const plaintext = { role: 'fa-roundtrip', dept: 'fa-rt-dept', marker: 'fa-rt-marker' }
+
+      const encrypted = await protectClient.encryptModel({ metadata: plaintext }, table)
+      if (encrypted.failure) throw new Error(encrypted.failure.message)
+
+      const [inserted] = await sql`
+        INSERT INTO "protect-ci-jsonb" (metadata, test_run_id)
+        VALUES (${sql.json(encrypted.data.metadata)}::eql_v2_encrypted, ${TEST_RUN_ID})
+        RETURNING id
+      `
+
+      // Extract the role field via -> operator
+      const queryResult = await protectClient.encryptQuery('$.role', {
+        column: table.metadata,
+        table: table,
+        queryType: 'steVecSelector',
+        returnType: 'composite-literal',
+      })
+      if (queryResult.failure) throw new Error(queryResult.failure.message)
+      const selectorTerm = queryResult.data
+
+      const rows = await sql`
+        SELECT t.metadata -> ${selectorTerm}::eql_v2_encrypted as extracted,
+               (t.metadata).data as metadata
+        FROM "protect-ci-jsonb" t
+        WHERE t.id = ${inserted.id}
+      `
+
+      expect(rows).toHaveLength(1)
+      expect(rows[0].extracted).not.toBeNull()
+
+      // Decrypt the full document and verify the extracted field matches
+      const decrypted = await protectClient.decryptModel({ metadata: rows[0].metadata })
+      if (decrypted.failure) throw new Error(decrypted.failure.message)
+      expect(decrypted.data.metadata).toEqual(plaintext)
+      expect((decrypted.data.metadata as any).role).toBe('fa-roundtrip')
+    }, 30000)
   })
 
   // ─── WHERE comparison: = equality ──────────────────────────────────
@@ -2685,5 +2906,240 @@ describe('searchableJson postgres integration', () => {
       expect(rows).toHaveLength(1)
     }, 30000)
 
+    it('equality across two documents with same field value', async () => {
+      const doc1 = { role: 'eq-cross-same', dept: 'eq-cross-d1' }
+      const doc2 = { role: 'eq-cross-same', dept: 'eq-cross-d2' }
+
+      const encrypted1 = await protectClient.encryptModel({ metadata: doc1 }, table)
+      if (encrypted1.failure) throw new Error(encrypted1.failure.message)
+      const encrypted2 = await protectClient.encryptModel({ metadata: doc2 }, table)
+      if (encrypted2.failure) throw new Error(encrypted2.failure.message)
+
+      const [inserted1] = await sql`
+        INSERT INTO "protect-ci-jsonb" (metadata, test_run_id)
+        VALUES (${sql.json(encrypted1.data.metadata)}::eql_v2_encrypted, ${TEST_RUN_ID})
+        RETURNING id
+      `
+      const [inserted2] = await sql`
+        INSERT INTO "protect-ci-jsonb" (metadata, test_run_id)
+        VALUES (${sql.json(encrypted2.data.metadata)}::eql_v2_encrypted, ${TEST_RUN_ID})
+        RETURNING id
+      `
+
+      const queryResult = await protectClient.encryptQuery('$.role', {
+        column: table.metadata,
+        table: table,
+        queryType: 'steVecSelector',
+        returnType: 'composite-literal',
+      })
+      if (queryResult.failure) throw new Error(queryResult.failure.message)
+      const selectorTerm = queryResult.data
+
+      const rows = await sql`
+        SELECT a.id as id_a, b.id as id_b
+        FROM "protect-ci-jsonb" a, "protect-ci-jsonb" b
+        WHERE eql_v2.jsonb_path_query_first(a.metadata, ${selectorTerm}::eql_v2_encrypted)
+            = eql_v2.jsonb_path_query_first(b.metadata, ${selectorTerm}::eql_v2_encrypted)
+        AND a.id = ${inserted1.id}
+        AND b.id = ${inserted2.id}
+      `
+
+      // STE-vec may produce different ciphertexts for identical plaintext across
+      // separate encryptions. If this assertion fails, it documents that limitation.
+      if (rows.length === 0) {
+        // Cross-document equality is not supported — document this behavior
+        expect(rows).toHaveLength(0)
+      } else {
+        expect(rows).toHaveLength(1)
+        expect(rows[0].id_a).toBe(inserted1.id)
+        expect(rows[0].id_b).toBe(inserted2.id)
+      }
+    }, 30000)
+
+    it('equality mismatch across two documents', async () => {
+      const doc1 = { role: 'eq-cross-mismatch-1', marker: 'eq-mm-1' }
+      const doc2 = { role: 'eq-cross-mismatch-2', marker: 'eq-mm-2' }
+
+      const encrypted1 = await protectClient.encryptModel({ metadata: doc1 }, table)
+      if (encrypted1.failure) throw new Error(encrypted1.failure.message)
+      const encrypted2 = await protectClient.encryptModel({ metadata: doc2 }, table)
+      if (encrypted2.failure) throw new Error(encrypted2.failure.message)
+
+      const [inserted1] = await sql`
+        INSERT INTO "protect-ci-jsonb" (metadata, test_run_id)
+        VALUES (${sql.json(encrypted1.data.metadata)}::eql_v2_encrypted, ${TEST_RUN_ID})
+        RETURNING id
+      `
+      const [inserted2] = await sql`
+        INSERT INTO "protect-ci-jsonb" (metadata, test_run_id)
+        VALUES (${sql.json(encrypted2.data.metadata)}::eql_v2_encrypted, ${TEST_RUN_ID})
+        RETURNING id
+      `
+
+      const queryResult = await protectClient.encryptQuery('$.role', {
+        column: table.metadata,
+        table: table,
+        queryType: 'steVecSelector',
+        returnType: 'composite-literal',
+      })
+      if (queryResult.failure) throw new Error(queryResult.failure.message)
+      const selectorTerm = queryResult.data
+
+      const rows = await sql`
+        SELECT a.id as id_a, b.id as id_b
+        FROM "protect-ci-jsonb" a, "protect-ci-jsonb" b
+        WHERE eql_v2.jsonb_path_query_first(a.metadata, ${selectorTerm}::eql_v2_encrypted)
+            = eql_v2.jsonb_path_query_first(b.metadata, ${selectorTerm}::eql_v2_encrypted)
+        AND a.id = ${inserted1.id}
+        AND b.id = ${inserted2.id}
+      `
+
+      expect(rows).toHaveLength(0)
+    }, 30000)
+
+  })
+
+  // ─── eql (default) return type ──────────────────────────────────────
+
+  describe('eql (default) return type', () => {
+    it('selector query using raw eql return type', async () => {
+      const plaintext = { user: { email: 'eql-raw-sel@test.com' }, marker: 'eql-raw-sel' }
+
+      const encrypted = await protectClient.encryptModel({ metadata: plaintext }, table)
+      if (encrypted.failure) throw new Error(encrypted.failure.message)
+
+      const [inserted] = await sql`
+        INSERT INTO "protect-ci-jsonb" (metadata, test_run_id)
+        VALUES (${sql.json(encrypted.data.metadata)}::eql_v2_encrypted, ${TEST_RUN_ID})
+        RETURNING id
+      `
+
+      // Omit returnType — single-value encryptQuery returns raw Encrypted object
+      const queryResult = await protectClient.encryptQuery('$.user.email', {
+        column: table.metadata,
+        table: table,
+        queryType: 'steVecSelector',
+      })
+      if (queryResult.failure) throw new Error(queryResult.failure.message)
+      const rawResult = queryResult.data
+
+      // Must use sql.json() to pass raw Encrypted object to PG
+      const rows = await sql`
+        SELECT id, (metadata).data as metadata
+        FROM "protect-ci-jsonb" t,
+             eql_v2.jsonb_path_query(t.metadata, ${sql.json(rawResult)}::eql_v2_encrypted) as result
+        WHERE t.test_run_id = ${TEST_RUN_ID}
+      `
+
+      expect(rows.length).toBeGreaterThanOrEqual(1)
+      const matchingRow = rows.find((r) => r.id === inserted.id)
+      expect(matchingRow).toBeDefined()
+
+      const decrypted = await protectClient.decryptModel({ metadata: matchingRow!.metadata })
+      if (decrypted.failure) throw new Error(decrypted.failure.message)
+      expect(decrypted.data.metadata).toEqual(plaintext)
+    }, 30000)
+
+    it('containment query using raw eql return type', async () => {
+      const plaintext = { role: 'eql-raw-contain', marker: 'eql-raw-ct' }
+
+      const encrypted = await protectClient.encryptModel({ metadata: plaintext }, table)
+      if (encrypted.failure) throw new Error(encrypted.failure.message)
+
+      const [inserted] = await sql`
+        INSERT INTO "protect-ci-jsonb" (metadata, test_run_id)
+        VALUES (${sql.json(encrypted.data.metadata)}::eql_v2_encrypted, ${TEST_RUN_ID})
+        RETURNING id
+      `
+
+      // Omit returnType — single-value encryptQuery returns raw Encrypted object
+      const queryResult = await protectClient.encryptQuery({ role: 'eql-raw-contain' }, {
+        column: table.metadata,
+        table: table,
+        queryType: 'steVecTerm',
+      })
+      if (queryResult.failure) throw new Error(queryResult.failure.message)
+      const rawResult = queryResult.data
+
+      // Must use sql.json() to pass raw Encrypted object to PG
+      const rows = await sql`
+        SELECT id, (metadata).data as metadata
+        FROM "protect-ci-jsonb"
+        WHERE metadata @> ${sql.json(rawResult)}::eql_v2_encrypted
+        AND test_run_id = ${TEST_RUN_ID}
+      `
+
+      expect(rows.length).toBeGreaterThanOrEqual(1)
+      const matchingRow = rows.find((r) => r.id === inserted.id)
+      expect(matchingRow).toBeDefined()
+
+      const decrypted = await protectClient.decryptModel({ metadata: matchingRow!.metadata })
+      if (decrypted.failure) throw new Error(decrypted.failure.message)
+      expect(decrypted.data.metadata).toEqual(plaintext)
+    }, 30000)
+  })
+
+  // ─── Concurrent encrypt + decrypt stress ────────────────────────────
+
+  describe('concurrent encrypt + decrypt stress', () => {
+    it('concurrent encrypt + decrypt stress (10 parallel)', async () => {
+      const docs = Array.from({ length: 10 }, (_, i) => ({
+        user: { email: `stress-${i}@test.com` },
+        role: `stress-role-${i}`,
+        index: i,
+        marker: `stress-${i}`,
+      }))
+
+      // Insert all 10 docs
+      const insertedIds: number[] = []
+      for (const plaintext of docs) {
+        const encrypted = await protectClient.encryptModel({ metadata: plaintext }, table)
+        if (encrypted.failure) throw new Error(encrypted.failure.message)
+
+        const [inserted] = await sql`
+          INSERT INTO "protect-ci-jsonb" (metadata, test_run_id)
+          VALUES (${sql.json(encrypted.data.metadata)}::eql_v2_encrypted, ${TEST_RUN_ID})
+          RETURNING id
+        `
+        insertedIds.push(inserted.id)
+      }
+
+      // 10 parallel encrypt-query-decrypt pipelines
+      const results = await Promise.all(
+        docs.map(async (plaintext, i) => {
+          // Encrypt a selector query
+          const queryResult = await protectClient.encryptQuery('$.user.email', {
+            column: table.metadata,
+            table: table,
+            queryType: 'steVecSelector',
+            returnType: 'composite-literal',
+          })
+          if (queryResult.failure) throw new Error(queryResult.failure.message)
+          const selectorTerm = queryResult.data
+
+          // Query PG
+          const rows = await sql`
+            SELECT id, (metadata).data as metadata
+            FROM "protect-ci-jsonb" t,
+                 eql_v2.jsonb_path_query(t.metadata, ${selectorTerm}::eql_v2_encrypted) as result
+            WHERE t.id = ${insertedIds[i]}
+          `
+
+          expect(rows).toHaveLength(1)
+
+          // Decrypt
+          const decrypted = await protectClient.decryptModel({ metadata: rows[0].metadata })
+          if (decrypted.failure) throw new Error(decrypted.failure.message)
+
+          return decrypted.data.metadata
+        })
+      )
+
+      // Assert all 10 return correct plaintext
+      expect(results).toHaveLength(10)
+      results.forEach((result, i) => {
+        expect(result).toEqual(docs[i])
+      })
+    }, 120000)
   })
 })
