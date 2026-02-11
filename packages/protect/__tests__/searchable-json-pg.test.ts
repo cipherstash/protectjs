@@ -826,15 +826,8 @@ describe('searchableJson postgres integration', () => {
 
       const insertedIds: number[] = []
       for (const plaintext of docs) {
-        const encrypted = await protectClient.encryptModel({ metadata: plaintext }, table)
-        if (encrypted.failure) throw new Error(encrypted.failure.message)
-
-        const [inserted] = await sql`
-          INSERT INTO "protect-ci-jsonb" (metadata, test_run_id)
-          VALUES (${sql.json(encrypted.data.metadata)}::eql_v2_encrypted, ${TEST_RUN_ID})
-          RETURNING id
-        `
-        insertedIds.push(inserted.id)
+        const { id } = await insertRow(plaintext)
+        insertedIds.push(id)
       }
 
       // Parallel encrypt 3 selector queries
@@ -918,15 +911,8 @@ describe('searchableJson postgres integration', () => {
 
       const insertedIds: number[] = []
       for (const plaintext of docs) {
-        const encrypted = await protectClient.encryptModel({ metadata: plaintext }, table)
-        if (encrypted.failure) throw new Error(encrypted.failure.message)
-
-        const [inserted] = await sql`
-          INSERT INTO "protect-ci-jsonb" (metadata, test_run_id)
-          VALUES (${sql.json(encrypted.data.metadata)}::eql_v2_encrypted, ${TEST_RUN_ID})
-          RETURNING id
-        `
-        insertedIds.push(inserted.id)
+        const { id } = await insertRow(plaintext)
+        insertedIds.push(id)
       }
 
       // Parallel encrypt 2 containment queries
@@ -1411,6 +1397,7 @@ describe('searchableJson postgres integration', () => {
       const dataRows = await sql`
         SELECT (metadata).data as metadata FROM "protect-ci-jsonb" t WHERE t.id = ${id}
       `
+      expect(dataRows).toHaveLength(1)
       await verifyRow(dataRows[0], plaintext)
     }, 30000)
 
@@ -1435,6 +1422,7 @@ describe('searchableJson postgres integration', () => {
       const dataRows = await sql`
         SELECT (metadata).data as metadata FROM "protect-ci-jsonb" t WHERE t.id = ${id}
       `
+      expect(dataRows).toHaveLength(1)
       await verifyRow(dataRows[0], plaintext)
     }, 30000)
 
@@ -1460,6 +1448,7 @@ describe('searchableJson postgres integration', () => {
       const dataRows = await sql`
         SELECT (metadata).data as metadata FROM "protect-ci-jsonb" t WHERE t.id = ${id}
       `
+      expect(dataRows).toHaveLength(1)
       await verifyRow(dataRows[0], plaintext)
     }, 30000)
 
@@ -1483,6 +1472,7 @@ describe('searchableJson postgres integration', () => {
       const dataRows = await sql`
         SELECT (metadata).data as metadata FROM "protect-ci-jsonb" t WHERE t.id = ${id}
       `
+      expect(dataRows).toHaveLength(1)
       await verifyRow(dataRows[0], plaintext)
     }, 30000)
 
@@ -1507,6 +1497,7 @@ describe('searchableJson postgres integration', () => {
       const dataRows = await sql`
         SELECT (metadata).data as metadata FROM "protect-ci-jsonb" t WHERE t.id = ${id}
       `
+      expect(dataRows).toHaveLength(1)
       await verifyRow(dataRows[0], plaintext)
     }, 30000)
   })
@@ -1887,9 +1878,6 @@ describe('searchableJson postgres integration', () => {
 
       // Decrypt the full document and verify the extracted field matches
       await verifyRow(rows[0], plaintext)
-      const decrypted = await protectClient.decryptModel({ metadata: rows[0].metadata })
-      if (decrypted.failure) throw new Error(decrypted.failure.message)
-      expect((decrypted.data.metadata as any).role).toBe('fa-roundtrip')
     }, 30000)
   })
 
@@ -1951,16 +1939,9 @@ describe('searchableJson postgres integration', () => {
         AND b.id = ${id2}
       `
 
-      // STE-vec may produce different ciphertexts for identical plaintext across
-      // separate encryptions. If this assertion fails, it documents that limitation.
-      if (rows.length === 0) {
-        // Cross-document equality is not supported — document this behavior
-        expect(rows).toHaveLength(0)
-      } else {
-        expect(rows).toHaveLength(1)
-        expect(rows[0].id_a).toBe(id1)
-        expect(rows[0].id_b).toBe(id2)
-      }
+      // STE-vec produces different ciphertexts for identical plaintext across
+      // separate encryptions, so cross-document equality is not supported.
+      expect(rows).toHaveLength(0)
 
       // Decrypt both docs to verify full e2e round-trip
       const [fullRow1] = await sql`SELECT (metadata).data as metadata FROM "protect-ci-jsonb" WHERE id = ${id1}`
