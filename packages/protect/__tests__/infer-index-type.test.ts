@@ -139,6 +139,28 @@ describe('infer-index-type helpers', () => {
     it('throws when explicit queryType does not match column config', () => {
       expect(() => resolveIndexType(equalityTable.name, 'steVecSelector', '$.path')).toThrow('not configured')
     })
+
+    describe('multi-index (combined) column', () => {
+      const combinedTable = csTable('combined', {
+        data: csColumn('data').searchableJson().equality(),
+      })
+
+      it('resolves steVecSelector on combined column', () => {
+        const result = resolveIndexType(combinedTable.data, 'steVecSelector', '$.user.email')
+        expect(result).toEqual({ indexType: 'ste_vec', queryOp: 'ste_vec_selector' })
+      })
+
+      it('resolves equality on combined column', () => {
+        const result = resolveIndexType(combinedTable.data, 'equality', 'alice')
+        expect(result.indexType).toBe('unique')
+        expect(result.queryOp).toBeUndefined()
+      })
+
+      it('infers unique (highest priority) when queryType omitted on combined column', () => {
+        const result = resolveIndexType(combinedTable.data, undefined, 'alice')
+        expect(result.indexType).toBe('unique')
+      })
+    })
   })
 
 })

@@ -1,5 +1,6 @@
 import 'dotenv/config'
 import { describe, expect, it, beforeAll } from 'vitest'
+import { csColumn, csTable } from '@cipherstash/schema'
 import { protect, ProtectErrorTypes } from '../src'
 
 type ProtectClient = Awaited<ReturnType<typeof protect>>
@@ -649,6 +650,50 @@ describe('searchableJson equivalence', () => {
     expect(searchableJsonData.v).toEqual(steVecTermData.v)
     expectTerm(searchableJsonData)
     expectTerm(steVecTermData)
+  }, 30000)
+})
+
+describe('searchableJson on multi-index (combined) column', () => {
+  let protectClient: ProtectClient
+
+  const combinedSchema = csTable('combined', {
+    data: csColumn('data').searchableJson().equality(),
+  })
+
+  beforeAll(async () => {
+    protectClient = await protect({ schemas: [combinedSchema] })
+  })
+
+  it('encryptQuery works with steVecSelector on combined column', async () => {
+    const result = await protectClient.encryptQuery('$.user.email', {
+      column: combinedSchema.data,
+      table: combinedSchema,
+      queryType: 'steVecSelector',
+    })
+
+    const data = unwrapResult(result)
+    expect(data).toBeDefined()
+    expect(data).toMatchObject({
+      i: { t: 'combined', c: 'data' },
+      v: 2,
+    })
+    expectSelector(data)
+  }, 30000)
+
+  it('encryptQuery works with steVecTerm on combined column', async () => {
+    const result = await protectClient.encryptQuery({ role: 'admin' }, {
+      column: combinedSchema.data,
+      table: combinedSchema,
+      queryType: 'steVecTerm',
+    })
+
+    const data = unwrapResult(result)
+    expect(data).toBeDefined()
+    expect(data).toMatchObject({
+      i: { t: 'combined', c: 'data' },
+      v: 2,
+    })
+    expectTerm(data)
   }, 30000)
 })
 
