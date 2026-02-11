@@ -70,6 +70,19 @@ describe('helpers', () => {
     it('should return false for non-encrypted object', () => {
       expect(isEncryptedPayload({ foo: 'bar' })).toBe(false)
     })
+
+    it('should return true for ste_vec encrypted payload (sv field)', () => {
+      const encrypted = {
+        v: 2,
+        sv: ['encrypted-term-1', 'encrypted-term-2'],
+        i: { c: 'metadata', t: 'documents' },
+      }
+      expect(isEncryptedPayload(encrypted)).toBe(true)
+    })
+
+    it('should return false for object with v and i but no c or sv', () => {
+      expect(isEncryptedPayload({ v: 1, i: { c: 'iv', t: 't' } })).toBe(false)
+    })
   })
 
   describe('modelToEncryptedPgComposites', () => {

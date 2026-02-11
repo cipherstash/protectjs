@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { csColumn, csTable } from '@cipherstash/schema'
 import { inferIndexType, validateIndexType } from '../src/index'
-import { inferQueryOpFromPlaintext } from '../src/ffi/helpers/infer-index-type'
+import { inferQueryOpFromPlaintext, resolveIndexType } from '../src/ffi/helpers/infer-index-type'
 
 describe('infer-index-type helpers', () => {
   const users = csTable('users', {
@@ -83,6 +83,61 @@ describe('infer-index-type helpers', () => {
 
     it('returns ste_vec_term for boolean plaintext', () => {
       expect(inferQueryOpFromPlaintext(true)).toBe('ste_vec_term')
+    })
+  })
+
+  describe('resolveIndexType', () => {
+    const jsonbTable = csTable('docs', { meta: csColumn('meta').searchableJson() })
+    const equalityTable = csTable('items', { name: csColumn('name').equality() })
+
+    it('resolves explicit steVecSelector to ste_vec with queryOp', () => {
+      const result = resolveIndexType(jsonbTable.meta, 'steVecSelector', '$.user.email')
+      expect(result).toEqual({ indexType: 'ste_vec', queryOp: 'ste_vec_selector' })
+    })
+
+    it('resolves explicit steVecTerm to ste_vec with queryOp', () => {
+      const result = resolveIndexType(jsonbTable.meta, 'steVecTerm', { role: 'admin' })
+      expect(result).toEqual({ indexType: 'ste_vec', queryOp: 'ste_vec_term' })
+    })
+
+    it('resolves searchableJson with string plaintext to ste_vec_selector', () => {
+      const result = resolveIndexType(jsonbTable.meta, 'searchableJson', '$.user.email')
+      expect(result).toEqual({ indexType: 'ste_vec', queryOp: 'ste_vec_selector' })
+    })
+
+    it('resolves searchableJson with object plaintext to ste_vec_term', () => {
+      const result = resolveIndexType(jsonbTable.meta, 'searchableJson', { role: 'admin' })
+      expect(result).toEqual({ indexType: 'ste_vec', queryOp: 'ste_vec_term' })
+    })
+
+    it('resolves searchableJson with null plaintext to indexType only (no queryOp)', () => {
+      const result = resolveIndexType(jsonbTable.meta, 'searchableJson', null)
+      expect(result).toEqual({ indexType: 'ste_vec' })
+    })
+
+    it('infers ste_vec and queryOp when queryType is omitted on ste_vec column', () => {
+      const result = resolveIndexType(jsonbTable.meta, undefined, '$.field')
+      expect(result).toEqual({ indexType: 'ste_vec', queryOp: 'ste_vec_selector' })
+    })
+
+    it('infers ste_vec with no queryOp when queryType omitted and plaintext is null', () => {
+      const result = resolveIndexType(jsonbTable.meta, undefined, null)
+      expect(result).toEqual({ indexType: 'ste_vec' })
+    })
+
+    it('resolves explicit equality to unique with no queryOp', () => {
+      const result = resolveIndexType(equalityTable.name, 'equality', 'alice')
+      expect(result.indexType).toBe('unique')
+      expect(result.queryOp).toBeUndefined()
+    })
+
+    it('infers unique with no queryOp when queryType omitted on equality column', () => {
+      const result = resolveIndexType(equalityTable.name, undefined, 'alice')
+      expect(result).toEqual({ indexType: 'unique' })
+    })
+
+    it('throws when explicit queryType does not match column config', () => {
+      expect(() => resolveIndexType(equalityTable.name, 'steVecSelector', '$.path')).toThrow('not configured')
     })
   })
 

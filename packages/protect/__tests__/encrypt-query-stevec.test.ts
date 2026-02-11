@@ -10,6 +10,19 @@ import {
   expectFailure,
 } from './fixtures'
 
+/** Assert encrypted selector output has valid shape */
+function expectSelector(data: any) {
+  expect(data).toHaveProperty('s')
+  expect(typeof data.s).toBe('string')
+  expect(data.s.length).toBeGreaterThan(0)
+}
+
+/** Assert encrypted term output has valid shape */
+function expectTerm(data: any) {
+  expect(data).toHaveProperty('sv')
+  expect(Array.isArray(data.sv)).toBe(true)
+}
+
 describe('encryptQuery with steVecSelector', () => {
   let protectClient: ProtectClient
 
@@ -29,6 +42,7 @@ describe('encryptQuery with steVecSelector', () => {
     expect(data).toMatchObject({
       i: { t: 'documents', c: 'metadata' },
     })
+    expectSelector(data)
   }, 30000)
 
   it('encrypts nested path selector', async () => {
@@ -43,6 +57,7 @@ describe('encryptQuery with steVecSelector', () => {
     expect(data).toMatchObject({
       i: { t: 'documents', c: 'metadata' },
     })
+    expectSelector(data)
   }, 30000)
 
   it('fails for non-string plaintext with steVecSelector (object)', async () => {
@@ -75,6 +90,7 @@ describe('encryptQuery with steVecTerm', () => {
     expect(data).toMatchObject({
       i: { t: 'documents', c: 'metadata' },
     })
+    expectTerm(data)
   }, 30000)
 
   it('encrypts nested object for containment', async () => {
@@ -92,6 +108,7 @@ describe('encryptQuery with steVecTerm', () => {
     expect(data).toMatchObject({
       i: { t: 'documents', c: 'metadata' },
     })
+    expectTerm(data)
   }, 30000)
 
   it('encrypts array for containment query', async () => {
@@ -106,6 +123,7 @@ describe('encryptQuery with steVecTerm', () => {
     expect(data).toMatchObject({
       i: { t: 'documents', c: 'metadata' },
     })
+    expectTerm(data)
   }, 30000)
 
   it('rejects string plaintext with steVecTerm', async () => {
@@ -177,6 +195,8 @@ describe('encryptQuery batch with STE Vec', () => {
     expect(data).toHaveLength(2)
     expect(data[0]).toMatchObject({ i: { t: 'documents', c: 'metadata' } })
     expect(data[1]).toMatchObject({ i: { t: 'documents', c: 'metadata' } })
+    expectSelector(data[0])
+    expectTerm(data[1])
   }, 30000)
 
   it('handles multiple steVecSelector queries in batch', async () => {
@@ -200,6 +220,8 @@ describe('encryptQuery batch with STE Vec', () => {
     expect(data).toHaveLength(2)
     expect(data[0]).toMatchObject({ i: { t: 'documents', c: 'metadata' } })
     expect(data[1]).toMatchObject({ i: { t: 'documents', c: 'metadata' } })
+    expectSelector(data[0])
+    expectSelector(data[1])
   }, 30000)
 
   it('handles null values with steVecSelector in batch', async () => {
@@ -224,6 +246,7 @@ describe('encryptQuery batch with STE Vec', () => {
     expect(data[0]).toBeNull()
     expect(data[1]).not.toBeNull()
     expect(data[1]).toMatchObject({ i: { t: 'documents', c: 'metadata' } })
+    expectSelector(data[1])
   }, 30000)
 
   it('handles null values with steVecTerm in batch', async () => {
@@ -248,6 +271,7 @@ describe('encryptQuery batch with STE Vec', () => {
     expect(data[0]).toBeNull()
     expect(data[1]).not.toBeNull()
     expect(data[1]).toMatchObject({ i: { t: 'documents', c: 'metadata' } })
+    expectTerm(data[1])
   }, 30000)
 })
 
@@ -270,6 +294,7 @@ describe('encryptQuery with queryType inference', () => {
     expect(data).toMatchObject({
       i: { t: 'documents', c: 'metadata' },
     })
+    expectSelector(data)
   }, 30000)
 
   it('infers steVecTerm for object plaintext without queryType', async () => {
@@ -284,6 +309,7 @@ describe('encryptQuery with queryType inference', () => {
     expect(data).toMatchObject({
       i: { t: 'documents', c: 'metadata' },
     })
+    expectTerm(data)
   }, 30000)
 
   it('infers steVecTerm for array plaintext without queryType', async () => {
@@ -298,6 +324,7 @@ describe('encryptQuery with queryType inference', () => {
     expect(data).toMatchObject({
       i: { t: 'documents', c: 'metadata' },
     })
+    expectTerm(data)
   }, 30000)
 
   it('infers steVecTerm for number plaintext but FFI requires wrapping', async () => {
@@ -350,6 +377,7 @@ describe('encryptQuery with queryType inference', () => {
     expect(data).toMatchObject({
       i: { t: 'documents', c: 'metadata' },
     })
+    expectTerm(data)
   }, 30000)
 })
 
@@ -380,5 +408,7 @@ describe('encryptQuery batch with queryType inference', () => {
     expect(data).toHaveLength(2)
     expect(data[0]).toBeDefined()
     expect(data[1]).toBeDefined()
+    expectSelector(data[0])
+    expectTerm(data[1])
   }, 30000)
 })
