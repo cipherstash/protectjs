@@ -90,6 +90,8 @@ describe('searchableJson postgres integration', () => {
         WHERE id = ${inserted.id}
       `
 
+      expect(rows).toHaveLength(1)
+
       const decrypted = await protectClient.decryptModel({ metadata: rows[0].metadata })
       if (decrypted.failure) throw new Error(decrypted.failure.message)
 
@@ -2017,6 +2019,14 @@ describe('searchableJson postgres integration', () => {
 
       expect(rows).toHaveLength(1)
       expect(rows[0].arr_len).toBeNull()
+
+      const dataRows = await sql`
+        SELECT (metadata).data as metadata FROM "protect-ci-jsonb" t WHERE t.id = ${inserted.id}
+      `
+      expect(dataRows).toHaveLength(1)
+      const decrypted = await protectClient.decryptModel({ metadata: dataRows[0].metadata })
+      if (decrypted.failure) throw new Error(decrypted.failure.message)
+      expect(decrypted.data.metadata).toEqual(plaintext)
     }, 30000)
 
     it('returns correct length for known array (Extended)', async () => {
@@ -2051,6 +2061,14 @@ describe('searchableJson postgres integration', () => {
 
       expect(rows).toHaveLength(1)
       expect(rows[0].arr_len).toBe(4)
+
+      const dataRows = await sql`
+        SELECT (metadata).data as metadata FROM "protect-ci-jsonb" t WHERE t.id = ${inserted.id}
+      `
+      expect(dataRows).toHaveLength(1)
+      const decrypted = await protectClient.decryptModel({ metadata: dataRows[0].metadata })
+      if (decrypted.failure) throw new Error(decrypted.failure.message)
+      expect(decrypted.data.metadata).toEqual(plaintext)
     }, 30000)
 
     it('returns correct length for known array (Simple)', async () => {
@@ -2086,6 +2104,14 @@ describe('searchableJson postgres integration', () => {
 
       expect(rows).toHaveLength(1)
       expect(rows[0].arr_len).toBe(3)
+
+      const dataRows = await sql`
+        SELECT (metadata).data as metadata FROM "protect-ci-jsonb" t WHERE t.id = ${inserted.id}
+      `
+      expect(dataRows).toHaveLength(1)
+      const decrypted = await protectClient.decryptModel({ metadata: dataRows[0].metadata })
+      if (decrypted.failure) throw new Error(decrypted.failure.message)
+      expect(decrypted.data.metadata).toEqual(plaintext)
     }, 30000)
 
     it('expands array via jsonb_array_elements (Extended)', async () => {
@@ -2119,6 +2145,14 @@ describe('searchableJson postgres integration', () => {
       `
 
       expect(rows).toHaveLength(3)
+
+      const dataRows = await sql`
+        SELECT (metadata).data as metadata FROM "protect-ci-jsonb" t WHERE t.id = ${inserted.id}
+      `
+      expect(dataRows).toHaveLength(1)
+      const decrypted = await protectClient.decryptModel({ metadata: dataRows[0].metadata })
+      if (decrypted.failure) throw new Error(decrypted.failure.message)
+      expect(decrypted.data.metadata).toEqual(plaintext)
     }, 30000)
 
     it('expands array via jsonb_array_elements (Simple)', async () => {
@@ -2153,6 +2187,14 @@ describe('searchableJson postgres integration', () => {
       )
 
       expect(rows).toHaveLength(3)
+
+      const dataRows = await sql`
+        SELECT (metadata).data as metadata FROM "protect-ci-jsonb" t WHERE t.id = ${inserted.id}
+      `
+      expect(dataRows).toHaveLength(1)
+      const decrypted = await protectClient.decryptModel({ metadata: dataRows[0].metadata })
+      if (decrypted.failure) throw new Error(decrypted.failure.message)
+      expect(decrypted.data.metadata).toEqual(plaintext)
     }, 30000)
   })
 
@@ -2733,6 +2775,14 @@ describe('searchableJson postgres integration', () => {
 
       expect(rows).toHaveLength(1)
       expect(rows[0].extracted).not.toBeNull()
+
+      const fullRows = await sql`
+        SELECT (metadata).data as metadata FROM "protect-ci-jsonb" t WHERE t.id = ${inserted.id}
+      `
+      expect(fullRows).toHaveLength(1)
+      const decrypted = await protectClient.decryptModel({ metadata: fullRows[0].metadata })
+      if (decrypted.failure) throw new Error(decrypted.failure.message)
+      expect(decrypted.data.metadata).toEqual(plaintext)
     }, 30000)
 
     it('extracts field by encrypted selector (Simple)', async () => {
@@ -2765,6 +2815,14 @@ describe('searchableJson postgres integration', () => {
 
       expect(rows).toHaveLength(1)
       expect(rows[0].extracted).not.toBeNull()
+
+      const fullRows = await sql`
+        SELECT (metadata).data as metadata FROM "protect-ci-jsonb" t WHERE t.id = ${inserted.id}
+      `
+      expect(fullRows).toHaveLength(1)
+      const decrypted = await protectClient.decryptModel({ metadata: fullRows[0].metadata })
+      if (decrypted.failure) throw new Error(decrypted.failure.message)
+      expect(decrypted.data.metadata).toEqual(plaintext)
     }, 30000)
 
     it('returns null for non-existent field (Extended)', async () => {
@@ -2863,7 +2921,7 @@ describe('searchableJson postgres integration', () => {
       const selectorTerm = queryResult.data
 
       const rows = await sql`
-        SELECT id
+        SELECT id, (metadata).data as metadata
         FROM "protect-ci-jsonb" t
         WHERE eql_v2.jsonb_path_query_first(t.metadata, ${selectorTerm}::eql_v2_encrypted)
             = eql_v2.jsonb_path_query_first(t.metadata, ${selectorTerm}::eql_v2_encrypted)
@@ -2871,6 +2929,10 @@ describe('searchableJson postgres integration', () => {
       `
 
       expect(rows).toHaveLength(1)
+
+      const decrypted = await protectClient.decryptModel({ metadata: rows[0].metadata })
+      if (decrypted.failure) throw new Error(decrypted.failure.message)
+      expect(decrypted.data.metadata).toEqual(plaintext)
     }, 30000)
 
     it('jsonb_path_query_first = self-comparison (Simple)', async () => {
@@ -2895,7 +2957,7 @@ describe('searchableJson postgres integration', () => {
       const selectorTerm = queryResult.data
 
       const rows = await sql.unsafe(
-        `SELECT id
+        `SELECT id, (metadata).data as metadata
          FROM "protect-ci-jsonb" t
          WHERE eql_v2.jsonb_path_query_first(t.metadata, $1::eql_v2_encrypted)
              = eql_v2.jsonb_path_query_first(t.metadata, $1::eql_v2_encrypted)
@@ -2904,6 +2966,10 @@ describe('searchableJson postgres integration', () => {
       )
 
       expect(rows).toHaveLength(1)
+
+      const decrypted = await protectClient.decryptModel({ metadata: rows[0].metadata })
+      if (decrypted.failure) throw new Error(decrypted.failure.message)
+      expect(decrypted.data.metadata).toEqual(plaintext)
     }, 30000)
 
     it('equality across two documents with same field value', async () => {
@@ -2954,6 +3020,16 @@ describe('searchableJson postgres integration', () => {
         expect(rows[0].id_a).toBe(inserted1.id)
         expect(rows[0].id_b).toBe(inserted2.id)
       }
+
+      // Decrypt both docs to verify full e2e round-trip
+      const [fullRow1] = await sql`SELECT (metadata).data as metadata FROM "protect-ci-jsonb" WHERE id = ${inserted1.id}`
+      const [fullRow2] = await sql`SELECT (metadata).data as metadata FROM "protect-ci-jsonb" WHERE id = ${inserted2.id}`
+      const d1 = await protectClient.decryptModel({ metadata: fullRow1.metadata })
+      const d2 = await protectClient.decryptModel({ metadata: fullRow2.metadata })
+      if (d1.failure) throw new Error(d1.failure.message)
+      if (d2.failure) throw new Error(d2.failure.message)
+      expect(d1.data.metadata).toEqual(doc1)
+      expect(d2.data.metadata).toEqual(doc2)
     }, 30000)
 
     it('equality mismatch across two documents', async () => {
