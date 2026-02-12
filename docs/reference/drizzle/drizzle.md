@@ -1,7 +1,7 @@
 # Drizzle + Stash Encryption Query Examples
-## Protect Operators Pattern (Recommended)
+## Encryption Operators Pattern (Recommended)
 
-This page demonstrates how to perform queries on encrypted data using **Drizzle ORM** with **CipherStash Stash Encryption** using the **protect operators pattern**.
+This page demonstrates how to perform queries on encrypted data using **Drizzle ORM** with **CipherStash Stash Encryption** using the **encryption operators pattern**.
 
 **Pattern:** Auto-encrypting operators from `createProtectOperators()` provide clean syntax with automatic encryption.
 
@@ -30,7 +30,7 @@ The TypeScript schema uses camelCase property names that map to snake_case datab
 
 ## When to Use This Pattern
 
-✅ **Use the protect operators pattern when:**
+✅ **Use the encryption operators pattern when:**
 - You want clean, readable query syntax
 - You're building standard CRUD applications
 - You prefer minimal boilerplate code
@@ -39,7 +39,7 @@ The TypeScript schema uses camelCase property names that map to snake_case datab
 
 This is the **recommended pattern** for most use cases.
 
-**Alternative:** See [manual encryption pattern](/reference/drizzle/drizzle-protect) for explicit control over encryption workflow.
+**Alternative:** See [manual encryption pattern](/reference/drizzle/drizzle-protect) for explicit control over the encryption workflow.
 
 ## Setup
 

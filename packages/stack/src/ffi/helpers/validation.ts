@@ -18,7 +18,7 @@ export function validateNumericValue(
     return {
       failure: {
         type: EncryptionErrorTypes.EncryptionError,
-        message: '[protect]: Cannot encrypt NaN value',
+        message: '[encryption]: Cannot encrypt NaN value',
       },
     }
   }
@@ -26,7 +26,7 @@ export function validateNumericValue(
     return {
       failure: {
         type: EncryptionErrorTypes.EncryptionError,
-        message: '[protect]: Cannot encrypt Infinity value',
+        message: '[encryption]: Cannot encrypt Infinity value',
       },
     }
   }
@@ -42,10 +42,10 @@ export function validateNumericValue(
  */
 export function assertValidNumericValue(value: unknown): void {
   if (typeof value === 'number' && Number.isNaN(value)) {
-    throw new Error('[protect]: Cannot encrypt NaN value')
+    throw new Error('[encryption]: Cannot encrypt NaN value')
   }
   if (typeof value === 'number' && !Number.isFinite(value)) {
-    throw new Error('[protect]: Cannot encrypt Infinity value')
+    throw new Error('[encryption]: Cannot encrypt Infinity value')
   }
 }
 
@@ -66,7 +66,7 @@ export function validateValueIndexCompatibility(
     return {
       failure: {
         type: EncryptionErrorTypes.EncryptionError,
-        message: `[protect]: Cannot use 'match' index with numeric value on column "${columnName}". The 'freeTextSearch' index only supports string values. Configure the column with 'orderAndRange()' or 'equality()' for numeric queries.`,
+        message: `[encryption]: Cannot use 'match' index with numeric value on column "${columnName}". The 'freeTextSearch' index only supports string values. Configure the column with 'orderAndRange()' or 'equality()' for numeric queries.`,
       },
     }
   }
@@ -88,7 +88,7 @@ export function assertValueIndexCompatibility(
 ): void {
   if (typeof value === 'number' && indexType === 'match') {
     throw new Error(
-      `[protect]: Cannot use 'match' index with numeric value on column "${columnName}". The 'freeTextSearch' index only supports string values. Configure the column with 'orderAndRange()' or 'equality()' for numeric queries.`,
+      `[encryption]: Cannot use 'match' index with numeric value on column "${columnName}". The 'freeTextSearch' index only supports string values. Configure the column with 'orderAndRange()' or 'equality()' for numeric queries.`,
     )
   }
 }

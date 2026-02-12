@@ -10,7 +10,7 @@ This page demonstrates how to perform queries on encrypted data using **Drizzle 
 - Use standard Drizzle operators (`eq()`, `gte()`, `lte()`) with pre-encrypted values
 - Manually decrypt results using `protectClient.bulkDecryptModels()`
 
-This verbose pattern demonstrates the low-level encryption workflow. For cleaner syntax, see the [protect operators pattern](/reference/drizzle/drizzle).
+This verbose pattern demonstrates the low-level encryption workflow. For cleaner syntax, see the [encryption operators pattern](/reference/drizzle/drizzle).
 
 ## Overview
 
@@ -21,7 +21,7 @@ This example uses a `transactions` table with the following encrypted fields:
 - **`description`**: Encrypted with full-text search support
 - **`createdAt`**: Encrypted timestamp with range query support
 
-**Key differences from protect operators pattern:**
+**Key differences from encryption operators pattern:**
 
 1. **Manual encryption** of query parameters using `protectClient.encrypt()`
 2. **Standard Drizzle operators** (`eq()`, `gte()`, `lte()`) with pre-encrypted values
@@ -39,7 +39,7 @@ This gives you explicit visibility into the encryption/decryption workflow at th
 - You're implementing batch operations with encryption
 - You want to inspect encrypted values for debugging
 
-**Recommended:** Most applications should use the [protect operators pattern](/reference/drizzle/drizzle) for cleaner syntax.
+**Recommended:** Most applications should use the [encryption operators pattern](/reference/drizzle/drizzle) for cleaner syntax.
 
 ## Setup
 
@@ -226,7 +226,7 @@ return decrypted.data
 
 Search for transactions with "gym" in the description. With the manual encryption pattern, you must encrypt the search pattern and cast it to the encrypted type.
 
-**Note:** Unlike the protect operators pattern which provides `protect.like()` wrapper, the manual encryption pattern requires using Drizzle's `sql` template with manual type casting. This gives you full control over the encryption and query construction at the cost of more verbose syntax.
+**Note:** Unlike the encryption operators pattern which provides `protect.like()` wrapper, the manual encryption pattern requires using Drizzle's `sql` template with manual type casting. This gives you full control over the encryption and query construction at the cost of more verbose syntax.
 
 ```ts:run
 // Encrypt the search pattern
@@ -451,7 +451,7 @@ return decrypted.data
 
 ## Understanding the manual approach
 
-When using the manual encryption pattern instead of protect operators, you have explicit control over each step:
+When using the manual encryption pattern instead of encryption operators, you have explicit control over each step:
 
 ### Encryption flow
 
@@ -461,9 +461,9 @@ When using the manual encryption pattern instead of protect operators, you have 
 4. **Decrypt results** using `protectClient.bulkDecryptModels(results)`
 5. **Return plaintext** - Results are now readable
 
-### Key differences from protect operators pattern
+### Key differences from encryption operators pattern
 
-| Aspect | Protect Operators | Manual Encryption |
+| Aspect | Encryption Operators | Manual Encryption |
 |--------|------------------|-------------------|
 | Encryption | `protect.eq(col, val)` | `encrypt()` + `eq()` |
 | Code | Auto-encrypting operators | Explicit encryption calls |
@@ -483,7 +483,7 @@ When using the manual encryption pattern instead of protect operators, you have 
 - You're implementing batch operations
 - You want to inspect encrypted values for debugging
 
-✅ **Use protect operators when:**
+✅ **Use encryption operators when:**
 - You want the simplest developer experience
 - You prefer cleaner query syntax
 - You're building standard CRUD operations
@@ -545,7 +545,7 @@ transactions.amount
 transactions.description
 transactions.createdAt
 
-// Protect schema (for encryption operations)
+// Encryption schema (for encryption operations)
 protectTransactions.account_number   // Note: snake_case
 protectTransactions.amount
 protectTransactions.description
@@ -556,7 +556,7 @@ protectTransactions.created_at       // Note: snake_case
 
 ## Next steps
 
-- **Compare patterns**: Try the same query with both protect operators and manual encryption
+- **Compare patterns**: Try the same query with both encryption operators and manual encryption
 - **Explore the code**: Check out the source code in the repository
 - **Try different queries**: Modify the examples above and run them
 - **Read the docs**: Visit [CipherStash Stash Encryption documentation](https://docs.cipherstash.com/)

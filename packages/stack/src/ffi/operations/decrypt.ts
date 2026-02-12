@@ -13,7 +13,7 @@ import { EncryptionOperation } from './base-operation'
 
 /**
  * Decrypts an encrypted payload using the provided client.
- * This is the type returned by the {@link ProtectClient.decrypt | decrypt} method of the {@link ProtectClient}.
+ * This is the type returned by the {@link EncryptionClient.decrypt | decrypt} method of the {@link EncryptionClient}.
  */
 export class DecryptOperation extends EncryptionOperation<JsPlaintext | null> {
   private client: Client
@@ -110,7 +110,7 @@ export class DecryptOperationWithLockContext extends EncryptionOperation<JsPlain
         const context = await this.lockContext.getLockContext()
 
         if (context.failure) {
-          throw new Error(`[protect]: ${context.failure.message}`)
+          throw new Error(`[encryption]: ${context.failure.message}`)
         }
 
         return await ffiDecrypt(client, {

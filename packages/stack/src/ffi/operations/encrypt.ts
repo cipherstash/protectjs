@@ -61,14 +61,14 @@ export class EncryptOperation extends EncryptionOperation<Encrypted> {
           typeof this.plaintext === 'number' &&
           Number.isNaN(this.plaintext)
         ) {
-          throw new Error('[protect]: Cannot encrypt NaN value')
+          throw new Error('[encryption]: Cannot encrypt NaN value')
         }
 
         if (
           typeof this.plaintext === 'number' &&
           !Number.isFinite(this.plaintext)
         ) {
-          throw new Error('[protect]: Cannot encrypt Infinity value')
+          throw new Error('[encryption]: Cannot encrypt Infinity value')
         }
 
         const { metadata } = this.getAuditData()
@@ -136,7 +136,7 @@ export class EncryptOperationWithLockContext extends EncryptionOperation<Encrypt
         const context = await this.lockContext.getLockContext()
 
         if (context.failure) {
-          throw new Error(`[protect]: ${context.failure.message}`)
+          throw new Error(`[encryption]: ${context.failure.message}`)
         }
 
         return await ffiEncrypt(client, {

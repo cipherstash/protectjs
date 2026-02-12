@@ -1,7 +1,12 @@
 import 'dotenv/config'
 import { encryptedColumn, encryptedTable } from '@cipherstash/schema'
 import { beforeAll, describe, expect, it } from 'vitest'
-import { type EncryptedPayload, Encryption, LockContext } from '../src'
+import {
+  type Encrypted,
+  Encryption,
+  type EncryptionClient,
+  LockContext,
+} from '../src'
 
 const users = encryptedTable('users', {
   email: encryptedColumn('email').freeTextSearch().equality().orderAndRange(),
@@ -17,7 +22,7 @@ type User = {
   number?: number
 }
 
-let protectClient: Awaited<ReturnType<typeof protect>>
+let protectClient: EncryptionClient
 
 beforeAll(async () => {
   protectClient = await Encryption({
@@ -315,8 +320,7 @@ describe('bulk encryption and decryption', () => {
     }, 30000)
 
     it('should handle empty array in bulk decrypt', async () => {
-      const encryptedPayloads: Array<{ id?: string; data: EncryptedPayload }> =
-        []
+      const encryptedPayloads: Array<{ id?: string; data: Encrypted }> = []
 
       const decryptedData = await protectClient.bulkDecrypt(encryptedPayloads)
 

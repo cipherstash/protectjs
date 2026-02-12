@@ -90,7 +90,7 @@ export class BulkDecryptModelsOperationWithLockContext<
         const context = await this.lockContext.getLockContext()
 
         if (context.failure) {
-          throw new Error(`[protect]: ${context.failure.message}`)
+          throw new Error(`[encryption]: ${context.failure.message}`)
         }
 
         const auditData = this.getAuditData()

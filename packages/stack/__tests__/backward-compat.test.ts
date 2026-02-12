@@ -1,14 +1,14 @@
 import 'dotenv/config'
 import { encryptedColumn, encryptedTable } from '@cipherstash/schema'
 import { beforeAll, describe, expect, it } from 'vitest'
-import { Encryption } from '../src'
+import { Encryption, type EncryptionClient } from '../src'
 
 const users = encryptedTable('users', {
   email: encryptedColumn('email'),
 })
 
 describe('k-field backward compatibility', () => {
-  let protectClient: Awaited<ReturnType<typeof protect>>
+  let protectClient: EncryptionClient
 
   beforeAll(async () => {
     protectClient = await Encryption({ schemas: [users] })

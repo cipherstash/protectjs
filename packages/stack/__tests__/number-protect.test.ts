@@ -5,7 +5,7 @@ import {
   encryptedValue,
 } from '@cipherstash/schema'
 import { beforeAll, describe, expect, it, test } from 'vitest'
-import { Encryption, LockContext } from '../src'
+import { Encryption, type EncryptionClient, LockContext } from '../src'
 
 const users = encryptedTable('users', {
   email: encryptedColumn('email').freeTextSearch().equality().orderAndRange(),
@@ -32,7 +32,7 @@ type User = {
   }
 }
 
-let protectClient: Awaited<ReturnType<typeof protect>>
+let protectClient: EncryptionClient
 
 beforeAll(async () => {
   protectClient = await Encryption({

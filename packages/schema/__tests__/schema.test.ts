@@ -1,15 +1,23 @@
 import { describe, expect, it } from 'vitest'
-import { buildEncryptConfig, csColumn, csTable, csValue } from '../src'
+import {
+  buildEncryptConfig,
+  encryptedColumn,
+  encryptedTable,
+  encryptedValue,
+} from '../src'
 
 describe('Schema with nested columns', () => {
   it('should handle nested column structures in encrypt config', () => {
-    const users = csTable('users', {
-      email: csColumn('email').freeTextSearch().equality().orderAndRange(),
-      address: csColumn('address').freeTextSearch(),
+    const users = encryptedTable('users', {
+      email: encryptedColumn('email')
+        .freeTextSearch()
+        .equality()
+        .orderAndRange(),
+      address: encryptedColumn('address').freeTextSearch(),
       example: {
-        field: csValue('example.field'),
+        field: encryptedValue('example.field'),
         nested: {
-          deep: csValue('example.nested.deep'),
+          deep: encryptedValue('example.nested.deep'),
         },
       },
     } as const)
@@ -65,17 +73,17 @@ describe('Schema with nested columns', () => {
   })
 
   it('should handle multiple tables with nested columns', () => {
-    const users = csTable('users', {
-      email: csColumn('email').equality(),
+    const users = encryptedTable('users', {
+      email: encryptedColumn('email').equality(),
       profile: {
-        name: csValue('profile.name'),
+        name: encryptedValue('profile.name'),
       },
     } as const)
 
-    const posts = csTable('posts', {
-      title: csColumn('title').freeTextSearch(),
+    const posts = encryptedTable('posts', {
+      title: encryptedColumn('title').freeTextSearch(),
       metadata: {
-        tags: csValue('metadata.tags'),
+        tags: encryptedValue('metadata.tags'),
       },
     } as const)
 
@@ -94,14 +102,14 @@ describe('Schema with nested columns', () => {
   })
 
   it('should handle complex nested structures with multiple index types', () => {
-    const complex = csTable('complex', {
-      id: csColumn('id').equality(),
+    const complex = encryptedTable('complex', {
+      id: encryptedColumn('id').equality(),
       content: {
-        text: csValue('content.text'),
+        text: encryptedValue('content.text'),
         metadata: {
-          tags: csValue('content.metadata.tags'),
+          tags: encryptedValue('content.metadata.tags'),
           stats: {
-            views: csValue('content.metadata.stats.views'),
+            views: encryptedValue('content.metadata.stats.views'),
           },
         },
       },
@@ -132,8 +140,8 @@ describe('Schema with nested columns', () => {
 
   // NOTE: Leaving this test commented out until stevec indexing for JSON is supported.
   /*it('should handle ste_vec index for JSON columns', () => {
-    const users = csTable('users', {
-      json: csColumn('json').dataType('jsonb').searchableJson(),
+    const users = encryptedTable('users', {
+      json: encryptedColumn('json').dataType('jsonb').searchableJson(),
     } as const)
 
     const config = buildEncryptConfig(users)
