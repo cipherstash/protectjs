@@ -4,8 +4,8 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Protect.js + Next.js + Clerk',
-  description: 'An example of using Protect.js with Next.js and Clerk',
+  title: 'Stash Encryption + Next.js + Clerk',
+  description: 'An example of using Stash Encryption with Next.js and Clerk',
 }
 
 export default function Layout({ children }: { children: React.ReactNode }) {

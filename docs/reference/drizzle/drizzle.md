@@ -1,12 +1,12 @@
-# Drizzle + Protect.js Query Examples
-## Protect Operators Pattern (Recommended)
+# Drizzle + Stash Encryption Query Examples
+## Encryption Operators Pattern (Recommended)
 
-This page demonstrates how to perform queries on encrypted data using **Drizzle ORM** with **CipherStash Protect.js** using the **protect operators pattern**.
+This page demonstrates how to perform queries on encrypted data using **Drizzle ORM** with **CipherStash Stash Encryption** using the **encryption operators pattern**.
 
-**Pattern:** Auto-encrypting operators from `createProtectOperators()` provide clean syntax with automatic encryption.
+**Pattern:** Auto-encrypting operators from `createEncryptionOperators()` provide clean syntax with automatic encryption.
 
 **How it works:**
-- Use `await protect.eq()`, `await protect.gte()`, `await protect.like()` for queries
+- Use `await encryption.eq()`, `await encryption.gte()`, `await encryption.like()` for queries
 - Operators automatically detect encrypted columns and encrypt query values
 - Results are automatically decrypted by the executor
 
@@ -30,7 +30,7 @@ The TypeScript schema uses camelCase property names that map to snake_case datab
 
 ## When to Use This Pattern
 
-✅ **Use the protect operators pattern when:**
+✅ **Use the encryption operators pattern when:**
 - You want clean, readable query syntax
 - You're building standard CRUD applications
 - You prefer minimal boilerplate code
@@ -39,7 +39,7 @@ The TypeScript schema uses camelCase property names that map to snake_case datab
 
 This is the **recommended pattern** for most use cases.
 
-**Alternative:** See [manual encryption pattern](/reference/drizzle/drizzle-protect) for explicit control over encryption workflow.
+**Alternative:** See [manual encryption pattern](/reference/drizzle/drizzle-encryption) for explicit control over the encryption workflow.
 
 ## Setup
 
@@ -103,7 +103,7 @@ Find transactions with a specific amount.
 ```ts:run
 const results = await db.select()
   .from(transactions)
-  .where(await protect.eq(transactions.amount, 800.00))
+  .where(await encryption.eq(transactions.amount, 800.00))
 return results
 ```
 
@@ -114,7 +114,7 @@ Find transactions with a specific description.
 ```ts:run
 const results = await db.select()
   .from(transactions)
-  .where(await protect.eq(transactions.description, 'Salary deposit'))
+  .where(await encryption.eq(transactions.description, 'Salary deposit'))
 return results
 ```
 
@@ -127,8 +127,8 @@ const results = await db.select()
   .from(transactions)
   .where(
     and(
-      await protect.eq(transactions.account, '1234567890'),
-      await protect.eq(transactions.amount, 800.00)
+      await encryption.eq(transactions.account, '1234567890'),
+      await encryption.eq(transactions.amount, 800.00)
     )
   )
 return results
@@ -145,7 +145,7 @@ Find transactions with amounts less than or equal to $150.
 ```ts:run
 const results = await db.select()
   .from(transactions)
-  .where(await protect.lte(transactions.amount, 150.00))
+  .where(await encryption.lte(transactions.amount, 150.00))
 return results
 ```
 
@@ -156,7 +156,7 @@ Find transactions with amounts greater than or equal to $1250.
 ```ts:run
 const results = await db.select()
   .from(transactions)
-  .where(await protect.gte(transactions.amount, 1250.00))
+  .where(await encryption.gte(transactions.amount, 1250.00))
 return results
 ```
 
@@ -171,7 +171,7 @@ Search for transactions with "gym" in the description using full-text search.
 ```ts:run
 const results = await db.select()
   .from(transactions)
-  .where(await protect.like(transactions.description, '%gym%'))
+  .where(await encryption.like(transactions.description, '%gym%'))
 return results
 ```
 
@@ -184,8 +184,8 @@ const results = await db.select()
   .from(transactions)
   .where(
     and(
-      await protect.gte(transactions.amount, 150.00),
-      await protect.like(transactions.description, '%payment%')
+      await encryption.gte(transactions.amount, 150.00),
+      await encryption.like(transactions.description, '%payment%')
     )
   )
 return results
@@ -204,8 +204,8 @@ const results = await db.select()
   .from(transactions)
   .where(
     and(
-      await protect.gte(transactions.amount, 150.00),
-      await protect.lte(transactions.amount, 1250.00)
+      await encryption.gte(transactions.amount, 150.00),
+      await encryption.lte(transactions.amount, 1250.00)
     )
   )
 return results
@@ -223,8 +223,8 @@ const results = await db.select()
   .from(transactions)
   .where(
     and(
-      await protect.gte(transactions.createdAt, twoWeeksAgo.getTime()),
-      await protect.lte(transactions.createdAt, now.getTime())
+      await encryption.gte(transactions.createdAt, twoWeeksAgo.getTime()),
+      await encryption.lte(transactions.createdAt, now.getTime())
     )
   )
 return results
@@ -234,7 +234,7 @@ return results
 
 ## Order by encrypted data
 
-Protect.js supports ordering on encrypted fields using Order-Revealing Encryption (ORE). This allows the database to sort encrypted values without decrypting them, while preserving the original sort order.
+Stash Encryption supports ordering on encrypted fields using Order-Revealing Encryption (ORE). This allows the database to sort encrypted values without decrypting them, while preserving the original sort order.
 
 ### Order by encrypted number
 
@@ -293,7 +293,7 @@ Count transactions with amounts greater than or equal to $1250.
 ```ts:run
 const result = await db.select({ count: sql`count(*)` })
   .from(transactions)
-  .where(await protect.gte(transactions.amount, 1250.00))
+  .where(await encryption.gte(transactions.amount, 1250.00))
 return result
 ```
 
@@ -313,12 +313,12 @@ return result
 
 ## Understanding the results
 
-All results are automatically **decrypted** by Protect.js before being returned to you. The data remains encrypted in the database at all times.
+All results are automatically **decrypted** by Stash Encryption before being returned to you. The data remains encrypted in the database at all times.
 
 ### What's happening behind the scenes
 
 1. **Query Construction**: You write normal Drizzle queries
-2. **Encryption**: `protect` operators encrypt your search values
+2. **Encryption**: `encryption` operators encrypt your search values
 3. **Database Search**: PostgreSQL searches encrypted data using special indexes
 4. **Decryption**: Results are decrypted before being returned
 5. **Display**: You see plain text results
@@ -327,7 +327,7 @@ All results are automatically **decrypted** by Protect.js before being returned 
 
 - ✅ **Data encrypted at rest** - Database breaches don't expose sensitive data
 - ✅ **Searchable encryption** - Equality, range, and text search work on encrypted fields
-- ✅ **Familiar API** - Use standard Drizzle syntax with `protect`
+- ✅ **Familiar API** - Use standard Drizzle syntax with `encryption`
 - ✅ **Automatic decryption** - No manual decryption needed
 - ✅ **Type safety** - Full TypeScript support
 
@@ -337,7 +337,7 @@ All results are automatically **decrypted** by Protect.js before being returned 
 
 - **Explore the code**: Check out the source code in the repository
 - **Try different queries**: Modify the examples above and run them
-- **Read the docs**: Visit [CipherStash Protect.js documentation](https://docs.cipherstash.com/)
+- **Read the docs**: Visit [CipherStash Stash Encryption documentation](https://docs.cipherstash.com/)
 - **Integrate into your app**: Use these patterns in your own applications
 
 ---

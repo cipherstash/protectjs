@@ -1,6 +1,6 @@
-# Basic example of using @cipherstash/protect
+# Basic example of using @cipherstash/stack
 
-This basic example demonstrates how to use the `@cipherstash/protect` package to encrypt arbitrary input.
+This basic example demonstrates how to use the `@cipherstash/stack` package to encrypt arbitrary input.
 
 ## Installing the basic example
 
@@ -43,7 +43,7 @@ Lastly, install the CipherStash CLI:
 > [!IMPORTANT]
 > Make sure you have [installed the CipherStash CLI](#installation) before following these steps.
 
-Set up all the configuration and credentials required for Protect.js:
+Set up all the configuration and credentials required for Stash Encryption:
 
 ```bash
 stash setup
@@ -53,8 +53,8 @@ If you have not already signed up for a CipherStash account, this will prompt yo
 
 At the end of `stash setup`, you will have two files in your project:
 
-- `cipherstash.toml` which contains the configuration for Protect.js
-- `cipherstash.secret.toml` which contains the credentials for Protect.js
+- `cipherstash.toml` which contains the configuration for Stash Encryption
+- `cipherstash.secret.toml` which contains the credentials for Stash Encryption
 
 > [!WARNING]
 > Do not commit `cipherstash.secret.toml` to git, because it contains sensitive credentials.
@@ -72,4 +72,4 @@ The application will log the plaintext to the console that has been encrypted us
 
 ## Next steps
 
-Check out the [Protect.js + Next.js + Clerk example app](../nextjs-clerk) to see how to add end-user identity as an extra control when encrypting data.
+Check out the [Stash Encryption + Next.js + Clerk example app](../nextjs-clerk) to see how to add end-user identity as an extra control when encrypting data.

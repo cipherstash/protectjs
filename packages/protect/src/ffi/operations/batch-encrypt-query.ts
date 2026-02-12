@@ -1,28 +1,32 @@
 import { type Result, withResult } from '@byteslice/result'
 import {
   type JsPlaintext,
-  encryptQueryBulk as ffiEncryptQueryBulk,
   type QueryPayload,
+  encryptQueryBulk as ffiEncryptQueryBulk,
 } from '@cipherstash/protect-ffi'
-import { type ProtectError, ProtectErrorTypes } from '../..'
-import { getErrorCode } from '../helpers/error-code'
-import { logger } from '../../../../utils/logger'
-import type { Context, LockContext } from '../../identify'
 import type { Encrypted as CipherStashEncrypted } from '@cipherstash/protect-ffi'
+import { type ProtectError, ProtectErrorTypes } from '../..'
+import { logger } from '../../../../utils/logger'
+import {
+  encryptedToCompositeLiteral,
+  encryptedToEscapedCompositeLiteral,
+} from '../../helpers'
+import type { Context, LockContext } from '../../identify'
 import type { Client, EncryptedQueryResult, ScalarQueryTerm } from '../../types'
+import { getErrorCode } from '../helpers/error-code'
+import { resolveIndexType } from '../helpers/infer-index-type'
+import {
+  assertValidNumericValue,
+  assertValueIndexCompatibility,
+} from '../helpers/validation'
 import { noClientError } from '../index'
 import { ProtectOperation } from './base-operation'
-import { resolveIndexType } from '../helpers/infer-index-type'
-import { assertValidNumericValue, assertValueIndexCompatibility } from '../helpers/validation'
-import { encryptedToCompositeLiteral, encryptedToEscapedCompositeLiteral } from '../../helpers'
 
 /**
  * Separates null/undefined values from non-null terms in the input array.
  * Returns a set of indices where values are null/undefined and an array of non-null terms with their original indices.
  */
-function filterNullTerms(
-  terms: readonly ScalarQueryTerm[],
-): {
+function filterNullTerms(terms: readonly ScalarQueryTerm[]): {
   nullIndices: Set<number>
   nonNullTerms: { term: ScalarQueryTerm; originalIndex: number }[]
 } {
@@ -54,15 +58,11 @@ function buildQueryPayload(
   const { indexType, queryOp } = resolveIndexType(
     term.column,
     term.queryType,
-    term.value
+    term.value,
   )
 
   // Validate value/index compatibility
-  assertValueIndexCompatibility(
-    term.value,
-    indexType,
-    term.column.getName()
-  )
+  assertValueIndexCompatibility(term.value, indexType, term.column.getName())
 
   const payload: QueryPayload = {
     plaintext: term.value as JsPlaintext,
@@ -110,7 +110,9 @@ function assembleResults(
 /**
  * @internal Use {@link ProtectClient.encryptQuery} with array input instead.
  */
-export class BatchEncryptQueryOperation extends ProtectOperation<EncryptedQueryResult[]> {
+export class BatchEncryptQueryOperation extends ProtectOperation<
+  EncryptedQueryResult[]
+> {
   constructor(
     private client: Client,
     private terms: readonly ScalarQueryTerm[],
@@ -118,11 +120,20 @@ export class BatchEncryptQueryOperation extends ProtectOperation<EncryptedQueryR
     super()
   }
 
-  public withLockContext(lockContext: LockContext): BatchEncryptQueryOperationWithLockContext {
-    return new BatchEncryptQueryOperationWithLockContext(this.client, this.terms, lockContext, this.auditMetadata)
+  public withLockContext(
+    lockContext: LockContext,
+  ): BatchEncryptQueryOperationWithLockContext {
+    return new BatchEncryptQueryOperationWithLockContext(
+      this.client,
+      this.terms,
+      lockContext,
+      this.auditMetadata,
+    )
   }
 
-  public async execute(): Promise<Result<EncryptedQueryResult[], ProtectError>> {
+  public async execute(): Promise<
+    Result<EncryptedQueryResult[], ProtectError>
+  > {
     logger.debug('Encrypting query terms', { count: this.terms.length })
 
     if (this.terms.length === 0) {
@@ -141,7 +152,9 @@ export class BatchEncryptQueryOperation extends ProtectOperation<EncryptedQueryR
 
         const { metadata } = this.getAuditData()
 
-        const queries: QueryPayload[] = nonNullTerms.map(({ term }) => buildQueryPayload(term))
+        const queries: QueryPayload[] = nonNullTerms.map(({ term }) =>
+          buildQueryPayload(term),
+        )
 
         const encrypted = await ffiEncryptQueryBulk(this.client, {
           queries,
@@ -162,7 +175,9 @@ export class BatchEncryptQueryOperation extends ProtectOperation<EncryptedQueryR
 /**
  * @internal Use {@link ProtectClient.encryptQuery} with array input and `.withLockContext()` instead.
  */
-export class BatchEncryptQueryOperationWithLockContext extends ProtectOperation<EncryptedQueryResult[]> {
+export class BatchEncryptQueryOperationWithLockContext extends ProtectOperation<
+  EncryptedQueryResult[]
+> {
   constructor(
     private client: Client,
     private terms: readonly ScalarQueryTerm[],
@@ -173,8 +188,12 @@ export class BatchEncryptQueryOperationWithLockContext extends ProtectOperation<
     this.auditMetadata = auditMetadata
   }
 
-  public async execute(): Promise<Result<EncryptedQueryResult[], ProtectError>> {
-    logger.debug('Encrypting query terms with lock context', { count: this.terms.length })
+  public async execute(): Promise<
+    Result<EncryptedQueryResult[], ProtectError>
+  > {
+    logger.debug('Encrypting query terms with lock context', {
+      count: this.terms.length,
+    })
 
     if (this.terms.length === 0) {
       return { data: [] }
@@ -200,7 +219,9 @@ export class BatchEncryptQueryOperationWithLockContext extends ProtectOperation<
 
         const { metadata } = this.getAuditData()
 
-        const queries: QueryPayload[] = nonNullTerms.map(({ term }) => buildQueryPayload(term, context))
+        const queries: QueryPayload[] = nonNullTerms.map(({ term }) =>
+          buildQueryPayload(term, context),
+        )
 
         const encrypted = await ffiEncryptQueryBulk(this.client, {
           queries,

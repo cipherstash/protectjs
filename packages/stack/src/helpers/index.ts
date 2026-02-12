@@ -1,0 +1,139 @@
+import type {
+  Encrypted as CipherStashEncrypted,
+  KeysetIdentifier as KeysetIdentifierFfi,
+} from '@cipherstash/protect-ffi'
+import type { Encrypted, KeysetIdentifier } from '../types'
+
+export type EncryptedPgComposite = {
+  data: Encrypted
+}
+
+/**
+ * Helper function to transform an encrypted payload into a PostgreSQL composite type.
+ * Use this when inserting data via Supabase or similar clients.
+ */
+export function encryptedToPgComposite(obj: Encrypted): EncryptedPgComposite {
+  return {
+    data: obj,
+  }
+}
+
+/**
+ * Helper function to transform an encrypted payload into a PostgreSQL composite literal string.
+ * Use this when querying with `.eq()` or similar equality operations in Supabase.
+ *
+ * @deprecated Use `encryptQuery()` with `returnType: 'composite-literal'` instead.
+ * @example
+ * ```typescript
+ * // Before (deprecated):
+ * const [encrypted] = await encryptionClient.encryptQuery([
+ *   { value: searchValue, column, table, queryType: 'equality' }
+ * ])
+ * const literal = encryptedToCompositeLiteral(encrypted)
+ * await supabase.from('table').select().eq('column', literal)
+ *
+ * // After (recommended):
+ * const [searchTerm] = await encryptionClient.encryptQuery([
+ *   { value: searchValue, column, table, queryType: 'equality', returnType: 'composite-literal' }
+ * ])
+ * await supabase.from('table').select().eq('column', searchTerm)
+ * ```
+ */
+export function encryptedToCompositeLiteral(obj: CipherStashEncrypted): string {
+  if (obj === null) {
+    throw new Error('encryptedToCompositeLiteral: obj cannot be null')
+  }
+  return `(${JSON.stringify(JSON.stringify(obj))})`
+}
+
+/**
+ * Helper function to transform an encrypted payload into an escaped PostgreSQL composite literal string.
+ * Use this when you need the composite literal format to be escaped as a string value.
+ *
+ * @deprecated Use `encryptQuery()` with `returnType: 'escaped-composite-literal'` instead.
+ * See also: `encryptedToCompositeLiteral` for parallel deprecation guidance.
+ * @example
+ * ```typescript
+ * // Before (deprecated):
+ * const [encrypted] = await encryptionClient.encryptQuery([
+ *   { value: searchValue, column, table, queryType: 'equality' }
+ * ])
+ * const escapedLiteral = encryptedToEscapedCompositeLiteral(encrypted)
+ *
+ * // After (recommended):
+ * const [searchTerm] = await encryptionClient.encryptQuery([
+ *   { value: searchValue, column, table, queryType: 'equality', returnType: 'escaped-composite-literal' }
+ * ])
+ * ```
+ */
+export function encryptedToEscapedCompositeLiteral(
+  obj: CipherStashEncrypted,
+): string {
+  if (obj === null) {
+    throw new Error('encryptedToEscapedCompositeLiteral: obj cannot be null')
+  }
+  return JSON.stringify(encryptedToCompositeLiteral(obj))
+}
+
+/**
+ * Helper function to transform a model's encrypted fields into PostgreSQL composite types
+ */
+export function modelToEncryptedPgComposites<T extends Record<string, unknown>>(
+  model: T,
+): T {
+  const result: Record<string, unknown> = {}
+
+  for (const [key, value] of Object.entries(model)) {
+    if (isEncryptedPayload(value)) {
+      result[key] = encryptedToPgComposite(value)
+    } else {
+      result[key] = value
+    }
+  }
+
+  return result as T
+}
+
+/**
+ * Helper function to transform multiple models' encrypted fields into PostgreSQL composite types
+ */
+export function bulkModelsToEncryptedPgComposites<
+  T extends Record<string, unknown>,
+>(models: T[]): T[] {
+  return models.map((model) => modelToEncryptedPgComposites(model))
+}
+
+export function toFfiKeysetIdentifier(
+  keyset: KeysetIdentifier | undefined,
+): KeysetIdentifierFfi | undefined {
+  if (!keyset) return undefined
+
+  if ('name' in keyset) {
+    return { Name: keyset.name }
+  }
+
+  return { Uuid: keyset.id }
+}
+
+/**
+ * Helper function to check if a value is an encrypted payload
+ */
+export function isEncryptedPayload(value: unknown): value is Encrypted {
+  if (value === null) return false
+
+  // TODO: this can definitely be improved
+  if (typeof value === 'object') {
+    const obj = value as Encrypted
+    return (
+      obj !== null && 'v' in obj && ('c' in obj || 'sv' in obj) && 'i' in obj
+    )
+  }
+
+  return false
+}
+
+export {
+  toJsonPath,
+  buildNestedObject,
+  parseJsonbPath,
+} from './jsonb'

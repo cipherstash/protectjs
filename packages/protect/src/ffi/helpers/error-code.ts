@@ -1,4 +1,7 @@
-import { ProtectError as FfiProtectError, type ProtectErrorCode } from '@cipherstash/protect-ffi'
+import {
+  ProtectError as FfiProtectError,
+  type ProtectErrorCode,
+} from '@cipherstash/protect-ffi'
 
 /**
  * Extracts FFI error code from an error if it's an FFI error, otherwise returns undefined.

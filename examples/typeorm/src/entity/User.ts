@@ -1,4 +1,4 @@
-import type { EncryptedData } from '@cipherstash/protect'
+import type { EncryptedData } from '@cipherstash/stack'
 import {
   Column,
   CreateDateColumn,

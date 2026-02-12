@@ -1,10 +1,10 @@
 # @cipherstash/schema
 
-A TypeScript schema builder for CipherStash Protect.js that enables you to define encryption schemas with searchable encryption capabilities.
+A TypeScript schema builder for the Stash Stack that enables you to define encryption schemas with searchable encryption capabilities.
 
 ## Overview
 
-`@cipherstash/schema` is a standalone package that provides the schema building functionality used by `@cipherstash/protect`. While not required for basic Protect.js usage, this package is available if you need to build encryption configuration schemas directly or want to understand the underlying schema structure.
+`@cipherstash/schema` is a standalone package that provides the schema building functionality used by `@cipherstash/stack`. While not required for basic Stash Encryption usage, this package is available if you need to build encryption configuration schemas directly or want to understand the underlying schema structure.
 
 ## Installation
 
@@ -19,13 +19,13 @@ pnpm add @cipherstash/schema
 ## Quick Start
 
 ```typescript
-import { csTable, csColumn, buildEncryptConfig } from '@cipherstash/schema'
+import { encryptedTable, encryptedColumn, buildEncryptConfig } from '@cipherstash/schema'
 
 // Define your schema
-const users = csTable('users', {
-  email: csColumn('email').freeTextSearch().equality().orderAndRange(),
-  name: csColumn('name').freeTextSearch(),
-  age: csColumn('age').orderAndRange(),
+const users = encryptedTable('users', {
+  email: encryptedColumn('email').freeTextSearch().equality().orderAndRange(),
+  name: encryptedColumn('name').freeTextSearch(),
+  age: encryptedColumn('age').orderAndRange(),
 })
 
 // Build the encryption configuration
@@ -35,48 +35,48 @@ console.log(config)
 
 ## Core Functions
 
-### `csTable(tableName, columns)`
+### `encryptedTable(tableName, columns)`
 
 Creates a table definition with encrypted columns.
 
 ```typescript
-import { csTable, csColumn } from '@cipherstash/schema'
+import { encryptedTable, encryptedColumn } from '@cipherstash/schema'
 
-const users = csTable('users', {
-  email: csColumn('email'),
-  name: csColumn('name'),
+const users = encryptedTable('users', {
+  email: encryptedColumn('email'),
+  name: encryptedColumn('name'),
 })
 ```
 
-### `csColumn(columnName)`
+### `encryptedColumn(columnName)`
 
 Creates a column definition with configurable indexes and data types.
 
 ```typescript
-import { csColumn } from '@cipherstash/schema'
+import { encryptedColumn } from '@cipherstash/schema'
 
-const emailColumn = csColumn('email')
+const emailColumn = encryptedColumn('email')
   .freeTextSearch()    // Enable text search
   .equality()          // Enable exact matching
   .orderAndRange()     // Enable sorting and range queries
   .dataType('string')  // Set data type
 ```
 
-### `csValue(valueName)`
+### `encryptedValue(valueName)`
 
 Creates a value definition for nested objects (up to 3 levels deep).
 
 ```typescript
-import { csTable, csColumn, csValue } from '@cipherstash/schema'
+import { encryptedTable, encryptedColumn, encryptedValue } from '@cipherstash/schema'
 
-const users = csTable('users', {
-  email: csColumn('email').equality(),
+const users = encryptedTable('users', {
+  email: encryptedColumn('email').equality(),
   profile: {
-    name: csValue('profile.name'),
+    name: encryptedValue('profile.name'),
     address: {
-      street: csValue('profile.address.street'),
+      street: encryptedValue('profile.address.street'),
       location: {
-        coordinates: csValue('profile.address.location.coordinates'),
+        coordinates: encryptedValue('profile.address.location.coordinates'),
       },
     },
   },
@@ -100,7 +100,7 @@ const config = buildEncryptConfig(users, orders, products)
 Enables exact matching queries.
 
 ```typescript
-const emailColumn = csColumn('email').equality()
+const emailColumn = encryptedColumn('email').equality()
 // SQL equivalent: WHERE email = 'example@example.com'
 ```
 
@@ -109,7 +109,7 @@ const emailColumn = csColumn('email').equality()
 Enables text search with configurable options.
 
 ```typescript
-const descriptionColumn = csColumn('description').freeTextSearch({
+const descriptionColumn = encryptedColumn('description').freeTextSearch({
   tokenizer: { kind: 'ngram', token_length: 3 },
   token_filters: [{ kind: 'downcase' }],
   k: 6,
@@ -124,7 +124,7 @@ const descriptionColumn = csColumn('description').freeTextSearch({
 Enables sorting and range queries.
 
 ```typescript
-const priceColumn = csColumn('price').orderAndRange()
+const priceColumn = encryptedColumn('price').orderAndRange()
 // SQL equivalent: ORDER BY price ASC, WHERE price > 100
 ```
 
@@ -133,7 +133,7 @@ const priceColumn = csColumn('price').orderAndRange()
 Set the data type for a column using `.dataType()`:
 
 ```typescript
-const column = csColumn('field')
+const column = encryptedColumn('field')
   .dataType('string')    // text (default)
   .dataType('number')    // Javascript number (i.e. integer or float)
   .dataType('jsonb')     // JSON binary
@@ -144,15 +144,15 @@ const column = csColumn('field')
 Support for nested object encryption (up to 3 levels deep):
 
 ```typescript
-const users = csTable('users', {
-  email: csColumn('email').equality(),
+const users = encryptedTable('users', {
+  email: encryptedColumn('email').equality(),
   profile: {
-    name: csValue('profile.name'),
+    name: encryptedValue('profile.name'),
     address: {
-      street: csValue('profile.address.street'),
-      city: csValue('profile.address.city'),
+      street: encryptedValue('profile.address.street'),
+      city: encryptedValue('profile.address.city'),
       location: {
-        coordinates: csValue('profile.address.location.coordinates'),
+        coordinates: encryptedValue('profile.address.location.coordinates'),
       },
     },
   },
@@ -166,7 +166,7 @@ const users = csTable('users', {
 ### Custom Token Filters
 
 ```typescript
-const column = csColumn('field').equality([
+const column = encryptedColumn('field').equality([
   { kind: 'downcase' }
 ])
 ```
@@ -174,7 +174,7 @@ const column = csColumn('field').equality([
 ### Custom Match Options
 
 ```typescript
-const column = csColumn('field').freeTextSearch({
+const column = encryptedColumn('field').freeTextSearch({
   tokenizer: { kind: 'standard' },
   token_filters: [{ kind: 'downcase' }],
   k: 8,
@@ -188,29 +188,29 @@ const column = csColumn('field').freeTextSearch({
 The schema builder provides full TypeScript support:
 
 ```typescript
-import { csTable, csColumn, type ProtectTableColumn } from '@cipherstash/schema'
+import { encryptedTable, encryptedColumn, type EncryptedTableColumn } from '@cipherstash/schema'
 
-const users = csTable('users', {
-  email: csColumn('email').equality(),
-  name: csColumn('name').freeTextSearch(),
+const users = encryptedTable('users', {
+  email: encryptedColumn('email').equality(),
+  name: encryptedColumn('name').freeTextSearch(),
 } as const)
 
 // TypeScript will infer the correct types
 type UsersTable = typeof users
 ```
 
-## Integration with Protect.js
+## Integration with Stash Encryption
 
-While this package can be used standalone, it's typically used through `@cipherstash/protect`:
+While this package can be used standalone, it's typically used through `@cipherstash/stack`:
 
 ```typescript
-import { csTable, csColumn } from '@cipherstash/protect'
+import { encryptedTable, encryptedColumn, Encryption } from '@cipherstash/stack'
 
-const users = csTable('users', {
-  email: csColumn('email').equality().freeTextSearch(),
+const users = encryptedTable('users', {
+  email: encryptedColumn('email').equality().freeTextSearch(),
 })
 
-const protectClient = await protect({
+const client = await Encryption({
   schemas: [users],
 })
 ```
@@ -245,14 +245,14 @@ The `buildEncryptConfig` function generates a configuration object like this:
 
 ## Use Cases
 
-- **Standalone schema building**: When you need to generate encryption configurations outside of Protect.js
+- **Standalone schema building**: When you need to generate encryption configurations outside of Stash Encryption
 - **Custom tooling**: Building tools that work with CipherStash encryption schemas
-- **Schema validation**: Validating schema structures before using them with Protect.js
+- **Schema validation**: Validating schema structures before using them with Stash Encryption
 - **Documentation generation**: Creating documentation from schema definitions
 
 ## API Reference
 
-### `csTable(tableName: string, columns: ProtectTableColumn)`
+### `encryptedTable(tableName: string, columns: EncryptionTableColumn)`
 
 Creates a table definition.
 
@@ -260,16 +260,16 @@ Creates a table definition.
 - `tableName`: The name of the table in the database
 - `columns`: Object defining the columns and their configurations
 
-**Returns:** `ProtectTable<T> & T`
+**Returns:** `EncryptionTable<T> & T`
 
-### `csColumn(columnName: string)`
+### `encryptedColumn(columnName: string)`
 
 Creates a column definition.
 
 **Parameters:**
 - `columnName`: The name of the column in the database
 
-**Returns:** `ProtectColumn`
+**Returns:** `EncryptionColumn`
 
 **Methods:**
 - `.dataType(castAs: CastAs)`: Set the data type
@@ -278,26 +278,26 @@ Creates a column definition.
 - `.orderAndRange()`: Enable order and range index
 - `.searchableJson()`: Enable searchable JSON index
 
-### `csValue(valueName: string)`
+### `encryptedValue(valueName: string)`
 
 Creates a value definition for nested objects.
 
 **Parameters:**
 - `valueName`: Dot-separated path to the value (e.g., 'profile.name')
 
-**Returns:** `ProtectValue`
+**Returns:** `EncryptionValue`
 
 **Methods:**
 - `.dataType(castAs: CastAs)`: Set the data type
 
-### `buildEncryptConfig(...tables: ProtectTable[])`
+### `buildEncryptConfig(...tables: EncryptionTable[])`
 
 Builds the encryption configuration.
 
 **Parameters:**
 - `...tables`: Variable number of table definitions
 
-**Returns:** `EncryptConfig`
+**Returns:** `EncryptionConfigSchema`
 
 ## License
 

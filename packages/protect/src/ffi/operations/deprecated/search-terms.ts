@@ -1,19 +1,21 @@
 import { type Result, withResult } from '@byteslice/result'
-import { encryptQueryBulk, type QueryPayload } from '@cipherstash/protect-ffi'
-import { type ProtectError, ProtectErrorTypes } from '../../..'
-import { getErrorCode } from '../../helpers/error-code'
-import { logger } from '../../../../../utils/logger'
-import type { Client, EncryptedSearchTerm, SearchTerm } from '../../../types'
+import { type QueryPayload, encryptQueryBulk } from '@cipherstash/protect-ffi'
 import { noClientError } from '../..'
-import { ProtectOperation } from '../base-operation'
-import { inferIndexType } from '../../helpers/infer-index-type'
+import { type ProtectError, ProtectErrorTypes } from '../../..'
+import { logger } from '../../../../../utils/logger'
 import type { LockContext } from '../../../identify'
+import type { Client, EncryptedSearchTerm, SearchTerm } from '../../../types'
+import { getErrorCode } from '../../helpers/error-code'
+import { inferIndexType } from '../../helpers/infer-index-type'
+import { ProtectOperation } from '../base-operation'
 
 /**
  * @deprecated Use `BatchEncryptQueryOperation` instead.
  * This class is maintained for backward compatibility only.
  */
-export class SearchTermsOperation extends ProtectOperation<EncryptedSearchTerm[]> {
+export class SearchTermsOperation extends ProtectOperation<
+  EncryptedSearchTerm[]
+> {
   constructor(
     private client: Client,
     private terms: SearchTerm[],
@@ -21,12 +23,16 @@ export class SearchTermsOperation extends ProtectOperation<EncryptedSearchTerm[]
     super()
   }
 
-  public withLockContext(lockContext: LockContext): SearchTermsOperationWithLockContext {
+  public withLockContext(
+    lockContext: LockContext,
+  ): SearchTermsOperationWithLockContext {
     return new SearchTermsOperationWithLockContext(this, lockContext)
   }
 
   public async execute(): Promise<Result<EncryptedSearchTerm[], ProtectError>> {
-    logger.debug('Creating search terms (deprecated API)', { count: this.terms.length })
+    logger.debug('Creating search terms (deprecated API)', {
+      count: this.terms.length,
+    })
 
     return await withResult(
       async () => {
@@ -65,7 +71,9 @@ export class SearchTermsOperation extends ProtectOperation<EncryptedSearchTerm[]
   }
 }
 
-export class SearchTermsOperationWithLockContext extends ProtectOperation<EncryptedSearchTerm[]> {
+export class SearchTermsOperationWithLockContext extends ProtectOperation<
+  EncryptedSearchTerm[]
+> {
   constructor(
     private operation: SearchTermsOperation,
     private lockContext: LockContext,
@@ -81,7 +89,7 @@ export class SearchTermsOperationWithLockContext extends ProtectOperation<Encryp
     }
 
     const { ctsToken, context } = lockContextResult.data
-    const op = (this.operation as any)
+    const op = this.operation as any
 
     return await withResult(
       async () => {

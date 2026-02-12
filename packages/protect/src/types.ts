@@ -1,8 +1,8 @@
 import type {
   Encrypted as CipherStashEncrypted,
   JsPlaintext,
-  newClient,
   QueryOpName,
+  newClient,
 } from '@cipherstash/protect-ffi'
 import type {
   ProtectColumn,
@@ -146,7 +146,13 @@ export type DecryptionResult<T> = DecryptionSuccess<T> | DecryptionError<T>
  * `queryType` entirely - both auto-infer the query operation from the plaintext type. Using
  * `'searchableJson'` explicitly is useful for code clarity and self-documenting intent.
  */
-export type QueryTypeName = 'orderAndRange' | 'freeTextSearch' | 'equality' | 'steVecSelector' | 'steVecTerm' | 'searchableJson'
+export type QueryTypeName =
+  | 'orderAndRange'
+  | 'freeTextSearch'
+  | 'equality'
+  | 'steVecSelector'
+  | 'steVecTerm'
+  | 'searchableJson'
 
 /**
  * Internal FFI index type names.
@@ -196,7 +202,7 @@ export const queryTypeToQueryOp: Partial<Record<QueryTypeName, QueryOpName>> = {
 export type QueryTermBase = {
   column: ProtectColumn
   table: ProtectTable<ProtectTableColumn>
-  queryType?: QueryTypeName  // Optional - auto-infers if omitted
+  queryType?: QueryTypeName // Optional - auto-infers if omitted
   /**
    * The format for the returned encrypted value:
    * - `'eql'` (default) - Returns raw Encrypted object

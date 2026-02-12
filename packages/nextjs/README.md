@@ -1,4 +1,4 @@
-# @cipherstash/protect
+# @cipherstash/nextjs
 
-This is the main package for the CipherStash Protect JavaScript Package.
+Next.js helpers and Clerk integration for the CipherStash Stash Encryption stack.
 Please refer to the [main README](https://github.com/cipherstash/protectjs) for more information.

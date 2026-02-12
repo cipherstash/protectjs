@@ -1,6 +1,6 @@
 # CipherStash JSEQL + Supabase + Hono Example
 
-This project demonstrates how to encrypt data using [@cipherstash/protect](https://www.npmjs.com/package/@cipherstash/protect) before storing it in a [Supabase](https://supabase.com/) Postgres database. It uses [Hono](https://hono.dev/) to create a minimal RESTful API, showcasing how to seamlessly integrate field-level encryption into a typical web application workflow.
+This project demonstrates how to encrypt data using [@cipherstash/stack](https://www.npmjs.com/package/@cipherstash/stack) before storing it in a [Supabase](https://supabase.com/) Postgres database. It uses [Hono](https://hono.dev/) to create a minimal RESTful API, showcasing how to seamlessly integrate field-level encryption into a typical web application workflow.
 
 ## Table of Contents
 - [Overview](#overview)  
@@ -22,7 +22,7 @@ This project demonstrates how to encrypt data using [@cipherstash/protect](https
 ## Overview
 
 **What does this example show?**  
-1. **Encrypting data** with [@cipherstash/protect](https://www.npmjs.com/package/@cipherstash/protect).  
+1. **Encrypting data** with [@cipherstash/stack](https://www.npmjs.com/package/@cipherstash/stack).  
 2. **Storing encrypted data** in a Postgres database (using Supabase).  
 3. **Retrieving and decrypting** that data in a minimal Hono-based REST API.  
 
@@ -52,8 +52,8 @@ This project demonstrates how to encrypt data using [@cipherstash/protect](https
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/cipherstash/jsprotect.git
-cd jsprotect/examples/hono-supabase
+git clone https://github.com/cipherstash/protectjs.git
+cd protectjs/examples/hono-supabase
 ```
 
 ### 2. Install dependencies
@@ -157,6 +157,6 @@ Creates a new user with an **encrypted** email field.
 
 ## Additional Resources
 
-- [@cipherstash/protect Documentation](https://github.com/cipherstash/protectjs)
+- [@cipherstash/stack Documentation](https://github.com/cipherstash/protectjs)
 - [Hono Framework](https://hono.dev/)
 - [Supabase Documentation](https://supabase.com/docs)

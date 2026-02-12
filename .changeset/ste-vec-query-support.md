@@ -1,6 +1,7 @@
 ---
 "@cipherstash/protect": minor
 "@cipherstash/schema": minor
+"@cipherstash/stack": minor
 ---
 
 Add encrypted JSONB query support with `searchableJson()` (recommended).

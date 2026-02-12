@@ -1,24 +1,26 @@
 import 'dotenv/config'
-import { describe, expect, it, beforeAll } from 'vitest'
-import { protect, ProtectErrorTypes } from '../src'
+import { beforeAll, describe, expect, it } from 'vitest'
+import { ProtectErrorTypes, protect } from '../src'
 import type { ProtectClient } from '../src/ffi'
 import {
-  users,
   articles,
-  products,
-  metadata,
+  createFailingMockLockContext,
   createMockLockContext,
   createMockLockContextWithNullContext,
-  createFailingMockLockContext,
-  unwrapResult,
   expectFailure,
+  metadata,
+  products,
+  unwrapResult,
+  users,
 } from './fixtures'
 
 describe('encryptQuery', () => {
   let protectClient: ProtectClient
 
   beforeAll(async () => {
-    protectClient = await protect({ schemas: [users, articles, products, metadata] })
+    protectClient = await protect({
+      schemas: [users, articles, products, metadata],
+    })
   })
 
   describe('single value encryption with explicit queryType', () => {
@@ -116,7 +118,7 @@ describe('encryptQuery', () => {
     }, 30000)
 
     it('rejects NaN values', async () => {
-      const result = await protectClient.encryptQuery(NaN, {
+      const result = await protectClient.encryptQuery(Number.NaN, {
         column: users.age,
         table: users,
         queryType: 'orderAndRange',
@@ -126,21 +128,27 @@ describe('encryptQuery', () => {
     }, 30000)
 
     it('rejects Infinity values', async () => {
-      const result = await protectClient.encryptQuery(Infinity, {
-        column: users.age,
-        table: users,
-        queryType: 'orderAndRange',
-      })
+      const result = await protectClient.encryptQuery(
+        Number.POSITIVE_INFINITY,
+        {
+          column: users.age,
+          table: users,
+          queryType: 'orderAndRange',
+        },
+      )
 
       expectFailure(result, 'Infinity')
     }, 30000)
 
     it('rejects negative Infinity values', async () => {
-      const result = await protectClient.encryptQuery(-Infinity, {
-        column: users.age,
-        table: users,
-        queryType: 'orderAndRange',
-      })
+      const result = await protectClient.encryptQuery(
+        Number.NEGATIVE_INFINITY,
+        {
+          column: users.age,
+          table: users,
+          queryType: 'orderAndRange',
+        },
+      )
 
       expectFailure(result, 'Infinity')
     }, 30000)
@@ -304,11 +312,14 @@ describe('encryptQuery', () => {
     }, 30000)
 
     it('encrypts strings with SQL special characters', async () => {
-      const result = await protectClient.encryptQuery("'; DROP TABLE users; --", {
-        column: users.email,
-        table: users,
-        queryType: 'equality',
-      })
+      const result = await protectClient.encryptQuery(
+        "'; DROP TABLE users; --",
+        {
+          column: users.email,
+          table: users,
+          queryType: 'equality',
+        },
+      )
 
       const data = unwrapResult(result)
       expect(data).toMatchObject({
@@ -322,9 +333,24 @@ describe('encryptQuery', () => {
   describe('encryptQuery bulk (array overload)', () => {
     it('encrypts multiple terms in batch', async () => {
       const result = await protectClient.encryptQuery([
-        { value: 'user@example.com', column: users.email, table: users, queryType: 'equality' },
-        { value: 'search term', column: users.bio, table: users, queryType: 'freeTextSearch' },
-        { value: 42, column: users.age, table: users, queryType: 'orderAndRange' },
+        {
+          value: 'user@example.com',
+          column: users.email,
+          table: users,
+          queryType: 'equality',
+        },
+        {
+          value: 'search term',
+          column: users.bio,
+          table: users,
+          queryType: 'freeTextSearch',
+        },
+        {
+          value: 42,
+          column: users.age,
+          table: users,
+          queryType: 'orderAndRange',
+        },
       ])
 
       const data = unwrapResult(result)
@@ -345,8 +371,18 @@ describe('encryptQuery', () => {
 
     it('handles null values in batch', async () => {
       const result = await protectClient.encryptQuery([
-        { value: 'test@example.com', column: users.email, table: users, queryType: 'equality' },
-        { value: null, column: users.bio, table: users, queryType: 'freeTextSearch' },
+        {
+          value: 'test@example.com',
+          column: users.email,
+          table: users,
+          queryType: 'equality',
+        },
+        {
+          value: null,
+          column: users.bio,
+          table: users,
+          queryType: 'freeTextSearch',
+        },
       ])
 
       const data = unwrapResult(result)
@@ -371,8 +407,18 @@ describe('encryptQuery', () => {
 
     it('rejects NaN/Infinity values in batch', async () => {
       const result = await protectClient.encryptQuery([
-        { value: NaN, column: users.age, table: users, queryType: 'orderAndRange' },
-        { value: Infinity, column: users.age, table: users, queryType: 'orderAndRange' },
+        {
+          value: Number.NaN,
+          column: users.age,
+          table: users,
+          queryType: 'orderAndRange',
+        },
+        {
+          value: Number.POSITIVE_INFINITY,
+          column: users.age,
+          table: users,
+          queryType: 'orderAndRange',
+        },
       ])
 
       expect(result.failure).toBeDefined()
@@ -380,7 +426,12 @@ describe('encryptQuery', () => {
 
     it('rejects negative Infinity in batch', async () => {
       const result = await protectClient.encryptQuery([
-        { value: -Infinity, column: users.age, table: users, queryType: 'orderAndRange' },
+        {
+          value: Number.NEGATIVE_INFINITY,
+          column: users.age,
+          table: users,
+          queryType: 'orderAndRange',
+        },
       ])
 
       expectFailure(result, 'Infinity')
@@ -390,11 +441,36 @@ describe('encryptQuery', () => {
   describe('bulk index preservation', () => {
     it('preserves exact positions with multiple nulls interspersed', async () => {
       const result = await protectClient.encryptQuery([
-        { value: null, column: users.email, table: users, queryType: 'equality' },
-        { value: 'user@example.com', column: users.email, table: users, queryType: 'equality' },
-        { value: null, column: users.bio, table: users, queryType: 'freeTextSearch' },
-        { value: null, column: users.age, table: users, queryType: 'orderAndRange' },
-        { value: 42, column: users.age, table: users, queryType: 'orderAndRange' },
+        {
+          value: null,
+          column: users.email,
+          table: users,
+          queryType: 'equality',
+        },
+        {
+          value: 'user@example.com',
+          column: users.email,
+          table: users,
+          queryType: 'equality',
+        },
+        {
+          value: null,
+          column: users.bio,
+          table: users,
+          queryType: 'freeTextSearch',
+        },
+        {
+          value: null,
+          column: users.age,
+          table: users,
+          queryType: 'orderAndRange',
+        },
+        {
+          value: 42,
+          column: users.age,
+          table: users,
+          queryType: 'orderAndRange',
+        },
       ])
 
       const data = unwrapResult(result)
@@ -411,7 +487,12 @@ describe('encryptQuery', () => {
 
     it('handles single-item array', async () => {
       const result = await protectClient.encryptQuery([
-        { value: 'single@example.com', column: users.email, table: users, queryType: 'equality' },
+        {
+          value: 'single@example.com',
+          column: users.email,
+          table: users,
+          queryType: 'equality',
+        },
       ])
 
       const data = unwrapResult(result)
@@ -423,9 +504,24 @@ describe('encryptQuery', () => {
 
     it('handles all-null array', async () => {
       const result = await protectClient.encryptQuery([
-        { value: null, column: users.email, table: users, queryType: 'equality' },
-        { value: null, column: users.bio, table: users, queryType: 'freeTextSearch' },
-        { value: null, column: users.age, table: users, queryType: 'orderAndRange' },
+        {
+          value: null,
+          column: users.email,
+          table: users,
+          queryType: 'equality',
+        },
+        {
+          value: null,
+          column: users.bio,
+          table: users,
+          queryType: 'freeTextSearch',
+        },
+        {
+          value: null,
+          column: users.age,
+          table: users,
+          queryType: 'orderAndRange',
+        },
       ])
 
       const data = unwrapResult(result)
@@ -454,7 +550,12 @@ describe('encryptQuery', () => {
     it('passes audit metadata for bulk query', async () => {
       const result = await protectClient
         .encryptQuery([
-          { value: 'test@example.com', column: users.email, table: users, queryType: 'equality' },
+          {
+            value: 'test@example.com',
+            column: users.email,
+            table: users,
+            queryType: 'equality',
+          },
         ])
         .audit({ metadata: { userId: 'test-user' } })
 
@@ -466,7 +567,12 @@ describe('encryptQuery', () => {
   describe('returnType formatting', () => {
     it('returns Encrypted by default (no returnType)', async () => {
       const result = await protectClient.encryptQuery([
-        { value: 'test@example.com', column: users.email, table: users, queryType: 'equality' },
+        {
+          value: 'test@example.com',
+          column: users.email,
+          table: users,
+          queryType: 'equality',
+        },
       ])
 
       const data = unwrapResult(result)
@@ -481,7 +587,13 @@ describe('encryptQuery', () => {
 
     it('returns composite-literal format when specified', async () => {
       const result = await protectClient.encryptQuery([
-        { value: 'test@example.com', column: users.email, table: users, queryType: 'equality', returnType: 'composite-literal' },
+        {
+          value: 'test@example.com',
+          column: users.email,
+          table: users,
+          queryType: 'equality',
+          returnType: 'composite-literal',
+        },
       ])
 
       const data = unwrapResult(result)
@@ -494,7 +606,13 @@ describe('encryptQuery', () => {
 
     it('returns escaped-composite-literal format when specified', async () => {
       const result = await protectClient.encryptQuery([
-        { value: 'test@example.com', column: users.email, table: users, queryType: 'equality', returnType: 'escaped-composite-literal' },
+        {
+          value: 'test@example.com',
+          column: users.email,
+          table: users,
+          queryType: 'equality',
+          returnType: 'escaped-composite-literal',
+        },
       ])
 
       const data = unwrapResult(result)
@@ -507,7 +625,13 @@ describe('encryptQuery', () => {
 
     it('returns eql format when explicitly specified', async () => {
       const result = await protectClient.encryptQuery([
-        { value: 'test@example.com', column: users.email, table: users, queryType: 'equality', returnType: 'eql' },
+        {
+          value: 'test@example.com',
+          column: users.email,
+          table: users,
+          queryType: 'equality',
+          returnType: 'eql',
+        },
       ])
 
       const data = unwrapResult(result)
@@ -522,9 +646,26 @@ describe('encryptQuery', () => {
 
     it('handles mixed returnType values in same batch', async () => {
       const result = await protectClient.encryptQuery([
-        { value: 'test@example.com', column: users.email, table: users, queryType: 'equality' }, // default
-        { value: 'search term', column: users.bio, table: users, queryType: 'freeTextSearch', returnType: 'composite-literal' },
-        { value: 42, column: users.age, table: users, queryType: 'orderAndRange', returnType: 'escaped-composite-literal' },
+        {
+          value: 'test@example.com',
+          column: users.email,
+          table: users,
+          queryType: 'equality',
+        }, // default
+        {
+          value: 'search term',
+          column: users.bio,
+          table: users,
+          queryType: 'freeTextSearch',
+          returnType: 'composite-literal',
+        },
+        {
+          value: 42,
+          column: users.age,
+          table: users,
+          queryType: 'orderAndRange',
+          returnType: 'escaped-composite-literal',
+        },
       ])
 
       const data = unwrapResult(result)
@@ -546,9 +687,27 @@ describe('encryptQuery', () => {
 
     it('handles returnType with null values', async () => {
       const result = await protectClient.encryptQuery([
-        { value: null, column: users.email, table: users, queryType: 'equality', returnType: 'composite-literal' },
-        { value: 'test@example.com', column: users.email, table: users, queryType: 'equality', returnType: 'composite-literal' },
-        { value: null, column: users.bio, table: users, queryType: 'freeTextSearch', returnType: 'escaped-composite-literal' },
+        {
+          value: null,
+          column: users.email,
+          table: users,
+          queryType: 'equality',
+          returnType: 'composite-literal',
+        },
+        {
+          value: 'test@example.com',
+          column: users.email,
+          table: users,
+          queryType: 'equality',
+          returnType: 'composite-literal',
+        },
+        {
+          value: null,
+          column: users.bio,
+          table: users,
+          queryType: 'freeTextSearch',
+          returnType: 'escaped-composite-literal',
+        },
       ])
 
       const data = unwrapResult(result)
@@ -580,7 +739,12 @@ describe('encryptQuery', () => {
       const mockLockContext = createMockLockContext()
 
       const operation = protectClient.encryptQuery([
-        { value: 'test@example.com', column: users.email, table: users, queryType: 'equality' },
+        {
+          value: 'test@example.com',
+          column: users.email,
+          table: users,
+          queryType: 'equality',
+        },
       ])
 
       const withContext = operation.withLockContext(mockLockContext as any)
@@ -614,8 +778,18 @@ describe('encryptQuery', () => {
       const mockLockContext = createMockLockContext()
 
       const operation = protectClient.encryptQuery([
-        { value: 'test@example.com', column: users.email, table: users, queryType: 'equality' },
-        { value: 42, column: users.age, table: users, queryType: 'orderAndRange' },
+        {
+          value: 'test@example.com',
+          column: users.email,
+          table: users,
+          queryType: 'equality',
+        },
+        {
+          value: 42,
+          column: users.age,
+          table: users,
+          queryType: 'orderAndRange',
+        },
       ])
 
       const withContext = operation.withLockContext(mockLockContext as any)
@@ -632,7 +806,7 @@ describe('encryptQuery', () => {
     it('handles LockContext failure gracefully', async () => {
       const mockLockContext = createFailingMockLockContext(
         ProtectErrorTypes.CtsTokenError,
-        'Mock LockContext failure'
+        'Mock LockContext failure',
       )
 
       const operation = protectClient.encryptQuery('test@example.com', {
@@ -644,7 +818,11 @@ describe('encryptQuery', () => {
       const withContext = operation.withLockContext(mockLockContext as any)
       const result = await withContext.execute()
 
-      expectFailure(result, 'Mock LockContext failure', ProtectErrorTypes.CtsTokenError)
+      expectFailure(
+        result,
+        'Mock LockContext failure',
+        ProtectErrorTypes.CtsTokenError,
+      )
     }, 30000)
 
     it('handles null value with LockContext', async () => {
@@ -670,7 +848,12 @@ describe('encryptQuery', () => {
       const mockLockContext = createMockLockContextWithNullContext()
 
       const operation = protectClient.encryptQuery([
-        { value: 'test@example.com', column: users.email, table: users, queryType: 'equality' },
+        {
+          value: 'test@example.com',
+          column: users.email,
+          table: users,
+          queryType: 'equality',
+        },
       ])
 
       const withContext = operation.withLockContext(mockLockContext as any)

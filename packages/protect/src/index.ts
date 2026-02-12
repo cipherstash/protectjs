@@ -107,11 +107,20 @@ export type { EncryptModelOperation } from './ffi/operations/encrypt-model'
 export type { EncryptOperation } from './ffi/operations/encrypt'
 
 // Operations
-export { EncryptQueryOperation, EncryptQueryOperationWithLockContext } from './ffi/operations/encrypt-query'
-export { BatchEncryptQueryOperation, BatchEncryptQueryOperationWithLockContext } from './ffi/operations/batch-encrypt-query'
+export {
+  EncryptQueryOperation,
+  EncryptQueryOperationWithLockContext,
+} from './ffi/operations/encrypt-query'
+export {
+  BatchEncryptQueryOperation,
+  BatchEncryptQueryOperationWithLockContext,
+} from './ffi/operations/batch-encrypt-query'
 
 // Helpers
-export { inferIndexType, validateIndexType } from './ffi/helpers/infer-index-type'
+export {
+  inferIndexType,
+  validateIndexType,
+} from './ffi/helpers/infer-index-type'
 
 // Types
 export type {

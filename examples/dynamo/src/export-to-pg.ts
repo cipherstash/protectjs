@@ -1,10 +1,10 @@
 import { PutCommand, ScanCommand } from '@aws-sdk/lib-dynamodb'
-import { protectDynamoDB } from '@cipherstash/protect-dynamodb'
+import { encryptedDynamoDB } from '@cipherstash/protect-dynamodb'
 import pg from 'pg'
 // Insert data in dynamo, scan it back out, insert/copy into PG, query from PG.
 import { createTable, docClient, dynamoClient } from './common/dynamo'
+import { encryptionClient, users } from './common/encryption'
 import { log } from './common/log'
-import { protectClient, users } from './common/protect'
 const PgClient = pg.Client
 
 const tableName = 'UsersExportToPG'
@@ -31,18 +31,18 @@ const main = async () => {
     ],
   })
 
-  const protectDynamo = protectDynamoDB({
-    protectClient,
+  const dynamodb = encryptedDynamoDB({
+    encryptionClient,
   })
 
   const user = {
-    // `pk` won't be encrypted because it's not included in the `users` protected table schema.
+    // `pk` won't be encrypted because it's not included in the `users` encrypted table schema.
     pk: 'user#1',
-    // `email` will be encrypted because it's included in the `users` protected table schema.
+    // `email` will be encrypted because it's included in the `users` encrypted table schema.
     email: 'abc@example.com',
   }
 
-  const encryptResult = await protectDynamo.encryptModel(user, users)
+  const encryptResult = await dynamodb.encryptModel(user, users)
 
   const putCommand = new PutCommand({
     TableName: tableName,
@@ -93,7 +93,7 @@ const main = async () => {
     throw new Error('No items found in scan result')
   }
 
-  // TODO: this logic belongs in Protect (or in common/protect.ts for the prototype)
+  // TODO: this logic belongs in Encryption (or in common/encryption.ts for the prototype)
   const formattedForPgInsert = scanResult.Items.reduce(
     (recordsToInsert, currentItem) => {
       const idAsText = currentItem.pk.slice('user#'.length)
@@ -128,7 +128,7 @@ const main = async () => {
 
   log('inserted rows', insertResult.rows)
 
-  const decryptRowsResult = await protectClient.bulkDecryptModels<User>(
+  const decryptRowsResult = await encryptionClient.bulkDecryptModels<User>(
     insertResult.rows,
   )
 

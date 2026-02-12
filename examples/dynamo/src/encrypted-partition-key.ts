@@ -1,8 +1,8 @@
 import { GetCommand, PutCommand } from '@aws-sdk/lib-dynamodb'
-import { protectDynamoDB } from '@cipherstash/protect-dynamodb'
+import { encryptedDynamoDB } from '@cipherstash/protect-dynamodb'
 import { createTable, docClient } from './common/dynamo'
+import { encryptionClient, users } from './common/encryption'
 import { log } from './common/log'
-import { protectClient, users } from './common/protect'
 
 const tableName = 'UsersEncryptedPartitionKey'
 
@@ -27,18 +27,18 @@ const main = async () => {
     ],
   })
 
-  const protectDynamo = protectDynamoDB({
-    protectClient,
+  const dynamodb = encryptedDynamoDB({
+    encryptionClient,
   })
 
   const user = {
-    // `email` will be encrypted because it's included in the `users` protected table schema.
+    // `email` will be encrypted because it's included in the `users` encrypted table schema.
     email: 'abc@example.com',
-    // `somePlaintextAttr` won't be encrypted because it's not in the protected table schema.
+    // `somePlaintextAttr` won't be encrypted because it's not in the encrypted table schema.
     somePlaintextAttr: 'abc',
   }
 
-  const encryptResult = await protectDynamo.encryptModel(user, users)
+  const encryptResult = await dynamodb.encryptModel(user, users)
 
   log('encrypted item', encryptResult)
 
@@ -50,8 +50,13 @@ const main = async () => {
   await docClient.send(putCommand)
 
   // Use encryptQuery to create the search term for partition key lookup
-  const encryptedResult = await protectClient.encryptQuery([
-    { value: 'abc@example.com', column: users.email, table: users, queryType: 'equality' },
+  const encryptedResult = await encryptionClient.encryptQuery([
+    {
+      value: 'abc@example.com',
+      column: users.email,
+      table: users,
+      queryType: 'equality',
+    },
   ])
 
   if (encryptedResult.failure) {
@@ -74,10 +79,7 @@ const main = async () => {
 
   const getResult = await docClient.send(getCommand)
 
-  const decryptedItem = await protectDynamo.decryptModel<User>(
-    getResult.Item,
-    users,
-  )
+  const decryptedItem = await dynamodb.decryptModel<User>(getResult.Item, users)
 
   log('decrypted item', decryptedItem)
 }

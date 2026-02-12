@@ -2,35 +2,41 @@
   <a href="https://cipherstash.com">
     <img alt="CipherStash Logo" loading="lazy" width="128" height="128" decoding="async" data-nimg="1" style="color:transparent" src="https://cipherstash.com/assets/cs-github.png">
   </a>
-  <h1>Protect.js</h1>
+  <h1>The CipherStash data security stack</h1>
 
 <a href="https://cipherstash.com"><img alt="Built by CipherStash" src="https://raw.githubusercontent.com/cipherstash/meta/refs/heads/main/csbadge.svg?style=for-the-badge&labelColor=000"></a>
-<a href="https://www.npmjs.com/package/@cipherstash/protect"><img alt="NPM version" src="https://img.shields.io/npm/v/@cipherstash/protect.svg?style=for-the-badge&labelColor=000000"></a>
-<a href="https://www.npmjs.com/package/@cipherstash/protect"><img alt="npm downloads" src="https://img.shields.io/npm/dm/@cipherstash/protect.svg?style=for-the-badge&labelColor=000000"></a>
-<a href="https://github.com/cipherstash/protectjs/blob/main/LICENSE.md"><img alt="License" src="https://img.shields.io/npm/l/@cipherstash/protect.svg?style=for-the-badge&labelColor=000000"></a>
+<a href="https://www.npmjs.com/package/@cipherstash/stack"><img alt="NPM version" src="https://img.shields.io/npm/v/@cipherstash/stack.svg?style=for-the-badge&labelColor=000000"></a>
+<a href="https://www.npmjs.com/package/@cipherstash/stack"><img alt="npm downloads" src="https://img.shields.io/npm/dm/@cipherstash/stack.svg?style=for-the-badge&labelColor=000000"></a>
+<a href="https://github.com/cipherstash/protectjs/blob/main/LICENSE.md"><img alt="License" src="https://img.shields.io/npm/l/@cipherstash/stack.svg?style=for-the-badge&labelColor=000000"></a>
 <a href="https://discord.gg/5qwXUFb6PB"><img alt="Join the community on Discord" src="https://img.shields.io/badge/Join%20the%20community-blueviolet.svg?style=for-the-badge&logo=Discord&labelColor=000000&logoWidth=20"></a>
 
 </div>
 
 ## Getting Started
 
-Protect.js lets you encrypt every value with its own key—without sacrificing performance or usability. Encryption happens in your app; ciphertext is stored in your database.
+CipherStash is the new standard for data security that feels invisible. Encrypt, control, and audit access to sensitive data directly in your TypeScript applications.
 
-Per‑value unique keys are powered by CipherStash [ZeroKMS](https://cipherstash.com/products/zerokms) bulk key operations, backed by a root key in [AWS KMS](https://docs.aws.amazon.com/kms/latest/developerguide/overview.html).
+What is the Stash Stack?
+Stash Stack is a collection of packages that provide a unified way to manage data security:
 
-Visit the [documentation](#documentation) below to get started with Protect.js and explore related products.
+- **Encryption** - Application-level encryption. Encrypt sensitive fields (names, emails, health records, etc.) while retaining search and filtering. Built for claim-based access control and identity-bound encryption.
+- **Secrets** - Secrets management. A secure vault for secrets and sensitive config. Manage your secrets easily with a zero-trust architecture and full audit trail.
+- **KMS** - Distributed key management. KMS is the key management system designed for both security and speed.
+
+Visit the [documentation](#documentation) below to get started.
 
 ## Documentation
 
 Visit the documentation for our products to get started:
 
-- **[Protect.js](https://cipherstash.com/docs/protect-js)** - End-to-end field level encryption for JavaScript/TypeScript apps with zero‑knowledge key management
-- **[Stash - Secrets Manager](https://getstash.sh/docs)** - Store and manage secrets like API keys and database credentials with zero-trust encryption
-- **[Protect.js for Drizzle ORM](https://cipherstash.com/docs/drizzle)** - Seamlessly integrate Protect.js with Drizzle ORM and PostgreSQL
+- **[Encryption](https://cipherstash.com/docs/encryption)** - End-to-end field level encryption for JavaScript/TypeScript apps with zero‑knowledge key management
+- **[Secrets](https://cipherstash.com/docs/secrets)** - Store and manage secrets like API keys and database credentials with zero-trust encryption
+- **[KMS](https://cipherstash.com/docs/kms)** - Distributed key management. KMS is the key management system designed for both security and speed.
+- **[Stash + Drizzle](https://cipherstash.com/docs/encryption/drizzle)** - Seamlessly integrate Stash Encryption with Drizzle ORM and PostgreSQL
 
 ## Features
 
-Protect.js protects data using industry-standard AES encryption and [ZeroKMS](https://cipherstash.com/products/zerokms) for bulk encryption and decryption operations and is up to 14x faster than AWS KMS or Hashicorp Vault. This enables every encrypted value, in every column, in every row in your database to have a unique key, without sacrificing performance.
+Stash Encryption protects data using industry-standard AES encryption and [Stash KMS](https://cipherstash.com/stack/kms) for bulk encryption and decryption operations and is up to 14x faster than AWS KMS or Hashicorp Vault. This enables every encrypted value, in every column, in every row in your database to have a unique key, without sacrificing performance.
 
 **Features:**
 
@@ -47,26 +53,26 @@ Protect.js protects data using industry-standard AES encryption and [ZeroKMS](ht
 - **Reduce the blast radius of data breaches**: Limit the impact of exploited vulnerabilities to only the data your end-users can decrypt
 
 > [!IMPORTANT]
-> **You need to opt-out of bundling when using Protect.js.** Protect.js uses Node.js specific features and requires the use of the native Node.js `require`. See the [documentation](https://cipherstash.com/docs/protect-js) for bundling configuration guides.
+> **You need to opt-out of bundling when using `@cipherstash/stack`.** This package uses Node.js specific features and requires the use of the native Node.js `require`. See the [documentation](https://cipherstash.com/docs/protect-js) for bundling configuration guides.
 
 ## Community
 
-The Protect.js community can be found on [Discord](https://discord.gg/5qwXUFb6PB) where you can ask questions, voice ideas, and share your projects with other people.
+The CipherStash community can be found on [Discord](https://discord.gg/5qwXUFb6PB) where you can ask questions, voice ideas, and share your projects with other people.
 
-Do note that our [Code of Conduct](CODE_OF_CONDUCT.md) applies to all Protect.js community channels. Users are **highly encouraged** to read and adhere to it to avoid repercussions.
+Do note that our [Code of Conduct](CODE_OF_CONDUCT.md) applies to all CipherStash community channels. Users are **highly encouraged** to read and adhere to it to avoid repercussions.
 
 ## Contributing
 
-Contributions to Protect.js are welcome and highly appreciated. However, before you jump right into it, we would like you to review our [Contribution Guidelines](CONTRIBUTE.md) to make sure you have a smooth experience contributing to Protect.js.
+Contributions are welcome and highly appreciated. However, before you jump right into it, we would like you to review our [Contribution Guidelines](CONTRIBUTE.md) to make sure you have a smooth experience.
 
 ---
 
 ## Security
 
-If you believe you have found a security vulnerability in Protect.js, we encourage you to **_responsibly disclose this and NOT open a public issue_**.
+If you believe you have found a security vulnerability, we encourage you to **_responsibly disclose this and NOT open a public issue_**.
 
 Please email [security@cipherstash.com](mailto:security@cipherstash.com) with details about the vulnerability. We will review your report and provide further instructions for submitting your report.
 
 ## License
 
-Protect.js is [MIT licensed](./LICENSE.md).
+This project is [MIT licensed](./LICENSE.md).

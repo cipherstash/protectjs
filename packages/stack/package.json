@@ -1,0 +1,80 @@
+{
+	"name": "@cipherstash/stack",
+	"version": "0.0.0",
+	"description": "The CipherStash data security stack",
+	"keywords": [
+		"encryption",
+		"secrets",
+		"kms",
+		"typescript",
+		"searchable-encryption",
+		"zero-trust"
+	],
+	"bugs": {
+		"url": "https://github.com/cipherstash/stack/issues"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/cipherstash/stack.git"
+	},
+	"license": "MIT",
+	"author": "CipherStash <hello@cipherstash.com>",
+	"type": "module",
+	"bin": {
+		"stash": "./dist/bin/stash.js"
+	},
+	"main": "./dist/index.cjs",
+	"types": "./dist/index.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js",
+			"require": "./dist/index.cjs"
+		},
+		"./client": {
+			"types": "./dist/client.d.ts",
+			"import": "./dist/client.js",
+			"require": "./dist/client.cjs"
+		},
+		"./identity": {
+			"types": "./dist/identity/index.d.ts",
+			"import": "./dist/identity/index.js",
+			"require": "./dist/identity/index.cjs"
+		},
+		"./secrets": {
+			"types": "./dist/secrets/index.d.ts",
+			"import": "./dist/secrets/index.js",
+			"require": "./dist/secrets/index.cjs"
+		}
+	},
+	"scripts": {
+		"build": "tsup",
+		"postbuild": "chmod +x ./dist/bin/stash.js",
+		"dev": "tsup --watch",
+		"test": "vitest run",
+		"release": "tsup"
+	},
+	"devDependencies": {
+		"@supabase/supabase-js": "^2.47.10",
+		"execa": "^9.5.2",
+		"json-schema-to-typescript": "^15.0.2",
+		"tsup": "catalog:repo",
+		"tsx": "catalog:repo",
+		"typescript": "catalog:repo",
+		"vitest": "catalog:repo"
+	},
+	"publishConfig": {
+		"access": "public"
+	},
+	"dependencies": {
+		"@byteslice/result": "^0.2.0",
+		"@cipherstash/protect-ffi": "0.20.1",
+		"@cipherstash/schema": "workspace:*",
+		"@stricli/core": "^1.2.5",
+		"dotenv": "16.4.7",
+		"zod": "^3.24.2"
+	},
+	"optionalDependencies": {
+		"@rollup/rollup-linux-x64-gnu": "4.24.0"
+	}
+}

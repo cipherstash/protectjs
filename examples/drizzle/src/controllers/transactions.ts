@@ -3,10 +3,10 @@ import type { Request, Response } from 'express'
 import { db } from '../db'
 import { transactions } from '../db/schema'
 import {
-  protectClient,
-  protectOps,
+  encryptionClient,
+  encryptionOps,
   transactionsSchema,
-} from '../protect/config'
+} from '../encryption/config'
 
 interface CreateTransactionBody {
   accountNumber: string
@@ -36,7 +36,7 @@ export async function getTransactions(req: Request, res: Response) {
 
     // Account number search (encrypted field)
     if (accountNumber && typeof accountNumber === 'string') {
-      const accountCondition = await protectOps.like(
+      const accountCondition = await encryptionOps.like(
         transactions.accountNumber,
         accountNumber,
       )
@@ -48,13 +48,13 @@ export async function getTransactions(req: Request, res: Response) {
       if (minAmount !== undefined) {
         const minAmountNum = Number(minAmount)
         if (!Number.isNaN(minAmountNum)) {
-          conditions.push(protectOps.gte(transactions.amount, minAmountNum))
+          conditions.push(encryptionOps.gte(transactions.amount, minAmountNum))
         }
       }
       if (maxAmount !== undefined) {
         const maxAmountNum = Number(maxAmount)
         if (!Number.isNaN(maxAmountNum)) {
-          conditions.push(protectOps.lte(transactions.amount, maxAmountNum))
+          conditions.push(encryptionOps.lte(transactions.amount, maxAmountNum))
         }
       }
     }
@@ -66,7 +66,7 @@ export async function getTransactions(req: Request, res: Response) {
 
     // Apply conditions
     if (conditions.length > 0) {
-      const condition = await protectOps.and(...conditions)
+      const condition = await encryptionOps.and(...conditions)
       query = query.where(condition) as typeof query
     }
 
@@ -74,7 +74,7 @@ export async function getTransactions(req: Request, res: Response) {
     const results = await query.execute()
 
     // Decrypt results
-    const decryptedResult = await protectClient.bulkDecryptModels(results)
+    const decryptedResult = await encryptionClient.bulkDecryptModels(results)
     if (decryptedResult.failure) {
       return res.status(500).json({
         error: 'Decryption failed',
@@ -119,7 +119,7 @@ export async function createTransaction(req: Request, res: Response) {
     }
 
     // Encrypt the transaction model
-    const encryptedResult = await protectClient.encryptModel<
+    const encryptedResult = await encryptionClient.encryptModel<
       typeof transactionData
     >(transactionData, transactionsSchema)
 
@@ -137,7 +137,7 @@ export async function createTransaction(req: Request, res: Response) {
       .returning()
 
     // Decrypt the inserted record for response
-    const decryptedResult = await protectClient.decryptModel(inserted)
+    const decryptedResult = await encryptionClient.decryptModel(inserted)
     if (decryptedResult.failure) {
       return res.status(500).json({
         error: 'Decryption failed',
@@ -175,7 +175,7 @@ export async function getTransaction(req: Request, res: Response) {
     }
 
     // Decrypt the transaction
-    const decryptedResult = await protectClient.decryptModel(transaction)
+    const decryptedResult = await encryptionClient.decryptModel(transaction)
     if (decryptedResult.failure) {
       return res.status(500).json({
         error: 'Decryption failed',
@@ -234,7 +234,7 @@ export async function updateTransaction(req: Request, res: Response) {
       body.description !== undefined
     ) {
       // Decrypt existing transaction to get current values
-      const decryptedExisting = await protectClient.decryptModel(existing)
+      const decryptedExisting = await encryptionClient.decryptModel(existing)
       if (decryptedExisting.failure) {
         return res.status(500).json({
           error: 'Decryption failed',
@@ -254,7 +254,7 @@ export async function updateTransaction(req: Request, res: Response) {
       }
 
       // Encrypt the merged data
-      const encryptedResult = await protectClient.encryptModel(
+      const encryptedResult = await encryptionClient.encryptModel(
         mergedData,
         transactionsSchema,
       )
@@ -282,7 +282,7 @@ export async function updateTransaction(req: Request, res: Response) {
       .returning()
 
     // Decrypt the updated record for response
-    const decryptedResult = await protectClient.decryptModel(updated)
+    const decryptedResult = await encryptionClient.decryptModel(updated)
     if (decryptedResult.failure) {
       return res.status(500).json({
         error: 'Decryption failed',

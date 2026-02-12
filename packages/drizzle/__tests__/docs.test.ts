@@ -1,16 +1,16 @@
 import 'dotenv/config'
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { protect } from '@cipherstash/protect'
+import { Encryption, type EncryptionClient } from '@cipherstash/stack'
 import * as drizzleOrm from 'drizzle-orm'
 import { integer, pgTable } from 'drizzle-orm/pg-core'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import {
-  createProtectOperators,
+  createEncryptionOperators,
   encryptedType,
-  extractProtectSchema,
+  extractEncryptionSchema,
 } from '../src/pg'
 import { docSeedData } from './fixtures/doc-seed-data'
 import { type ExecutionContext, executeCodeBlock } from './utils/code-executor'
@@ -62,20 +62,20 @@ const transactions = pgTable('drizzle-docs-test', {
   }),
 })
 
-const protectTransactions = extractProtectSchema(transactions)
+const encryptionTransactions = extractEncryptionSchema(transactions)
 
 describe('Documentation Drift Tests', () => {
   let db: ReturnType<typeof drizzle>
   let client: ReturnType<typeof postgres>
-  let protectClient: Awaited<ReturnType<typeof protect>>
-  let protectOps: ReturnType<typeof createProtectOperators>
+  let encryptionClient: EncryptionClient
+  let encryptionOps: ReturnType<typeof createEncryptionOperators>
   let seedDataIds: number[] = []
 
   beforeAll(async () => {
     client = postgres(process.env.DATABASE_URL as string)
     db = drizzle({ client })
-    protectClient = await protect({ schemas: [protectTransactions] })
-    protectOps = createProtectOperators(protectClient)
+    encryptionClient = await Encryption({ schemas: [encryptionTransactions] })
+    encryptionOps = createEncryptionOperators(encryptionClient)
 
     // Create test table with EQL encrypted columns (drop if exists for clean state)
     await client`DROP TABLE IF EXISTS "drizzle-docs-test"`
@@ -90,9 +90,9 @@ describe('Documentation Drift Tests', () => {
     `
 
     // Seed test data
-    const encrypted = await protectClient.bulkEncryptModels(
+    const encrypted = await encryptionClient.bulkEncryptModels(
       docSeedData,
-      protectTransactions,
+      encryptionTransactions,
     )
     if (encrypted.failure) {
       throw new Error(`Encryption failed: ${encrypted.failure.message}`)
@@ -120,7 +120,7 @@ describe('Documentation Drift Tests', () => {
     }
   }, 30000)
 
-  describe('drizzle.md - Protect Operators Pattern', () => {
+  describe('drizzle.md - Encryption Operators Pattern', () => {
     // Path to documentation relative to repo root
     const docsPath = join(
       __dirname,
@@ -135,9 +135,9 @@ describe('Documentation Drift Tests', () => {
         const context: ExecutionContext = {
           db,
           transactions,
-          protect: protectOps,
-          protectClient,
-          protectTransactions,
+          encryption: encryptionOps,
+          encryptionClient,
+          encryptionTransactions,
           ...drizzleOrm,
         }
 
@@ -158,13 +158,13 @@ describe('Documentation Drift Tests', () => {
     )
   })
 
-  describe('drizzle-protect.md - Manual Encryption Pattern', () => {
+  describe('drizzle-encryption.md - Manual Encryption Pattern', () => {
     const docsPath = join(
       __dirname,
-      '../../../docs/reference/drizzle/drizzle-protect.md',
+      '../../../docs/reference/drizzle/drizzle-encryption.md',
     )
 
-    const blocks = loadDocumentation(docsPath, 'drizzle-protect.md')
+    const blocks = loadDocumentation(docsPath, 'drizzle-encryption.md')
 
     it.each(blocks.map((b) => [b.section, b]))(
       '%s',
@@ -172,10 +172,10 @@ describe('Documentation Drift Tests', () => {
         const context: ExecutionContext = {
           db,
           transactions,
-          protectClient,
-          protectTransactions,
+          encryptionClient,
+          encryptionTransactions,
           ...drizzleOrm,
-          // Note: 'protect' intentionally omitted
+          // Note: 'encryption' intentionally omitted
         }
 
         const result = await executeCodeBlock(block.code, context)

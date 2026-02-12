@@ -12,7 +12,7 @@ This how-to guide shows you how to use lock context if you're using [Clerk](http
 
 ## Getting started
 
-If you're using [Clerk](https://clerk.com/) as your identity provider, use the `protectClerkMiddleware` function to automatically set the CTS token for every user session.
+If you're using [Clerk](https://clerk.com/) as your identity provider, use the `encryptionClerkMiddleware` function to automatically set the CTS token for every user session.
 
 Install the `@cipherstash/nextjs` package:
 
@@ -28,10 +28,10 @@ In your `middleware.ts` file, add the following code:
 
 ```typescript
 import { clerkMiddleware } from '@clerk/nextjs/server'
-import { protectClerkMiddleware } from '@cipherstash/nextjs/clerk'
+import { encryptionClerkMiddleware } from '@cipherstash/nextjs/clerk'
 
 export default clerkMiddleware(async (auth, req: NextRequest) => {
-  return protectClerkMiddleware(auth, req)
+  return encryptionClerkMiddleware(auth, req)
 })
 ```
 
@@ -68,7 +68,7 @@ export default async function Page() {
 Since the CTS token is already available, you can construct a `LockContext` object with the existing CTS token.
 
 ```typescript
-import { LockContext } from '@cipherstash/protect/identify'
+import { LockContext } from '@cipherstash/stack/identity'
 import { getCtsToken } from '@cipherstash/nextjs'
 
 export default async function Page() {
@@ -95,9 +95,9 @@ export default async function Page() {
 If you want to override the default context, you can pass a custom context to the `LockContext` constructor.
 
 ```typescript
-import { LockContext } from '@cipherstash/protect/identify'
+import { LockContext } from '@cipherstash/stack/identity'
 
-// protectClient from the previous steps
+// encryptionClient from the previous steps
 const lc = new LockContext({
   context: {
     identityClaim: ['sub'], // this is the default context

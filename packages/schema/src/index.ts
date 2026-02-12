@@ -101,17 +101,17 @@ export type UniqueIndexOpts = z.infer<typeof uniqueIndexOptsSchema>
 export type OreIndexOpts = z.infer<typeof oreIndexOptsSchema>
 export type ColumnSchema = z.infer<typeof columnSchema>
 
-export type ProtectTableColumn = {
+export type EncryptionTableColumn = {
   [key: string]:
-    | ProtectColumn
+    | EncryptionColumn
     | {
         [key: string]:
-          | ProtectValue
+          | EncryptionValue
           | {
               [key: string]:
-                | ProtectValue
+                | EncryptionValue
                 | {
-                    [key: string]: ProtectValue
+                    [key: string]: EncryptionValue
                   }
             }
       }
@@ -121,7 +121,7 @@ export type EncryptConfig = z.infer<typeof encryptConfigSchema>
 // ------------------------
 // Interface definitions
 // ------------------------
-export class ProtectValue {
+export class EncryptionValue {
   private valueName: string
   private castAsValue: CastAs
 
@@ -150,7 +150,7 @@ export class ProtectValue {
   }
 }
 
-export class ProtectColumn {
+export class EncryptionColumn {
   private columnName: string
   private castAsValue: CastAs
   private indexesValue: {
@@ -238,7 +238,7 @@ interface TableDefinition {
   columns: Record<string, ColumnSchema>
 }
 
-export class ProtectTable<T extends ProtectTableColumn> {
+export class EncryptionTable<T extends EncryptionTableColumn> {
   constructor(
     public readonly tableName: string,
     private readonly columnBuilders: T,
@@ -252,19 +252,22 @@ export class ProtectTable<T extends ProtectTableColumn> {
 
     const processColumn = (
       builder:
-        | ProtectColumn
+        | EncryptionColumn
         | Record<
             string,
-            | ProtectValue
+            | EncryptionValue
             | Record<
                 string,
-                | ProtectValue
-                | Record<string, ProtectValue | Record<string, ProtectValue>>
+                | EncryptionValue
+                | Record<
+                    string,
+                    EncryptionValue | Record<string, EncryptionValue>
+                  >
               >
           >,
       colName: string,
     ) => {
-      if (builder instanceof ProtectColumn) {
+      if (builder instanceof EncryptionColumn) {
         const builtColumn = builder.build()
 
         // Hanlde building the ste_vec index for JSON columns so users don't have to pass the prefix.
@@ -286,7 +289,7 @@ export class ProtectTable<T extends ProtectTableColumn> {
         }
       } else {
         for (const [key, value] of Object.entries(builder)) {
-          if (value instanceof ProtectValue) {
+          if (value instanceof EncryptionValue) {
             builtColumns[value.getName()] = value.build()
           } else {
             processColumn(value, key)
@@ -307,42 +310,73 @@ export class ProtectTable<T extends ProtectTableColumn> {
 }
 
 // ------------------------
+// New public type aliases
+// ------------------------
+export type EncryptedTable<T extends EncryptionTableColumn> = EncryptionTable<T>
+export type EncryptedColumn = EncryptionColumn
+export type EncryptedValue = EncryptionValue
+export type EncryptedTableColumn = EncryptionTableColumn
+
+// ------------------------
+// Deprecated Protect* type aliases (backward compat)
+// ------------------------
+/** @deprecated Use EncryptedTable */
+export type ProtectTable<T extends EncryptionTableColumn> = EncryptionTable<T>
+/** @deprecated Use EncryptedColumn */
+export type ProtectColumn = EncryptionColumn
+/** @deprecated Use EncryptedValue */
+export type ProtectValue = EncryptionValue
+/** @deprecated Use EncryptedTableColumn */
+export type ProtectTableColumn = EncryptionTableColumn
+
+// ------------------------
 // User facing functions
 // ------------------------
-export function csTable<T extends ProtectTableColumn>(
+export function encryptedTable<T extends EncryptionTableColumn>(
   tableName: string,
   columns: T,
-): ProtectTable<T> & T {
-  const tableBuilder = new ProtectTable(tableName, columns) as ProtectTable<T> &
-    T
+): EncryptionTable<T> & T {
+  const tableBuilder = new EncryptionTable(
+    tableName,
+    columns,
+  ) as EncryptionTable<T> & T
 
   for (const [colName, colBuilder] of Object.entries(columns)) {
-    ;(tableBuilder as ProtectTableColumn)[colName] = colBuilder
+    ;(tableBuilder as EncryptionTableColumn)[colName] = colBuilder
   }
 
   return tableBuilder
 }
 
-export function csColumn(columnName: string) {
-  return new ProtectColumn(columnName)
+/** @deprecated Use encryptedTable */
+export const csTable = encryptedTable
+
+export function encryptedColumn(columnName: string) {
+  return new EncryptionColumn(columnName)
 }
 
-export function csValue(valueName: string) {
-  return new ProtectValue(valueName)
+/** @deprecated Use encryptedColumn */
+export const csColumn = encryptedColumn
+
+export function encryptedValue(valueName: string) {
+  return new EncryptionValue(valueName)
 }
+
+/** @deprecated Use encryptedValue */
+export const csValue = encryptedValue
 
 // ------------------------
 // Internal functions
 // ------------------------
 export function buildEncryptConfig(
-  ...protectTables: Array<ProtectTable<ProtectTableColumn>>
+  ...encryptionTables: Array<EncryptionTable<EncryptionTableColumn>>
 ): EncryptConfig {
   const config: EncryptConfig = {
     v: 2,
     tables: {},
   }
 
-  for (const tb of protectTables) {
+  for (const tb of encryptionTables) {
     const tableDef = tb.build()
     config.tables[tableDef.tableName] = tableDef.columns
   }

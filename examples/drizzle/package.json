@@ -20,7 +20,7 @@
 	},
 	"dependencies": {
 		"@cipherstash/drizzle": "workspace:*",
-		"@cipherstash/protect": "workspace:*",
+		"@cipherstash/stack": "workspace:*",
 		"drizzle-orm": "^0.44.7",
 		"express": "^5.2.1",
 		"pg": "^8.16.3",

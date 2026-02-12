@@ -4,8 +4,8 @@ services:
     image: mysql:latest
     environment:
       MYSQL_ROOT_PASSWORD: password
-      MYSQL_DATABASE: protect_example
-      MYSQL_USER: protect_example
+      MYSQL_DATABASE: encryption_example
+      MYSQL_USER: encryption_example
       MYSQL_PASSWORD: password
     ports:
       - "3306:3306"

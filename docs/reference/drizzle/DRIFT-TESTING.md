@@ -1,6 +1,6 @@
 # Documentation Drift Testing
 
-This document describes the documentation drift detection system for the Drizzle + Protect.js integration. The system ensures that code examples in documentation remain executable and accurate as the codebase evolves.
+This document describes the documentation drift detection system for the Drizzle + Stash Encryption integration. The system ensures that code examples in documentation remain executable and accurate as the codebase evolves.
 
 ## Overview
 
@@ -27,8 +27,8 @@ packages/drizzle/
 │       └── code-executor.test.ts       # Executor unit tests
 │
 docs/reference/drizzle/
-├── drizzle.md                          # Protect operators pattern (recommended)
-├── drizzle-protect.md                  # Manual encryption pattern (verbose)
+├── drizzle.md                          # Encryption operators pattern (recommended)
+├── drizzle-encryption.md                  # Manual encryption pattern (verbose)
 └── DRIFT-TESTING.md                    # This document
 ```
 
@@ -63,9 +63,9 @@ The executor (`code-executor.ts`) runs extracted code blocks in a controlled con
 const context: ExecutionContext = {
   db,                    // Drizzle database instance
   transactions,          // Table schema
-  protect,               // Protect operators (eq, gte, like, etc.)
-  protectClient,         // Raw protect client for manual encryption
-  protectTransactions,   // Protect schema for encryption
+  encryption,            // Encryption operators (eq, gte, like, etc.)
+  encryptionClient,         // Encryption client for manual encryption
+  encryptionTransactions,   // Encryption schema for encryption
   eq, gte, lte, ilike,   // Drizzle operators
   and, or, desc, asc,    // Drizzle combinators
   sql, inArray,          // Drizzle utilities
@@ -230,7 +230,7 @@ Explanation of what this example demonstrates.
 // Your executable code here
 const results = await db.select()
   .from(transactions)
-  .where(await protect.eq(transactions.amount, 800.00))
+  .where(await encryption.eq(transactions.amount, 800.00))
 return results
 ​```
 ```
@@ -280,7 +280,7 @@ Failed block at line 156:
 ---
 const results = await db.select()
   .from(transactions)
-  .where(await protect.eq(transactions.nonexistent, 'value'))
+  .where(await encryption.eq(transactions.nonexistent, 'value'))
 return results
 ---
 Error: Column "nonexistent" does not exist
@@ -295,21 +295,21 @@ When writing `ts:run` blocks, these variables are available:
 |----------|------|-------------|
 | `db` | Drizzle instance | Database connection |
 | `transactions` | Table schema | The test table definition |
-| `protectTransactions` | Protect schema | Schema for encryption operations |
+| `encryptionTransactions` | Encryption schema | Schema for encryption operations |
 
-### Protect Operators (Auto-Encrypting)
+### Encryption Operators (Auto-Encrypting)
 | Variable | Description |
 |----------|-------------|
-| `protect.eq(column, value)` | Equality match on encrypted field |
-| `protect.gte(column, value)` | Greater than or equal |
-| `protect.lte(column, value)` | Less than or equal |
-| `protect.like(column, pattern)` | Text search with wildcards |
+| `encryption.eq(column, value)` | Equality match on encrypted field |
+| `encryption.gte(column, value)` | Greater than or equal |
+| `encryption.lte(column, value)` | Less than or equal |
+| `encryption.like(column, pattern)` | Text search with wildcards |
 
-### Protect Client (Manual Encryption)
+### Encryption Client (Manual Encryption)
 | Variable | Description |
 |----------|-------------|
-| `protectClient.encrypt(value, opts)` | Encrypt a single value |
-| `protectClient.bulkDecryptModels(results)` | Decrypt query results |
+| `encryptionClient.encrypt(value, opts)` | Encrypt a single value |
+| `encryptionClient.bulkDecryptModels(results)` | Decrypt query results |
 
 ### Drizzle Operators
 | Variable | Description |
@@ -339,7 +339,7 @@ const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
 ✅ **Match seed data values** when demonstrating specific queries:
 ```typescript
 // Seed has account '1234567890' with amount 800.00
-await protect.eq(transactions.account, '1234567890')
+await encryption.eq(transactions.account, '1234567890')
 ```
 
 ✅ **Keep examples focused** - one concept per block
@@ -382,10 +382,10 @@ Verify you're using the correct column names from the `transactions` schema:
 - `id`, `account`, `amount`, `description`, `createdAt`
 
 ### Results are encrypted/unreadable
-For manual encryption pattern (`drizzle-protect.md`), ensure you call `bulkDecryptModels()`:
+For manual encryption pattern (`drizzle-encryption.md`), ensure you call `bulkDecryptModels()`:
 ```typescript
 const results = await db.select().from(transactions)
-const decrypted = await protectClient.bulkDecryptModels(results)
+const decrypted = await encryptionClient.bulkDecryptModels(results)
 return decrypted.data  // Not results!
 ```
 

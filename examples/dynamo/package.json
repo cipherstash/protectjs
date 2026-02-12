@@ -21,7 +21,7 @@
     "@aws-sdk/client-dynamodb": "^3.817.0",
     "@aws-sdk/lib-dynamodb": "^3.817.0",
     "@aws-sdk/util-dynamodb": "^3.817.0",
-    "@cipherstash/protect": "workspace:*",
+    "@cipherstash/stack": "workspace:*",
     "@cipherstash/protect-dynamodb": "workspace:*",
     "pg": "^8.13.1"
   },

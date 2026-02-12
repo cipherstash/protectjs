@@ -50,6 +50,8 @@
 
 <!-- start -->
 
+> **Deprecated:** This package has been superseded by [`@cipherstash/stack`](https://www.npmjs.com/package/@cipherstash/stack). Please migrate to `@cipherstash/stack` for all new projects. This package will continue to receive critical fixes but no new features.
+
 Protect.js lets you encrypt every value with its own key—without sacrificing performance or usability. Encryption happens in your app; ciphertext is stored in your database.
 
 Per‑value unique keys are powered by CipherStash [ZeroKMS](https://cipherstash.com/products/zerokms) bulk key operations, backed by a root key in [AWS KMS](https://docs.aws.amazon.com/kms/latest/developerguide/overview.html).

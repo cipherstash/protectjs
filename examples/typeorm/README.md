@@ -1,4 +1,4 @@
-# Protect.js Example with TypeORM
+# Stash Encryption Example with TypeORM
 
 > ⚠️ **Heads-up:** This example was generated with AI with some very specific prompting to make it as useful as possible for you :)
 > If you find any issues, think this example is absolutely terrible, or would like to speak with a human, book a call with the [CipherStash solutions engineering team](https://calendly.com/cipherstash-gtm/cipherstash-discovery-call?month=2025-09)
@@ -33,7 +33,7 @@ DB_DATABASE=cipherstash
 ```typescript
 // src/entity/User.ts
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm'
-import type { EncryptedData } from '@cipherstash/protect'
+import type { EncryptedData } from '@cipherstash/stack'
 import { EncryptedColumn } from '../decorators/encrypted-column'
 
 @Entity()
@@ -68,30 +68,30 @@ export class User {
 }
 ```
 
-### 4. Configure Protect.js
+### 4. Configure Stash Encryption
 
 ```typescript
-// src/protect.ts
-import { protect, csTable, csColumn } from '@cipherstash/protect'
+// src/encryption.ts
+import { Encryption, encryptedTable, encryptedColumn } from '@cipherstash/stack'
 
-export const protectedUser = csTable('user', {
-  email: csColumn('email').equality().orderAndRange(),
-  ssn: csColumn('ssn').equality(),
-  phone: csColumn('phone').equality(),
+export const encryptedUser = encryptedTable('user', {
+  email: encryptedColumn('email').equality().orderAndRange(),
+  ssn: encryptedColumn('ssn').equality(),
+  phone: encryptedColumn('phone').equality(),
 })
 
-export const protectClient = await protect({
-  schemas: [protectedUser],
+export const encryptionClient = await Encryption({
+  schemas: [encryptedUser],
 })
 ```
 
 ### 5. Use Streamlined Helpers
 
 ```typescript
-// src/helpers/protect-entity.ts
-import { ProtectEntityHelper } from './helpers/protect-entity'
+// src/helpers/encryption-entity.ts
+import { EncryptionEntityHelper } from './helpers/encryption-entity'
 
-const helper = new ProtectEntityHelper(protectClient)
+const helper = new EncryptionEntityHelper(encryptionClient)
 
 // 🚀 Bulk create with encryption (recommended for production)
 const users = await helper.bulkEncryptAndSave(
@@ -101,15 +101,15 @@ const users = await helper.bulkEncryptAndSave(
     { firstName: 'Jane', email: 'jane@example.com', ssn: '987-65-4321' }
   ],
   {
-    email: { table: protectedUser, column: protectedUser.email },
-    ssn: { table: protectedUser, column: protectedUser.ssn }
+    email: { table: encryptedUser, column: encryptedUser.email },
+    ssn: { table: encryptedUser, column: encryptedUser.ssn }
   }
 )
 
 // 🔓 Bulk decrypt for display
 const decryptedUsers = await helper.bulkDecrypt(allUsers, {
-  email: { table: protectedUser, column: protectedUser.email },
-  ssn: { table: protectedUser, column: protectedUser.ssn }
+  email: { table: encryptedUser, column: encryptedUser.email },
+  ssn: { table: encryptedUser, column: encryptedUser.ssn }
 })
 
 // 🔍 Search encrypted data
@@ -117,7 +117,7 @@ const foundUser = await helper.searchEncryptedField(
   User,
   'email',
   'john@example.com',
-  { table: protectedUser, column: protectedUser.email }
+  { table: encryptedUser, column: encryptedUser.email }
 )
 ```
 
@@ -155,9 +155,9 @@ email: EncryptedData | null
 
 ```typescript
 // Encrypt individual fields
-const emailResult = await protectClient.encrypt('user@example.com', {
-  table: protectedUser,
-  column: protectedUser.email,
+const emailResult = await encryptionClient.encrypt('user@example.com', {
+  table: encryptedUser,
+  column: encryptedUser.email,
 })
 
 if (emailResult.failure) {
@@ -186,8 +186,8 @@ const savedUsers = await helper.bulkEncryptAndSave(
   User,
   usersToCreate,
   {
-    email: { table: protectedUser, column: protectedUser.email },
-    ssn: { table: protectedUser, column: protectedUser.ssn }
+    email: { table: encryptedUser, column: encryptedUser.email },
+    ssn: { table: encryptedUser, column: encryptedUser.ssn }
   }
 )
 ```
@@ -203,7 +203,7 @@ const newUser = {
   ssn: '111-22-3333'
 }
 
-const encryptedModelResult = await protectClient.encryptModel(newUser, protectedUser)
+const encryptedModelResult = await encryptionClient.encryptModel(newUser, encryptedUser)
 
 if (encryptedModelResult.failure) {
   throw new Error(`Model encryption failed: ${encryptedModelResult.failure.message}`)
@@ -286,7 +286,7 @@ export const encryptedDataTransformer = {
 
 ### 2. Error Handling
 ```typescript
-const result = await protectClient.encrypt(data, { table, column })
+const result = await encryptionClient.encrypt(data, { table, column })
 
 if (result.failure) {
   // Always handle failures gracefully
@@ -298,8 +298,8 @@ if (result.failure) {
 ### 3. Environment Configuration
 ```typescript
 // Use environment variables for all sensitive data
-export const protectClient = await protect({
-  schemas: [protectedUser],
+export const encryptionClient = await Encryption({
+  schemas: [encryptedUser],
 })
 ```
 
@@ -358,7 +358,7 @@ The demo will show:
 ## 🔗 Next Steps
 
 - **Explore the demo**: Run `npm start` to see all features in action
-- **Read the docs**: Check out [Protect.js documentation](https://github.com/cipherstash/protectjs/tree/main/docs)
+- **Read the docs**: Check out [Stash Encryption documentation](https://github.com/cipherstash/protectjs/tree/main/docs)
 - **Learn concepts**: Understand [searchable encryption](https://github.com/cipherstash/protectjs/blob/main/docs/concepts/searchable-encryption.md)
 - **See other examples**: Browse the [examples directory](https://github.com/cipherstash/protectjs/tree/main/examples)
 
@@ -380,7 +380,7 @@ The demo will show:
 
 ### Getting Help
 
-- 📚 [Protect.js Documentation](https://github.com/cipherstash/protectjs/tree/main/docs)
+- 📚 [Stash Encryption Documentation](https://github.com/cipherstash/protectjs/tree/main/docs)
 - 🐛 [GitHub Issues](https://github.com/cipherstash/protectjs/issues)
 - 💬 [Community Support](https://cipherstash.com)
 

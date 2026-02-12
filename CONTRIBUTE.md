@@ -1,4 +1,4 @@
-# How to contribute to @cipherstash/protect
+# How to contribute to @cipherstash/stack
 
 ## I want to report a bug, or make a feature request
 
@@ -8,9 +8,9 @@ Please use the GitHub issue tracker to report bugs, suggest features, or documen
 
 ---
 
-# Contributing to @cipherstash/protect
+# Contributing to @cipherstash/stack
 
-Thank you for your interest in contributing to **@cipherstash/protect**! This document will walk you through the repository’s structure, how to build and run the project locally, and how to make contributions effectively.
+Thank you for your interest in contributing to **@cipherstash/stack**! This document will walk you through the repository's structure, how to build and run the project locally, and how to make contributions effectively.
 
 ## Repository Structure
 
@@ -21,7 +21,7 @@ Thank you for your interest in contributing to **@cipherstash/protect**! This do
 │   └── example-app-2/
 │
 ├── packages/
-│   └── protect/     <-- Main package published to npm
+│   └── stack/       <-- Main package published to npm
 │
 ├── .changeset/
 ├── .turbo/
@@ -34,13 +34,13 @@ Thank you for your interest in contributing to **@cipherstash/protect**! This do
 
 This repo uses [Turborepo](https://turbo.build/) to manage multiple packages and examples in a monorepo structure. Turborepo orchestrates tasks (build, test, lint, etc.) across the different packages in a consistent and efficient manner.
 
-### `packages/protect`
+### `packages/stack`
 
-The **@cipherstash/protect** package is the core library that is published to npm under the `@cipherstash/protect` namespace. This is likely where you’ll spend most of your time if you’re contributing new features or bug fixes related to JSEQL’s core functionality.
+The **@cipherstash/stack** package is the core library that is published to npm under the `@cipherstash/stack` namespace. This is likely where you'll spend most of your time if you're contributing new features or bug fixes related to the core functionality.
 
 ### `examples/` Directory
 
-Within the `examples/` directory, you’ll find example applications that demonstrate how to use **@cipherstash/protect**. These examples reference the local `@cipherstash/protect` package, allowing you to test and verify your changes to **@cipherstash/protect** in a real-world application scenario.
+Within the `examples/` directory, you'll find example applications that demonstrate how to use **@cipherstash/stack**. These examples reference the local `@cipherstash/stack` package, allowing you to test and verify your changes to **@cipherstash/stack** in a real-world application scenario.
 
 ## Setup Instructions
 
@@ -59,13 +59,13 @@ pnpm install
 
 ### 4. Build the Main Package
 
-Before you can run any example, you need to build the `@cipherstash/protect` package:
+Before you can run any example, you need to build the `@cipherstash/stack` package:
 
 ```bash
 pnpm run build
 ```
 
-This command triggers Turborepo’s build pipeline, compiling the **@cipherstash/protect** package in `packages/protect` and linking it locally so the example can reference it.
+This command triggers Turborepo's build pipeline, compiling the **@cipherstash/stack** package in `packages/stack` and linking it locally so the example can reference it.
 
 ### 5. Run an Example App
 
@@ -77,7 +77,7 @@ pnpm run dev
 
 Navigate to one of the examples in `examples/` and follow the instructions for the corresponding example.
 
-Now, you can view the running application (if it’s a web or server app) or otherwise test the example’s output. This will help confirm your local build of **@cipherstash/protect** is working correctly.
+Now, you can view the running application (if it's a web or server app) or otherwise test the example's output. This will help confirm your local build of **@cipherstash/stack** is working correctly.
 
 ## Making Changes
 
@@ -86,7 +86,7 @@ Now, you can view the running application (if it’s a web or server app) or oth
    git checkout -b feat/my-new-feature
    ```
 
-2. **Implement your changes** in the relevant package (most likely in `packages/protect`).
+2. **Implement your changes** in the relevant package (most likely in `packages/stack`).
 
 3. **Write tests** to cover any new functionality or bug fixes.
 
