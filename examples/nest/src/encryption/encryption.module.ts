@@ -7,9 +7,9 @@ import {
 } from '@cipherstash/stack'
 import { type DynamicModule, Global, Module } from '@nestjs/common'
 import { ConfigModule, ConfigService } from '@nestjs/config'
-import type { EncryptionConfig } from './interfaces/protect-config.interface'
-import { ENCRYPTION_CLIENT, ENCRYPTION_CONFIG } from './protect.constants'
-import { EncryptionService } from './protect.service'
+import { ENCRYPTION_CLIENT, ENCRYPTION_CONFIG } from './encryption.constants'
+import { EncryptionService } from './encryption.service'
+import type { EncryptionConfig } from './interfaces/encryption-config.interface'
 import { users } from './schema'
 
 @Global()

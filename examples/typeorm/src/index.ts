@@ -1,9 +1,9 @@
 import 'reflect-metadata'
 import 'dotenv/config'
 import { AppDataSource } from './data-source'
+import { encryptedUser, initializeEncryptionClient } from './encryption'
 import { User } from './entity/User'
-import { EncryptionEntityHelper } from './helpers/protect-entity'
-import { initializeEncryptionClient, protectedUser } from './protect'
+import { EncryptionEntityHelper } from './helpers/encryption-entity'
 
 async function main() {
   try {
@@ -32,16 +32,16 @@ async function main() {
     // Encrypt individual fields
     const [emailResult, ssnResult, phoneResult] = await Promise.all([
       encryptionClient.encrypt(emailToInsert, {
-        table: protectedUser,
-        column: protectedUser.email,
+        table: encryptedUser,
+        column: encryptedUser.email,
       }),
       encryptionClient.encrypt(ssnToInsert, {
-        table: protectedUser,
-        column: protectedUser.ssn,
+        table: encryptedUser,
+        column: encryptedUser.ssn,
       }),
       encryptionClient.encrypt(phoneToInsert, {
-        table: protectedUser,
-        column: protectedUser.phone,
+        table: encryptedUser,
+        column: encryptedUser.phone,
       }),
     ])
 
@@ -113,9 +113,9 @@ async function main() {
       User,
       usersToCreate,
       {
-        email: { table: protectedUser, column: protectedUser.email },
-        ssn: { table: protectedUser, column: protectedUser.ssn },
-        phone: { table: protectedUser, column: protectedUser.phone },
+        email: { table: encryptedUser, column: encryptedUser.email },
+        ssn: { table: encryptedUser, column: encryptedUser.ssn },
+        phone: { table: encryptedUser, column: encryptedUser.phone },
       },
     )
 
@@ -132,9 +132,9 @@ async function main() {
     console.log(`📊 Found ${allUsers.length} users in database`)
 
     const decryptedUsers = await helper.bulkDecrypt(allUsers, {
-      email: { table: protectedUser, column: protectedUser.email },
-      ssn: { table: protectedUser, column: protectedUser.ssn },
-      phone: { table: protectedUser, column: protectedUser.phone },
+      email: { table: encryptedUser, column: encryptedUser.email },
+      ssn: { table: encryptedUser, column: encryptedUser.ssn },
+      phone: { table: encryptedUser, column: encryptedUser.phone },
     })
 
     console.log('✅ All users decrypted using bulk operations')
@@ -161,15 +161,15 @@ async function main() {
       User,
       'email',
       searchEmail,
-      { table: protectedUser, column: protectedUser.email },
+      { table: encryptedUser, column: encryptedUser.email },
     )
 
     if (foundUser) {
       // Decrypt the found user's data
       const decryptedFoundUser = await helper.bulkDecrypt([foundUser], {
-        email: { table: protectedUser, column: protectedUser.email },
-        ssn: { table: protectedUser, column: protectedUser.ssn },
-        phone: { table: protectedUser, column: protectedUser.phone },
+        email: { table: encryptedUser, column: encryptedUser.email },
+        ssn: { table: encryptedUser, column: encryptedUser.ssn },
+        phone: { table: encryptedUser, column: encryptedUser.phone },
       })
 
       const userData = decryptedFoundUser[0]
@@ -197,7 +197,7 @@ async function main() {
     // Encrypt the entire model
     const encryptedModelResult = await encryptionClient.encryptModel(
       newUser,
-      protectedUser,
+      encryptedUser,
     )
 
     if (encryptedModelResult.failure) {
@@ -206,17 +206,17 @@ async function main() {
       )
     }
 
-    const encryptedUser = encryptedModelResult.data
+    const encryptedUserData = encryptedModelResult.data
     const finalUser = new User()
-    finalUser.firstName = encryptedUser.firstName as string
-    finalUser.lastName = encryptedUser.lastName as string
-    finalUser.age = encryptedUser.age as number
+    finalUser.firstName = encryptedUserData.firstName as string
+    finalUser.lastName = encryptedUserData.lastName as string
+    finalUser.age = encryptedUserData.age as number
     // biome-ignore lint/suspicious/noExplicitAny: Required for model encryption type compatibility
-    finalUser.email = encryptedUser.email as any
+    finalUser.email = encryptedUserData.email as any
     // biome-ignore lint/suspicious/noExplicitAny: Required for model encryption type compatibility
-    finalUser.ssn = encryptedUser.ssn as any
+    finalUser.ssn = encryptedUserData.ssn as any
     // biome-ignore lint/suspicious/noExplicitAny: Required for model encryption type compatibility
-    finalUser.phone = encryptedUser.phone as any
+    finalUser.phone = encryptedUserData.phone as any
 
     const savedModelUser = await AppDataSource.manager.save(finalUser)
     console.log(

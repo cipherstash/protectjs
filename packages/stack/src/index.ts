@@ -4,10 +4,12 @@ import { EncryptionClient } from './ffi'
 import type { KeysetIdentifier } from './types'
 
 // Re-export FFI error types for programmatic error handling
-export {
-  ProtectError as FfiProtectError,
-  type ProtectErrorCode,
-} from '@cipherstash/protect-ffi'
+import { ProtectError as _FfiEncryptionError } from '@cipherstash/protect-ffi'
+export type { ProtectErrorCode } from '@cipherstash/protect-ffi'
+
+export const FfiEncryptionError = _FfiEncryptionError
+/** @deprecated Use FfiEncryptionError */
+export const FfiProtectError = _FfiEncryptionError
 
 export const EncryptionErrorTypes = {
   ClientInitError: 'ClientInitError',

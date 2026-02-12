@@ -74,7 +74,7 @@ export const resetCtsToken = (res?: NextResponse) => {
   return response
 }
 
-export const protectMiddleware = async (
+export const encryptionMiddleware = async (
   oidcToken: string,
   req: NextRequest,
   res?: NextResponse,
@@ -123,3 +123,6 @@ export const protectMiddleware = async (
 
   return NextResponse.next()
 }
+
+/** @deprecated Use encryptionMiddleware */
+export const protectMiddleware = encryptionMiddleware

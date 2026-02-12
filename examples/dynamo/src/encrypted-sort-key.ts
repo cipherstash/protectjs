@@ -1,8 +1,8 @@
 import { GetCommand, PutCommand } from '@aws-sdk/lib-dynamodb'
 import { encryptedDynamoDB } from '@cipherstash/protect-dynamodb'
 import { createTable, docClient, dynamoClient } from './common/dynamo'
+import { encryptionClient, users } from './common/encryption'
 import { log } from './common/log'
-import { encryptionClient, users } from './common/protect'
 
 const tableName = 'UsersEncryptedSortKey'
 

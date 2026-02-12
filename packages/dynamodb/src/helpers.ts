@@ -4,7 +4,7 @@ import type {
   EncryptedTableColumn,
   ProtectErrorCode,
 } from '@cipherstash/stack'
-import { FfiProtectError } from '@cipherstash/stack'
+import { FfiEncryptionError } from '@cipherstash/stack'
 import type { EncryptedDynamoDBError } from './types'
 export const ciphertextAttrSuffix = '__source'
 export const searchTermAttrSuffix = '__hmac'
@@ -34,10 +34,10 @@ export function handleError(
   },
 ): EncryptedDynamoDBError {
   // Preserve FFI error code if available, otherwise use generic DynamoDB error code
-  // Check for FfiProtectError instance or plain error objects with code property
+  // Check for FfiEncryptionError instance or plain error objects with code property
   const errorObj = error as Record<string, unknown>
   const errorCode =
-    error instanceof FfiProtectError
+    error instanceof FfiEncryptionError
       ? error.code
       : errorObj &&
           typeof errorObj === 'object' &&

@@ -12,7 +12,7 @@ This how-to guide shows you how to use lock context if you're using [Clerk](http
 
 ## Getting started
 
-If you're using [Clerk](https://clerk.com/) as your identity provider, use the `protectClerkMiddleware` function to automatically set the CTS token for every user session.
+If you're using [Clerk](https://clerk.com/) as your identity provider, use the `encryptionClerkMiddleware` function to automatically set the CTS token for every user session.
 
 Install the `@cipherstash/nextjs` package:
 
@@ -28,10 +28,10 @@ In your `middleware.ts` file, add the following code:
 
 ```typescript
 import { clerkMiddleware } from '@clerk/nextjs/server'
-import { protectClerkMiddleware } from '@cipherstash/nextjs/clerk'
+import { encryptionClerkMiddleware } from '@cipherstash/nextjs/clerk'
 
 export default clerkMiddleware(async (auth, req: NextRequest) => {
-  return protectClerkMiddleware(auth, req)
+  return encryptionClerkMiddleware(auth, req)
 })
 ```
 

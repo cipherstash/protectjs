@@ -6,8 +6,8 @@ import {
 } from '@nestjs/common'
 import type { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
-import type { EncryptionService } from '../protect.service'
-import { getEncryptionService } from '../utils/get-protect-service.util'
+import type { EncryptionService } from '../encryption.service'
+import { getEncryptionService } from '../utils/get-encryption-service.util'
 
 import type {
   EncryptedColumn,
@@ -16,7 +16,7 @@ import type {
   EncryptedValue,
 } from '@cipherstash/stack'
 
-export interface EncryptInterceptorOptions {
+export interface DecryptInterceptorOptions {
   fields?: string[]
   table: EncryptedTable<EncryptedTableColumn>
   column: EncryptedColumn | EncryptedValue
@@ -24,24 +24,24 @@ export interface EncryptInterceptorOptions {
 }
 
 /**
- * Interceptor to automatically encrypt response data
+ * Interceptor to automatically decrypt response data
  *
  * @example
  * ```typescript
- * @UseInterceptors(new EncryptInterceptor({
+ * @UseInterceptors(new DecryptInterceptor({
  *   fields: ['email', 'phone'],
  *   table: 'users',
  *   column: 'email'
  * }))
  * @Get()
  * async getUsers() {
- *   return this.userService.findAll(); // Email and phone fields will be encrypted
+ *   return this.userService.findAll(); // Email and phone fields will be decrypted
  * }
  * ```
  */
 @Injectable()
-export class EncryptInterceptor implements NestInterceptor {
-  constructor(private readonly options: EncryptInterceptorOptions) {}
+export class DecryptInterceptor implements NestInterceptor {
+  constructor(private readonly options: DecryptInterceptorOptions) {}
 
   async intercept(
     context: ExecutionContext,
@@ -61,16 +61,16 @@ export class EncryptInterceptor implements NestInterceptor {
 
         if (Array.isArray(data)) {
           return Promise.all(
-            data.map((item) => this.encryptItem(item, encryptionService)),
+            data.map((item) => this.decryptItem(item, encryptionService)),
           )
         }
 
-        return this.encryptItem(data, encryptionService)
+        return this.decryptItem(data, encryptionService)
       }),
     )
   }
 
-  private async encryptItem(
+  private async decryptItem(
     item: unknown,
     encryptionService: EncryptionService,
   ): Promise<unknown> {
@@ -83,18 +83,18 @@ export class EncryptInterceptor implements NestInterceptor {
     if (this.options.fields) {
       for (const field of this.options.fields) {
         if (result[field] !== undefined && result[field] !== null) {
-          const encryptResult = await encryptionService.encrypt(result[field], {
-            table: this.options.table,
-            column: this.options.column,
-          })
+          // Check if the field contains an encrypted payload
+          if (typeof result[field] === 'object' && result[field].c) {
+            const decryptResult = await encryptionService.decrypt(result[field])
 
-          if (encryptResult.failure) {
-            throw new Error(
-              `Encryption failed for field ${field}: ${encryptResult.failure.message}`,
-            )
+            if (decryptResult.failure) {
+              throw new Error(
+                `Decryption failed for field ${field}: ${decryptResult.failure.message}`,
+              )
+            }
+
+            result[field] = decryptResult.data
           }
-
-          result[field] = encryptResult.data
         }
       }
     }

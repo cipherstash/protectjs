@@ -1,7 +1,7 @@
 import type { EncryptedPayload, EncryptionClient } from '@cipherstash/stack'
 import { Test, type TestingModule } from '@nestjs/testing'
-import { ENCRYPTION_CLIENT } from './protect.constants'
-import { EncryptionService } from './protect.service'
+import { ENCRYPTION_CLIENT } from './encryption.constants'
+import { EncryptionService } from './encryption.service'
 import { users } from './schema'
 
 describe('EncryptionService', () => {

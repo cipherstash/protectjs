@@ -3,8 +3,8 @@ import { encryptedDynamoDB } from '@cipherstash/protect-dynamodb'
 import pg from 'pg'
 // Insert data in dynamo, scan it back out, insert/copy into PG, query from PG.
 import { createTable, docClient, dynamoClient } from './common/dynamo'
+import { encryptionClient, users } from './common/encryption'
 import { log } from './common/log'
-import { encryptionClient, users } from './common/protect'
 const PgClient = pg.Client
 
 const tableName = 'UsersExportToPG'
@@ -93,7 +93,7 @@ const main = async () => {
     throw new Error('No items found in scan result')
   }
 
-  // TODO: this logic belongs in Protect (or in common/protect.ts for the prototype)
+  // TODO: this logic belongs in Encryption (or in common/encryption.ts for the prototype)
   const formattedForPgInsert = scanResult.Items.reduce(
     (recordsToInsert, currentItem) => {
       const idAsText = currentItem.pk.slice('user#'.length)

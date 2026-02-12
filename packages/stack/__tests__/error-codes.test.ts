@@ -1,7 +1,7 @@
 import 'dotenv/config'
 import { encryptedColumn, encryptedTable } from '@cipherstash/schema'
 import { beforeAll, describe, expect, it } from 'vitest'
-import { Encryption, EncryptionErrorTypes, FfiProtectError } from '../src'
+import { Encryption, EncryptionErrorTypes, FfiEncryptionError } from '../src'
 import type { EncryptionClient } from '../src'
 
 /** FFI tests require longer timeout due to client initialization */
@@ -39,9 +39,9 @@ describe('FFI Error Code Preservation', () => {
     })
   })
 
-  describe('FfiProtectError class', () => {
+  describe('FfiEncryptionError class', () => {
     it('constructs with code and message', () => {
-      const error = new FfiProtectError({
+      const error = new FfiEncryptionError({
         code: 'UNKNOWN_COLUMN',
         message: 'Test error',
       })

@@ -2,7 +2,7 @@ import type { Decrypted, EncryptedPayload } from '@cipherstash/stack'
 import { Test, type TestingModule } from '@nestjs/testing'
 import { AppController } from './app.controller'
 import { AppService, type CreateUserDto, type User } from './app.service'
-import { EncryptionService } from './protect'
+import { EncryptionService } from './encryption'
 
 describe('AppController', () => {
   let appController: AppController

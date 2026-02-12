@@ -1,6 +1,6 @@
 import type { ExecutionContext } from '@nestjs/common'
 import type { ModuleRef } from '@nestjs/core'
-import { EncryptionService } from '../protect.service'
+import { EncryptionService } from '../encryption.service'
 
 export function getEncryptionService(
   ctx: ExecutionContext,

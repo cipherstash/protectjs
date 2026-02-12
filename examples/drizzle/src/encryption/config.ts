@@ -1,13 +1,13 @@
 import 'dotenv/config'
 import {
   createEncryptionOperators,
-  extractProtectSchema,
+  extractEncryptionSchema,
 } from '@cipherstash/drizzle/pg'
 import { Encryption } from '@cipherstash/stack'
 import { transactions } from '../db/schema'
 
 // Extract Stash Encryption schema from Drizzle table
-export const transactionsSchema = extractProtectSchema(transactions)
+export const transactionsSchema = extractEncryptionSchema(transactions)
 
 // Initialize Stash Encryption client
 export const encryptionClient = await Encryption({

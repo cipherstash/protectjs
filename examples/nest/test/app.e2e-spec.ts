@@ -4,7 +4,7 @@ import { Test, type TestingModule } from '@nestjs/testing'
 import request from 'supertest'
 import { AppController } from '../src/app.controller'
 import { AppService } from '../src/app.service'
-import { EncryptionService } from '../src/protect'
+import { EncryptionService } from '../src/encryption'
 
 describe('AppController (e2e)', () => {
   let app: INestApplication

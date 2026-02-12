@@ -1,7 +1,7 @@
 import 'dotenv/config'
 import {
   Encryption,
-  FfiProtectError,
+  FfiEncryptionError,
   encryptedColumn,
   encryptedTable,
 } from '@cipherstash/stack'
@@ -30,13 +30,13 @@ describe('EncryptedDynamoDB Error Code Preservation', () => {
   })
 
   describe('handleError FFI error code extraction', () => {
-    it('FfiProtectError has code property accessible', () => {
-      const ffiError = new FfiProtectError({
+    it('FfiEncryptionError has code property accessible', () => {
+      const ffiError = new FfiEncryptionError({
         code: 'UNKNOWN_COLUMN',
         message: 'Test error',
       })
       expect(ffiError.code).toBe('UNKNOWN_COLUMN')
-      expect(ffiError instanceof FfiProtectError).toBe(true)
+      expect(ffiError instanceof FfiEncryptionError).toBe(true)
     })
   })
 

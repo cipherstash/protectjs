@@ -3,8 +3,8 @@
 import type { FormData } from '@/components/form'
 import { db } from '@/db'
 import { users } from '@/db/schema'
-import { encryptionClient } from '@/protect'
-import { users as encryptedUsers } from '@/protect/schema'
+import { encryptionClient } from '@/encryption'
+import { users as encryptedUsers } from '@/encryption/schema'
 
 export async function createUser(data: FormData) {
   console.log(data)

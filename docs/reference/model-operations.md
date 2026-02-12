@@ -24,8 +24,8 @@ These operations automatically handle the encryption of fields defined in your s
 The `encryptModel` method encrypts fields in your model that are defined in your schema while leaving other fields unchanged.
 
 ```typescript
-import { encryptionClient } from "./protect";
-import { users } from "./protect/schema";
+import { encryptionClient } from "./encryption";
+import { users } from "./encryption/schema";
 
 const user = {
   id: "1",

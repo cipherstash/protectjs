@@ -1,7 +1,7 @@
 import type { Decrypted, EncryptedPayload } from '@cipherstash/stack'
 import { Injectable } from '@nestjs/common'
-import type { EncryptionService } from './protect'
-import { users } from './protect'
+import type { EncryptionService } from './encryption'
+import { users } from './encryption'
 
 export type User = {
   id: string

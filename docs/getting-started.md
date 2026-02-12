@@ -26,12 +26,12 @@ This getting started guide steps you through:
 ## Step 0: Basic file structure
 
 The following is the basic file structure of the standalone project for this getting started guide.
-In the `src/protect/` directory, we have the table definition in `schema.ts` and the Stash Encryption client in `index.ts`.
+In the `src/encryption/` directory, we have the table definition in `schema.ts` and the Stash Encryption client in `index.ts`.
 
 ```
 📦 <project root>
  ├ 📂 src
- │   ├ 📂 protect
+ │   ├ 📂 encryption
  │   │  ├ 📜 index.ts
  │   │  └ 📜 schema.ts
  │   └ 📜 index.ts
@@ -47,7 +47,7 @@ If you're following this getting started guide with an existing app, skip to [th
 If you're following this getting started guide with a clean slate, create a basic structure by running:
 
 ```bash
-mkdir -p protect-example/src/protect
+mkdir -p protect-example/src/encryption
 cd protect-example
 git init
 npm init -y
@@ -98,7 +98,7 @@ Save these environment variables to a `.env` file in your project.
 
 Stash Encryption uses a schema to define the tables and columns that you want to encrypt and decrypt.
 
-To define your tables and columns, add the following to `src/protect/schema.ts`:
+To define your tables and columns, add the following to `src/encryption/schema.ts`:
 
 ```ts
 import { encryptedTable, encryptedColumn } from "@cipherstash/stack";
@@ -114,7 +114,7 @@ export const orders = encryptedTable("orders", {
 
 **Searchable encryption:**
 
-If you want to search encrypted data in your PostgreSQL database, you must declare the indexes in schema in `src/protect/schema.ts`:
+If you want to search encrypted data in your PostgreSQL database, you must declare the indexes in schema in `src/encryption/schema.ts`:
 
 ```ts
 import { encryptedTable, encryptedColumn } from "@cipherstash/stack";
@@ -132,7 +132,7 @@ Read more about [defining your schema](./docs/reference/schema.md).
 
 ## Step 4: Initialize the Encryption client
 
-To import the `Encryption` function and initialize a client with your defined schema, add the following to `src/protect/index.ts`:
+To import the `Encryption` function and initialize a client with your defined schema, add the following to `src/encryption/index.ts`:
 
 ```ts
 import { Encryption, type EncryptionClientConfig } from "@cipherstash/stack";
@@ -153,8 +153,8 @@ Stash Encryption provides the `encrypt` function on `encryptionClient` to encryp
 Start encrypting data by adding this to `src/index.ts`:
 
 ```typescript
-import { users } from "./protect/schema";
-import { encryptionClient } from "./protect";
+import { users } from "./encryption/schema";
+import { encryptionClient } from "./encryption";
 
 const encryptResult = await encryptionClient.encrypt("secret@squirrel.example", {
   column: users.email,
@@ -209,7 +209,7 @@ Use the `decrypt` function to decrypt data.
 `decrypt` takes an encrypted data object as a parameter.
 
 ```typescript
-import { encryptionClient } from "./protect";
+import { encryptionClient } from "./encryption";
 
 const decryptResult = await encryptionClient.decrypt(ciphertext);
 

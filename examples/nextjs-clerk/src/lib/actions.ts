@@ -2,8 +2,8 @@
 
 import { db } from '@/core/db'
 import { users } from '@/core/db/schema'
-import { users as encryptedUsers, encryptionClient } from '@/core/protect'
-import { getLockContext } from '@/core/protect'
+import { users as encryptedUsers, encryptionClient } from '@/core/encryption'
+import { getLockContext } from '@/core/encryption'
 import { getCtsToken } from '@cipherstash/nextjs'
 import { auth } from '@clerk/nextjs/server'
 import { revalidatePath } from 'next/cache'

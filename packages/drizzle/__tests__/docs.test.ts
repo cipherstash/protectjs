@@ -120,7 +120,7 @@ describe('Documentation Drift Tests', () => {
     }
   }, 30000)
 
-  describe('drizzle.md - Protect Operators Pattern', () => {
+  describe('drizzle.md - Encryption Operators Pattern', () => {
     // Path to documentation relative to repo root
     const docsPath = join(
       __dirname,
@@ -135,7 +135,7 @@ describe('Documentation Drift Tests', () => {
         const context: ExecutionContext = {
           db,
           transactions,
-          protect: encryptionOps,
+          encryption: encryptionOps,
           encryptionClient,
           encryptionTransactions,
           ...drizzleOrm,
@@ -158,13 +158,13 @@ describe('Documentation Drift Tests', () => {
     )
   })
 
-  describe('drizzle-protect.md - Manual Encryption Pattern', () => {
+  describe('drizzle-encryption.md - Manual Encryption Pattern', () => {
     const docsPath = join(
       __dirname,
-      '../../../docs/reference/drizzle/drizzle-protect.md',
+      '../../../docs/reference/drizzle/drizzle-encryption.md',
     )
 
-    const blocks = loadDocumentation(docsPath, 'drizzle-protect.md')
+    const blocks = loadDocumentation(docsPath, 'drizzle-encryption.md')
 
     it.each(blocks.map((b) => [b.section, b]))(
       '%s',
@@ -175,7 +175,7 @@ describe('Documentation Drift Tests', () => {
           encryptionClient,
           encryptionTransactions,
           ...drizzleOrm,
-          // Note: 'protect' intentionally omitted
+          // Note: 'encryption' intentionally omitted
         }
 
         const result = await executeCodeBlock(block.code, context)

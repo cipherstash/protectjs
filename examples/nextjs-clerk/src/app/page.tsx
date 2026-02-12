@@ -1,6 +1,6 @@
 import { db } from '@/core/db'
 import { users } from '@/core/db/schema'
-import { encryptionClient, getLockContext } from '@/core/protect'
+import { encryptionClient, getLockContext } from '@/core/encryption'
 import { getCtsToken } from '@cipherstash/nextjs'
 import type { EncryptedData } from '@cipherstash/stack'
 import { auth, currentUser } from '@clerk/nextjs/server'

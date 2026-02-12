@@ -3,7 +3,7 @@ import { serve } from '@hono/node-server'
 import { createClient } from '@supabase/supabase-js'
 import { Hono } from 'hono'
 
-// Consolidated protect and it's schemas into a single file
+// Consolidated encryption and its schemas into a single file
 import {
   Encryption,
   type EncryptionClientConfig,

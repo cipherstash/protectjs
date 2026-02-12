@@ -1,5 +1,5 @@
 import {
-  ProtectError as FfiProtectError,
+  ProtectError as FfiEncryptionError,
   type ProtectErrorCode,
 } from '@cipherstash/protect-ffi'
 
@@ -8,5 +8,5 @@ import {
  * Used to preserve specific error codes in EncryptionError responses.
  */
 export function getErrorCode(error: unknown): ProtectErrorCode | undefined {
-  return error instanceof FfiProtectError ? error.code : undefined
+  return error instanceof FfiEncryptionError ? error.code : undefined
 }

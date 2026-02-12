@@ -22,7 +22,7 @@ The documentation for Stash Encryption is organized into the following sections:
 ### Drizzle ORM Integration
 
 - [Encryption Operators Pattern](reference/drizzle/drizzle.md) - Recommended approach with auto-encrypting operators
-- [Manual Encryption Pattern](reference/drizzle/drizzle-protect.md) - Explicit control over encryption workflow
+- [Manual Encryption Pattern](reference/drizzle/drizzle-encryption.md) - Explicit control over encryption workflow
 
 ## How-to guides
 

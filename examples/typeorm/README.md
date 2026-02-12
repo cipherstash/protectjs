@@ -71,17 +71,17 @@ export class User {
 ### 4. Configure Stash Encryption
 
 ```typescript
-// src/protect.ts
+// src/encryption.ts
 import { Encryption, encryptedTable, encryptedColumn } from '@cipherstash/stack'
 
-export const protectedUser = encryptedTable('user', {
+export const encryptedUser = encryptedTable('user', {
   email: encryptedColumn('email').equality().orderAndRange(),
   ssn: encryptedColumn('ssn').equality(),
   phone: encryptedColumn('phone').equality(),
 })
 
 export const encryptionClient = await Encryption({
-  schemas: [protectedUser],
+  schemas: [encryptedUser],
 })
 ```
 
@@ -101,15 +101,15 @@ const users = await helper.bulkEncryptAndSave(
     { firstName: 'Jane', email: 'jane@example.com', ssn: '987-65-4321' }
   ],
   {
-    email: { table: protectedUser, column: protectedUser.email },
-    ssn: { table: protectedUser, column: protectedUser.ssn }
+    email: { table: encryptedUser, column: encryptedUser.email },
+    ssn: { table: encryptedUser, column: encryptedUser.ssn }
   }
 )
 
 // 🔓 Bulk decrypt for display
 const decryptedUsers = await helper.bulkDecrypt(allUsers, {
-  email: { table: protectedUser, column: protectedUser.email },
-  ssn: { table: protectedUser, column: protectedUser.ssn }
+  email: { table: encryptedUser, column: encryptedUser.email },
+  ssn: { table: encryptedUser, column: encryptedUser.ssn }
 })
 
 // 🔍 Search encrypted data
@@ -117,7 +117,7 @@ const foundUser = await helper.searchEncryptedField(
   User,
   'email',
   'john@example.com',
-  { table: protectedUser, column: protectedUser.email }
+  { table: encryptedUser, column: encryptedUser.email }
 )
 ```
 
@@ -156,8 +156,8 @@ email: EncryptedData | null
 ```typescript
 // Encrypt individual fields
 const emailResult = await encryptionClient.encrypt('user@example.com', {
-  table: protectedUser,
-  column: protectedUser.email,
+  table: encryptedUser,
+  column: encryptedUser.email,
 })
 
 if (emailResult.failure) {
@@ -186,8 +186,8 @@ const savedUsers = await helper.bulkEncryptAndSave(
   User,
   usersToCreate,
   {
-    email: { table: protectedUser, column: protectedUser.email },
-    ssn: { table: protectedUser, column: protectedUser.ssn }
+    email: { table: encryptedUser, column: encryptedUser.email },
+    ssn: { table: encryptedUser, column: encryptedUser.ssn }
   }
 )
 ```
@@ -203,7 +203,7 @@ const newUser = {
   ssn: '111-22-3333'
 }
 
-const encryptedModelResult = await encryptionClient.encryptModel(newUser, protectedUser)
+const encryptedModelResult = await encryptionClient.encryptModel(newUser, encryptedUser)
 
 if (encryptedModelResult.failure) {
   throw new Error(`Model encryption failed: ${encryptedModelResult.failure.message}`)
@@ -299,7 +299,7 @@ if (result.failure) {
 ```typescript
 // Use environment variables for all sensitive data
 export const encryptionClient = await Encryption({
-  schemas: [protectedUser],
+  schemas: [encryptedUser],
 })
 ```
 

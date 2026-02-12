@@ -50,8 +50,8 @@ import { logger } from '../../utils/logger'
 import {
   CS_COOKIE_NAME,
   type CtsToken,
+  encryptionMiddleware,
   getCtsToken,
-  protectMiddleware,
   resetCtsToken,
 } from '../src/'
 
@@ -115,7 +115,7 @@ describe('resetCtsToken', () => {
   })
 })
 
-describe('protectMiddleware', () => {
+describe('encryptionMiddleware', () => {
   afterEach(() => {
     vi.clearAllMocks()
   })
@@ -130,7 +130,7 @@ describe('protectMiddleware', () => {
     const mockOidcToken = 'valid_token'
     const mockReq = createMockRequest(false)
 
-    await protectMiddleware(mockOidcToken, mockReq)
+    await encryptionMiddleware(mockOidcToken, mockReq)
 
     expect(mockSetCtsToken).toHaveBeenCalledWith(mockOidcToken)
   })
@@ -138,7 +138,7 @@ describe('protectMiddleware', () => {
   it('should reset the cts token if oidcToken is not provided but cookie is present', async () => {
     const mockReq = createMockRequest(true)
 
-    await protectMiddleware('', mockReq)
+    await encryptionMiddleware('', mockReq)
 
     expect(logger.debug).toHaveBeenCalledWith(
       'The JWT token was undefined, so the CipherStash session was reset.',
@@ -149,7 +149,7 @@ describe('protectMiddleware', () => {
   it('should return NextResponse.next() if none of the conditions are met', async () => {
     const mockReq = createMockRequest(false)
 
-    const response = await protectMiddleware('', mockReq)
+    const response = await encryptionMiddleware('', mockReq)
 
     expect(response).toBeInstanceOf(NextResponse)
     expect(logger.debug).toHaveBeenCalledWith(

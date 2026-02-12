@@ -1,6 +1,6 @@
 import 'dotenv/config'
 import readline from 'node:readline'
-import { encryptionClient, users } from './protect'
+import { encryptionClient, users } from './encryption'
 
 const rl = readline.createInterface({
   input: process.stdin,

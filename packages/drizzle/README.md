@@ -115,7 +115,7 @@ export const usersTable = pgTable('users', {
 ### 2. Initialize Stash Encryption
 
 ```typescript
-// protect/config.ts
+// encryption/config.ts
 import { Encryption } from '@cipherstash/stack'
 import { extractEncryptionSchema } from '@cipherstash/drizzle/pg'
 import { usersTable } from '../db/schema'
@@ -132,7 +132,7 @@ export const encryptionClient = await Encryption({
 ### 3. Create encryption operators
 
 ```typescript
-// protect/operators.ts
+// encryption/operators.ts
 import { createEncryptionOperators } from '@cipherstash/drizzle/pg'
 import { encryptionClient } from './config'
 

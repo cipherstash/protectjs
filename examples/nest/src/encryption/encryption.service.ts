@@ -8,7 +8,7 @@ import type {
   LockContext,
 } from '@cipherstash/stack'
 import { Inject, Injectable } from '@nestjs/common'
-import { ENCRYPTION_CLIENT } from './protect.constants'
+import { ENCRYPTION_CLIENT } from './encryption.constants'
 
 @Injectable()
 export class EncryptionService {

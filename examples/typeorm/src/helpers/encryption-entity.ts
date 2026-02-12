@@ -24,7 +24,7 @@ export class EncryptionEntityHelper {
    * const savedUsers = await helper.bulkEncryptAndSave(
    *   User,
    *   users,
-   *   { email: { table: protectedUser, column: protectedUser.email } }
+   *   { email: { table: encryptedUser, column: encryptedUser.email } }
    * )
    * ```
    */
@@ -104,7 +104,7 @@ export class EncryptionEntityHelper {
    * const users = await repository.find()
    * const decryptedUsers = await helper.bulkDecrypt(
    *   users,
-   *   { email_encrypted: { table: protectedUser, column: protectedUser.email } }
+   *   { email_encrypted: { table: encryptedUser, column: encryptedUser.email } }
    * )
    * ```
    */
@@ -194,7 +194,7 @@ export class EncryptionEntityHelper {
    *   User,
    *   'email',
    *   'john@example.com',
-   *   { table: protectedUser, column: protectedUser.email }
+   *   { table: encryptedUser, column: encryptedUser.email }
    * )
    * ```
    */

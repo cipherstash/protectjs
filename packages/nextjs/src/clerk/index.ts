@@ -5,7 +5,7 @@ import { logger } from '../../../utils/logger'
 import { setCtsToken } from '../cts'
 import { CS_COOKIE_NAME, resetCtsToken } from '../index'
 
-export const protectClerkMiddleware = async (
+export const encryptionClerkMiddleware = async (
   auth: ClerkMiddlewareAuth,
   req: NextRequest,
 ) => {
@@ -40,3 +40,6 @@ export const protectClerkMiddleware = async (
 
   return NextResponse.next()
 }
+
+/** @deprecated Use encryptionClerkMiddleware */
+export const protectClerkMiddleware = encryptionClerkMiddleware

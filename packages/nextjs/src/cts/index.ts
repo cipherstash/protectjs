@@ -41,7 +41,7 @@ export const fetchCtsToken = async (oidcToken: string): GetCtsTokenResponse => {
 
   if (!workspaceId) {
     logger.error(
-      'The "CS_WORKSPACE_ID" environment variable is not set, and is required by protectClerkMiddleware. No CipherStash session will be set.',
+      'The "CS_WORKSPACE_ID" environment variable is not set, and is required by encryptionClerkMiddleware. No CipherStash session will be set.',
     )
 
     return {

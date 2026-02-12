@@ -1,5 +1,5 @@
 import { type ExecutionContext, createParamDecorator } from '@nestjs/common'
-import { getEncryptionService } from '../utils/get-protect-service.util'
+import { getEncryptionService } from '../utils/get-encryption-service.util'
 
 import type {
   EncryptedColumn,

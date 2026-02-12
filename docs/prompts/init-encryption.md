@@ -22,35 +22,35 @@ If you detect a mono repo, you need to ask the user which application they want 
 
 ## Adding scafolding for the Stash Encryption client, schemas, and example code
 
-In the rool of the application (if the application is configred to use something like `src` then this is where these operations will occur), you need to add a `protect` directory with the following files/content. If the application uses TypeScript use the `.ts` extension, else use the `.js` extension.
+In the rool of the application (if the application is configred to use something like `src` then this is where these operations will occur), you need to add a `encryption` directory with the following files/content. If the application uses TypeScript use the `.ts` extension, else use the `.js` extension.
 
-`protect/schemas.(ts/js)`
+`encryption/schemas.(ts/js)`
 ```js
 import { encryptedTable, encryptedColumn } from '@cipherstash/stack'
 
-export const protectedExample = encryptedTable('example_table', {
+export const encryptedExample = encryptedTable('example_table', {
   sensitiveData: encryptedColumn('sensitiveData'),
 }
 ```
 
-`protect/index.(ts/js)`
+`encryption/index.(ts/js)`
 ```js
 import { Encryption } from '@cipherstash/stack'
-import { * as protectSchemas } from './schemas'
+import { * as encryptionSchemas } from './schemas'
 
 export const encryptionClient = Encryption({
-  schemas: [...protectSchemas]
+  schemas: [...encryptionSchemas]
 })
 ```
 
-`protect/example.(ts/js)`
+`encryption/example.(ts/js)`
 ```js
 import { encryptionClient } from './index'
-import { * as protectSchemas } from './schemas'
+import { * as encryptionSchemas } from './schemas'
 
 const sensitiveData = "Let's encrypt some data."
 
-/** 
+/**
  * There is no need to wrap any encryptionClient method in a try/catch as it will always return a Result pattern.
  * ---
  * The Result will either contain a `failure` OR a `data` key. You should ALWAYS check for the `failure` key first.
@@ -59,8 +59,8 @@ const sensitiveData = "Let's encrypt some data."
  */
 //
 const encryptResult = encryptionClient.encrypt(sensitiveData, {
-  table: protectSchemas.protectedExample
-  column: protectSchemas.protectedExample.sensitiveData
+  table: encryptionSchemas.encryptedExample
+  column: encryptionSchemas.encryptedExample.sensitiveData
 })
 
 if (encryptResult.failure) {

@@ -21,7 +21,7 @@ Example in a single file:
 ```
 📦 <project root>
  ├ 📂 src
- │   ├ 📂 protect
+ │   ├ 📂 encryption
  │   │  └ 📜 schema.ts
 ```
 
@@ -30,7 +30,7 @@ or in multiple files:
 ```
 📦 <project root>
  ├ 📂 src
- │   ├ 📂 protect
+ │   ├ 📂 encryption
  │   |   └ 📂 schemas
  │   │     └ 📜 users.ts
  │   │     └ 📜 posts.ts

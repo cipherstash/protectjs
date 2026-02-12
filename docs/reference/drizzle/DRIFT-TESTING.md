@@ -28,7 +28,7 @@ packages/drizzle/
 │
 docs/reference/drizzle/
 ├── drizzle.md                          # Encryption operators pattern (recommended)
-├── drizzle-protect.md                  # Manual encryption pattern (verbose)
+├── drizzle-encryption.md                  # Manual encryption pattern (verbose)
 └── DRIFT-TESTING.md                    # This document
 ```
 
@@ -382,7 +382,7 @@ Verify you're using the correct column names from the `transactions` schema:
 - `id`, `account`, `amount`, `description`, `createdAt`
 
 ### Results are encrypted/unreadable
-For manual encryption pattern (`drizzle-protect.md`), ensure you call `bulkDecryptModels()`:
+For manual encryption pattern (`drizzle-encryption.md`), ensure you call `bulkDecryptModels()`:
 ```typescript
 const results = await db.select().from(transactions)
 const decrypted = await encryptionClient.bulkDecryptModels(results)

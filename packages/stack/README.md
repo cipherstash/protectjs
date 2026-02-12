@@ -199,12 +199,12 @@ Save these environment variables to a `.env` file in your project.
 ### Basic file structure
 
 The following is the basic file structure of the project.
-In the `src/protect/` directory, we have the table definition in `schema.ts` and the encryption client in `index.ts`.
+In the `src/encryption/` directory, we have the table definition in `schema.ts` and the encryption client in `index.ts`.
 
 ```
  <project root>
   src
-     protect
+     encryption
        index.ts
        schema.ts
      index.ts
@@ -219,7 +219,7 @@ In the `src/protect/` directory, we have the table definition in `schema.ts` and
 
 Stash Encryption uses a schema to define the tables and columns that you want to encrypt and decrypt.
 
-Define your tables and columns by adding this to `src/protect/schema.ts`:
+Define your tables and columns by adding this to `src/encryption/schema.ts`:
 
 ```ts
 import { encryptedTable, encryptedColumn } from "@cipherstash/stack";
@@ -235,7 +235,7 @@ export const orders = encryptedTable("orders", {
 
 **Searchable encryption:**
 
-If you want to search encrypted data in your PostgreSQL database, you must declare the indexes in schema in `src/protect/schema.ts`:
+If you want to search encrypted data in your PostgreSQL database, you must declare the indexes in schema in `src/encryption/schema.ts`:
 
 ```ts
 import { encryptedTable, encryptedColumn } from "@cipherstash/stack";
@@ -253,7 +253,7 @@ Read more about [defining your schema](./docs/reference/schema.md).
 
 ### Initialize the encryption client
 
-To import the `Encryption` function and initialize a client with your defined schema, add the following to `src/protect/index.ts`:
+To import the `Encryption` function and initialize a client with your defined schema, add the following to `src/encryption/index.ts`:
 
 ```ts
 import { Encryption, type EncryptionClientConfig } from "@cipherstash/stack";
@@ -277,8 +277,8 @@ Stash Encryption provides the `encrypt` function on `encryptionClient` to encryp
 To start encrypting data, add the following to `src/index.ts`:
 
 ```typescript
-import { users } from "./protect/schema";
-import { encryptionClient } from "./protect";
+import { users } from "./encryption/schema";
+import { encryptionClient } from "./encryption";
 
 const encryptResult = await encryptionClient.encrypt("secret@squirrel.example", {
   column: users.email,
@@ -323,7 +323,7 @@ Stash Encryption provides the `decrypt` function on `encryptionClient` to decryp
 To start decrypting data, add the following to `src/index.ts`:
 
 ```typescript
-import { encryptionClient } from "./protect";
+import { encryptionClient } from "./encryption";
 
 // encryptResult is the EQL payload from the previous step
 const decryptResult = await encryptionClient.decrypt(encryptResult.data);
@@ -376,8 +376,8 @@ If you are working with a large data set, the model operations are significantly
 Use the `encryptModel` method to encrypt a model's fields that are defined in your schema:
 
 ```typescript
-import { encryptionClient } from "./protect";
-import { users } from "./protect/schema";
+import { encryptionClient } from "./encryption";
+import { users } from "./encryption/schema";
 
 // Your model with plaintext values
 const user = {
@@ -411,8 +411,8 @@ Stash Encryption provides strong TypeScript support for model operations.
 You can specify your model's type to ensure end-to-end type safety:
 
 ```typescript
-import { encryptionClient } from "./protect";
-import { users } from "./protect/schema";
+import { encryptionClient } from "./encryption";
+import { users } from "./encryption/schema";
 
 // Define your model type
 type User = {
@@ -478,7 +478,7 @@ This type safety helps catch potential issues at compile time and provides bette
 Example with Drizzle infered types:
 
 ```typescript
-import { encryptionClient } from "./protect";
+import { encryptionClient } from "./encryption";
 import { jsonb, pgTable, serial, InferSelectModel } from "drizzle-orm/pg-core";
 import { encryptedTable, encryptedColumn } from "@cipherstash/stack";
 
@@ -510,7 +510,7 @@ const encryptedResult = await encryptionClient.encryptModel<User>(
 Use the `decryptModel` method to decrypt a model's encrypted fields:
 
 ```typescript
-import { encryptionClient } from "./protect";
+import { encryptionClient } from "./encryption";
 
 const decryptedResult = await encryptionClient.decryptModel(encryptedUser);
 
@@ -532,8 +532,8 @@ console.log("decrypted user:", decryptedUser);
 For better performance when working with multiple models, use the `bulkEncryptModels` and `bulkDecryptModels` methods:
 
 ```typescript
-import { encryptionClient } from "./protect";
-import { users } from "./protect/schema";
+import { encryptionClient } from "./encryption";
+import { users } from "./encryption/schema";
 
 // Array of models with plaintext values
 const userModels = [
@@ -586,8 +586,8 @@ Stash Encryption provides direct access to ZeroKMS bulk operations through the `
 Use the `bulkEncrypt` method to encrypt multiple plaintext values at once:
 
 ```typescript
-import { encryptionClient } from "./protect";
-import { users } from "./protect/schema";
+import { encryptionClient } from "./encryption";
+import { users } from "./encryption/schema";
 
 // Array of plaintext values with optional IDs for correlation
 const plaintexts = [
@@ -644,7 +644,7 @@ const encryptedResult = await encryptionClient.bulkEncrypt(plaintexts, {
 Use the `bulkDecrypt` method to decrypt multiple encrypted values at once:
 
 ```typescript
-import { encryptionClient } from "./protect";
+import { encryptionClient } from "./encryption";
 
 // encryptedData is the result from bulkEncrypt
 const decryptedResult = await encryptionClient.bulkDecrypt(encryptedData);
@@ -907,8 +907,8 @@ const lockContext = identifyResult.data;
 To encrypt data with a lock context, call the optional `withLockContext` method on the `encrypt` function and pass the lock context object as a parameter:
 
 ```typescript
-import { encryptionClient } from "./protect";
-import { users } from "./protect/schema";
+import { encryptionClient } from "./encryption";
+import { users } from "./encryption/schema";
 
 const encryptResult = await encryptionClient
   .encrypt("plaintext", {
@@ -929,7 +929,7 @@ console.log("EQL Payload containing ciphertexts:", encryptResult.data);
 To decrypt data with a lock context, call the optional `withLockContext` method on the `decrypt` function and pass the lock context object as a parameter:
 
 ```typescript
-import { encryptionClient } from "./protect";
+import { encryptionClient } from "./encryption";
 
 const decryptResult = await encryptionClient
   .decrypt(encryptResult.data)
@@ -947,8 +947,8 @@ const plaintext = decryptResult.data;
 All model operations support lock contexts for identity-aware encryption:
 
 ```typescript
-import { encryptionClient } from "./protect";
-import { users } from "./protect/schema";
+import { encryptionClient } from "./encryption";
+import { users } from "./encryption/schema";
 
 const myUsers = [
   {
@@ -1009,7 +1009,7 @@ In the [CipherStash Dashboard](https://dashboard.cipherstash.com/workspaces/_/en
 
 ```typescript
 import { Encryption } from "@cipherstash/stack";
-import { users } from "./protect/schema";
+import { users } from "./encryption/schema";
 
 const encryptionClient = await Encryption({
   schemas: [users],
@@ -1043,9 +1043,9 @@ const encryptionClient = await Encryption({
 To enable the logger, configure the following environment variable:
 
 ```bash
-PROTECT_LOG_LEVEL=debug  # Enable debug logging
-PROTECT_LOG_LEVEL=info   # Enable info logging
-PROTECT_LOG_LEVEL=error  # Enable error logging
+CS_LOG_LEVEL=debug  # Enable debug logging
+CS_LOG_LEVEL=info   # Enable info logging
+CS_LOG_LEVEL=error  # Enable error logging
 ```
 
 ## CipherStash Client

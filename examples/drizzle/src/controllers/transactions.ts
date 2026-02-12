@@ -6,7 +6,7 @@ import {
   encryptionClient,
   encryptionOps,
   transactionsSchema,
-} from '../protect/config'
+} from '../encryption/config'
 
 interface CreateTransactionBody {
   accountNumber: string
