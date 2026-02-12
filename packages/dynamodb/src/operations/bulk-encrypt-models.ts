@@ -16,18 +16,18 @@ export class BulkEncryptModelsOperation<
 > extends DynamoDBOperation<T[]> {
   private encryptionClient: EncryptionClient
   private items: T[]
-  private protectTable: EncryptedTable<EncryptedTableColumn>
+  private table: EncryptedTable<EncryptedTableColumn>
 
   constructor(
     encryptionClient: EncryptionClient,
     items: T[],
-    protectTable: EncryptedTable<EncryptedTableColumn>,
+    table: EncryptedTable<EncryptedTableColumn>,
     options?: DynamoDBOperationOptions,
   ) {
     super(options)
     this.encryptionClient = encryptionClient
     this.items = items
-    this.protectTable = protectTable
+    this.table = table
   }
 
   public async execute(): Promise<Result<T[], EncryptedDynamoDBError>> {
@@ -36,7 +36,7 @@ export class BulkEncryptModelsOperation<
         const encryptResult = await this.encryptionClient
           .bulkEncryptModels(
             this.items.map((item) => deepClone(item)),
-            this.protectTable,
+            this.table,
           )
           .audit(this.getAuditData())
 
@@ -51,7 +51,7 @@ export class BulkEncryptModelsOperation<
         }
 
         const data = encryptResult.data.map((item) => deepClone(item))
-        const encryptedAttrs = Object.keys(this.protectTable.build().columns)
+        const encryptedAttrs = Object.keys(this.table.build().columns)
 
         return data.map(
           (encrypted) => toEncryptedDynamoItem(encrypted, encryptedAttrs) as T,

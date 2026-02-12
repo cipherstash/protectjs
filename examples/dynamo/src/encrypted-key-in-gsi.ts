@@ -1,5 +1,5 @@
 import { PutCommand, QueryCommand } from '@aws-sdk/lib-dynamodb'
-import { protectDynamoDB } from '@cipherstash/protect-dynamodb'
+import { encryptedDynamoDB } from '@cipherstash/protect-dynamodb'
 import { createTable, docClient, dynamoClient } from './common/dynamo'
 import { log } from './common/log'
 import { encryptionClient, users } from './common/protect'
@@ -44,7 +44,7 @@ const main = async () => {
     ],
   })
 
-  const protectDynamo = protectDynamoDB({
+  const dynamodb = encryptedDynamoDB({
     encryptionClient,
   })
 
@@ -55,7 +55,7 @@ const main = async () => {
     email: 'abc@example.com',
   }
 
-  const encryptResult = await protectDynamo.encryptModel(user, users)
+  const encryptResult = await dynamodb.encryptModel(user, users)
 
   log('encrypted item', encryptResult)
 
@@ -105,7 +105,7 @@ const main = async () => {
     throw new Error('Item not found')
   }
 
-  const decryptedItem = await protectDynamo.decryptModel<User>(
+  const decryptedItem = await dynamodb.decryptModel<User>(
     queryResult.Items[0],
     users,
   )

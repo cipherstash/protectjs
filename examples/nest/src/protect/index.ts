@@ -1,6 +1,6 @@
 // Main module exports
-export { ProtectModule } from './protect.module'
-export { ProtectService } from './protect.service'
+export { EncryptionModule } from './protect.module'
+export { EncryptionService } from './protect.service'
 
 // Schema exports
 export * from './schema'
@@ -14,5 +14,5 @@ export { EncryptInterceptor } from './interceptors/encrypt.interceptor'
 export { DecryptInterceptor } from './interceptors/decrypt.interceptor'
 
 // Type exports
-export type { ProtectConfig } from './interfaces/protect-config.interface'
-export { PROTECT_CONFIG, PROTECT_CLIENT } from './protect.constants'
+export type { EncryptionConfig } from './interfaces/protect-config.interface'
+export { ENCRYPTION_CONFIG, ENCRYPTION_CLIENT } from './protect.constants'

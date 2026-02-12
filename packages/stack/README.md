@@ -199,7 +199,7 @@ Save these environment variables to a `.env` file in your project.
 ### Basic file structure
 
 The following is the basic file structure of the project.
-In the `src/protect/` directory, we have the table definition in `schema.ts` and the protect client in `index.ts`.
+In the `src/protect/` directory, we have the table definition in `schema.ts` and the encryption client in `index.ts`.
 
 ```
  <project root>
@@ -482,7 +482,7 @@ import { encryptionClient } from "./protect";
 import { jsonb, pgTable, serial, InferSelectModel } from "drizzle-orm/pg-core";
 import { encryptedTable, encryptedColumn } from "@cipherstash/stack";
 
-const protectUsers = encryptedTable("users", {
+const encryptedUsers = encryptedTable("users", {
   email: encryptedColumn("email"),
 });
 
@@ -501,7 +501,7 @@ const user = {
 // Drizzle User type works directly with model operations
 const encryptedResult = await encryptionClient.encryptModel<User>(
   user,
-  protectUsers
+  encryptedUsers
 );
 ```
 

@@ -1,11 +1,11 @@
 import type { EncryptedPayload, EncryptionClient } from '@cipherstash/stack'
 import { Test, type TestingModule } from '@nestjs/testing'
-import { PROTECT_CLIENT } from './protect.constants'
-import { ProtectService } from './protect.service'
+import { ENCRYPTION_CLIENT } from './protect.constants'
+import { EncryptionService } from './protect.service'
 import { users } from './schema'
 
-describe('ProtectService', () => {
-  let service: ProtectService
+describe('EncryptionService', () => {
+  let service: EncryptionService
   let mockClient: jest.Mocked<EncryptionClient>
 
   const mockEncryptedPayload: EncryptedPayload = {
@@ -27,15 +27,15 @@ describe('ProtectService', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        ProtectService,
+        EncryptionService,
         {
-          provide: PROTECT_CLIENT,
+          provide: ENCRYPTION_CLIENT,
           useValue: mockClient,
         },
       ],
     }).compile()
 
-    service = module.get<ProtectService>(ProtectService)
+    service = module.get<EncryptionService>(EncryptionService)
   })
 
   describe('encrypt', () => {

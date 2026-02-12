@@ -25,7 +25,7 @@ CS_CLIENT_ACCESS_KEY=
 
 ### How encryption works here
 - `src/protect/schema.ts` defines tables with `.equality()`, `.orderAndRange()`, `.freeTextSearch()` for searchable encryption on Postgres.
-- `ProtectModule` initializes an `EncryptionClient` with those schemas and injects a `ProtectService`.
+- `EncryptionModule` initializes an `EncryptionClient` with those schemas and injects an `EncryptionService`.
 - `AppService` uses `encryptModel`/`decryptModel` and bulk variants to demonstrate single and bulk flows.
 
 ### Minimal API demo

@@ -88,10 +88,10 @@ export const encryptionClient = await Encryption({
 ### 5. Use Streamlined Helpers
 
 ```typescript
-// src/helpers/protect-entity.ts
-import { ProtectEntityHelper } from './helpers/protect-entity'
+// src/helpers/encryption-entity.ts
+import { EncryptionEntityHelper } from './helpers/encryption-entity'
 
-const helper = new ProtectEntityHelper(encryptionClient)
+const helper = new EncryptionEntityHelper(encryptionClient)
 
 // 🚀 Bulk create with encryption (recommended for production)
 const users = await helper.bulkEncryptAndSave(

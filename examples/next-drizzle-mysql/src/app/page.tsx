@@ -2,7 +2,7 @@ import { ClientForm } from '@/components/form'
 import { db } from '@/db'
 import { users } from '@/db/schema'
 import { encryptionClient } from '@/protect'
-import { users as protectedUsers } from '@/protect/schema'
+import { users as encryptedUsers } from '@/protect/schema'
 
 type User = {
   id: number

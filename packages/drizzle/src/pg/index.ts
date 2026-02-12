@@ -139,7 +139,7 @@ export const encryptedType = <TData>(
   // Also store on property for immediate access (before pgTable processes it)
   // We need to use any here because Drizzle columns don't have a type for custom properties
   // biome-ignore lint/suspicious/noExplicitAny: Drizzle columns don't expose custom property types
-  ;(column as any)._protectConfig = fullConfig
+  ;(column as any)._encryptionConfig = fullConfig
 
   return column
 }
@@ -170,8 +170,8 @@ export function getEncryptedColumnConfig(
 
     if (isEncrypted) {
       // Try to get config from property (if still there)
-      if (columnAny._protectConfig) {
-        return columnAny._protectConfig
+      if (columnAny._encryptionConfig) {
+        return columnAny._encryptionConfig
       }
 
       // Look up config by column name (the name passed to encryptedType)
@@ -184,7 +184,17 @@ export function getEncryptedColumnConfig(
 }
 
 // Re-export schema extraction utility
-export { extractProtectSchema } from './schema-extraction.js'
+export {
+  extractEncryptionSchema,
+  extractProtectSchema,
+} from './schema-extraction.js'
 
 // Re-export operators
-export { createProtectOperators } from './operators.js'
+export {
+  createEncryptionOperators,
+  createProtectOperators,
+  EncryptionOperatorError,
+  ProtectOperatorError,
+  EncryptionConfigError,
+  ProtectConfigError,
+} from './operators.js'

@@ -1,6 +1,6 @@
 import type { Decrypted, EncryptedPayload } from '@cipherstash/stack'
 import { Injectable } from '@nestjs/common'
-import type { ProtectService } from './protect'
+import type { EncryptionService } from './protect'
 import { users } from './protect'
 
 export type User = {
@@ -20,7 +20,7 @@ export type CreateUserDto = {
 
 @Injectable()
 export class AppService {
-  constructor(private readonly protectService: ProtectService) {}
+  constructor(private readonly encryptionService: EncryptionService) {}
 
   async getHello(): Promise<{
     encryptedUser: User
@@ -38,7 +38,7 @@ export class AppService {
       name: 'John Doe',
     }
 
-    const encryptedResult = await this.protectService.encryptModel<User>(
+    const encryptedResult = await this.encryptionService.encryptModel<User>(
       {
         id: '1',
         email_encrypted: userData.email,
@@ -53,7 +53,7 @@ export class AppService {
       throw new Error(`Encryption failed: ${encryptedResult.failure.message}`)
     }
 
-    const decryptedResult = await this.protectService.decryptModel<User>(
+    const decryptedResult = await this.encryptionService.decryptModel<User>(
       encryptedResult.data,
     )
 
@@ -76,7 +76,7 @@ export class AppService {
     ]
 
     const bulkEncryptedResult =
-      await this.protectService.bulkEncryptModels<User>(
+      await this.encryptionService.bulkEncryptModels<User>(
         bulkUsers.map((user, index) => ({
           id: (index + 2).toString(),
           email_encrypted: user.email,
@@ -93,7 +93,7 @@ export class AppService {
     }
 
     const bulkDecryptedResult =
-      await this.protectService.bulkDecryptModels<User>(
+      await this.encryptionService.bulkDecryptModels<User>(
         bulkEncryptedResult.data,
       )
 
@@ -114,7 +114,7 @@ export class AppService {
   }
 
   async createUser(userData: CreateUserDto): Promise<User> {
-    const encryptedResult = await this.protectService.encryptModel<User>(
+    const encryptedResult = await this.encryptionService.encryptModel<User>(
       {
         id: Date.now().toString(),
         email_encrypted: userData.email,
@@ -136,7 +136,7 @@ export class AppService {
 
   async getUser(id: string, encryptedUser: User): Promise<Decrypted<User>> {
     const decryptedResult =
-      await this.protectService.decryptModel<User>(encryptedUser)
+      await this.encryptionService.decryptModel<User>(encryptedUser)
 
     if (decryptedResult.failure) {
       throw new Error(

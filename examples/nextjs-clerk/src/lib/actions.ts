@@ -2,7 +2,7 @@
 
 import { db } from '@/core/db'
 import { users } from '@/core/db/schema'
-import { encryptionClient, users as protectUsers } from '@/core/protect'
+import { users as encryptedUsers, encryptionClient } from '@/core/protect'
 import { getLockContext } from '@/core/protect'
 import { getCtsToken } from '@cipherstash/nextjs'
 import { auth } from '@clerk/nextjs/server'
@@ -32,8 +32,8 @@ export async function addUser(formData: FormData) {
   const lockContext = getLockContext(ctsToken.ctsToken)
   const encryptedResult = await encryptionClient
     .encrypt(email, {
-      column: protectUsers.email,
-      table: protectUsers,
+      column: encryptedUsers.email,
+      table: encryptedUsers,
     })
     .withLockContext(lockContext)
 

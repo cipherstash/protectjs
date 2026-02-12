@@ -1,5 +1,5 @@
 import { PutCommand, ScanCommand } from '@aws-sdk/lib-dynamodb'
-import { protectDynamoDB } from '@cipherstash/protect-dynamodb'
+import { encryptedDynamoDB } from '@cipherstash/protect-dynamodb'
 import pg from 'pg'
 // Insert data in dynamo, scan it back out, insert/copy into PG, query from PG.
 import { createTable, docClient, dynamoClient } from './common/dynamo'
@@ -31,7 +31,7 @@ const main = async () => {
     ],
   })
 
-  const protectDynamo = protectDynamoDB({
+  const dynamodb = encryptedDynamoDB({
     encryptionClient,
   })
 
@@ -42,7 +42,7 @@ const main = async () => {
     email: 'abc@example.com',
   }
 
-  const encryptResult = await protectDynamo.encryptModel(user, users)
+  const encryptResult = await dynamodb.encryptModel(user, users)
 
   const putCommand = new PutCommand({
     TableName: tableName,

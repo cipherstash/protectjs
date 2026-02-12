@@ -30,22 +30,22 @@ export interface EncryptedDynamoDBError extends Error {
 export interface EncryptedDynamoDBInstance {
   encryptModel<T extends Record<string, unknown>>(
     item: T,
-    protectTable: EncryptedTable<EncryptedTableColumn>,
+    table: EncryptedTable<EncryptedTableColumn>,
   ): EncryptModelOperation<T>
 
   bulkEncryptModels<T extends Record<string, unknown>>(
     items: T[],
-    protectTable: EncryptedTable<EncryptedTableColumn>,
+    table: EncryptedTable<EncryptedTableColumn>,
   ): BulkEncryptModelsOperation<T>
 
   decryptModel<T extends Record<string, unknown>>(
     item: Record<string, Encrypted | unknown>,
-    protectTable: EncryptedTable<EncryptedTableColumn>,
+    table: EncryptedTable<EncryptedTableColumn>,
   ): DecryptModelOperation<T>
 
   bulkDecryptModels<T extends Record<string, unknown>>(
     items: Record<string, Encrypted | unknown>[],
-    protectTable: EncryptedTable<EncryptedTableColumn>,
+    table: EncryptedTable<EncryptedTableColumn>,
   ): BulkDecryptModelsOperation<T>
 
   /**
@@ -54,7 +54,7 @@ export interface EncryptedDynamoDBInstance {
    * @example
    * ```typescript
    * // Before (deprecated)
-   * const result = await protectDynamo.createSearchTerms([{ value, column, table }])
+   * const result = await dynamodb.createSearchTerms([{ value, column, table }])
    * const hmac = result.data[0]
    *
    * // After (new API)

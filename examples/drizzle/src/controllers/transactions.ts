@@ -4,7 +4,7 @@ import { db } from '../db'
 import { transactions } from '../db/schema'
 import {
   encryptionClient,
-  protectOps,
+  encryptionOps,
   transactionsSchema,
 } from '../protect/config'
 
@@ -36,7 +36,7 @@ export async function getTransactions(req: Request, res: Response) {
 
     // Account number search (encrypted field)
     if (accountNumber && typeof accountNumber === 'string') {
-      const accountCondition = await protectOps.like(
+      const accountCondition = await encryptionOps.like(
         transactions.accountNumber,
         accountNumber,
       )
@@ -48,13 +48,13 @@ export async function getTransactions(req: Request, res: Response) {
       if (minAmount !== undefined) {
         const minAmountNum = Number(minAmount)
         if (!Number.isNaN(minAmountNum)) {
-          conditions.push(protectOps.gte(transactions.amount, minAmountNum))
+          conditions.push(encryptionOps.gte(transactions.amount, minAmountNum))
         }
       }
       if (maxAmount !== undefined) {
         const maxAmountNum = Number(maxAmount)
         if (!Number.isNaN(maxAmountNum)) {
-          conditions.push(protectOps.lte(transactions.amount, maxAmountNum))
+          conditions.push(encryptionOps.lte(transactions.amount, maxAmountNum))
         }
       }
     }
@@ -66,7 +66,7 @@ export async function getTransactions(req: Request, res: Response) {
 
     // Apply conditions
     if (conditions.length > 0) {
-      const condition = await protectOps.and(...conditions)
+      const condition = await encryptionOps.and(...conditions)
       query = query.where(condition) as typeof query
     }
 

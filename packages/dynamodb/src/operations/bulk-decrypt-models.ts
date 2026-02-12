@@ -18,18 +18,18 @@ export class BulkDecryptModelsOperation<
 > extends DynamoDBOperation<Decrypted<T>[]> {
   private encryptionClient: EncryptionClient
   private items: Record<string, Encrypted | unknown>[]
-  private protectTable: EncryptedTable<EncryptedTableColumn>
+  private table: EncryptedTable<EncryptedTableColumn>
 
   constructor(
     encryptionClient: EncryptionClient,
     items: Record<string, Encrypted | unknown>[],
-    protectTable: EncryptedTable<EncryptedTableColumn>,
+    table: EncryptedTable<EncryptedTableColumn>,
     options?: DynamoDBOperationOptions,
   ) {
     super(options)
     this.encryptionClient = encryptionClient
     this.items = items
-    this.protectTable = protectTable
+    this.table = table
   }
 
   public async execute(): Promise<
@@ -38,7 +38,7 @@ export class BulkDecryptModelsOperation<
     return await withResult(
       async () => {
         const itemsWithEqlPayloads = this.items.map((item) =>
-          toItemWithEqlPayloads(item, this.protectTable),
+          toItemWithEqlPayloads(item, this.table),
         )
 
         const decryptResult = await this.encryptionClient

@@ -2,12 +2,12 @@ import type { Decrypted, EncryptedPayload } from '@cipherstash/stack'
 import { Test, type TestingModule } from '@nestjs/testing'
 import { AppController } from './app.controller'
 import { AppService, type CreateUserDto, type User } from './app.service'
-import { ProtectService } from './protect'
+import { EncryptionService } from './protect'
 
 describe('AppController', () => {
   let appController: AppController
   let appService: AppService
-  let protectService: ProtectService
+  let encryptionService: EncryptionService
 
   const mockEncryptedPayload: EncryptedPayload = {
     c: 'mock-encrypted-data',
@@ -27,7 +27,7 @@ describe('AppController', () => {
   }
 
   beforeEach(async () => {
-    const mockProtectService = {
+    const mockEncryptionService = {
       encryptModel: jest.fn(),
       decryptModel: jest.fn(),
       bulkEncryptModels: jest.fn(),
@@ -39,15 +39,15 @@ describe('AppController', () => {
       providers: [
         AppService,
         {
-          provide: ProtectService,
-          useValue: mockProtectService,
+          provide: EncryptionService,
+          useValue: mockEncryptionService,
         },
       ],
     }).compile()
 
     appController = app.get<AppController>(AppController)
     appService = app.get<AppService>(AppService)
-    protectService = app.get<ProtectService>(ProtectService)
+    encryptionService = app.get<EncryptionService>(EncryptionService)
   })
 
   describe('getHello', () => {

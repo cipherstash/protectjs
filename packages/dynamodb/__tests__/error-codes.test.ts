@@ -14,7 +14,7 @@ const FFI_TEST_TIMEOUT = 30_000
 
 describe('EncryptedDynamoDB Error Code Preservation', () => {
   let encryptionClient: EncryptionClient
-  let protectDynamo: ReturnType<typeof encryptedDynamoDB>
+  let dynamodb: ReturnType<typeof encryptedDynamoDB>
 
   const testSchema = encryptedTable('test_table', {
     email: encryptedColumn('email').equality(),
@@ -26,7 +26,7 @@ describe('EncryptedDynamoDB Error Code Preservation', () => {
 
   beforeAll(async () => {
     encryptionClient = await Encryption({ schemas: [testSchema] })
-    protectDynamo = encryptedDynamoDB({ encryptionClient })
+    dynamodb = encryptedDynamoDB({ encryptionClient })
   })
 
   describe('handleError FFI error code extraction', () => {
@@ -46,7 +46,7 @@ describe('EncryptedDynamoDB Error Code Preservation', () => {
       async () => {
         const model = { nonexistent: 'test value' }
 
-        const result = await protectDynamo.encryptModel(model, badSchema)
+        const result = await dynamodb.encryptModel(model, badSchema)
 
         expect(result.failure).toBeDefined()
         expect((result.failure as EncryptedDynamoDBError).code).toBe(
@@ -66,10 +66,7 @@ describe('EncryptedDynamoDB Error Code Preservation', () => {
           email__source: 'invalid_ciphertext_data',
         }
 
-        const result = await protectDynamo.decryptModel(
-          malformedItem,
-          testSchema,
-        )
+        const result = await dynamodb.decryptModel(malformedItem, testSchema)
 
         expect(result.failure).toBeDefined()
         // FFI returns undefined code for IO/parsing errors, so we fall back to generic code
@@ -87,7 +84,7 @@ describe('EncryptedDynamoDB Error Code Preservation', () => {
       async () => {
         const models = [{ nonexistent: 'value1' }, { nonexistent: 'value2' }]
 
-        const result = await protectDynamo.bulkEncryptModels(models, badSchema)
+        const result = await dynamodb.bulkEncryptModels(models, badSchema)
 
         expect(result.failure).toBeDefined()
         expect((result.failure as EncryptedDynamoDBError).code).toBe(
@@ -108,7 +105,7 @@ describe('EncryptedDynamoDB Error Code Preservation', () => {
           { email__source: 'invalid2' },
         ]
 
-        const result = await protectDynamo.bulkDecryptModels(
+        const result = await dynamodb.bulkDecryptModels(
           malformedItems,
           testSchema,
         )

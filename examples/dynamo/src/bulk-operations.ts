@@ -1,5 +1,5 @@
 import { BatchGetCommand, BatchWriteCommand } from '@aws-sdk/lib-dynamodb'
-import { protectDynamoDB } from '@cipherstash/protect-dynamodb'
+import { encryptedDynamoDB } from '@cipherstash/protect-dynamodb'
 import { createTable, docClient, dynamoClient } from './common/dynamo'
 import { log } from './common/log'
 import { encryptionClient, users } from './common/protect'
@@ -28,7 +28,7 @@ const main = async () => {
     ],
   })
 
-  const protectDynamo = protectDynamoDB({
+  const dynamodb = encryptedDynamoDB({
     encryptionClient,
   })
 
@@ -45,7 +45,7 @@ const main = async () => {
     },
   ]
 
-  const encryptResult = await protectDynamo.bulkEncryptModels(items, users)
+  const encryptResult = await dynamodb.bulkEncryptModels(items, users)
 
   if (encryptResult.failure) {
     throw new Error(`Failed to encrypt items: ${encryptResult.failure.message}`)
@@ -79,7 +79,7 @@ const main = async () => {
 
   const getResult = await docClient.send(batchGetCommand)
 
-  const decryptedItems = await protectDynamo.bulkDecryptModels<User>(
+  const decryptedItems = await dynamodb.bulkDecryptModels<User>(
     getResult.Responses?.[tableName],
     users,
   )

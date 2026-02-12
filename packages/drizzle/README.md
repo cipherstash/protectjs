@@ -117,11 +117,11 @@ export const usersTable = pgTable('users', {
 ```typescript
 // protect/config.ts
 import { Encryption } from '@cipherstash/stack'
-import { extractProtectSchema } from '@cipherstash/drizzle/pg'
+import { extractEncryptionSchema } from '@cipherstash/drizzle/pg'
 import { usersTable } from '../db/schema'
 
 // Extract Stash Encryption schema from Drizzle table
-export const users = extractProtectSchema(usersTable)
+export const users = extractEncryptionSchema(usersTable)
 
 // Initialize Stash Encryption client
 export const encryptionClient = await Encryption({
@@ -129,15 +129,15 @@ export const encryptionClient = await Encryption({
 })
 ```
 
-### 3. Create Protect operators
+### 3. Create encryption operators
 
 ```typescript
 // protect/operators.ts
-import { createProtectOperators } from '@cipherstash/drizzle/pg'
+import { createEncryptionOperators } from '@cipherstash/drizzle/pg'
 import { encryptionClient } from './config'
 
 // Create operators that automatically handle encryption in queries
-export const protectOps = createProtectOperators(encryptionClient)
+export const encryptionOps = createEncryptionOperators(encryptionClient)
 ```
 
 ## Usage Examples
@@ -193,22 +193,22 @@ decrypted.data.forEach(user => {
 const results = await db
   .select()
   .from(usersTable)
-  .where(await protectOps.eq(usersTable.email, 'jane@example.com'))
+  .where(await encryptionOps.eq(usersTable.email, 'jane@example.com'))
 
 // Text search (LIKE/ILIKE)
 const results = await db
   .select()
   .from(usersTable)
-  .where(await protectOps.ilike(usersTable.email, 'smith'))
+  .where(await encryptionOps.ilike(usersTable.email, 'smith'))
 
 // Range queries
 const results = await db
   .select()
   .from(usersTable)
   .where(
-    await protectOps.and(
-      protectOps.gte(usersTable.age, 25),
-      protectOps.lte(usersTable.age, 35),
+    await encryptionOps.and(
+      encryptionOps.gte(usersTable.age, 25),
+      encryptionOps.lte(usersTable.age, 35),
     ),
   )
 
@@ -222,7 +222,7 @@ const decrypted = await encryptionClient.bulkDecryptModels(results)
 const results = await db
   .select()
   .from(usersTable)
-  .orderBy(protectOps.asc(usersTable.age))
+  .orderBy(encryptionOps.asc(usersTable.age))
 
 const decrypted = await encryptionClient.bulkDecryptModels(results)
 ```
@@ -235,15 +235,15 @@ const decrypted = await encryptionClient.bulkDecryptModels(results)
 ```typescript
 import { eq } from 'drizzle-orm'
 
-// Mix Protect operators (encrypted) with regular Drizzle operators (non-encrypted)
+// Mix encryption operators (encrypted) with regular Drizzle operators (non-encrypted)
 const results = await db
   .select()
   .from(usersTable)
   .where(
-    await protectOps.and(
-      // Protect operators for encrypted columns (batched for efficiency)
-      protectOps.gte(usersTable.age, 25),
-      protectOps.ilike(usersTable.email, 'developer'),
+    await encryptionOps.and(
+      // Encryption operators for encrypted columns (batched for efficiency)
+      encryptionOps.gte(usersTable.age, 25),
+      encryptionOps.ilike(usersTable.email, 'developer'),
       // Regular Drizzle operators for non-encrypted columns
       eq(usersTable.id, 1),
     ),
@@ -251,7 +251,7 @@ const results = await db
 ```
 
 > [!TIP]
-> **Performance Tip**: Using `protectOps.and()` batches all encryption operations into a single `createSearchTerms` call, which is more efficient than awaiting each operator individually.
+> **Performance Tip**: Using `encryptionOps.and()` batches all encryption operations into a single `createSearchTerms` call, which is more efficient than awaiting each operator individually.
 
 ## Available Operators
 
@@ -308,7 +308,7 @@ Creates an encrypted column type for Drizzle schemas.
 - `equality?: boolean` - Enable equality queries
 - `orderAndRange?: boolean` - Enable range queries and sorting
 
-### `extractProtectSchema(table)`
+### `extractEncryptionSchema(table)`
 
 Extracts a Stash Encryption schema from a Drizzle table definition.
 
@@ -317,7 +317,7 @@ Extracts a Stash Encryption schema from a Drizzle table definition.
 
 **Returns:** Stash Encryption schema object
 
-### `createProtectOperators(encryptionClient)`
+### `createEncryptionOperators(encryptionClient)`
 
 Creates Drizzle-compatible operators that automatically handle encryption.
 

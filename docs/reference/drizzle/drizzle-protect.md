@@ -107,8 +107,8 @@ Find transactions with a specific amount. First encrypt the search value, then u
 ```ts:run
 // Encrypt the search value
 const encryptedAmount = await encryptionClient.encrypt(800.00, {
-  table: protectTransactions,
-  column: protectTransactions.amount
+  table: encryptionTransactions,
+  column: encryptionTransactions.amount
 })
 
 // Query with regular Drizzle eq()
@@ -128,8 +128,8 @@ Find transactions with a specific description using manual encryption.
 ```ts:run
 // Encrypt the search value
 const encryptedDesc = await encryptionClient.encrypt('Salary deposit', {
-  table: protectTransactions,
-  column: protectTransactions.description
+  table: encryptionTransactions,
+  column: encryptionTransactions.description
 })
 
 // Query with regular Drizzle eq()
@@ -149,12 +149,12 @@ Find transactions matching multiple encrypted fields using manual encryption.
 ```ts:run
 // Encrypt both search values
 const encryptedAccount = await encryptionClient.encrypt('1234567890', {
-  table: protectTransactions,
-  column: protectTransactions.account_number
+  table: encryptionTransactions,
+  column: encryptionTransactions.account_number
 })
 const encryptedAmount = await encryptionClient.encrypt(800.00, {
-  table: protectTransactions,
-  column: protectTransactions.amount
+  table: encryptionTransactions,
+  column: encryptionTransactions.amount
 })
 
 // Query with regular Drizzle operators
@@ -183,8 +183,8 @@ Find transactions with amounts less than or equal to $150 using manual encryptio
 ```ts:run
 // Encrypt the comparison value
 const encryptedAmount = await encryptionClient.encrypt(150.00, {
-  table: protectTransactions,
-  column: protectTransactions.amount
+  table: encryptionTransactions,
+  column: encryptionTransactions.amount
 })
 
 // Query with regular Drizzle lte()
@@ -204,8 +204,8 @@ Find transactions with amounts greater than or equal to $1250.
 ```ts:run
 // Encrypt the comparison value
 const encryptedAmount = await encryptionClient.encrypt(1250.00, {
-  table: protectTransactions,
-  column: protectTransactions.amount
+  table: encryptionTransactions,
+  column: encryptionTransactions.amount
 })
 
 // Query with regular Drizzle gte()
@@ -226,13 +226,13 @@ return decrypted.data
 
 Search for transactions with "gym" in the description. With the manual encryption pattern, you must encrypt the search pattern and cast it to the encrypted type.
 
-**Note:** Unlike the encryption operators pattern which provides `protect.like()` wrapper, the manual encryption pattern requires using Drizzle's `sql` template with manual type casting. This gives you full control over the encryption and query construction at the cost of more verbose syntax.
+**Note:** Unlike the encryption operators pattern which provides `encryption.like()` wrapper, the manual encryption pattern requires using Drizzle's `sql` template with manual type casting. This gives you full control over the encryption and query construction at the cost of more verbose syntax.
 
 ```ts:run
 // Encrypt the search pattern
 const encryptedPattern = await encryptionClient.encrypt('%gym%', {
-  table: protectTransactions,
-  column: protectTransactions.description
+  table: encryptionTransactions,
+  column: encryptionTransactions.description
 })
 
 // Cast encrypted pattern to jsonb then to eql_v2_encrypted type
@@ -252,14 +252,14 @@ Combine text search with manual encryption for other fields. All search values m
 ```ts:run
 // Encrypt the amount comparison value
 const encryptedAmount = await encryptionClient.encrypt(150.00, {
-  table: protectTransactions,
-  column: protectTransactions.amount
+  table: encryptionTransactions,
+  column: encryptionTransactions.amount
 })
 
 // Encrypt the search pattern for text search
 const encryptedPattern = await encryptionClient.encrypt('%payment%', {
-  table: protectTransactions,
-  column: protectTransactions.description
+  table: encryptionTransactions,
+  column: encryptionTransactions.description
 })
 
 const results = await db.select()
@@ -287,12 +287,12 @@ Find transactions with amounts between $150 and $1250.
 ```ts:run
 // Encrypt both range boundaries
 const encryptedMin = await encryptionClient.encrypt(150.00, {
-  table: protectTransactions,
-  column: protectTransactions.amount
+  table: encryptionTransactions,
+  column: encryptionTransactions.amount
 })
 const encryptedMax = await encryptionClient.encrypt(1250.00, {
-  table: protectTransactions,
-  column: protectTransactions.amount
+  table: encryptionTransactions,
+  column: encryptionTransactions.amount
 })
 
 // Query with regular Drizzle operators
@@ -321,12 +321,12 @@ const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000)
 
 // Encrypt both date boundaries
 const encryptedStart = await encryptionClient.encrypt(twoWeeksAgo.getTime(), {
-  table: protectTransactions,
-  column: protectTransactions.created_at
+  table: encryptionTransactions,
+  column: encryptionTransactions.created_at
 })
 const encryptedEnd = await encryptionClient.encrypt(now.getTime(), {
-  table: protectTransactions,
-  column: protectTransactions.created_at
+  table: encryptionTransactions,
+  column: encryptionTransactions.created_at
 })
 
 // Query with regular Drizzle operators
@@ -419,8 +419,8 @@ Count transactions with amounts greater than or equal to $1250.
 ```ts:run
 // Encrypt the search value
 const encryptedAmount = await encryptionClient.encrypt(1250.00, {
-  table: protectTransactions,
-  column: protectTransactions.amount
+  table: encryptionTransactions,
+  column: encryptionTransactions.amount
 })
 
 const results = await db.select({ count: sql`count(*)` })
@@ -465,10 +465,10 @@ When using the manual encryption pattern instead of encryption operators, you ha
 
 | Aspect | Encryption Operators | Manual Encryption |
 |--------|------------------|-------------------|
-| Encryption | `protect.eq(col, val)` | `encrypt()` + `eq()` |
+| Encryption | `encryption.eq(col, val)` | `encrypt()` + `eq()` |
 | Code | Auto-encrypting operators | Explicit encryption calls |
 | Decryption | Handled by executor | Manual with `bulkDecryptModels()` |
-| LIKE queries | `protect.like()` | `encrypt()` + `ilike()` |
+| LIKE queries | `encryption.like()` | `encrypt()` + `ilike()` |
 | Control | High-level | Low-level |
 | Use case | Clean syntax | Full control |
 
@@ -515,8 +515,8 @@ When using the manual encryption pattern instead of encryption operators, you ha
 ```ts
 // Single value encryption
 const encrypted = await encryptionClient.encrypt(plaintext, {
-  table: protectTransactions,
-  column: protectTransactions.column_name
+  table: encryptionTransactions,
+  column: encryptionTransactions.column_name
 })
 
 // Use encrypted.data in queries
@@ -546,10 +546,10 @@ transactions.description
 transactions.createdAt
 
 // Encryption schema (for encryption operations)
-protectTransactions.account_number   // Note: snake_case
-protectTransactions.amount
-protectTransactions.description
-protectTransactions.created_at       // Note: snake_case
+encryptionTransactions.account_number   // Note: snake_case
+encryptionTransactions.amount
+encryptionTransactions.description
+encryptionTransactions.created_at       // Note: snake_case
 ```
 
 ---

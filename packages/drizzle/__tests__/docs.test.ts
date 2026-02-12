@@ -8,9 +8,9 @@ import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import {
-  createProtectOperators,
+  createEncryptionOperators,
   encryptedType,
-  extractProtectSchema,
+  extractEncryptionSchema,
 } from '../src/pg'
 import { docSeedData } from './fixtures/doc-seed-data'
 import { type ExecutionContext, executeCodeBlock } from './utils/code-executor'
@@ -62,20 +62,20 @@ const transactions = pgTable('drizzle-docs-test', {
   }),
 })
 
-const protectTransactions = extractProtectSchema(transactions)
+const encryptionTransactions = extractEncryptionSchema(transactions)
 
 describe('Documentation Drift Tests', () => {
   let db: ReturnType<typeof drizzle>
   let client: ReturnType<typeof postgres>
   let encryptionClient: EncryptionClient
-  let encryptionOps: ReturnType<typeof createProtectOperators>
+  let encryptionOps: ReturnType<typeof createEncryptionOperators>
   let seedDataIds: number[] = []
 
   beforeAll(async () => {
     client = postgres(process.env.DATABASE_URL as string)
     db = drizzle({ client })
-    encryptionClient = await Encryption({ schemas: [protectTransactions] })
-    encryptionOps = createProtectOperators(encryptionClient)
+    encryptionClient = await Encryption({ schemas: [encryptionTransactions] })
+    encryptionOps = createEncryptionOperators(encryptionClient)
 
     // Create test table with EQL encrypted columns (drop if exists for clean state)
     await client`DROP TABLE IF EXISTS "drizzle-docs-test"`
@@ -92,7 +92,7 @@ describe('Documentation Drift Tests', () => {
     // Seed test data
     const encrypted = await encryptionClient.bulkEncryptModels(
       docSeedData,
-      protectTransactions,
+      encryptionTransactions,
     )
     if (encrypted.failure) {
       throw new Error(`Encryption failed: ${encrypted.failure.message}`)
@@ -137,7 +137,7 @@ describe('Documentation Drift Tests', () => {
           transactions,
           protect: encryptionOps,
           encryptionClient,
-          protectTransactions,
+          encryptionTransactions,
           ...drizzleOrm,
         }
 
@@ -173,7 +173,7 @@ describe('Documentation Drift Tests', () => {
           db,
           transactions,
           encryptionClient,
-          protectTransactions,
+          encryptionTransactions,
           ...drizzleOrm,
           // Note: 'protect' intentionally omitted
         }

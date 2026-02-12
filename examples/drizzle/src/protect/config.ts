@@ -1,6 +1,6 @@
 import 'dotenv/config'
 import {
-  createProtectOperators,
+  createEncryptionOperators,
   extractProtectSchema,
 } from '@cipherstash/drizzle/pg'
 import { Encryption } from '@cipherstash/stack'
@@ -14,5 +14,5 @@ export const encryptionClient = await Encryption({
   schemas: [transactionsSchema],
 })
 
-// Create Protect operators for encrypted field queries
-export const protectOps = createProtectOperators(encryptionClient)
+// Create encryption operators for encrypted field queries
+export const encryptionOps = createEncryptionOperators(encryptionClient)

@@ -13,7 +13,7 @@ import {
  * @example
  * ```typescript
  * // Before (deprecated)
- * const result = await protectDynamo.createSearchTerms([{ value, column, table }])
+ * const result = await dynamodb.createSearchTerms([{ value, column, table }])
  * const hmac = result.data[0]
  *
  * // After (new API)

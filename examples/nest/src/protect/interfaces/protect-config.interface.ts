@@ -1,6 +1,6 @@
 import type { EncryptedTable, EncryptedTableColumn } from '@cipherstash/stack'
 
-export interface ProtectConfig {
+export interface EncryptionConfig {
   workspaceCrn: string
   clientId: string
   clientKey: string

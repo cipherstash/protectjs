@@ -21,13 +21,13 @@ import { getEncryptedColumnConfig } from './index.js'
  *   age: encryptedType('age', { dataType: 'number', orderAndRange: true }),
  * })
  *
- * const encryptionSchema = extractProtectSchema(drizzleUsersTable)
+ * const encryptionSchema = extractEncryptionSchema(drizzleUsersTable)
  * const encryptionClient = await Encryption({ schemas: [encryptionSchema.build()] })
  * ```
  */
 // We use any for the PgTable generic because we need to access Drizzle's internal properties
 // biome-ignore lint/suspicious/noExplicitAny: Drizzle table types don't expose Symbol properties
-export function extractProtectSchema<T extends PgTable<any>>(
+export function extractEncryptionSchema<T extends PgTable<any>>(
   table: T,
 ): ReturnType<typeof encryptedTable<Record<string, EncryptedColumn>>> {
   // Drizzle tables store the name in a Symbol property
@@ -103,3 +103,8 @@ export function extractProtectSchema<T extends PgTable<any>>(
 
   return encryptedTable(tableName, columns)
 }
+
+/**
+ * @deprecated Use `extractEncryptionSchema` instead.
+ */
+export { extractEncryptionSchema as extractProtectSchema }

@@ -72,8 +72,8 @@ const searchTerm = 'alice.johnson@example.com'
 
 const encryptedParam = await encryptionClient.createSearchTerms([{
   value: searchTerm,
-  table: protectedUsers,        // Reference to the Protect table schema
-  column: protectedUsers.email, // Your Protect column definition
+  table: encryptedUsers,        // Reference to the encrypted table schema
+  column: encryptedUsers.email, // Your encrypted column definition
 }])
 
 if (encryptedParam.failure) {
@@ -90,7 +90,7 @@ const equalitySQL = `
 // 3) Execute the query, passing in the Postgres column name
 //    and the encrypted search term as the second parameter
 //    (client is an arbitrary Postgres client)
-const result = await client.query(equalitySQL, [ protectedUser.email.getName(), encryptedParam.data ])
+const result = await client.query(equalitySQL, [ encryptedUsers.email.getName(), encryptedParam.data ])
 ```
 
 Using the above approach, Stash Encryption is generating the EQL payloads and which means you never have to drop down to writing complex SQL queries.

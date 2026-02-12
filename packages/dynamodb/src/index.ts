@@ -22,48 +22,48 @@ export function encryptedDynamoDB(
   return {
     encryptModel<T extends Record<string, unknown>>(
       item: T,
-      protectTable: EncryptedTable<EncryptedTableColumn>,
+      table: EncryptedTable<EncryptedTableColumn>,
     ) {
       return new EncryptModelOperation<T>(
         encryptionClient,
         item,
-        protectTable,
+        table,
         options,
       )
     },
 
     bulkEncryptModels<T extends Record<string, unknown>>(
       items: T[],
-      protectTable: EncryptedTable<EncryptedTableColumn>,
+      table: EncryptedTable<EncryptedTableColumn>,
     ) {
       return new BulkEncryptModelsOperation<T>(
         encryptionClient,
         items,
-        protectTable,
+        table,
         options,
       )
     },
 
     decryptModel<T extends Record<string, unknown>>(
       item: Record<string, Encrypted | unknown>,
-      protectTable: EncryptedTable<EncryptedTableColumn>,
+      table: EncryptedTable<EncryptedTableColumn>,
     ) {
       return new DecryptModelOperation<T>(
         encryptionClient,
         item,
-        protectTable,
+        table,
         options,
       )
     },
 
     bulkDecryptModels<T extends Record<string, unknown>>(
       items: Record<string, Encrypted | unknown>[],
-      protectTable: EncryptedTable<EncryptedTableColumn>,
+      table: EncryptedTable<EncryptedTableColumn>,
     ) {
       return new BulkDecryptModelsOperation<T>(
         encryptionClient,
         items,
-        protectTable,
+        table,
         options,
       )
     },

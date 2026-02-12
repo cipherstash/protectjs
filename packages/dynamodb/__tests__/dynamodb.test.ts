@@ -30,14 +30,14 @@ const schema = encryptedTable('dynamo_cipherstash_test', {
 
 describe('dynamodb helpers', () => {
   let encryptionClient: EncryptionClient
-  let protectDynamo: ReturnType<typeof encryptedDynamoDB>
+  let dynamodb: ReturnType<typeof encryptedDynamoDB>
 
   beforeAll(async () => {
     encryptionClient = await Encryption({
       schemas: [schema],
     })
 
-    protectDynamo = encryptedDynamoDB({
+    dynamodb = encryptedDynamoDB({
       encryptionClient,
     })
   })
@@ -83,7 +83,7 @@ describe('dynamodb helpers', () => {
       },
     }
 
-    const result = await protectDynamo.encryptModel(testData, schema)
+    const result = await dynamodb.encryptModel(testData, schema)
     if (result.failure) {
       throw new Error(`Encryption failed: ${result.failure.message}`)
     }
@@ -112,10 +112,7 @@ describe('dynamodb helpers', () => {
     expect(encryptedData.example.deep.notProtected).toBe('deep not protected')
     expect(encryptedData.metadata).toEqual({ role: 'admin' })
 
-    const decryptResult = await protectDynamo.decryptModel(
-      encryptedData,
-      schema,
-    )
+    const decryptResult = await dynamodb.decryptModel(encryptedData, schema)
     if (decryptResult.failure) {
       throw new Error(`Decryption failed: ${decryptResult.failure.message}`)
     }
@@ -141,7 +138,7 @@ describe('dynamodb helpers', () => {
       },
     }
 
-    const result = await protectDynamo.encryptModel(testData, schema)
+    const result = await dynamodb.encryptModel(testData, schema)
     if (result.failure) {
       throw new Error(`Encryption failed: ${result.failure.message}`)
     }
@@ -173,7 +170,7 @@ describe('dynamodb helpers', () => {
       metadata: { role: 'admin!@#$%^&*()' },
     }
 
-    const result = await protectDynamo.encryptModel(testData, schema)
+    const result = await dynamodb.encryptModel(testData, schema)
     if (result.failure) {
       throw new Error(`Encryption failed: ${result.failure.message}`)
     }
@@ -213,7 +210,7 @@ describe('dynamodb helpers', () => {
       },
     ]
 
-    const result = await protectDynamo.bulkEncryptModels(testData, schema)
+    const result = await dynamodb.bulkEncryptModels(testData, schema)
     if (result.failure) {
       throw new Error(`Bulk encryption failed: ${result.failure.message}`)
     }
@@ -260,14 +257,14 @@ describe('dynamodb helpers', () => {
     }
 
     // First encrypt
-    const encryptResult = await protectDynamo.encryptModel(originalData, schema)
+    const encryptResult = await dynamodb.encryptModel(originalData, schema)
 
     if (encryptResult.failure) {
       throw new Error(`Encryption failed: ${encryptResult.failure.message}`)
     }
 
     // Then decrypt
-    const decryptResult = await protectDynamo.decryptModel(
+    const decryptResult = await dynamodb.decryptModel(
       encryptResult.data,
       schema,
     )
@@ -308,10 +305,7 @@ describe('dynamodb helpers', () => {
     ]
 
     // First encrypt
-    const encryptResult = await protectDynamo.bulkEncryptModels(
-      originalData,
-      schema,
-    )
+    const encryptResult = await dynamodb.bulkEncryptModels(originalData, schema)
     if (encryptResult.failure) {
       throw new Error(
         `Bulk encryption failed: ${encryptResult.failure.message}`,
@@ -319,7 +313,7 @@ describe('dynamodb helpers', () => {
     }
 
     // Then decrypt
-    const decryptResult = await protectDynamo.bulkDecryptModels(
+    const decryptResult = await dynamodb.bulkDecryptModels(
       encryptResult.data,
       schema,
     )

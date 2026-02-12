@@ -59,7 +59,7 @@ Start by importing the `encryptedTable` and `encryptedColumn` functions from `@c
 ```ts
 import { encryptedTable, encryptedColumn } from "@cipherstash/stack";
 
-export const protectedUsers = encryptedTable("users", {
+export const encryptedUsers = encryptedTable("users", {
   email: encryptedColumn("email"),
 });
 ```
@@ -71,7 +71,7 @@ If you are looking to enable searchable encryption in a PostgreSQL database, you
 ```ts
 import { encryptedTable, encryptedColumn } from "@cipherstash/stack";
 
-export const protectedUsers = encryptedTable("users", {
+export const encryptedUsers = encryptedTable("users", {
   email: encryptedColumn("email").freeTextSearch().equality().orderAndRange(),
 });
 ```
@@ -90,7 +90,7 @@ You can define nested objects by using the `encryptedValue` function to define a
 ```ts
 import { encryptedTable, encryptedColumn, encryptedValue } from "@cipherstash/stack";
 
-export const protectedUsers = encryptedTable("users", {
+export const encryptedUsers = encryptedTable("users", {
   email: encryptedColumn("email").freeTextSearch().equality().orderAndRange(),
   profile: {
     name: encryptedValue("profile.name"),
@@ -138,10 +138,10 @@ Simply import your schemas and pass them to the `Encryption` function.
 
 ```ts
 import { Encryption, type EncryptionClientConfig } from "@cipherstash/stack";
-import { protectedUsers } from "./schemas/users";
+import { encryptedUsers } from "./schemas/users";
 
 const config: EncryptionClientConfig = {
-  schemas: [protectedUsers], // At least one encryptedTable is required
+  schemas: [encryptedUsers], // At least one encryptedTable is required
 }
 
 const encryptionClient = await Encryption(config);

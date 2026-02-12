@@ -1,18 +1,18 @@
 import { type ExecutionContext, createParamDecorator } from '@nestjs/common'
-import type { ProtectService } from '../protect.service'
+import type { EncryptionService } from '../protect.service'
 import { users } from '../schema'
-import { getProtectService } from '../utils/get-protect-service.util'
+import { getEncryptionService } from '../utils/get-protect-service.util'
 
 import type {
+  EncryptedColumn,
   EncryptedTable,
   EncryptedTableColumn,
   EncryptedValue,
-  ProtectColumn,
 } from '@cipherstash/stack'
 
 export interface EncryptOptions {
   table: EncryptedTable<EncryptedTableColumn>
-  column: ProtectColumn | EncryptedValue
+  column: EncryptedColumn | EncryptedValue
   lockContext?: unknown // JWT or LockContext
 }
 
@@ -37,11 +37,11 @@ export interface EncryptOptions {
 export const Encrypt = createParamDecorator(
   async (field: string, ctx: ExecutionContext) => {
     const request = ctx.switchToHttp().getRequest()
-    const protectService = getProtectService(ctx)
+    const encryptionService = getEncryptionService(ctx)
 
-    if (!protectService) {
+    if (!encryptionService) {
       throw new Error(
-        'ProtectService not found. Make sure ProtectModule is imported.',
+        'EncryptionService not found. Make sure EncryptionModule is imported.',
       )
     }
 
@@ -52,7 +52,7 @@ export const Encrypt = createParamDecorator(
 
     // Note: This is a simplified example. In practice, you'd need to pass actual table/column objects
     // from your schema definitions rather than creating them inline
-    const result = await protectService.encrypt(value, {
+    const result = await encryptionService.encrypt(value, {
       table: users,
       column: users.email_encrypted,
     })
@@ -71,11 +71,11 @@ export const Encrypt = createParamDecorator(
 export const EncryptModel = createParamDecorator(
   async (tableName: string, ctx: ExecutionContext) => {
     const request = ctx.switchToHttp().getRequest()
-    const protectService = getProtectService(ctx)
+    const encryptionService = getEncryptionService(ctx)
 
-    if (!protectService) {
+    if (!encryptionService) {
       throw new Error(
-        'ProtectService not found. Make sure ProtectModule is imported.',
+        'EncryptionService not found. Make sure EncryptionModule is imported.',
       )
     }
 

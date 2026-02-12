@@ -6,20 +6,20 @@ import {
 } from '@nestjs/common'
 import type { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
-import type { ProtectService } from '../protect.service'
-import { getProtectService } from '../utils/get-protect-service.util'
+import type { EncryptionService } from '../protect.service'
+import { getEncryptionService } from '../utils/get-protect-service.util'
 
 import type {
+  EncryptedColumn,
   EncryptedTable,
   EncryptedTableColumn,
   EncryptedValue,
-  ProtectColumn,
 } from '@cipherstash/stack'
 
 export interface DecryptInterceptorOptions {
   fields?: string[]
   table: EncryptedTable<EncryptedTableColumn>
-  column: ProtectColumn | EncryptedValue
+  column: EncryptedColumn | EncryptedValue
   lockContext?: unknown
 }
 
@@ -47,11 +47,11 @@ export class DecryptInterceptor implements NestInterceptor {
     context: ExecutionContext,
     next: CallHandler,
   ): Promise<Observable<unknown>> {
-    const protectService = getProtectService(context)
+    const encryptionService = getEncryptionService(context)
 
-    if (!protectService) {
+    if (!encryptionService) {
       throw new Error(
-        'ProtectService not found. Make sure ProtectModule is imported.',
+        'EncryptionService not found. Make sure EncryptionModule is imported.',
       )
     }
 
@@ -61,18 +61,18 @@ export class DecryptInterceptor implements NestInterceptor {
 
         if (Array.isArray(data)) {
           return Promise.all(
-            data.map((item) => this.decryptItem(item, protectService)),
+            data.map((item) => this.decryptItem(item, encryptionService)),
           )
         }
 
-        return this.decryptItem(data, protectService)
+        return this.decryptItem(data, encryptionService)
       }),
     )
   }
 
   private async decryptItem(
     item: unknown,
-    protectService: ProtectService,
+    encryptionService: EncryptionService,
   ): Promise<unknown> {
     if (!item || typeof item !== 'object') {
       return item
@@ -85,7 +85,7 @@ export class DecryptInterceptor implements NestInterceptor {
         if (result[field] !== undefined && result[field] !== null) {
           // Check if the field contains an encrypted payload
           if (typeof result[field] === 'object' && result[field].c) {
-            const decryptResult = await protectService.decrypt(result[field])
+            const decryptResult = await encryptionService.decrypt(result[field])
 
             if (decryptResult.failure) {
               throw new Error(

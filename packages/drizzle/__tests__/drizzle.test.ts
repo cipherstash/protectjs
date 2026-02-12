@@ -6,9 +6,9 @@ import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import {
-  createProtectOperators,
+  createEncryptionOperators,
   encryptedType,
-  extractProtectSchema,
+  extractEncryptionSchema,
 } from '../src/pg'
 
 if (!process.env.DATABASE_URL) {
@@ -57,7 +57,7 @@ const drizzleUsersTable = pgTable('protect-ci', {
 })
 
 // Extract Encryption schema from Drizzle table
-const users = extractProtectSchema(drizzleUsersTable)
+const users = extractEncryptionSchema(drizzleUsersTable)
 
 // Hard code this as the CI database doesn't support order by on encrypted columns
 const SKIP_ORDER_BY_TEST = true
@@ -79,14 +79,14 @@ interface DecryptedUser {
 }
 
 let encryptionClient: EncryptionClient
-let encryptionOps: ReturnType<typeof createProtectOperators>
+let encryptionOps: ReturnType<typeof createEncryptionOperators>
 let db: ReturnType<typeof drizzle>
 const testData: TestUser[] = []
 
 beforeAll(async () => {
   // Initialize Encryption client using schema extracted from Drizzle table
   encryptionClient = await Encryption({ schemas: [users] })
-  encryptionOps = createProtectOperators(encryptionClient)
+  encryptionOps = createEncryptionOperators(encryptionClient)
 
   const client = postgres(process.env.DATABASE_URL as string)
   db = drizzle({ client })
@@ -184,10 +184,10 @@ afterAll(async () => {
 }, 30000)
 
 describe('Drizzle ORM Integration with Encryption', () => {
-  it('should perform equality search using Protect operators', async () => {
+  it('should perform equality search using encryption operators', async () => {
     const searchEmail = 'jane.smith@example.com'
 
-    // Query using Protect operators - encryption is handled automatically
+    // Query using encryption operators - encryption is handled automatically
     const results = await db
       .select({
         id: drizzleUsersTable.id,
@@ -216,10 +216,10 @@ describe('Drizzle ORM Integration with Encryption', () => {
     expect(decryptedUser.email).toBe(searchEmail)
   }, 30000)
 
-  it('should perform text search using Protect operators', async () => {
+  it('should perform text search using encryption operators', async () => {
     const searchText = 'smith'
 
-    // Query using Protect operators - encryption is handled automatically
+    // Query using encryption operators - encryption is handled automatically
     const results = await db
       .select({
         id: drizzleUsersTable.id,
@@ -260,10 +260,10 @@ describe('Drizzle ORM Integration with Encryption', () => {
     expect(foundMatch).toBe(true)
   }, 30000)
 
-  it('should perform number range queries using Protect operators', async () => {
+  it('should perform number range queries using encryption operators', async () => {
     const minAge = 28
 
-    // Query using Protect operators - encryption is handled automatically
+    // Query using encryption operators - encryption is handled automatically
     const results = await db
       .select({
         id: drizzleUsersTable.id,
@@ -351,7 +351,7 @@ describe('Drizzle ORM Integration with Encryption', () => {
     const maxAge = 35
     const searchText = 'developer'
 
-    // Complex query using Protect operators with batched and() - encryption is handled automatically
+    // Complex query using encryption operators with batched and() - encryption is handled automatically
     // All operator calls are batched into a single createSearchTerms call
     const results = await db
       .select({
@@ -480,7 +480,7 @@ describe('Drizzle ORM Integration with Encryption', () => {
   it('should handle inArray operator with encrypted columns', async () => {
     const searchEmails = ['jane.smith@example.com', 'bob.wilson@example.com']
 
-    // Query using Protect operators with inArray
+    // Query using encryption operators with inArray
     const results = await db
       .select({
         id: drizzleUsersTable.id,
@@ -520,7 +520,7 @@ describe('Drizzle ORM Integration with Encryption', () => {
     const minAge = 25
     const maxAge = 30
 
-    // Query using Protect operators with between
+    // Query using encryption operators with between
     const results = await db
       .select({
         id: drizzleUsersTable.id,

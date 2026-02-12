@@ -1,16 +1,16 @@
 import { type ExecutionContext, createParamDecorator } from '@nestjs/common'
-import { getProtectService } from '../utils/get-protect-service.util'
+import { getEncryptionService } from '../utils/get-protect-service.util'
 
 import type {
+  EncryptedColumn,
   EncryptedTable,
   EncryptedTableColumn,
   EncryptedValue,
-  ProtectColumn,
 } from '@cipherstash/stack'
 
 export interface DecryptOptions {
   table: EncryptedTable<EncryptedTableColumn>
-  column: ProtectColumn | EncryptedValue
+  column: EncryptedColumn | EncryptedValue
   lockContext?: unknown // JWT or LockContext
 }
 
@@ -35,11 +35,11 @@ export interface DecryptOptions {
 export const Decrypt = createParamDecorator(
   async (field: string, ctx: ExecutionContext) => {
     const request = ctx.switchToHttp().getRequest()
-    const protectService = getProtectService(ctx)
+    const encryptionService = getEncryptionService(ctx)
 
-    if (!protectService) {
+    if (!encryptionService) {
       throw new Error(
-        'ProtectService not found. Make sure ProtectModule is imported.',
+        'EncryptionService not found. Make sure EncryptionModule is imported.',
       )
     }
 
@@ -51,7 +51,7 @@ export const Decrypt = createParamDecorator(
 
     // Check if value is already an encrypted payload
     if (typeof value === 'object' && value.c) {
-      const result = await protectService.decrypt(value)
+      const result = await encryptionService.decrypt(value)
       if (result.failure) {
         throw new Error(`Decryption failed: ${result.failure.message}`)
       }
@@ -69,11 +69,11 @@ export const Decrypt = createParamDecorator(
 export const DecryptModel = createParamDecorator(
   async (tableName: string, ctx: ExecutionContext) => {
     const request = ctx.switchToHttp().getRequest()
-    const protectService = getProtectService(ctx)
+    const encryptionService = getEncryptionService(ctx)
 
-    if (!protectService) {
+    if (!encryptionService) {
       throw new Error(
-        'ProtectService not found. Make sure ProtectModule is imported.',
+        'EncryptionService not found. Make sure EncryptionModule is imported.',
       )
     }
 

@@ -7,23 +7,23 @@ import {
 } from '@cipherstash/stack'
 import { type DynamicModule, Global, Module } from '@nestjs/common'
 import { ConfigModule, ConfigService } from '@nestjs/config'
-import type { ProtectConfig } from './interfaces/protect-config.interface'
-import { PROTECT_CLIENT, PROTECT_CONFIG } from './protect.constants'
-import { ProtectService } from './protect.service'
+import type { EncryptionConfig } from './interfaces/protect-config.interface'
+import { ENCRYPTION_CLIENT, ENCRYPTION_CONFIG } from './protect.constants'
+import { EncryptionService } from './protect.service'
 import { users } from './schema'
 
 @Global()
 @Module({})
 // biome-ignore lint/complexity/noStaticOnlyClass: NestJS module
-export class ProtectModule {
-  static forRoot(config?: Partial<ProtectConfig>): DynamicModule {
+export class EncryptionModule {
+  static forRoot(config?: Partial<EncryptionConfig>): DynamicModule {
     return {
-      module: ProtectModule,
+      module: EncryptionModule,
       imports: [ConfigModule],
       providers: [
         {
-          provide: PROTECT_CONFIG,
-          useFactory: (configService: ConfigService): ProtectConfig => {
+          provide: ENCRYPTION_CONFIG,
+          useFactory: (configService: ConfigService): EncryptionConfig => {
             const workspaceCrn = configService.get<string>('CS_WORKSPACE_CRN')
             const clientId = configService.get<string>('CS_CLIENT_ID')
             const clientKey = configService.get<string>('CS_CLIENT_KEY')
@@ -31,7 +31,7 @@ export class ProtectModule {
               'CS_CLIENT_ACCESS_KEY',
             )
 
-            const defaultConfig: ProtectConfig = {
+            const defaultConfig: EncryptionConfig = {
               workspaceCrn: workspaceCrn ?? '',
               clientId: clientId ?? '',
               clientKey: clientKey ?? '',
@@ -62,11 +62,11 @@ export class ProtectModule {
           inject: [ConfigService],
         },
         {
-          provide: PROTECT_CLIENT,
+          provide: ENCRYPTION_CLIENT,
           useFactory: async (
-            config: ProtectConfig,
+            config: EncryptionConfig,
           ): Promise<EncryptionClient> => {
-            const protectConfig: EncryptionClientConfig = {
+            const encryptionConfig: EncryptionClientConfig = {
               schemas: (config.schemas && config.schemas.length > 0
                 ? config.schemas
                 : [users]) as [
@@ -75,35 +75,37 @@ export class ProtectModule {
               ],
             }
 
-            return await Encryption(protectConfig)
+            return await Encryption(encryptionConfig)
           },
-          inject: [PROTECT_CONFIG],
+          inject: [ENCRYPTION_CONFIG],
         },
-        ProtectService,
+        EncryptionService,
       ],
-      exports: [ProtectService, PROTECT_CLIENT],
+      exports: [EncryptionService, ENCRYPTION_CLIENT],
     }
   }
 
   static forRootAsync(options: {
-    useFactory: (...args: unknown[]) => Promise<ProtectConfig> | ProtectConfig
+    useFactory: (
+      ...args: unknown[]
+    ) => Promise<EncryptionConfig> | EncryptionConfig
     inject?: unknown[]
   }): DynamicModule {
     return {
-      module: ProtectModule,
+      module: EncryptionModule,
       imports: [ConfigModule],
       providers: [
         {
-          provide: PROTECT_CONFIG,
+          provide: ENCRYPTION_CONFIG,
           useFactory: options.useFactory,
           inject: options.inject || [],
         },
         {
-          provide: PROTECT_CLIENT,
+          provide: ENCRYPTION_CLIENT,
           useFactory: async (
-            config: ProtectConfig,
+            config: EncryptionConfig,
           ): Promise<EncryptionClient> => {
-            const protectConfig: EncryptionClientConfig = {
+            const encryptionConfig: EncryptionClientConfig = {
               schemas: (config.schemas && config.schemas.length > 0
                 ? config.schemas
                 : [users]) as [
@@ -112,13 +114,13 @@ export class ProtectModule {
               ],
             }
 
-            return await Encryption(protectConfig)
+            return await Encryption(encryptionConfig)
           },
-          inject: [PROTECT_CONFIG],
+          inject: [ENCRYPTION_CONFIG],
         },
-        ProtectService,
+        EncryptionService,
       ],
-      exports: [ProtectService, PROTECT_CLIENT],
+      exports: [EncryptionService, ENCRYPTION_CLIENT],
     }
   }
 }

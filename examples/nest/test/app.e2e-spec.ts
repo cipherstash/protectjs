@@ -4,11 +4,11 @@ import { Test, type TestingModule } from '@nestjs/testing'
 import request from 'supertest'
 import { AppController } from '../src/app.controller'
 import { AppService } from '../src/app.service'
-import { ProtectService } from '../src/protect'
+import { EncryptionService } from '../src/protect'
 
 describe('AppController (e2e)', () => {
   let app: INestApplication
-  let protectService: ProtectService
+  let encryptionService: EncryptionService
 
   const mockEncryptedPayload: EncryptedPayload = {
     c: 'mock-encrypted-data',
@@ -21,7 +21,7 @@ describe('AppController (e2e)', () => {
       providers: [
         AppService,
         {
-          provide: ProtectService,
+          provide: EncryptionService,
           useValue: {
             encryptModel: jest.fn().mockImplementation((model) =>
               Promise.resolve({
@@ -73,7 +73,7 @@ describe('AppController (e2e)', () => {
     }).compile()
 
     app = moduleFixture.createNestApplication()
-    protectService = moduleFixture.get<ProtectService>(ProtectService)
+    encryptionService = moduleFixture.get<EncryptionService>(EncryptionService)
     await app.init()
   })
 

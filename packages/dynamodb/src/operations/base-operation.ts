@@ -1,5 +1,5 @@
 import type { Result } from '@byteslice/result'
-import type { ProtectDynamoDBError } from '../types'
+import type { EncryptedDynamoDBError } from '../types'
 
 export type AuditConfig = {
   metadata?: Record<string, unknown>
@@ -13,7 +13,7 @@ export type DynamoDBOperationOptions = {
   logger?: {
     error: (message: string, error: Error) => void
   }
-  errorHandler?: (error: ProtectDynamoDBError) => void
+  errorHandler?: (error: EncryptedDynamoDBError) => void
 }
 
 export abstract class DynamoDBOperation<T> {
@@ -46,15 +46,15 @@ export abstract class DynamoDBOperation<T> {
   /**
    * Execute the operation and return a Result
    */
-  abstract execute(): Promise<Result<T, ProtectDynamoDBError>>
+  abstract execute(): Promise<Result<T, EncryptedDynamoDBError>>
 
   /**
    * Make the operation thenable
    */
-  public then<TResult1 = Result<T, ProtectDynamoDBError>, TResult2 = never>(
+  public then<TResult1 = Result<T, EncryptedDynamoDBError>, TResult2 = never>(
     onfulfilled?:
       | ((
-          value: Result<T, ProtectDynamoDBError>,
+          value: Result<T, EncryptedDynamoDBError>,
         ) => TResult1 | PromiseLike<TResult1>)
       | null,
     onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null,

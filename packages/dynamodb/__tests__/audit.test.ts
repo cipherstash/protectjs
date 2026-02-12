@@ -24,14 +24,14 @@ const schema = encryptedTable('dynamo_cipherstash_test', {
 
 describe('dynamodb helpers', () => {
   let encryptionClient: EncryptionClient
-  let protectDynamo: ReturnType<typeof encryptedDynamoDB>
+  let dynamodb: ReturnType<typeof encryptedDynamoDB>
 
   beforeAll(async () => {
     encryptionClient = await Encryption({
       schemas: [schema],
     })
 
-    protectDynamo = encryptedDynamoDB({
+    dynamodb = encryptedDynamoDB({
       encryptionClient,
     })
   })
@@ -58,7 +58,7 @@ describe('dynamodb helpers', () => {
       },
     }
 
-    const result = await protectDynamo.encryptModel(testData, schema).audit({
+    const result = await dynamodb.encryptModel(testData, schema).audit({
       metadata: { sub: 'cj@cjb.io', type: 'dynamo_encrypt_model' },
     })
     if (result.failure) {
@@ -108,7 +108,7 @@ describe('dynamodb helpers', () => {
       },
     }
 
-    const result = await protectDynamo.encryptModel(testData, schema).audit({
+    const result = await dynamodb.encryptModel(testData, schema).audit({
       metadata: { sub: 'cj@cjb.io', type: 'dynamo_encrypt_model' },
     })
     if (result.failure) {
@@ -142,7 +142,7 @@ describe('dynamodb helpers', () => {
       metadata: { role: 'admin!@#$%^&*()' },
     }
 
-    const result = await protectDynamo.encryptModel(testData, schema).audit({
+    const result = await dynamodb.encryptModel(testData, schema).audit({
       metadata: { sub: 'cj@cjb.io', type: 'dynamo_encrypt_model' },
     })
     if (result.failure) {
@@ -184,14 +184,12 @@ describe('dynamodb helpers', () => {
       },
     ]
 
-    const result = await protectDynamo
-      .bulkEncryptModels(testData, schema)
-      .audit({
-        metadata: {
-          sub: 'cj@cjb.io',
-          type: 'dynamo_bulk_encrypt_models',
-        },
-      })
+    const result = await dynamodb.bulkEncryptModels(testData, schema).audit({
+      metadata: {
+        sub: 'cj@cjb.io',
+        type: 'dynamo_bulk_encrypt_models',
+      },
+    })
     if (result.failure) {
       throw new Error(`Bulk encryption failed: ${result.failure.message}`)
     }
@@ -238,7 +236,7 @@ describe('dynamodb helpers', () => {
     }
 
     // First encrypt
-    const encryptResult = await protectDynamo
+    const encryptResult = await dynamodb
       .encryptModel(originalData, schema)
       .audit({
         metadata: { sub: 'cj@cjb.io', type: 'dynamo_encrypt_model' },
@@ -249,7 +247,7 @@ describe('dynamodb helpers', () => {
     }
 
     // Then decrypt
-    const decryptResult = await protectDynamo
+    const decryptResult = await dynamodb
       .decryptModel(encryptResult.data, schema)
       .audit({
         metadata: { sub: 'cj@cjb.io', type: 'dynamo_decrypt_model' },
@@ -291,7 +289,7 @@ describe('dynamodb helpers', () => {
     ]
 
     // First encrypt
-    const encryptResult = await protectDynamo
+    const encryptResult = await dynamodb
       .bulkEncryptModels(originalData, schema)
       .audit({
         metadata: { sub: 'cj@cjb.io', type: 'dynamo_bulk_encrypt_models' },
@@ -303,7 +301,7 @@ describe('dynamodb helpers', () => {
     }
 
     // Then decrypt
-    const decryptResult = await protectDynamo
+    const decryptResult = await dynamodb
       .bulkDecryptModels(encryptResult.data, schema)
       .audit({
         metadata: { sub: 'cj@cjb.io', type: 'dynamo_bulk_decrypt_models' },

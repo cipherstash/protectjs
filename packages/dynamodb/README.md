@@ -22,7 +22,7 @@ pnpm add @cipherstash/protect-dynamodb
 ## Quick Start
 
 ```typescript
-import { protectDynamoDB } from '@cipherstash/protect-dynamodb'
+import { encryptedDynamoDB } from '@cipherstash/protect-dynamodb'
 import { Encryption, encryptedColumn, encryptedTable } from '@cipherstash/stack'
 import { PutCommand, GetCommand } from '@aws-sdk/lib-dynamodb'
 
@@ -37,7 +37,7 @@ const encryptionClient = await Encryption({
 })
 
 // Create the DynamoDB helper instance
-const protectDynamo = protectDynamoDB({
+const dynamodb = encryptedDynamoDB({
   encryptionClient,
 })
 
@@ -46,7 +46,7 @@ const user = {
   email: 'user@example.com',
 }
 
-const encryptResult = await protectDynamo.encryptModel(user, users)
+const encryptResult = await dynamodb.encryptModel(user, users)
 if (encryptResult.failure) {
   throw new Error(`Failed to encrypt user: ${encryptResult.failure.message}`)
 }
@@ -58,7 +58,7 @@ await docClient.send(new PutCommand({
 }))
 
 // Create search terms for querying
-const searchTermsResult = await protectDynamo.createSearchTerms([
+const searchTermsResult = await dynamodb.createSearchTerms([
   {
     value: 'user@example.com',
     column: users.email,
@@ -82,7 +82,7 @@ if (!result.Item) {
 }
 
 // Decrypt the result
-const decryptResult = await protectDynamo.decryptModel<User>(
+const decryptResult = await dynamodb.decryptModel<User>(
   result.Item,
   users,
 )
@@ -108,7 +108,7 @@ The package provides methods to encrypt and decrypt data for DynamoDB:
 All methods return a `Result` type that must be checked for failures:
 
 ```typescript
-const result = await protectDynamo.encryptModel(user, users)
+const result = await dynamodb.encryptModel(user, users)
 if (result.failure) {
   // Handle error
   console.error(result.failure.message)
@@ -125,7 +125,7 @@ Create search terms for querying encrypted data:
 - `createSearchTerms`: Creates search terms for one or more columns
 
 ```typescript
-const searchTermsResult = await protectDynamo.createSearchTerms([
+const searchTermsResult = await dynamodb.createSearchTerms([
   {
     value: 'user@example.com',
     column: users.email,
@@ -158,7 +158,7 @@ const users = encryptedTable('users', {
 })
 
 // Encrypt and store
-const encryptResult = await protectDynamo.encryptModel({
+const encryptResult = await dynamodb.encryptModel({
   pk: 'user#1',
   email: 'user@example.com',
 }, users)
@@ -168,7 +168,7 @@ if (encryptResult.failure) {
 }
 
 // Query using search terms
-const searchTermsResult = await protectDynamo.createSearchTerms([
+const searchTermsResult = await dynamodb.createSearchTerms([
   {
     value: 'user@example.com',
     column: users.email,
@@ -202,7 +202,7 @@ const table = {
 }
 
 // Create search terms for querying
-const searchTermsResult = await protectDynamo.createSearchTerms([
+const searchTermsResult = await dynamodb.createSearchTerms([
   {
     value: 'user@example.com',
     column: users.email,
@@ -246,7 +246,7 @@ const table = {
 }
 
 // Create search terms for querying
-const searchTermsResult = await protectDynamo.createSearchTerms([
+const searchTermsResult = await dynamodb.createSearchTerms([
   {
     value: 'user@example.com',
     column: users.email,
@@ -301,7 +301,7 @@ const table = {
 }
 
 // Create search terms for querying
-const searchTermsResult = await protectDynamo.createSearchTerms([
+const searchTermsResult = await dynamodb.createSearchTerms([
   {
     value: 'user@example.com',
     column: users.email,
@@ -321,7 +321,7 @@ const [emailHmac] = searchTermsResult.data
 All methods return a `Result` type from `@byteslice/result` that must be checked for failures:
 
 ```typescript
-const result = await protectDynamo.encryptModel(user, users)
+const result = await dynamodb.encryptModel(user, users)
 
 if (result.failure) {
   // Handle error
@@ -343,14 +343,14 @@ type User = {
 }
 
 // Type-safe encryption
-const encryptResult = await protectDynamo.encryptModel<User>(user, users)
+const encryptResult = await dynamodb.encryptModel<User>(user, users)
 if (encryptResult.failure) {
   throw new Error(`Failed to encrypt user: ${encryptResult.failure.message}`)
 }
 const encryptedUser = encryptResult.data
 
 // Type-safe decryption
-const decryptResult = await protectDynamo.decryptModel<User>(item, users)
+const decryptResult = await dynamodb.decryptModel<User>(item, users)
 if (decryptResult.failure) {
   throw new Error(`Failed to decrypt user: ${decryptResult.failure.message}`)
 }

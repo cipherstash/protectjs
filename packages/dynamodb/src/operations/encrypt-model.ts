@@ -16,25 +16,25 @@ export class EncryptModelOperation<
 > extends DynamoDBOperation<T> {
   private encryptionClient: EncryptionClient
   private item: T
-  private protectTable: EncryptedTable<EncryptedTableColumn>
+  private table: EncryptedTable<EncryptedTableColumn>
 
   constructor(
     encryptionClient: EncryptionClient,
     item: T,
-    protectTable: EncryptedTable<EncryptedTableColumn>,
+    table: EncryptedTable<EncryptedTableColumn>,
     options?: DynamoDBOperationOptions,
   ) {
     super(options)
     this.encryptionClient = encryptionClient
     this.item = item
-    this.protectTable = protectTable
+    this.table = table
   }
 
   public async execute(): Promise<Result<T, EncryptedDynamoDBError>> {
     return await withResult(
       async () => {
         const encryptResult = await this.encryptionClient
-          .encryptModel(deepClone(this.item), this.protectTable)
+          .encryptModel(deepClone(this.item), this.table)
           .audit(this.getAuditData())
 
         if (encryptResult.failure) {
@@ -48,7 +48,7 @@ export class EncryptModelOperation<
         }
 
         const data = deepClone(encryptResult.data)
-        const encryptedAttrs = Object.keys(this.protectTable.build().columns)
+        const encryptedAttrs = Object.keys(this.table.build().columns)
 
         return toEncryptedDynamoItem(data, encryptedAttrs) as T
       },

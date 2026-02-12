@@ -38,7 +38,7 @@ import { bindIfParam, sql } from 'drizzle-orm'
 import type { PgTable } from 'drizzle-orm/pg-core'
 import type { EncryptedColumnConfig } from './index.js'
 import { getEncryptedColumnConfig } from './index.js'
-import { extractProtectSchema } from './schema-extraction.js'
+import { extractEncryptionSchema } from './schema-extraction.js'
 
 // ============================================================================
 // Type Definitions and Type Guards
@@ -78,7 +78,7 @@ function isPgTable(value: unknown): value is EncryptedDrizzleTable {
 /**
  * Custom error types for better debugging
  */
-export class ProtectOperatorError extends Error {
+export class EncryptionOperatorError extends Error {
   constructor(
     message: string,
     public readonly context?: {
@@ -88,14 +88,14 @@ export class ProtectOperatorError extends Error {
     },
   ) {
     super(message)
-    this.name = 'ProtectOperatorError'
+    this.name = 'EncryptionOperatorError'
   }
 }
 
-export class ProtectConfigError extends ProtectOperatorError {
-  constructor(message: string, context?: ProtectOperatorError['context']) {
+export class EncryptionConfigError extends EncryptionOperatorError {
+  constructor(message: string, context?: EncryptionOperatorError['context']) {
     super(message, context)
-    this.name = 'ProtectConfigError'
+    this.name = 'EncryptionConfigError'
   }
 }
 
@@ -152,7 +152,7 @@ function getEncryptionTableFromColumn(
   // Extract encrypted schema from drizzle table and cache it
   try {
     // biome-ignore lint/suspicious/noExplicitAny: PgTable type doesn't expose all needed properties
-    encryptionTable = extractProtectSchema(drizzleTable as PgTable<any>)
+    encryptionTable = extractEncryptionSchema(drizzleTable as PgTable<any>)
     encryptionTableCache.set(tableName, encryptionTable)
     return encryptionTable
   } catch {
@@ -386,7 +386,7 @@ async function encryptValues(
       const encryptedTerms = await encryptionClient.encryptQuery(terms)
 
       if (encryptedTerms.failure) {
-        throw new ProtectOperatorError(
+        throw new EncryptionOperatorError(
           `Failed to encrypt query terms for column "${columnName}": ${encryptedTerms.failure.message}`,
           { columnName },
         )
@@ -400,12 +400,12 @@ async function encryptValues(
         }
       }
     } catch (error) {
-      if (error instanceof ProtectOperatorError) {
+      if (error instanceof EncryptionOperatorError) {
         throw error
       }
       const errorMessage =
         error instanceof Error ? error.message : String(error)
-      throw new ProtectOperatorError(
+      throw new EncryptionOperatorError(
         `Unexpected error encrypting values for column "${columnName}": ${errorMessage}`,
         { columnName },
       )
@@ -560,7 +560,7 @@ async function executeLazyOperator(
       encryptedMin = encryptedValues[0]?.encrypted
       encryptedMax = encryptedValues[1]?.encrypted
     } else {
-      throw new ProtectOperatorError(
+      throw new EncryptionOperatorError(
         'Between operator requires both min and max encrypted values',
         {
           columnName: lazyOp.columnInfo.columnName,
@@ -571,7 +571,7 @@ async function executeLazyOperator(
     }
 
     if (encryptedMin === undefined || encryptedMax === undefined) {
-      throw new ProtectOperatorError(
+      throw new EncryptionOperatorError(
         'Between operator requires both min and max values to be encrypted',
         {
           columnName: lazyOp.columnInfo.columnName,
@@ -590,7 +590,7 @@ async function executeLazyOperator(
   if (encryptedValues && encryptedValues.length > 0) {
     encrypted = encryptedValues[0]?.encrypted
   } else {
-    throw new ProtectOperatorError(
+    throw new EncryptionOperatorError(
       'Operator requires encrypted value but none provided',
       {
         columnName: lazyOp.columnInfo.columnName,
@@ -601,7 +601,7 @@ async function executeLazyOperator(
   }
 
   if (encrypted === undefined) {
-    throw new ProtectOperatorError(
+    throw new EncryptionOperatorError(
       'Encryption failed or value was not encrypted',
       {
         columnName: lazyOp.columnInfo.columnName,
@@ -694,7 +694,7 @@ function createComparisonOperator(
     // This will be replaced with encrypted value in executeLazyOperator
     const executeFn = (encrypted: unknown) => {
       if (encrypted === undefined) {
-        throw new ProtectOperatorError(
+        throw new EncryptionOperatorError(
           `Encryption failed for ${operator} operator`,
           {
             columnName: columnInfo.columnName,
@@ -728,7 +728,7 @@ function createComparisonOperator(
   if (requiresEquality && config?.equality) {
     const executeFn = (encrypted: unknown) => {
       if (encrypted === undefined) {
-        throw new ProtectOperatorError(
+        throw new EncryptionOperatorError(
           `Encryption failed for ${operator} operator`,
           {
             columnName: columnInfo.columnName,
@@ -787,7 +787,7 @@ function createRangeOperator(
     encryptedMax?: unknown,
   ) => {
     if (encryptedMin === undefined || encryptedMax === undefined) {
-      throw new ProtectOperatorError(
+      throw new EncryptionOperatorError(
         `${operator} operator requires both min and max values`,
         {
           columnName: columnInfo.columnName,
@@ -849,7 +849,7 @@ function createTextSearchOperator(
 
   const executeFn = (encrypted: unknown) => {
     if (encrypted === undefined) {
-      throw new ProtectOperatorError(
+      throw new EncryptionOperatorError(
         `Encryption failed for ${operator} operator`,
         {
           columnName: columnInfo.columnName,
@@ -880,7 +880,8 @@ function createTextSearchOperator(
 }
 
 // ============================================================================
-// Public API: createProtectOperators
+// Public API: createEncryptionOperators
+// Deprecated: Use createEncryptionOperators instead of createProtectOperators
 // ============================================================================
 
 /**
@@ -901,22 +902,22 @@ function createTextSearchOperator(
  * @example
  * ```ts
  * // Initialize operators
- * const protectOps = createProtectOperators(encryptionClient)
+ * const encryptionOps = createEncryptionOperators(encryptionClient)
  *
  * // Equality search - automatically encrypts and uses PostgreSQL operators
  * const results = await db
  *   .select()
  *   .from(usersTable)
- *   .where(await protectOps.eq(usersTable.email, 'user@example.com'))
+ *   .where(await encryptionOps.eq(usersTable.email, 'user@example.com'))
  *
  * // Range query - automatically encrypts and uses eql_v2.gte()
  * const olderUsers = await db
  *   .select()
  *   .from(usersTable)
- *   .where(await protectOps.gte(usersTable.age, 25))
+ *   .where(await encryptionOps.gte(usersTable.age, 25))
  * ```
  */
-export function createProtectOperators(encryptionClient: EncryptionClient): {
+export function createEncryptionOperators(encryptionClient: EncryptionClient): {
   // Comparison operators
   /**
    * Equality operator - encrypts value for encrypted columns.
@@ -925,7 +926,7 @@ export function createProtectOperators(encryptionClient: EncryptionClient): {
    * @example
    * Select users with a specific email address.
    * ```ts
-   * const condition = await protectOps.eq(usersTable.email, 'user@example.com')
+   * const condition = await encryptionOps.eq(usersTable.email, 'user@example.com')
    * const results = await db.select().from(usersTable).where(condition)
    * ```
    */
@@ -938,7 +939,7 @@ export function createProtectOperators(encryptionClient: EncryptionClient): {
    * @example
    * Select users whose email address is not a specific value.
    * ```ts
-   * const condition = await protectOps.ne(usersTable.email, 'user@example.com')
+   * const condition = await encryptionOps.ne(usersTable.email, 'user@example.com')
    * const results = await db.select().from(usersTable).where(condition)
    * ```
    */
@@ -951,7 +952,7 @@ export function createProtectOperators(encryptionClient: EncryptionClient): {
    * @example
    * Select users older than a specific age.
    * ```ts
-   * const condition = await protectOps.gt(usersTable.age, 30)
+   * const condition = await encryptionOps.gt(usersTable.age, 30)
    * const results = await db.select().from(usersTable).where(condition)
    * ```
    */
@@ -964,7 +965,7 @@ export function createProtectOperators(encryptionClient: EncryptionClient): {
    * @example
    * Select users older than or equal to a specific age.
    * ```ts
-   * const condition = await protectOps.gte(usersTable.age, 30)
+   * const condition = await encryptionOps.gte(usersTable.age, 30)
    * const results = await db.select().from(usersTable).where(condition)
    * ```
    */
@@ -977,7 +978,7 @@ export function createProtectOperators(encryptionClient: EncryptionClient): {
    * @example
    * Select users younger than a specific age.
    * ```ts
-   * const condition = await protectOps.lt(usersTable.age, 30)
+   * const condition = await encryptionOps.lt(usersTable.age, 30)
    * const results = await db.select().from(usersTable).where(condition)
    * ```
    */
@@ -990,7 +991,7 @@ export function createProtectOperators(encryptionClient: EncryptionClient): {
    * @example
    * Select users younger than or equal to a specific age.
    * ```ts
-   * const condition = await protectOps.lte(usersTable.age, 30)
+   * const condition = await encryptionOps.lte(usersTable.age, 30)
    * const results = await db.select().from(usersTable).where(condition)
    * ```
    */
@@ -1003,7 +1004,7 @@ export function createProtectOperators(encryptionClient: EncryptionClient): {
    * @example
    * Select users within a specific age range.
    * ```ts
-   * const condition = await protectOps.between(usersTable.age, 20, 30)
+   * const condition = await encryptionOps.between(usersTable.age, 20, 30)
    * const results = await db.select().from(usersTable).where(condition)
    * ```
    */
@@ -1016,7 +1017,7 @@ export function createProtectOperators(encryptionClient: EncryptionClient): {
    * @example
    * Select users outside a specific age range.
    * ```ts
-   * const condition = await protectOps.notBetween(usersTable.age, 20, 30)
+   * const condition = await encryptionOps.notBetween(usersTable.age, 20, 30)
    * const results = await db.select().from(usersTable).where(condition)
    * ```
    */
@@ -1037,7 +1038,7 @@ export function createProtectOperators(encryptionClient: EncryptionClient): {
    * @example
    * Select users with email addresses matching a pattern.
    * ```ts
-   * const condition = await protectOps.like(usersTable.email, '%@example.com')
+   * const condition = await encryptionOps.like(usersTable.email, '%@example.com')
    * const results = await db.select().from(usersTable).where(condition)
    * ```
    */
@@ -1054,7 +1055,7 @@ export function createProtectOperators(encryptionClient: EncryptionClient): {
    * @example
    * Select users with email addresses matching a pattern (case-insensitive).
    * ```ts
-   * const condition = await protectOps.ilike(usersTable.email, '%@example.com')
+   * const condition = await encryptionOps.ilike(usersTable.email, '%@example.com')
    * const results = await db.select().from(usersTable).where(condition)
    * ```
    */
@@ -1095,7 +1096,10 @@ export function createProtectOperators(encryptionClient: EncryptionClient): {
   /**
    * Equality operator - encrypts value and uses regular Drizzle operator
    */
-  const protectEq = (left: SQLWrapper, right: unknown): Promise<SQL> | SQL => {
+  const encryptionEq = (
+    left: SQLWrapper,
+    right: unknown,
+  ): Promise<SQL> | SQL => {
     const columnInfo = getColumnInfo(
       left,
       defaultEncryptionTable,
@@ -1115,7 +1119,10 @@ export function createProtectOperators(encryptionClient: EncryptionClient): {
   /**
    * Not equal operator - encrypts value and uses regular Drizzle operator
    */
-  const protectNe = (left: SQLWrapper, right: unknown): Promise<SQL> | SQL => {
+  const encryptionNe = (
+    left: SQLWrapper,
+    right: unknown,
+  ): Promise<SQL> | SQL => {
     const columnInfo = getColumnInfo(
       left,
       defaultEncryptionTable,
@@ -1135,7 +1142,10 @@ export function createProtectOperators(encryptionClient: EncryptionClient): {
   /**
    * Greater than operator - uses eql_v2.gt() for encrypted columns with ORE index
    */
-  const protectGt = (left: SQLWrapper, right: unknown): Promise<SQL> | SQL => {
+  const encryptionGt = (
+    left: SQLWrapper,
+    right: unknown,
+  ): Promise<SQL> | SQL => {
     const columnInfo = getColumnInfo(
       left,
       defaultEncryptionTable,
@@ -1155,7 +1165,10 @@ export function createProtectOperators(encryptionClient: EncryptionClient): {
   /**
    * Greater than or equal operator - uses eql_v2.gte() for encrypted columns with ORE index
    */
-  const protectGte = (left: SQLWrapper, right: unknown): Promise<SQL> | SQL => {
+  const encryptionGte = (
+    left: SQLWrapper,
+    right: unknown,
+  ): Promise<SQL> | SQL => {
     const columnInfo = getColumnInfo(
       left,
       defaultEncryptionTable,
@@ -1175,7 +1188,10 @@ export function createProtectOperators(encryptionClient: EncryptionClient): {
   /**
    * Less than operator - uses eql_v2.lt() for encrypted columns with ORE index
    */
-  const protectLt = (left: SQLWrapper, right: unknown): Promise<SQL> | SQL => {
+  const encryptionLt = (
+    left: SQLWrapper,
+    right: unknown,
+  ): Promise<SQL> | SQL => {
     const columnInfo = getColumnInfo(
       left,
       defaultEncryptionTable,
@@ -1195,7 +1211,10 @@ export function createProtectOperators(encryptionClient: EncryptionClient): {
   /**
    * Less than or equal operator - uses eql_v2.lte() for encrypted columns with ORE index
    */
-  const protectLte = (left: SQLWrapper, right: unknown): Promise<SQL> | SQL => {
+  const encryptionLte = (
+    left: SQLWrapper,
+    right: unknown,
+  ): Promise<SQL> | SQL => {
     const columnInfo = getColumnInfo(
       left,
       defaultEncryptionTable,
@@ -1215,7 +1234,7 @@ export function createProtectOperators(encryptionClient: EncryptionClient): {
   /**
    * Between operator - uses eql_v2.gte() and eql_v2.lte() for encrypted columns with ORE index
    */
-  const protectBetween = (
+  const encryptionBetween = (
     left: SQLWrapper,
     min: unknown,
     max: unknown,
@@ -1240,7 +1259,7 @@ export function createProtectOperators(encryptionClient: EncryptionClient): {
   /**
    * Not between operator - uses eql_v2.gte() and eql_v2.lte() for encrypted columns with ORE index
    */
-  const protectNotBetween = (
+  const encryptionNotBetween = (
     left: SQLWrapper,
     min: unknown,
     max: unknown,
@@ -1265,7 +1284,7 @@ export function createProtectOperators(encryptionClient: EncryptionClient): {
   /**
    * Like operator - encrypts value and uses eql_v2.like() for encrypted columns with match index
    */
-  const protectLike = (
+  const encryptionLike = (
     left: SQLWrapper,
     right: unknown,
   ): Promise<SQL> | SQL => {
@@ -1288,7 +1307,7 @@ export function createProtectOperators(encryptionClient: EncryptionClient): {
   /**
    * Case-insensitive like operator - encrypts value and uses eql_v2.ilike() for encrypted columns with match index
    */
-  const protectIlike = (
+  const encryptionIlike = (
     left: SQLWrapper,
     right: unknown,
   ): Promise<SQL> | SQL => {
@@ -1311,7 +1330,7 @@ export function createProtectOperators(encryptionClient: EncryptionClient): {
   /**
    * Not like operator (case insensitive) - encrypts value and uses eql_v2.ilike() for encrypted columns with match index
    */
-  const protectNotIlike = (
+  const encryptionNotIlike = (
     left: SQLWrapper,
     right: unknown,
   ): Promise<SQL> | SQL => {
@@ -1334,7 +1353,7 @@ export function createProtectOperators(encryptionClient: EncryptionClient): {
   /**
    * In array operator - encrypts all values in the array
    */
-  const protectInArray = async (
+  const encryptionInArray = async (
     left: SQLWrapper,
     right: unknown[] | SQLWrapper,
   ): Promise<SQL> => {
@@ -1381,7 +1400,7 @@ export function createProtectOperators(encryptionClient: EncryptionClient): {
   /**
    * Not in array operator
    */
-  const protectNotInArray = async (
+  const encryptionNotInArray = async (
     left: SQLWrapper,
     right: unknown[] | SQLWrapper,
   ): Promise<SQL> => {
@@ -1431,7 +1450,7 @@ export function createProtectOperators(encryptionClient: EncryptionClient): {
   /**
    * Ascending order helper - uses eql_v2.order_by() for encrypted columns with ORE index
    */
-  const protectAsc = (column: SQLWrapper): SQL => {
+  const encryptionAsc = (column: SQLWrapper): SQL => {
     const columnInfo = getColumnInfo(
       column,
       defaultEncryptionTable,
@@ -1448,7 +1467,7 @@ export function createProtectOperators(encryptionClient: EncryptionClient): {
   /**
    * Descending order helper - uses eql_v2.order_by() for encrypted columns with ORE index
    */
-  const protectDesc = (column: SQLWrapper): SQL => {
+  const encryptionDesc = (column: SQLWrapper): SQL => {
     const columnInfo = getColumnInfo(
       column,
       defaultEncryptionTable,
@@ -1465,7 +1484,7 @@ export function createProtectOperators(encryptionClient: EncryptionClient): {
   /**
    * Batched AND operator - collects lazy operators, batches encryption, and combines conditions
    */
-  const protectAnd = async (
+  const encryptionAnd = async (
     ...conditions: (SQL | SQLWrapper | Promise<SQL> | undefined)[]
   ): Promise<SQL> => {
     // Single pass: separate lazy operators from regular conditions
@@ -1629,7 +1648,7 @@ export function createProtectOperators(encryptionClient: EncryptionClient): {
   /**
    * Batched OR operator - collects lazy operators, batches encryption, and combines conditions
    */
-  const protectOr = async (
+  const encryptionOr = async (
     ...conditions: (SQL | SQLWrapper | Promise<SQL> | undefined)[]
   ): Promise<SQL> => {
     const lazyOperators: LazyOperator[] = []
@@ -1783,35 +1802,35 @@ export function createProtectOperators(encryptionClient: EncryptionClient): {
 
   return {
     // Comparison operators
-    eq: protectEq,
-    ne: protectNe,
-    gt: protectGt,
-    gte: protectGte,
-    lt: protectLt,
-    lte: protectLte,
+    eq: encryptionEq,
+    ne: encryptionNe,
+    gt: encryptionGt,
+    gte: encryptionGte,
+    lt: encryptionLt,
+    lte: encryptionLte,
 
     // Range operators
-    between: protectBetween,
-    notBetween: protectNotBetween,
+    between: encryptionBetween,
+    notBetween: encryptionNotBetween,
 
     // Text search operators
-    like: protectLike,
-    ilike: protectIlike,
-    notIlike: protectNotIlike,
+    like: encryptionLike,
+    ilike: encryptionIlike,
+    notIlike: encryptionNotIlike,
 
     // Array operators
-    inArray: protectInArray,
-    notInArray: protectNotInArray,
+    inArray: encryptionInArray,
+    notInArray: encryptionNotInArray,
 
     // Sorting operators
-    asc: protectAsc,
-    desc: protectDesc,
+    asc: encryptionAsc,
+    desc: encryptionDesc,
 
     // AND operator - batches encryption operations
-    and: protectAnd,
+    and: encryptionAnd,
 
     // OR operator - batches encryption operations
-    or: protectOr,
+    or: encryptionOr,
 
     // Operators that don't need encryption (pass through to Drizzle)
     exists,
@@ -1825,3 +1844,18 @@ export function createProtectOperators(encryptionClient: EncryptionClient): {
     arrayOverlaps,
   }
 }
+
+/**
+ * @deprecated Use `EncryptionOperatorError` instead.
+ */
+export { EncryptionOperatorError as ProtectOperatorError }
+
+/**
+ * @deprecated Use `EncryptionConfigError` instead.
+ */
+export { EncryptionConfigError as ProtectConfigError }
+
+/**
+ * @deprecated Use `createEncryptionOperators` instead.
+ */
+export { createEncryptionOperators as createProtectOperators }
