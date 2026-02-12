@@ -6,7 +6,7 @@ export default defineConfig([
       index: 'src/index.ts',
       client: 'src/client.ts',
       'identify/index': 'src/identify/index.ts',
-      'secrets/index': 'src/stash/index.ts',
+      'secrets/index': 'src/secrets/index.ts',
     },
     format: ['cjs', 'esm'],
     sourcemap: true,

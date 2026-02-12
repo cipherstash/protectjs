@@ -7,7 +7,7 @@ import {
   buildRouteMap,
   run,
 } from '@stricli/core'
-import { Stash } from '../stash/index.js'
+import { SecretsClient, type SecretsConfig } from '../secrets/index.js'
 
 // ANSI color codes for beautiful terminal output
 const colors = {
@@ -40,7 +40,7 @@ const style = {
 /**
  * Get configuration from environment variables
  */
-function getConfig(environment: string): Stash['config'] {
+function getConfig(environment: string): SecretsConfig {
   const workspaceCRN = process.env.CS_WORKSPACE_CRN
   const clientId = process.env.CS_CLIENT_ID
   const clientKey = process.env.CS_CLIENT_KEY
@@ -84,11 +84,11 @@ function getConfig(environment: string): Stash['config'] {
 }
 
 /**
- * Create a Stash instance with proper error handling
+ * Create a SecretsClient instance with proper error handling
  */
-function createStash(environment: string): Stash {
+function createSecretsClient(environment: string): SecretsClient {
   const config = getConfig(environment)
-  return new Stash(config)
+  return new SecretsClient(config)
 }
 
 /**
@@ -115,13 +115,13 @@ function askConfirmation(prompt: string): Promise<boolean> {
 const setCommand = buildCommand({
   func: async (flags: { name: string; value: string; environment: string }) => {
     const { name, value, environment } = flags
-    const stash = createStash(environment)
+    const secrets = createSecretsClient(environment)
 
     console.log(
       `${style.info(`Encrypting and storing secret "${name}" in environment "${environment}"...`)}`,
     )
 
-    const result = await stash.set(name, value)
+    const result = await secrets.set(name, value)
     if (result.failure) {
       console.error(
         style.error(`Failed to set secret: ${result.failure.message}`),
@@ -179,13 +179,13 @@ Examples:
 const getCommand = buildCommand({
   func: async (flags: { name: string; environment: string }) => {
     const { name, environment } = flags
-    const stash = createStash(environment)
+    const secrets = createSecretsClient(environment)
 
     console.log(
       `${style.info(`Retrieving secret "${name}" from environment "${environment}"...`)}`,
     )
 
-    const result = await stash.get(name)
+    const result = await secrets.get(name)
     if (result.failure) {
       console.error(
         style.error(`Failed to get secret: ${result.failure.message}`),
@@ -234,13 +234,13 @@ Examples:
 const listCommand = buildCommand({
   func: async (flags: { environment: string }) => {
     const { environment } = flags
-    const stash = createStash(environment)
+    const secrets = createSecretsClient(environment)
 
     console.log(
       `${style.info(`Listing secrets in environment "${environment}"...`)}`,
     )
 
-    const result = await stash.list()
+    const result = await secrets.list()
     if (result.failure) {
       console.error(
         style.error(`Failed to list secrets: ${result.failure.message}`),
@@ -322,7 +322,7 @@ const deleteCommand = buildCommand({
     yes?: boolean
   }) => {
     const { name, environment, yes } = flags
-    const stash = createStash(environment)
+    const secrets = createSecretsClient(environment)
 
     // Ask for confirmation unless --yes flag is set
     if (!yes) {
@@ -340,7 +340,7 @@ const deleteCommand = buildCommand({
       `${style.info(`Deleting secret "${name}" from environment "${environment}"...`)}`,
     )
 
-    const result = await stash.delete(name)
+    const result = await secrets.delete(name)
     if (result.failure) {
       console.error(
         style.error(`Failed to delete secret: ${result.failure.message}`),

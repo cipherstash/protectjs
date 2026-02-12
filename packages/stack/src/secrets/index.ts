@@ -11,9 +11,9 @@ export type SecretName = string
 export type SecretValue = string
 
 /**
- * Configuration options for initializing the Stash client
+ * Configuration options for initializing the Secrets client
  */
-export interface StashConfig {
+export interface SecretsConfig {
   workspaceCRN: string
   clientId: string
   clientKey: string
@@ -63,13 +63,13 @@ export interface DecryptedSecretResponse {
 }
 
 /**
- * The Stash client provides a high-level API for managing encrypted secrets
+ * The SecretsClient provides a high-level API for managing encrypted secrets
  * stored in CipherStash. Secrets are encrypted locally before being sent to
  * the API, ensuring end-to-end encryption.
  */
-export class Stash {
+export class SecretsClient {
   private encryptionClient: EncryptionClient | null = null
-  private config: StashConfig
+  private config: SecretsConfig
   private readonly apiBaseUrl =
     process.env.STASH_API_URL || 'https://getstash.sh/api/secrets'
   private readonly secretsSchema = encryptedTable('secrets', {
@@ -91,12 +91,12 @@ export class Stash {
     return match[1]
   }
 
-  constructor(config: StashConfig) {
+  constructor(config: SecretsConfig) {
     this.config = config
   }
 
   /**
-   * Initialize the Stash client and underlying Encryption client
+   * Initialize the Secrets client and underlying Encryption client
    */
   private async ensureInitialized(): Promise<void> {
     if (this.encryptionClient) {
@@ -186,8 +186,8 @@ export class Stash {
    *
    * @example
    * ```typescript
-   * const stash = new Stash({ ... })
-   * const result = await stash.set('DATABASE_URL', 'postgres://user:pass@localhost:5432/mydb')
+   * const secrets = await Secrets({ ... })
+   * const result = await secrets.set('DATABASE_URL', 'postgres://user:pass@localhost:5432/mydb')
    * if (result.failure) {
    *   console.error('Failed to set secret:', result.failure.message)
    * }
@@ -244,8 +244,8 @@ export class Stash {
    *
    * @example
    * ```typescript
-   * const stash = new Stash({ ... })
-   * const result = await stash.get('DATABASE_URL')
+   * const secrets = await Secrets({ ... })
+   * const result = await secrets.get('DATABASE_URL')
    * if (result.failure) {
    *   console.error('Failed to get secret:', result.failure.message)
    * } else {
@@ -317,8 +317,8 @@ export class Stash {
    *
    * @example
    * ```typescript
-   * const stash = new Stash({ ... })
-   * const result = await stash.getMany(['DATABASE_URL', 'API_KEY'])
+   * const secrets = await Secrets({ ... })
+   * const result = await secrets.getMany(['DATABASE_URL', 'API_KEY'])
    * if (result.failure) {
    *   console.error('Failed to get secrets:', result.failure.message)
    * } else {
@@ -402,8 +402,8 @@ export class Stash {
    *
    * @example
    * ```typescript
-   * const stash = new Stash({ ... })
-   * const result = await stash.list()
+   * const secrets = await Secrets({ ... })
+   * const result = await secrets.list()
    * if (result.failure) {
    *   console.error('Failed to list secrets:', result.failure.message)
    * } else {
@@ -441,8 +441,8 @@ export class Stash {
    *
    * @example
    * ```typescript
-   * const stash = new Stash({ ... })
-   * const result = await stash.delete('DATABASE_URL')
+   * const secrets = await Secrets({ ... })
+   * const result = await secrets.delete('DATABASE_URL')
    * if (result.failure) {
    *   console.error('Failed to delete secret:', result.failure.message)
    * }
@@ -465,10 +465,15 @@ export class Stash {
 /**
  * Initialize a Secrets client for managing encrypted secrets.
  *
- * @param config - The configuration options for the Stash client
- * @returns A Promise that resolves to an initialized Stash instance
+ * @param config - The configuration options for the Secrets client
+ * @returns A Promise that resolves to an initialized SecretsClient instance
  */
-export async function Secrets(config: StashConfig): Promise<Stash> {
-  const client = new Stash(config)
+export async function Secrets(config: SecretsConfig): Promise<SecretsClient> {
+  const client = new SecretsClient(config)
   return client
 }
+
+/** @deprecated Use SecretsConfig */
+export type StashConfig = SecretsConfig
+/** @deprecated Use SecretsClient */
+export { SecretsClient as Stash }
