@@ -1599,74 +1599,40 @@ describe('searchableJson postgres integration', () => {
       await verifyRow(dataRows[0], plaintext)
     }, 30000)
 
-    // Diagnostic: inspect STE vec entries to verify array element storage and selector matching
-    it('diagnostic: STE vec entries for array field', async () => {
+    // [@] notation (proxy convention) produces the selector hash matching is_array=true STE vec entries
+    it('[@] selector matches is_array=true entries in STE vec', async () => {
       const plaintext = { colors: ['a', 'b'], marker: 'diag-sv' }
       const { id } = await insertRow(plaintext)
 
-      // Get all STE vec entries with their selector and array flag
       const entries = await sql`
         SELECT
-          e.idx,
           eql_v2.selector(e.entry::jsonb) as selector,
-          eql_v2.is_ste_vec_array(e.entry::jsonb) as is_array,
-          (e.entry::jsonb) ? 'a' as has_a_key
+          eql_v2.is_ste_vec_array(e.entry::jsonb) as is_array
         FROM "protect-ci-jsonb" t,
              LATERAL unnest(eql_v2.ste_vec((t.metadata).data)) WITH ORDINALITY AS e(entry, idx)
         WHERE t.id = ${id}
       `
 
-      // Log all entries for debugging
-      console.log('STE vec entries:', JSON.stringify(entries, null, 2))
+      const arrayEntries = entries.filter((e: any) => e.is_array === true)
+      expect(arrayEntries.length).toBeGreaterThan(0)
 
-      // Encrypt selectors with different notations and compare hashes
-      const selectorPlain = await encryptQueryTerm('$.colors', 'steVecSelector')
-      const selectorWild = await encryptQueryTerm(
-        '$.colors[*]',
-        'steVecSelector',
-      )
+      const selectorAt = await encryptQueryTerm('$.colors[@]', 'steVecSelector')
+      const hashAt =
+        await sql`SELECT eql_v2.selector(${selectorAt}::eql_v2_encrypted) as s`
 
-      // Extract the selector hashes from the encrypted terms
-      const hashPlain =
-        await sql`SELECT eql_v2.selector(${selectorPlain}::eql_v2_encrypted) as s`
-      const hashWild =
-        await sql`SELECT eql_v2.selector(${selectorWild}::eql_v2_encrypted) as s`
-
-      console.log('Selector hash for $.colors:', hashPlain[0].s)
-      console.log('Selector hash for $.colors[*]:', hashWild[0].s)
-      console.log('Are they different?', hashPlain[0].s !== hashWild[0].s)
-
-      // Show which entries match each selector
-      const matchPlain = entries.filter(
-        (e: any) => e.selector === hashPlain[0].s,
-      )
-      const matchWild = entries.filter((e: any) => e.selector === hashWild[0].s)
-
-      console.log(
-        'Entries matching $.colors:',
-        matchPlain.length,
-        matchPlain.map((e: any) => ({ idx: e.idx, is_array: e.is_array })),
-      )
-      console.log(
-        'Entries matching $.colors[*]:',
-        matchWild.length,
-        matchWild.map((e: any) => ({ idx: e.idx, is_array: e.is_array })),
-      )
-
-      // At minimum, we expect the STE vec to have entries
-      expect(entries.length).toBeGreaterThan(0)
+      expect(hashAt[0].s).toBe(arrayEntries[0].selector)
     }, 30000)
 
     it('returns correct length for known array (Extended)', async () => {
       const plaintext = { colors: ['a', 'b', 'c', 'd'], marker: 'al-known' }
       const { id } = await insertRow(plaintext)
 
+      // Use [@] notation — proxy convention for array element selector (is_array=true entries)
       const selectorTerm = await encryptQueryTerm(
-        '$.colors[*]',
+        '$.colors[@]',
         'steVecSelector',
       )
 
-      // Use jsonb_path_query_first (scalar) — returns the wrapped array with 'a' flag
       const rows = await sql`
         SELECT t.id,
                eql_v2.jsonb_array_length(
@@ -1690,8 +1656,9 @@ describe('searchableJson postgres integration', () => {
       const plaintext = { colors: ['x', 'y', 'z'], marker: 'al-known-s' }
       const { id } = await insertRow(plaintext)
 
+      // Use [@] notation — proxy convention for array element selector (is_array=true entries)
       const selectorTerm = await encryptQueryTerm(
-        '$.colors[*]',
+        '$.colors[@]',
         'steVecSelector',
       )
 
@@ -1721,7 +1688,8 @@ describe('searchableJson postgres integration', () => {
       const plaintext = { tags: ['ae-a', 'ae-b', 'ae-c'], marker: 'ae-expand' }
       const { id } = await insertRow(plaintext)
 
-      const selectorTerm = await encryptQueryTerm('$.tags[*]', 'steVecSelector')
+      // Use [@] notation — proxy convention for array element selector (is_array=true entries)
+      const selectorTerm = await encryptQueryTerm('$.tags[@]', 'steVecSelector')
 
       const rows = await sql`
         SELECT eql_v2.jsonb_array_elements(
@@ -1747,7 +1715,8 @@ describe('searchableJson postgres integration', () => {
       }
       const { id } = await insertRow(plaintext)
 
-      const selectorTerm = await encryptQueryTerm('$.tags[*]', 'steVecSelector')
+      // Use [@] notation — proxy convention for array element selector (is_array=true entries)
+      const selectorTerm = await encryptQueryTerm('$.tags[@]', 'steVecSelector')
 
       const rows = await sql.unsafe(
         `SELECT eql_v2.jsonb_array_elements(
