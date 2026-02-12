@@ -1,5 +1,5 @@
 import {
-  type EncryptionClientConfig,
+  type EncryptionClient,
   encryptedToPgComposite,
 } from '@cipherstash/stack'
 import type { EntityTarget } from 'typeorm'
@@ -9,7 +9,7 @@ import { AppDataSource } from '../data-source'
  * Helper functions for working with encrypted entities in TypeORM
  */
 export class ProtectEntityHelper {
-  constructor(private protectClient: EncryptionClientConfig) {}
+  constructor(private protectClient: EncryptionClient) {}
 
   /**
    * Bulk encrypt and save entities to the database

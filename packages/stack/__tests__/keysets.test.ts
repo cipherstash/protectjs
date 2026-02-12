@@ -24,7 +24,7 @@ describe('encryption and decryption with keyset id', () => {
     })
 
     if (ciphertext.failure) {
-      throw new Error(`[protect]: ${ciphertext.failure.message}`)
+      throw new Error(`[encryption]: ${ciphertext.failure.message}`)
     }
 
     // Verify encrypted field
@@ -57,7 +57,7 @@ describe('encryption and decryption with keyset name', () => {
     })
 
     if (ciphertext.failure) {
-      throw new Error(`[protect]: ${ciphertext.failure.message}`)
+      throw new Error(`[encryption]: ${ciphertext.failure.message}`)
     }
 
     // Verify encrypted field

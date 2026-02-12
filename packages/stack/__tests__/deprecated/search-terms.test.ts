@@ -30,7 +30,7 @@ describe('createSearchTerms (deprecated - backward compatibility)', () => {
     const searchTermsResult = await protectClient.createSearchTerms(searchTerms)
 
     if (searchTermsResult.failure) {
-      throw new Error(`[protect]: ${searchTermsResult.failure.message}`)
+      throw new Error(`[encryption]: ${searchTermsResult.failure.message}`)
     }
 
     expect(searchTermsResult.data).toEqual(
@@ -57,7 +57,7 @@ describe('createSearchTerms (deprecated - backward compatibility)', () => {
     const searchTermsResult = await protectClient.createSearchTerms(searchTerms)
 
     if (searchTermsResult.failure) {
-      throw new Error(`[protect]: ${searchTermsResult.failure.message}`)
+      throw new Error(`[encryption]: ${searchTermsResult.failure.message}`)
     }
 
     const result = searchTermsResult.data[0] as string
@@ -80,7 +80,7 @@ describe('createSearchTerms (deprecated - backward compatibility)', () => {
     const searchTermsResult = await protectClient.createSearchTerms(searchTerms)
 
     if (searchTermsResult.failure) {
-      throw new Error(`[protect]: ${searchTermsResult.failure.message}`)
+      throw new Error(`[encryption]: ${searchTermsResult.failure.message}`)
     }
 
     const result = searchTermsResult.data[0] as string
@@ -105,7 +105,7 @@ describe('createSearchTerms (deprecated - backward compatibility)', () => {
     const searchTermsResult = await protectClient.createSearchTerms(searchTerms)
 
     if (searchTermsResult.failure) {
-      throw new Error(`[protect]: ${searchTermsResult.failure.message}`)
+      throw new Error(`[encryption]: ${searchTermsResult.failure.message}`)
     }
 
     const result = searchTermsResult.data[0] as string
@@ -128,7 +128,7 @@ describe('createSearchTerms (deprecated - backward compatibility)', () => {
     const searchTermsResult = await protectClient.createSearchTerms(searchTerms)
 
     if (searchTermsResult.failure) {
-      throw new Error(`[protect]: ${searchTermsResult.failure.message}`)
+      throw new Error(`[encryption]: ${searchTermsResult.failure.message}`)
     }
 
     const result = searchTermsResult.data[0] as string

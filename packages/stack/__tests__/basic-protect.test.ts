@@ -27,7 +27,7 @@ describe('encryption and decryption', () => {
     })
 
     if (ciphertext.failure) {
-      throw new Error(`[protect]: ${ciphertext.failure.message}`)
+      throw new Error(`[encryption]: ${ciphertext.failure.message}`)
     }
 
     // Verify encrypted field

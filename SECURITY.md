@@ -38,6 +38,12 @@ The below tables list each package along with the currently supported (receiving
 | 5.1.x   | :white_check_mark: |
 | < 5.1  | :x: |
 
+### `@cipherstash/stack`
+
+| Version | Supported          |
+| ------- | ------------------ |
+| 0.x.x   | :white_check_mark: |
+
 ### `@cipherstash/nextjs`
 
 | Version | Supported          |

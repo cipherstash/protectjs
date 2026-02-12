@@ -162,7 +162,7 @@ function getProtectTableFromColumn(
 }
 
 /**
- * Helper to get the EncryptedColumn for a Drizzle column from the ProtectTable
+ * Helper to get the EncryptedColumn for a Drizzle column from the EncryptedTable
  */
 function getEncryptedColumn(
   drizzleColumn: SQLWrapper,

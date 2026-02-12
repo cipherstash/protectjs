@@ -57,7 +57,7 @@ describe('encrypt models with nested fields', () => {
     })
 
     if (encryptResponse.failure) {
-      throw new Error(`[protect]: ${encryptResponse.failure.message}`)
+      throw new Error(`[encryption]: ${encryptResponse.failure.message}`)
     }
 
     // Verify encrypted field
@@ -66,7 +66,7 @@ describe('encrypt models with nested fields', () => {
     const decryptResponse = await protectClient.decrypt(encryptResponse.data)
 
     if (decryptResponse.failure) {
-      throw new Error(`[protect]: ${decryptResponse.failure.message}`)
+      throw new Error(`[encryption]: ${decryptResponse.failure.message}`)
     }
 
     expect(decryptResponse).toEqual({
@@ -95,7 +95,7 @@ describe('encrypt models with nested fields', () => {
     )
 
     if (encryptedModel.failure) {
-      throw new Error(`[protect]: ${encryptedModel.failure.message}`)
+      throw new Error(`[encryption]: ${encryptedModel.failure.message}`)
     }
 
     // Verify encrypted fields
@@ -114,7 +114,7 @@ describe('encrypt models with nested fields', () => {
     )
 
     if (decryptedResult.failure) {
-      throw new Error(`[protect]: ${decryptedResult.failure.message}`)
+      throw new Error(`[encryption]: ${decryptedResult.failure.message}`)
     }
 
     expect(decryptedResult.data).toEqual(decryptedModel)
@@ -141,7 +141,7 @@ describe('encrypt models with nested fields', () => {
     )
 
     if (encryptedModel.failure) {
-      throw new Error(`[protect]: ${encryptedModel.failure.message}`)
+      throw new Error(`[encryption]: ${encryptedModel.failure.message}`)
     }
 
     // Verify null fields are preserved
@@ -155,7 +155,7 @@ describe('encrypt models with nested fields', () => {
     )
 
     if (decryptedResult.failure) {
-      throw new Error(`[protect]: ${decryptedResult.failure.message}`)
+      throw new Error(`[encryption]: ${decryptedResult.failure.message}`)
     }
 
     expect(decryptedResult.data).toEqual(decryptedModel)
@@ -180,7 +180,7 @@ describe('encrypt models with nested fields', () => {
     )
 
     if (encryptedModel.failure) {
-      throw new Error(`[protect]: ${encryptedModel.failure.message}`)
+      throw new Error(`[encryption]: ${encryptedModel.failure.message}`)
     }
 
     // Verify undefined fields are preserved
@@ -193,7 +193,7 @@ describe('encrypt models with nested fields', () => {
     )
 
     if (decryptedResult.failure) {
-      throw new Error(`[protect]: ${decryptedResult.failure.message}`)
+      throw new Error(`[encryption]: ${decryptedResult.failure.message}`)
     }
 
     expect(decryptedResult.data).toEqual(decryptedModel)
@@ -223,7 +223,7 @@ describe('encrypt models with nested fields', () => {
     )
 
     if (encryptedModel.failure) {
-      throw new Error(`[protect]: ${encryptedModel.failure.message}`)
+      throw new Error(`[encryption]: ${encryptedModel.failure.message}`)
     }
 
     // Verify encrypted fields
@@ -245,7 +245,7 @@ describe('encrypt models with nested fields', () => {
     )
 
     if (decryptedResult.failure) {
-      throw new Error(`[protect]: ${decryptedResult.failure.message}`)
+      throw new Error(`[encryption]: ${decryptedResult.failure.message}`)
     }
 
     expect(decryptedResult.data).toEqual(decryptedModel)
@@ -270,7 +270,7 @@ describe('encrypt models with nested fields', () => {
     )
 
     if (encryptedModel.failure) {
-      throw new Error(`[protect]: ${encryptedModel.failure.message}`)
+      throw new Error(`[encryption]: ${encryptedModel.failure.message}`)
     }
 
     // Verify encrypted fields
@@ -285,7 +285,7 @@ describe('encrypt models with nested fields', () => {
     )
 
     if (decryptedResult.failure) {
-      throw new Error(`[protect]: ${decryptedResult.failure.message}`)
+      throw new Error(`[encryption]: ${decryptedResult.failure.message}`)
     }
 
     expect(decryptedResult.data).toEqual(decryptedModel)
@@ -307,7 +307,7 @@ describe('encrypt models with nested fields', () => {
     )
 
     if (encryptedModel.failure) {
-      throw new Error(`[protect]: ${encryptedModel.failure.message}`)
+      throw new Error(`[encryption]: ${encryptedModel.failure.message}`)
     }
 
     // Verify encrypted fields
@@ -322,7 +322,7 @@ describe('encrypt models with nested fields', () => {
     )
 
     if (decryptedResult.failure) {
-      throw new Error(`[protect]: ${decryptedResult.failure.message}`)
+      throw new Error(`[encryption]: ${decryptedResult.failure.message}`)
     }
 
     expect(decryptedResult.data).toEqual(decryptedModel)
@@ -361,7 +361,7 @@ describe('encrypt models with nested fields', () => {
       )
 
       if (encryptedModels.failure) {
-        throw new Error(`[protect]: ${encryptedModels.failure.message}`)
+        throw new Error(`[encryption]: ${encryptedModels.failure.message}`)
       }
 
       // Verify encrypted fields for each model
@@ -381,7 +381,7 @@ describe('encrypt models with nested fields', () => {
       )
 
       if (decryptedResults.failure) {
-        throw new Error(`[protect]: ${decryptedResults.failure.message}`)
+        throw new Error(`[encryption]: ${decryptedResults.failure.message}`)
       }
 
       expect(decryptedResults.data).toEqual(decryptedModels)
@@ -419,7 +419,7 @@ describe('encrypt models with nested fields', () => {
       )
 
       if (encryptedModels.failure) {
-        throw new Error(`[protect]: ${encryptedModels.failure.message}`)
+        throw new Error(`[encryption]: ${encryptedModels.failure.message}`)
       }
 
       // Verify null/undefined fields are preserved
@@ -439,7 +439,7 @@ describe('encrypt models with nested fields', () => {
       )
 
       if (decryptedResults.failure) {
-        throw new Error(`[protect]: ${decryptedResults.failure.message}`)
+        throw new Error(`[encryption]: ${decryptedResults.failure.message}`)
       }
 
       expect(decryptedResults.data).toEqual(decryptedModels)
@@ -474,7 +474,7 @@ describe('encrypt models with nested fields', () => {
       )
 
       if (encryptedModels.failure) {
-        throw new Error(`[protect]: ${encryptedModels.failure.message}`)
+        throw new Error(`[encryption]: ${encryptedModels.failure.message}`)
       }
 
       // Verify encrypted fields for each model
@@ -494,7 +494,7 @@ describe('encrypt models with nested fields', () => {
       )
 
       if (decryptedResults.failure) {
-        throw new Error(`[protect]: ${decryptedResults.failure.message}`)
+        throw new Error(`[encryption]: ${decryptedResults.failure.message}`)
       }
 
       expect(decryptedResults.data).toEqual(decryptedModels)
@@ -511,7 +511,7 @@ describe('encrypt models with nested fields', () => {
       )
 
       if (encryptedModels.failure) {
-        throw new Error(`[protect]: ${encryptedModels.failure.message}`)
+        throw new Error(`[encryption]: ${encryptedModels.failure.message}`)
       }
 
       expect(encryptedModels.data).toEqual([])
@@ -521,7 +521,7 @@ describe('encrypt models with nested fields', () => {
       )
 
       if (decryptedResults.failure) {
-        throw new Error(`[protect]: ${decryptedResults.failure.message}`)
+        throw new Error(`[encryption]: ${decryptedResults.failure.message}`)
       }
 
       expect(decryptedResults.data).toEqual([])
@@ -552,7 +552,7 @@ describe('nested fields with a plaintext field', () => {
     )
 
     if (encryptedModel.failure) {
-      throw new Error(`[protect]: ${encryptedModel.failure.message}`)
+      throw new Error(`[encryption]: ${encryptedModel.failure.message}`)
     }
 
     // Verify encrypted fields
@@ -572,7 +572,7 @@ describe('nested fields with a plaintext field', () => {
     )
 
     if (decryptedResult.failure) {
-      throw new Error(`[protect]: ${decryptedResult.failure.message}`)
+      throw new Error(`[encryption]: ${decryptedResult.failure.message}`)
     }
 
     expect(decryptedResult.data).toEqual(decryptedModel)
@@ -605,7 +605,7 @@ describe('nested fields with a plaintext field', () => {
     )
 
     if (encryptedModel.failure) {
-      throw new Error(`[protect]: ${encryptedModel.failure.message}`)
+      throw new Error(`[encryption]: ${encryptedModel.failure.message}`)
     }
 
     // Verify encrypted fields
@@ -630,7 +630,7 @@ describe('nested fields with a plaintext field', () => {
     )
 
     if (decryptedResult.failure) {
-      throw new Error(`[protect]: ${decryptedResult.failure.message}`)
+      throw new Error(`[encryption]: ${decryptedResult.failure.message}`)
     }
 
     expect(decryptedResult.data).toEqual(decryptedModel)
@@ -664,7 +664,7 @@ describe('nested fields with a plaintext field', () => {
     )
 
     if (encryptedModel.failure) {
-      throw new Error(`[protect]: ${encryptedModel.failure.message}`)
+      throw new Error(`[encryption]: ${encryptedModel.failure.message}`)
     }
 
     // Verify encrypted fields
@@ -686,7 +686,7 @@ describe('nested fields with a plaintext field', () => {
     )
 
     if (decryptedResult.failure) {
-      throw new Error(`[protect]: ${decryptedResult.failure.message}`)
+      throw new Error(`[encryption]: ${decryptedResult.failure.message}`)
     }
 
     expect(decryptedResult.data).toEqual(decryptedModel)
@@ -714,7 +714,7 @@ describe('nested fields with a plaintext field', () => {
     )
 
     if (encryptedModel.failure) {
-      throw new Error(`[protect]: ${encryptedModel.failure.message}`)
+      throw new Error(`[encryption]: ${encryptedModel.failure.message}`)
     }
 
     // Verify encrypted fields
@@ -734,7 +734,7 @@ describe('nested fields with a plaintext field', () => {
     )
 
     if (decryptedResult.failure) {
-      throw new Error(`[protect]: ${decryptedResult.failure.message}`)
+      throw new Error(`[encryption]: ${decryptedResult.failure.message}`)
     }
 
     expect(decryptedResult.data).toEqual(decryptedModel)
@@ -779,7 +779,7 @@ describe('nested fields with a plaintext field', () => {
       )
 
       if (encryptedModels.failure) {
-        throw new Error(`[protect]: ${encryptedModels.failure.message}`)
+        throw new Error(`[encryption]: ${encryptedModels.failure.message}`)
       }
 
       // Verify encrypted fields
@@ -809,7 +809,7 @@ describe('nested fields with a plaintext field', () => {
       )
 
       if (decryptedResults.failure) {
-        throw new Error(`[protect]: ${decryptedResults.failure.message}`)
+        throw new Error(`[encryption]: ${decryptedResults.failure.message}`)
       }
 
       expect(decryptedResults.data).toEqual(decryptedModels)
@@ -851,7 +851,7 @@ describe('nested fields with a plaintext field', () => {
       )
 
       if (encryptedModels.failure) {
-        throw new Error(`[protect]: ${encryptedModels.failure.message}`)
+        throw new Error(`[encryption]: ${encryptedModels.failure.message}`)
       }
 
       // Verify encrypted fields
@@ -883,7 +883,7 @@ describe('nested fields with a plaintext field', () => {
       )
 
       if (decryptedResults.failure) {
-        throw new Error(`[protect]: ${decryptedResults.failure.message}`)
+        throw new Error(`[encryption]: ${decryptedResults.failure.message}`)
       }
 
       expect(decryptedResults.data).toEqual(decryptedModels)
@@ -927,7 +927,7 @@ describe('nested fields with a plaintext field', () => {
       )
 
       if (encryptedModels.failure) {
-        throw new Error(`[protect]: ${encryptedModels.failure.message}`)
+        throw new Error(`[encryption]: ${encryptedModels.failure.message}`)
       }
 
       // Verify encrypted fields
@@ -953,7 +953,7 @@ describe('nested fields with a plaintext field', () => {
       )
 
       if (decryptedResults.failure) {
-        throw new Error(`[protect]: ${decryptedResults.failure.message}`)
+        throw new Error(`[encryption]: ${decryptedResults.failure.message}`)
       }
 
       expect(decryptedResults.data).toEqual(decryptedModels)

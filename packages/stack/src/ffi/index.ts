@@ -283,11 +283,11 @@ export class EncryptionClient {
    * It includes encrypting a value first, then decrypting it, and handling the result.
    *
    * ```typescript
-   * const encryptedData = await eqlClient.encrypt(
+   * const encryptedData = await encryptionClient.encrypt(
    *  "person@example.com",
    *  { column: "email", table: "users" }
    * )
-   * const decryptResult = await eqlClient.decrypt(encryptedData)
+   * const decryptResult = await encryptionClient.decrypt(encryptedData)
    * if (decryptResult.failure) {
    *   throw new Error(`Decryption failed: ${decryptResult.failure.message}`);
    * }
@@ -297,7 +297,7 @@ export class EncryptionClient {
    * @example
    * Provide a lock context when decrypting:
    * ```typescript
-   *    await eqlClient.decrypt(encryptedData)
+   *    await encryptionClient.decrypt(encryptedData)
    *      .withLockContext(lockContext)
    * ```
    *
@@ -343,8 +343,8 @@ export class EncryptionClient {
   /**
    * Decrypt a model with encrypted values
    * Usage:
-   *    await eqlClient.decryptModel(encryptedModel)
-   *    await eqlClient.decryptModel(encryptedModel).withLockContext(lockContext)
+   *    await encryptionClient.decryptModel(encryptedModel)
+   *    await encryptionClient.decryptModel(encryptedModel).withLockContext(lockContext)
    */
   decryptModel<T extends Record<string, unknown>>(
     input: T,
@@ -355,8 +355,8 @@ export class EncryptionClient {
   /**
    * Bulk encrypt models with decrypted values
    * Usage:
-   *    await eqlClient.bulkEncryptModels(decryptedModels, table)
-   *    await eqlClient.bulkEncryptModels(decryptedModels, table).withLockContext(lockContext)
+   *    await encryptionClient.bulkEncryptModels(decryptedModels, table)
+   *    await encryptionClient.bulkEncryptModels(decryptedModels, table).withLockContext(lockContext)
    */
   bulkEncryptModels<T extends Record<string, unknown>>(
     input: Array<Decrypted<T>>,
@@ -368,8 +368,8 @@ export class EncryptionClient {
   /**
    * Bulk decrypt models with encrypted values
    * Usage:
-   *    await eqlClient.bulkDecryptModels(encryptedModels)
-   *    await eqlClient.bulkDecryptModels(encryptedModels).withLockContext(lockContext)
+   *    await encryptionClient.bulkDecryptModels(encryptedModels)
+   *    await encryptionClient.bulkDecryptModels(encryptedModels).withLockContext(lockContext)
    */
   bulkDecryptModels<T extends Record<string, unknown>>(
     input: Array<T>,
@@ -380,8 +380,8 @@ export class EncryptionClient {
   /**
    * Bulk encryption - returns a thenable object.
    * Usage:
-   *    await eqlClient.bulkEncrypt(plaintexts, { column, table })
-   *    await eqlClient.bulkEncrypt(plaintexts, { column, table }).withLockContext(lockContext)
+   *    await encryptionClient.bulkEncrypt(plaintexts, { column, table })
+   *    await encryptionClient.bulkEncrypt(plaintexts, { column, table }).withLockContext(lockContext)
    */
   bulkEncrypt(
     plaintexts: BulkEncryptPayload,
@@ -393,8 +393,8 @@ export class EncryptionClient {
   /**
    * Bulk decryption - returns a thenable object.
    * Usage:
-   *    await eqlClient.bulkDecrypt(encryptedPayloads)
-   *    await eqlClient.bulkDecrypt(encryptedPayloads).withLockContext(lockContext)
+   *    await encryptionClient.bulkDecrypt(encryptedPayloads)
+   *    await encryptionClient.bulkDecrypt(encryptedPayloads).withLockContext(lockContext)
    */
   bulkDecrypt(encryptedPayloads: BulkDecryptPayload): BulkDecryptOperation {
     return new BulkDecryptOperation(this.client, encryptedPayloads)
@@ -419,8 +419,8 @@ export class EncryptionClient {
    * ```
    *
    * Usage:
-   *    await eqlClient.createSearchTerms(searchTerms)
-   *    await eqlClient.createSearchTerms(searchTerms).withLockContext(lockContext)
+   *    await encryptionClient.createSearchTerms(searchTerms)
+   *    await encryptionClient.createSearchTerms(searchTerms).withLockContext(lockContext)
    */
   createSearchTerms(terms: SearchTerm[]): SearchTermsOperation {
     return new SearchTermsOperation(this.client, terms)

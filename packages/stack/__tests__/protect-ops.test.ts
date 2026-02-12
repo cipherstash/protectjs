@@ -33,7 +33,7 @@ describe('encryption and decryption edge cases', () => {
     })
 
     if (ciphertext.failure) {
-      throw new Error(`[protect]: ${ciphertext.failure.message}`)
+      throw new Error(`[encryption]: ${ciphertext.failure.message}`)
     }
 
     // Verify null is preserved
@@ -64,7 +64,7 @@ describe('encryption and decryption edge cases', () => {
     )
 
     if (encryptedModel.failure) {
-      throw new Error(`[protect]: ${encryptedModel.failure.message}`)
+      throw new Error(`[encryption]: ${encryptedModel.failure.message}`)
     }
 
     // Verify encrypted fields
@@ -83,7 +83,7 @@ describe('encryption and decryption edge cases', () => {
     )
 
     if (decryptedResult.failure) {
-      throw new Error(`[protect]: ${decryptedResult.failure.message}`)
+      throw new Error(`[encryption]: ${decryptedResult.failure.message}`)
     }
 
     expect(decryptedResult.data).toEqual({
@@ -114,7 +114,7 @@ describe('encryption and decryption edge cases', () => {
     )
 
     if (encryptedModel.failure) {
-      throw new Error(`[protect]: ${encryptedModel.failure.message}`)
+      throw new Error(`[encryption]: ${encryptedModel.failure.message}`)
     }
 
     // Verify null fields are preserved
@@ -133,7 +133,7 @@ describe('encryption and decryption edge cases', () => {
     )
 
     if (decryptedResult.failure) {
-      throw new Error(`[protect]: ${decryptedResult.failure.message}`)
+      throw new Error(`[encryption]: ${decryptedResult.failure.message}`)
     }
 
     expect(decryptedResult.data).toEqual({
@@ -164,7 +164,7 @@ describe('encryption and decryption edge cases', () => {
     )
 
     if (encryptedModel.failure) {
-      throw new Error(`[protect]: ${encryptedModel.failure.message}`)
+      throw new Error(`[encryption]: ${encryptedModel.failure.message}`)
     }
 
     // Verify undefined fields are preserved
@@ -183,7 +183,7 @@ describe('encryption and decryption edge cases', () => {
     )
 
     if (decryptedResult.failure) {
-      throw new Error(`[protect]: ${decryptedResult.failure.message}`)
+      throw new Error(`[encryption]: ${decryptedResult.failure.message}`)
     }
 
     expect(decryptedResult.data).toEqual({
@@ -226,7 +226,7 @@ describe('bulk encryption', () => {
     )
 
     if (encryptedModels.failure) {
-      throw new Error(`[protect]: ${encryptedModels.failure.message}`)
+      throw new Error(`[encryption]: ${encryptedModels.failure.message}`)
     }
 
     // Verify encrypted fields for each model
@@ -251,7 +251,7 @@ describe('bulk encryption', () => {
     )
 
     if (decryptedResult.failure) {
-      throw new Error(`[protect]: ${decryptedResult.failure.message}`)
+      throw new Error(`[encryption]: ${decryptedResult.failure.message}`)
     }
 
     expect(decryptedResult.data).toEqual([
@@ -282,7 +282,7 @@ describe('bulk encryption', () => {
     )
 
     if (encryptedModels.failure) {
-      throw new Error(`[protect]: ${encryptedModels.failure.message}`)
+      throw new Error(`[encryption]: ${encryptedModels.failure.message}`)
     }
 
     expect(encryptedModels.data).toEqual([])
@@ -293,7 +293,7 @@ describe('bulk encryption', () => {
     const decryptedResult = await protectClient.bulkDecryptModels<User>([])
 
     if (decryptedResult.failure) {
-      throw new Error(`[protect]: ${decryptedResult.failure.message}`)
+      throw new Error(`[encryption]: ${decryptedResult.failure.message}`)
     }
 
     expect(decryptedResult.data).toEqual([])
@@ -336,7 +336,7 @@ describe('bulk encryption edge cases', () => {
     )
 
     if (encryptedModels.failure) {
-      throw new Error(`[protect]: ${encryptedModels.failure.message}`)
+      throw new Error(`[encryption]: ${encryptedModels.failure.message}`)
     }
 
     // Verify encrypted fields for each model
@@ -367,7 +367,7 @@ describe('bulk encryption edge cases', () => {
     )
 
     if (decryptedResult.failure) {
-      throw new Error(`[protect]: ${decryptedResult.failure.message}`)
+      throw new Error(`[encryption]: ${decryptedResult.failure.message}`)
     }
 
     expect(decryptedResult.data).toEqual(decryptedModels)
@@ -408,7 +408,7 @@ describe('bulk encryption edge cases', () => {
     )
 
     if (encryptedModels.failure) {
-      throw new Error(`[protect]: ${encryptedModels.failure.message}`)
+      throw new Error(`[encryption]: ${encryptedModels.failure.message}`)
     }
 
     // Verify encrypted fields for each model
@@ -439,7 +439,7 @@ describe('bulk encryption edge cases', () => {
     )
 
     if (decryptedResult.failure) {
-      throw new Error(`[protect]: ${decryptedResult.failure.message}`)
+      throw new Error(`[encryption]: ${decryptedResult.failure.message}`)
     }
 
     expect(decryptedResult.data).toEqual(decryptedModels)
@@ -475,7 +475,7 @@ describe('bulk encryption edge cases', () => {
     )
 
     if (encryptedModels.failure) {
-      throw new Error(`[protect]: ${encryptedModels.failure.message}`)
+      throw new Error(`[encryption]: ${encryptedModels.failure.message}`)
     }
 
     // Verify encrypted fields for each model
@@ -506,7 +506,7 @@ describe('bulk encryption edge cases', () => {
     )
 
     if (decryptedResult.failure) {
-      throw new Error(`[protect]: ${decryptedResult.failure.message}`)
+      throw new Error(`[encryption]: ${decryptedResult.failure.message}`)
     }
 
     expect(decryptedResult.data).toEqual(decryptedModels)
@@ -530,7 +530,7 @@ describe('error handling', () => {
       users,
     )
     if (encryptedModel.failure) {
-      throw new Error(`[protect]: ${encryptedModel.failure.message}`)
+      throw new Error(`[encryption]: ${encryptedModel.failure.message}`)
     }
 
     // Create an invalid model by removing required fields
@@ -587,7 +587,7 @@ describe('type safety', () => {
     const encryptedModel = await protectClient.encryptModel<User>(model, users)
 
     if (encryptedModel.failure) {
-      throw new Error(`[protect]: ${encryptedModel.failure.message}`)
+      throw new Error(`[encryption]: ${encryptedModel.failure.message}`)
     }
 
     // Decrypt the model
@@ -596,7 +596,7 @@ describe('type safety', () => {
     )
 
     if (decryptedResult.failure) {
-      throw new Error(`[protect]: ${decryptedResult.failure.message}`)
+      throw new Error(`[encryption]: ${decryptedResult.failure.message}`)
     }
 
     expect(decryptedResult.data).toEqual(model)
@@ -623,7 +623,7 @@ describe('performance', () => {
     )
 
     if (encryptedModels.failure) {
-      throw new Error(`[protect]: ${encryptedModels.failure.message}`)
+      throw new Error(`[encryption]: ${encryptedModels.failure.message}`)
     }
 
     // Decrypt the models
@@ -632,7 +632,7 @@ describe('performance', () => {
     )
 
     if (decryptedResult.failure) {
-      throw new Error(`[protect]: ${decryptedResult.failure.message}`)
+      throw new Error(`[encryption]: ${decryptedResult.failure.message}`)
     }
 
     expect(decryptedResult.data).toEqual(largeModels)
@@ -652,7 +652,7 @@ describe('encryption and decryption with lock context', () => {
     const lockContext = await lc.identify(userJwt)
 
     if (lockContext.failure) {
-      throw new Error(`[protect]: ${lockContext.failure.message}`)
+      throw new Error(`[encryption]: ${lockContext.failure.message}`)
     }
 
     const email = 'hello@example.com'
@@ -665,7 +665,7 @@ describe('encryption and decryption with lock context', () => {
       .withLockContext(lockContext.data)
 
     if (ciphertext.failure) {
-      throw new Error(`[protect]: ${ciphertext.failure.message}`)
+      throw new Error(`[encryption]: ${ciphertext.failure.message}`)
     }
 
     const plaintext = await protectClient
@@ -673,7 +673,7 @@ describe('encryption and decryption with lock context', () => {
       .withLockContext(lockContext.data)
 
     if (plaintext.failure) {
-      throw new Error(`[protect]: ${plaintext.failure.message}`)
+      throw new Error(`[encryption]: ${plaintext.failure.message}`)
     }
 
     expect(plaintext.data).toEqual(email)
@@ -691,7 +691,7 @@ describe('encryption and decryption with lock context', () => {
     const lockContext = await lc.identify(userJwt)
 
     if (lockContext.failure) {
-      throw new Error(`[protect]: ${lockContext.failure.message}`)
+      throw new Error(`[encryption]: ${lockContext.failure.message}`)
     }
 
     // Create a model with decrypted values
@@ -706,7 +706,7 @@ describe('encryption and decryption with lock context', () => {
       .withLockContext(lockContext.data)
 
     if (encryptedModel.failure) {
-      throw new Error(`[protect]: ${encryptedModel.failure.message}`)
+      throw new Error(`[encryption]: ${encryptedModel.failure.message}`)
     }
 
     // Decrypt the model with lock context
@@ -715,7 +715,7 @@ describe('encryption and decryption with lock context', () => {
       .withLockContext(lockContext.data)
 
     if (decryptedResult.failure) {
-      throw new Error(`[protect]: ${decryptedResult.failure.message}`)
+      throw new Error(`[encryption]: ${decryptedResult.failure.message}`)
     }
 
     expect(decryptedResult.data).toEqual({
@@ -736,7 +736,7 @@ describe('encryption and decryption with lock context', () => {
     const lockContext = await lc.identify(userJwt)
 
     if (lockContext.failure) {
-      throw new Error(`[protect]: ${lockContext.failure.message}`)
+      throw new Error(`[encryption]: ${lockContext.failure.message}`)
     }
 
     // Create a model with decrypted values
@@ -751,7 +751,7 @@ describe('encryption and decryption with lock context', () => {
       .withLockContext(lockContext.data)
 
     if (encryptedModel.failure) {
-      throw new Error(`[protect]: ${encryptedModel.failure.message}`)
+      throw new Error(`[encryption]: ${encryptedModel.failure.message}`)
     }
 
     try {
@@ -774,7 +774,7 @@ describe('encryption and decryption with lock context', () => {
     const lockContext = await lc.identify(userJwt)
 
     if (lockContext.failure) {
-      throw new Error(`[protect]: ${lockContext.failure.message}`)
+      throw new Error(`[encryption]: ${lockContext.failure.message}`)
     }
 
     // Create models with decrypted values
@@ -795,7 +795,7 @@ describe('encryption and decryption with lock context', () => {
       .withLockContext(lockContext.data)
 
     if (encryptedModels.failure) {
-      throw new Error(`[protect]: ${encryptedModels.failure.message}`)
+      throw new Error(`[encryption]: ${encryptedModels.failure.message}`)
     }
 
     // Decrypt the models with lock context
@@ -804,7 +804,7 @@ describe('encryption and decryption with lock context', () => {
       .withLockContext(lockContext.data)
 
     if (decryptedResult.failure) {
-      throw new Error(`[protect]: ${decryptedResult.failure.message}`)
+      throw new Error(`[encryption]: ${decryptedResult.failure.message}`)
     }
 
     expect(decryptedResult.data).toEqual([
@@ -831,7 +831,7 @@ describe('special characters', () => {
     })
 
     if (ciphertext.failure) {
-      throw new Error(`[protect]: ${ciphertext.failure.message}`)
+      throw new Error(`[encryption]: ${ciphertext.failure.message}`)
     }
 
     const decrypted = await protectClient.decrypt(ciphertext.data)

@@ -39,7 +39,7 @@ describe('encryption and decryption with lock context', () => {
     const lockContext = await lc.identify(userJwt)
 
     if (lockContext.failure) {
-      throw new Error(`[protect]: ${lockContext.failure.message}`)
+      throw new Error(`[encryption]: ${lockContext.failure.message}`)
     }
 
     const email = 'hello@example.com'
@@ -52,7 +52,7 @@ describe('encryption and decryption with lock context', () => {
       .withLockContext(lockContext.data)
 
     if (ciphertext.failure) {
-      throw new Error(`[protect]: ${ciphertext.failure.message}`)
+      throw new Error(`[encryption]: ${ciphertext.failure.message}`)
     }
 
     const plaintext = await protectClient
@@ -60,7 +60,7 @@ describe('encryption and decryption with lock context', () => {
       .withLockContext(lockContext.data)
 
     if (plaintext.failure) {
-      throw new Error(`[protect]: ${plaintext.failure.message}`)
+      throw new Error(`[encryption]: ${plaintext.failure.message}`)
     }
 
     expect(plaintext.data).toEqual(email)
@@ -78,7 +78,7 @@ describe('encryption and decryption with lock context', () => {
     const lockContext = await lc.identify(userJwt)
 
     if (lockContext.failure) {
-      throw new Error(`[protect]: ${lockContext.failure.message}`)
+      throw new Error(`[encryption]: ${lockContext.failure.message}`)
     }
 
     // Create a model with decrypted values
@@ -93,7 +93,7 @@ describe('encryption and decryption with lock context', () => {
       .withLockContext(lockContext.data)
 
     if (encryptedModel.failure) {
-      throw new Error(`[protect]: ${encryptedModel.failure.message}`)
+      throw new Error(`[encryption]: ${encryptedModel.failure.message}`)
     }
 
     // Decrypt the model with lock context
@@ -102,7 +102,7 @@ describe('encryption and decryption with lock context', () => {
       .withLockContext(lockContext.data)
 
     if (decryptedResult.failure) {
-      throw new Error(`[protect]: ${decryptedResult.failure.message}`)
+      throw new Error(`[encryption]: ${decryptedResult.failure.message}`)
     }
 
     expect(decryptedResult.data).toEqual({
@@ -123,7 +123,7 @@ describe('encryption and decryption with lock context', () => {
     const lockContext = await lc.identify(userJwt)
 
     if (lockContext.failure) {
-      throw new Error(`[protect]: ${lockContext.failure.message}`)
+      throw new Error(`[encryption]: ${lockContext.failure.message}`)
     }
 
     // Create a model with decrypted values
@@ -138,7 +138,7 @@ describe('encryption and decryption with lock context', () => {
       .withLockContext(lockContext.data)
 
     if (encryptedModel.failure) {
-      throw new Error(`[protect]: ${encryptedModel.failure.message}`)
+      throw new Error(`[encryption]: ${encryptedModel.failure.message}`)
     }
 
     try {
@@ -161,7 +161,7 @@ describe('encryption and decryption with lock context', () => {
     const lockContext = await lc.identify(userJwt)
 
     if (lockContext.failure) {
-      throw new Error(`[protect]: ${lockContext.failure.message}`)
+      throw new Error(`[encryption]: ${lockContext.failure.message}`)
     }
 
     // Create models with decrypted values
@@ -182,7 +182,7 @@ describe('encryption and decryption with lock context', () => {
       .withLockContext(lockContext.data)
 
     if (encryptedModels.failure) {
-      throw new Error(`[protect]: ${encryptedModels.failure.message}`)
+      throw new Error(`[encryption]: ${encryptedModels.failure.message}`)
     }
 
     // Decrypt the models with lock context
@@ -191,7 +191,7 @@ describe('encryption and decryption with lock context', () => {
       .withLockContext(lockContext.data)
 
     if (decryptedResult.failure) {
-      throw new Error(`[protect]: ${decryptedResult.failure.message}`)
+      throw new Error(`[encryption]: ${decryptedResult.failure.message}`)
     }
 
     expect(decryptedResult.data).toEqual([

@@ -48,7 +48,7 @@ beforeAll(async () => {
     .eq('test_run_id', TEST_RUN_ID)
 
   if (error) {
-    console.warn(`[protect]: Failed to clean up test data: ${error.message}`)
+    console.warn(`[encryption]: Failed to clean up test data: ${error.message}`)
   }
 })
 
@@ -60,7 +60,9 @@ afterAll(async () => {
       .delete()
       .in('id', insertedIds)
     if (error) {
-      console.error(`[protect]: Failed to clean up test data: ${error.message}`)
+      console.error(
+        `[encryption]: Failed to clean up test data: ${error.message}`,
+      )
     }
   }
 })
@@ -77,7 +79,7 @@ describe('supabase', () => {
     })
 
     if (ciphertext.failure) {
-      throw new Error(`[protect]: ${ciphertext.failure.message}`)
+      throw new Error(`[encryption]: ${ciphertext.failure.message}`)
     }
 
     const { data: insertedData, error: insertError } = await supabase
@@ -89,7 +91,7 @@ describe('supabase', () => {
       .select('id')
 
     if (insertError) {
-      throw new Error(`[protect]: ${insertError.message}`)
+      throw new Error(`[encryption]: ${insertError.message}`)
     }
 
     insertedIds.push(insertedData[0].id)
@@ -100,7 +102,7 @@ describe('supabase', () => {
       .eq('id', insertedData[0].id)
 
     if (error) {
-      throw new Error(`[protect]: ${error.message}`)
+      throw new Error(`[encryption]: ${error.message}`)
     }
 
     const dataToDecrypt = data[0].encrypted as Encrypted
@@ -122,7 +124,7 @@ describe('supabase', () => {
     const encryptedModel = await protectClient.encryptModel(model, table)
 
     if (encryptedModel.failure) {
-      throw new Error(`[protect]: ${encryptedModel.failure.message}`)
+      throw new Error(`[encryption]: ${encryptedModel.failure.message}`)
     }
 
     const { data: insertedData, error: insertError } = await supabase
@@ -136,7 +138,7 @@ describe('supabase', () => {
       .select('id')
 
     if (insertError) {
-      throw new Error(`[protect]: ${insertError.message}`)
+      throw new Error(`[encryption]: ${insertError.message}`)
     }
 
     insertedIds.push(insertedData[0].id)
@@ -147,7 +149,7 @@ describe('supabase', () => {
       .eq('id', insertedData[0].id)
 
     if (error) {
-      throw new Error(`[protect]: ${error.message}`)
+      throw new Error(`[encryption]: ${error.message}`)
     }
 
     if (!isEncryptedPayload(data[0].encrypted)) {
@@ -157,7 +159,7 @@ describe('supabase', () => {
     const decryptedModel = await protectClient.decryptModel(data[0])
 
     if (decryptedModel.failure) {
-      throw new Error(`[protect]: ${decryptedModel.failure.message}`)
+      throw new Error(`[encryption]: ${decryptedModel.failure.message}`)
     }
 
     expect({
@@ -183,7 +185,7 @@ describe('supabase', () => {
     const encryptedModels = await protectClient.bulkEncryptModels(models, table)
 
     if (encryptedModels.failure) {
-      throw new Error(`[protect]: ${encryptedModels.failure.message}`)
+      throw new Error(`[encryption]: ${encryptedModels.failure.message}`)
     }
 
     const dataToInsert = bulkModelsToEncryptedPgComposites(
@@ -199,7 +201,7 @@ describe('supabase', () => {
       .select('id')
 
     if (insertError) {
-      throw new Error(`[protect]: ${insertError.message}`)
+      throw new Error(`[encryption]: ${insertError.message}`)
     }
 
     insertedIds.push(...insertedData.map((d: { id: number }) => d.id))
@@ -213,13 +215,13 @@ describe('supabase', () => {
       )
 
     if (error) {
-      throw new Error(`[protect]: ${error.message}`)
+      throw new Error(`[encryption]: ${error.message}`)
     }
 
     const decryptedModels = await protectClient.bulkDecryptModels(data)
 
     if (decryptedModels.failure) {
-      throw new Error(`[protect]: ${decryptedModels.failure.message}`)
+      throw new Error(`[encryption]: ${decryptedModels.failure.message}`)
     }
 
     expect(
@@ -244,7 +246,7 @@ describe('supabase', () => {
     const encryptedModel = await protectClient.encryptModel(model, table)
 
     if (encryptedModel.failure) {
-      throw new Error(`[protect]: ${encryptedModel.failure.message}`)
+      throw new Error(`[encryption]: ${encryptedModel.failure.message}`)
     }
 
     const insertResult = await supabase
@@ -258,7 +260,7 @@ describe('supabase', () => {
       .select('id')
 
     if (insertResult.error) {
-      throw new Error(`[protect]: ${insertResult.error.message}`)
+      throw new Error(`[encryption]: ${insertResult.error.message}`)
     }
 
     const insertedRecordId = insertResult.data[0].id
@@ -276,7 +278,7 @@ describe('supabase', () => {
     ])
 
     if (encryptedResult.failure) {
-      throw new Error(`[protect]: ${encryptedResult.failure.message}`)
+      throw new Error(`[encryption]: ${encryptedResult.failure.message}`)
     }
 
     const [searchTerm] = encryptedResult.data
@@ -290,7 +292,7 @@ describe('supabase', () => {
       .eq('test_run_id', TEST_RUN_ID)
 
     if (error) {
-      throw new Error(`[protect]: ${error.message}`)
+      throw new Error(`[encryption]: ${error.message}`)
     }
 
     // Verify we found our specific row with encrypted age match
@@ -299,7 +301,7 @@ describe('supabase', () => {
     const decryptedModel = await protectClient.decryptModel(data[0])
 
     if (decryptedModel.failure) {
-      throw new Error(`[protect]: ${decryptedModel.failure.message}`)
+      throw new Error(`[encryption]: ${decryptedModel.failure.message}`)
     }
 
     expect(decryptedModel.data.age).toBe(testAge)

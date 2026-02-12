@@ -29,10 +29,10 @@ export interface EncryptionError {
 /** @deprecated Use EncryptionError */
 export type ProtectError = EncryptionError
 
-type AtLeastOneCsTable<T> = [T, ...T[]]
+type AtLeastOneEncryptedTable<T> = [T, ...T[]]
 
 export type EncryptionClientConfig = {
-  schemas: AtLeastOneCsTable<EncryptedTable<EncryptedTableColumn>>
+  schemas: AtLeastOneEncryptedTable<EncryptedTable<EncryptedTableColumn>>
   workspaceCrn?: string
   accessKey?: string
   clientId?: string

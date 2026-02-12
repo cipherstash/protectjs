@@ -20,7 +20,7 @@ describe('searchableJson()', () => {
   })
 })
 
-describe('ProtectTable.build() with searchableJson', () => {
+describe('encryptedTable.build() with searchableJson', () => {
   it('transforms prefix to table/column format', () => {
     const users = encryptedTable('users', {
       metadata: encryptedColumn('metadata').searchableJson(),

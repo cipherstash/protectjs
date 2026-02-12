@@ -45,7 +45,7 @@ describe('bulk encryption and decryption', () => {
       })
 
       if (encryptedData.failure) {
-        throw new Error(`[protect]: ${encryptedData.failure.message}`)
+        throw new Error(`[encryption]: ${encryptedData.failure.message}`)
       }
 
       // Verify structure
@@ -83,7 +83,7 @@ describe('bulk encryption and decryption', () => {
       })
 
       if (encryptedData.failure) {
-        throw new Error(`[protect]: ${encryptedData.failure.message}`)
+        throw new Error(`[encryption]: ${encryptedData.failure.message}`)
       }
 
       // Verify structure
@@ -112,7 +112,7 @@ describe('bulk encryption and decryption', () => {
       })
 
       if (encryptedData.failure) {
-        throw new Error(`[protect]: ${encryptedData.failure.message}`)
+        throw new Error(`[encryption]: ${encryptedData.failure.message}`)
       }
 
       // Verify structure
@@ -141,7 +141,7 @@ describe('bulk encryption and decryption', () => {
       })
 
       if (encryptedData.failure) {
-        throw new Error(`[protect]: ${encryptedData.failure.message}`)
+        throw new Error(`[encryption]: ${encryptedData.failure.message}`)
       }
 
       // Verify structure
@@ -166,7 +166,7 @@ describe('bulk encryption and decryption', () => {
       })
 
       if (encryptedData.failure) {
-        throw new Error(`[protect]: ${encryptedData.failure.message}`)
+        throw new Error(`[encryption]: ${encryptedData.failure.message}`)
       }
 
       expect(encryptedData.data).toHaveLength(0)
@@ -188,14 +188,14 @@ describe('bulk encryption and decryption', () => {
       })
 
       if (encryptedData.failure) {
-        throw new Error(`[protect]: ${encryptedData.failure.message}`)
+        throw new Error(`[encryption]: ${encryptedData.failure.message}`)
       }
 
       // Now decrypt the data
       const decryptedData = await protectClient.bulkDecrypt(encryptedData.data)
 
       if (decryptedData.failure) {
-        throw new Error(`[protect]: ${decryptedData.failure.message}`)
+        throw new Error(`[encryption]: ${decryptedData.failure.message}`)
       }
 
       // Verify structure
@@ -225,14 +225,14 @@ describe('bulk encryption and decryption', () => {
       })
 
       if (encryptedData.failure) {
-        throw new Error(`[protect]: ${encryptedData.failure.message}`)
+        throw new Error(`[encryption]: ${encryptedData.failure.message}`)
       }
 
       // Now decrypt the data
       const decryptedData = await protectClient.bulkDecrypt(encryptedData.data)
 
       if (decryptedData.failure) {
-        throw new Error(`[protect]: ${decryptedData.failure.message}`)
+        throw new Error(`[encryption]: ${decryptedData.failure.message}`)
       }
 
       // Verify structure
@@ -262,14 +262,14 @@ describe('bulk encryption and decryption', () => {
       })
 
       if (encryptedData.failure) {
-        throw new Error(`[protect]: ${encryptedData.failure.message}`)
+        throw new Error(`[encryption]: ${encryptedData.failure.message}`)
       }
 
       // Now decrypt the data
       const decryptedData = await protectClient.bulkDecrypt(encryptedData.data)
 
       if (decryptedData.failure) {
-        throw new Error(`[protect]: ${decryptedData.failure.message}`)
+        throw new Error(`[encryption]: ${decryptedData.failure.message}`)
       }
 
       // Verify structure
@@ -299,14 +299,14 @@ describe('bulk encryption and decryption', () => {
       })
 
       if (encryptedData.failure) {
-        throw new Error(`[protect]: ${encryptedData.failure.message}`)
+        throw new Error(`[encryption]: ${encryptedData.failure.message}`)
       }
 
       // Now decrypt the data
       const decryptedData = await protectClient.bulkDecrypt(encryptedData.data)
 
       if (decryptedData.failure) {
-        throw new Error(`[protect]: ${decryptedData.failure.message}`)
+        throw new Error(`[encryption]: ${decryptedData.failure.message}`)
       }
 
       // Verify structure
@@ -325,7 +325,7 @@ describe('bulk encryption and decryption', () => {
       const decryptedData = await protectClient.bulkDecrypt(encryptedPayloads)
 
       if (decryptedData.failure) {
-        throw new Error(`[protect]: ${decryptedData.failure.message}`)
+        throw new Error(`[encryption]: ${decryptedData.failure.message}`)
       }
 
       expect(decryptedData.data).toHaveLength(0)
@@ -347,7 +347,7 @@ describe('bulk encryption and decryption', () => {
       const lockContext = await lc.identify(userJwt)
 
       if (lockContext.failure) {
-        throw new Error(`[protect]: ${lockContext.failure.message}`)
+        throw new Error(`[encryption]: ${lockContext.failure.message}`)
       }
 
       const plaintexts = [
@@ -365,7 +365,7 @@ describe('bulk encryption and decryption', () => {
         .withLockContext(lockContext.data)
 
       if (encryptedData.failure) {
-        throw new Error(`[protect]: ${encryptedData.failure.message}`)
+        throw new Error(`[encryption]: ${encryptedData.failure.message}`)
       }
 
       // Verify structure
@@ -386,7 +386,7 @@ describe('bulk encryption and decryption', () => {
         .withLockContext(lockContext.data)
 
       if (decryptedData.failure) {
-        throw new Error(`[protect]: ${decryptedData.failure.message}`)
+        throw new Error(`[encryption]: ${decryptedData.failure.message}`)
       }
 
       // Verify decrypted data
@@ -414,7 +414,7 @@ describe('bulk encryption and decryption', () => {
       const lockContext = await lc.identify(userJwt)
 
       if (lockContext.failure) {
-        throw new Error(`[protect]: ${lockContext.failure.message}`)
+        throw new Error(`[encryption]: ${lockContext.failure.message}`)
       }
 
       const plaintexts = [
@@ -432,7 +432,7 @@ describe('bulk encryption and decryption', () => {
         .withLockContext(lockContext.data)
 
       if (encryptedData.failure) {
-        throw new Error(`[protect]: ${encryptedData.failure.message}`)
+        throw new Error(`[encryption]: ${encryptedData.failure.message}`)
       }
 
       // Verify null is preserved
@@ -445,7 +445,7 @@ describe('bulk encryption and decryption', () => {
         .withLockContext(lockContext.data)
 
       if (decryptedData.failure) {
-        throw new Error(`[protect]: ${decryptedData.failure.message}`)
+        throw new Error(`[encryption]: ${decryptedData.failure.message}`)
       }
 
       // Verify null is preserved
@@ -470,11 +470,11 @@ describe('bulk encryption and decryption', () => {
       const lockContext2 = await lc2.identify(user2Jwt)
 
       if (lockContext1.failure) {
-        throw new Error(`[protect]: ${lockContext1.failure.message}`)
+        throw new Error(`[encryption]: ${lockContext1.failure.message}`)
       }
 
       if (lockContext2.failure) {
-        throw new Error(`[protect]: ${lockContext2.failure.message}`)
+        throw new Error(`[encryption]: ${lockContext2.failure.message}`)
       }
 
       // Encrypt first value with USER_JWT lock context
@@ -486,7 +486,7 @@ describe('bulk encryption and decryption', () => {
         .withLockContext(lockContext1.data)
 
       if (encryptedData1.failure) {
-        throw new Error(`[protect]: ${encryptedData1.failure.message}`)
+        throw new Error(`[encryption]: ${encryptedData1.failure.message}`)
       }
 
       // Encrypt second value with USER_2_JWT lock context
@@ -498,7 +498,7 @@ describe('bulk encryption and decryption', () => {
         .withLockContext(lockContext2.data)
 
       if (encryptedData2.failure) {
-        throw new Error(`[protect]: ${encryptedData2.failure.message}`)
+        throw new Error(`[encryption]: ${encryptedData2.failure.message}`)
       }
 
       // Combine both encrypted payloads
@@ -513,7 +513,7 @@ describe('bulk encryption and decryption', () => {
         .withLockContext(lockContext2.data)
 
       if (decryptedData.failure) {
-        throw new Error(`[protect]: ${decryptedData.failure.message}`)
+        throw new Error(`[encryption]: ${decryptedData.failure.message}`)
       }
 
       // Verify both payloads are returned
@@ -547,14 +547,14 @@ describe('bulk encryption and decryption', () => {
       })
 
       if (encryptedData.failure) {
-        throw new Error(`[protect]: ${encryptedData.failure.message}`)
+        throw new Error(`[encryption]: ${encryptedData.failure.message}`)
       }
 
       // Decrypt
       const decryptedData = await protectClient.bulkDecrypt(encryptedData.data)
 
       if (decryptedData.failure) {
-        throw new Error(`[protect]: ${decryptedData.failure.message}`)
+        throw new Error(`[encryption]: ${decryptedData.failure.message}`)
       }
 
       // Verify round-trip integrity
@@ -579,14 +579,14 @@ describe('bulk encryption and decryption', () => {
       })
 
       if (encryptedData.failure) {
-        throw new Error(`[protect]: ${encryptedData.failure.message}`)
+        throw new Error(`[encryption]: ${encryptedData.failure.message}`)
       }
 
       // Decrypt
       const decryptedData = await protectClient.bulkDecrypt(encryptedData.data)
 
       if (decryptedData.failure) {
-        throw new Error(`[protect]: ${decryptedData.failure.message}`)
+        throw new Error(`[encryption]: ${decryptedData.failure.message}`)
       }
 
       // Verify all data is preserved

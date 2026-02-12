@@ -442,9 +442,9 @@ const rootRouteMap = buildRouteMap({
     secrets: secretsRouteMap,
   },
   docs: {
-    brief: 'CipherStash Protect - Encrypted secrets management',
+    brief: 'CipherStash Stash - Encrypted secrets management',
     fullDescription: `
-CipherStash Protect CLI
+CipherStash Stash CLI
 
 Manage encrypted secrets with end-to-end encryption. Secrets are encrypted locally
 before being sent to the CipherStash API, ensuring your plaintext never leaves
