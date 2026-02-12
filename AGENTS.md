@@ -64,7 +64,7 @@ USER_JWT=
 USER_2_JWT=
 
 # Logging (plaintext is never logged by design)
-PROTECT_LOG_LEVEL=debug|info|error
+CS_LOG_LEVEL=debug|info|error
 ```
 
 If these variables are missing, tests that require live encryption will fail or be skipped; prefer filtering to specific packages and tests while developing.

@@ -32,9 +32,9 @@ const main = async () => {
   })
 
   const user = {
-    // `email` will be encrypted because it's included in the `users` protected table schema.
+    // `email` will be encrypted because it's included in the `users` encrypted table schema.
     email: 'abc@example.com',
-    // `somePlaintextAttr` won't be encrypted because it's not in the protected table schema.
+    // `somePlaintextAttr` won't be encrypted because it's not in the encrypted table schema.
     somePlaintextAttr: 'abc',
   }
 

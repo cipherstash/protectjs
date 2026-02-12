@@ -47,8 +47,8 @@ If you're following this getting started guide with an existing app, skip to [th
 If you're following this getting started guide with a clean slate, create a basic structure by running:
 
 ```bash
-mkdir -p protect-example/src/encryption
-cd protect-example
+mkdir -p encryption-example/src/encryption
+cd encryption-example
 git init
 npm init -y
 ```

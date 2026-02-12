@@ -1,6 +1,6 @@
 import { jsonb, pgTable, serial, varchar } from 'drizzle-orm/pg-core'
 
-// Data that is encrypted using protectjs is stored as jsonb in postgres
+// Data that is encrypted using CipherStash is stored as jsonb in postgres
 // ---
 // This example does not include any searchable encrypted fields
 // If you want to search on encrypted fields, you will need to install EQL.

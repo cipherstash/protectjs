@@ -4,7 +4,7 @@ This example demonstrates how to build a modern web application using:
 - [Next.js](https://nextjs.org/) - React framework for production
 - [Drizzle ORM](https://orm.drizzle.team/) - TypeScript ORM for SQL databases
 - [MySQL](https://www.mysql.com/) - Popular open-source relational database
-- [Stash Encryption](https://cipherstash.com/protect) - Data protection and encryption library
+- [Stash Encryption](https://github.com/cipherstash/protectjs) - Data protection and encryption library
 
 ## Features
 
@@ -73,5 +73,5 @@ The application will be available at `http://localhost:3000`.
 
 - [Next.js Documentation](https://nextjs.org/docs)
 - [Drizzle ORM Documentation](https://orm.drizzle.team/docs/overview)
-- [Stash Encryption Documentation](https://cipherstash.com/protect/docs)
+- [Stash Encryption Documentation](https://github.com/cipherstash/protectjs#documentation)
 - [MySQL Documentation](https://dev.mysql.com/doc/)

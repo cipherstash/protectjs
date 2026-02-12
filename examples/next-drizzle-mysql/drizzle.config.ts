@@ -6,10 +6,10 @@ export default defineConfig({
   dbCredentials: {
     host: '127.0.0.1',
     port: 3306,
-    user: 'protect_example',
+    user: 'encryption_example',
     password: 'password',
-    database: 'protect_example',
+    database: 'encryption_example',
   },
 })
 
-// mysql://protect_example:password@127.0.0.1:3306/protect_example
+// mysql://encryption_example:password@127.0.0.1:3306/encryption_example

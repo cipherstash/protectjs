@@ -26,7 +26,7 @@ import { encryptedDynamoDB } from '@cipherstash/protect-dynamodb'
 import { Encryption, encryptedColumn, encryptedTable } from '@cipherstash/stack'
 import { PutCommand, GetCommand } from '@aws-sdk/lib-dynamodb'
 
-// Define your protected table schema
+// Define your encrypted table schema
 const users = encryptedTable('users', {
   email: encryptedColumn('email').equality(),
 })

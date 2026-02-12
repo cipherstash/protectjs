@@ -37,7 +37,7 @@ export class EncryptionModule {
               clientKey: clientKey ?? '',
               clientAccessKey: clientAccessKey ?? '',
               logLevel: configService.get<'debug' | 'info' | 'error'>(
-                'PROTECT_LOG_LEVEL',
+                'CS_LOG_LEVEL',
                 'info',
               ),
               ...config,

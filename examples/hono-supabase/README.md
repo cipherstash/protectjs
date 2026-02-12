@@ -52,8 +52,8 @@ This project demonstrates how to encrypt data using [@cipherstash/stack](https:/
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/cipherstash/jsprotect.git
-cd jsprotect/examples/hono-supabase
+git clone https://github.com/cipherstash/protectjs.git
+cd protectjs/examples/hono-supabase
 ```
 
 ### 2. Install dependencies

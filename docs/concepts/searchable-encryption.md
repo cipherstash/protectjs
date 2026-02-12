@@ -98,7 +98,7 @@ Using the above approach, Stash Encryption is generating the EQL payloads and wh
 So does this solve the original problem of searching on encrypted data?
 
 ```sql
-# SELECT * FROM users WHERE WHERE cs_unique_v2(email) = cs_unique_v2(eql_payload_created_by_protect);
+# SELECT * FROM users WHERE WHERE cs_unique_v2(email) = cs_unique_v2(eql_payload_created_by_encryption);
  id |      name      |           email
 ----+----------------+----------------------------
   1 | Alice Johnson  | mBbKmsMMkbKBSN...

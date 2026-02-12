@@ -17,8 +17,8 @@ npm install @cipherstash/stack
 If you use the DynamoDB helpers, update the peer dependency:
 
 ```bash
-# @cipherstash/protect-dynamodb now expects @cipherstash/stack
-npm install @cipherstash/stack @cipherstash/protect-dynamodb
+# @cipherstash/dynamodb now expects @cipherstash/stack
+npm install @cipherstash/stack @cipherstash/dynamodb
 ```
 
 If you use the Drizzle integration, update the peer dependency:
@@ -118,22 +118,24 @@ npm install @cipherstash/stack @cipherstash/drizzle
 ```diff
 -import { protect } from '@cipherstash/protect'
 +import { Encryption } from '@cipherstash/stack'
- import { extractProtectSchema, createProtectOperators } from '@cipherstash/drizzle/pg'
+-import { extractProtectSchema, createProtectOperators } from '@cipherstash/drizzle/pg'
++import { extractEncryptionSchema, createEncryptionOperators } from '@cipherstash/drizzle/pg'
 
- const users = extractProtectSchema(usersTable)
+-const users = extractProtectSchema(usersTable)
++const users = extractEncryptionSchema(usersTable)
 -const client = await protect({ schemas: [users] })
 +const client = await Encryption({ schemas: [users] })
- const ops = createProtectOperators(client)
+-const ops = createProtectOperators(client)
++const ops = createEncryptionOperators(client)
 ```
-
-> Note: `extractProtectSchema` and `createProtectOperators` retain their names in the Drizzle package.
 
 ### DynamoDB integration
 
 ```diff
 -import { protect, csTable, csColumn } from '@cipherstash/protect'
 +import { Encryption, encryptedTable, encryptedColumn } from '@cipherstash/stack'
- import { protectDynamoDB } from '@cipherstash/protect-dynamodb'
+-import { protectDynamoDB } from '@cipherstash/protect-dynamodb'
++import { encryptedDynamoDB } from '@cipherstash/dynamodb'
 
 -const users = csTable('users', {
 -  email: csColumn('email').equality(),
@@ -143,7 +145,8 @@ npm install @cipherstash/stack @cipherstash/drizzle
 
 -const client = await protect({ schemas: [users] })
 +const client = await Encryption({ schemas: [users] })
- const dynamo = protectDynamoDB({ protectClient: client })
+-const dynamo = protectDynamoDB({ protectClient: client })
++const dynamo = encryptedDynamoDB({ encryptionClient: client })
 ```
 
 ## 4. Deprecated aliases
@@ -183,6 +186,11 @@ ProtectColumn                  →  EncryptedColumn
 ProtectValue                   →  EncryptedValue
 ProtectTableColumn             →  EncryptedTableColumn
 ProtectOperation               →  EncryptionOperation
+extractProtectSchema           →  extractEncryptionSchema
+createProtectOperators         →  createEncryptionOperators
+@cipherstash/protect-dynamodb  →  @cipherstash/dynamodb
+protectDynamoDB                →  encryptedDynamoDB
+protectClient                  →  encryptionClient
 ```
 
 > **Important**: Run the more specific replacements first (e.g., `@cipherstash/protect/identify` before `@cipherstash/protect`) to avoid partial matches.

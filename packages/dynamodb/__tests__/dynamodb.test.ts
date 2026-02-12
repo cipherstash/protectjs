@@ -21,8 +21,8 @@ const schema = encryptedTable('dynamo_cipherstash_test', {
     protected: encryptedValue('example.protected'),
     deep: {
       protected: encryptedValue('example.deep.protected'),
-      protectNestedJson: encryptedValue(
-        'example.deep.protectNestedJson',
+      encryptedNestedJson: encryptedValue(
+        'example.deep.encryptedNestedJson',
       ).dataType('json'),
     },
   },
@@ -76,7 +76,7 @@ describe('dynamodb helpers', () => {
         deep: {
           protected: 'deep protected',
           notProtected: 'deep not protected',
-          protectNestedJson: {
+          encryptedNestedJson: {
             hello: 'world',
           },
         },
