@@ -9,10 +9,10 @@ const users = encryptedTable('users', {
   json: encryptedColumn('json').dataType('json'),
 })
 
-let protectClient: EncryptionClient
+let encryptionClient: EncryptionClient
 
 beforeAll(async () => {
-  protectClient = await Encryption({
+  encryptionClient = await Encryption({
     schemas: [users],
   })
 })
@@ -21,7 +21,7 @@ describe('encryption and decryption', () => {
   it('should encrypt and decrypt a payload', async () => {
     const email = 'hello@example.com'
 
-    const ciphertext = await protectClient.encrypt(email, {
+    const ciphertext = await encryptionClient.encrypt(email, {
       column: users.email,
       table: users,
     })
@@ -35,7 +35,7 @@ describe('encryption and decryption', () => {
 
     const a = ciphertext.data
 
-    const plaintext = await protectClient.decrypt(ciphertext.data)
+    const plaintext = await encryptionClient.decrypt(ciphertext.data)
 
     expect(plaintext).toEqual({
       data: email,

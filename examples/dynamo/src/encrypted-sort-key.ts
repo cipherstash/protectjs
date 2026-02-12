@@ -2,7 +2,7 @@ import { GetCommand, PutCommand } from '@aws-sdk/lib-dynamodb'
 import { protectDynamoDB } from '@cipherstash/protect-dynamodb'
 import { createTable, docClient, dynamoClient } from './common/dynamo'
 import { log } from './common/log'
-import { protectClient, users } from './common/protect'
+import { encryptionClient, users } from './common/protect'
 
 const tableName = 'UsersEncryptedSortKey'
 
@@ -37,7 +37,7 @@ const main = async () => {
   })
 
   const protectDynamo = protectDynamoDB({
-    protectClient,
+    encryptionClient,
   })
 
   const user = {
@@ -59,7 +59,7 @@ const main = async () => {
   await docClient.send(putCommand)
 
   // Use encryptQuery to create the search term for sort key range query
-  const encryptedResult = await protectClient.encryptQuery([
+  const encryptedResult = await encryptionClient.encryptQuery([
     {
       value: 'abc@example.com',
       column: users.email,

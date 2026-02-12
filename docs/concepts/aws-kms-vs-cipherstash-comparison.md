@@ -66,12 +66,12 @@ const users = encryptedTable('users', {
 });
 
 // One-time setup: Initialize client
-const protectClient = await Encryption({
+const encryptionClient = await Encryption({
   schemas: [users],
 });
 
 // Encrypt: One line, no manual encoding, no key management
-const encryptResult = await protectClient.encrypt(
+const encryptResult = await encryptionClient.encrypt(
   'secret@squirrel.example',
   { column: users.email, table: users }
 );
@@ -129,7 +129,7 @@ async function decryptWithKMS(base64Ciphertext: string): Promise<string> {
 
 ```typescript
 // Decrypt: One call, returns typed value
-const decryptResult = await protectClient.decrypt(ciphertext);
+const decryptResult = await encryptionClient.decrypt(ciphertext);
 
 if (decryptResult.failure) {
   throw new Error(decryptResult.failure.message);
@@ -159,13 +159,13 @@ const users = encryptedTable('users', {
 });
 
 // Encrypt as usual
-const encryptResult = await protectClient.encrypt(
+const encryptResult = await encryptionClient.encrypt(
   'secret@squirrel.example',
   { column: users.email, table: users }
 );
 
 // Create search terms and query directly in PostgreSQL
-const searchTerms = await protectClient.createSearchTerms({
+const searchTerms = await encryptionClient.createSearchTerms({
   terms: ['secret'],
   column: users.email,
   table: users,
@@ -206,13 +206,13 @@ const lc = new LockContext();
 const lockContext = await lc.identify(userJwt);
 
 // Encrypt with lock context (chainable API)
-const encryptResult = await protectClient.encrypt(
+const encryptResult = await encryptionClient.encrypt(
   'secret@squirrel.example',
   { column: users.email, table: users }
 ).withLockContext(lockContext);
 
 // Decrypt requires the same lock context (enforced by Stash Encryption)
-const decryptResult = await protectClient.decrypt(ciphertext)
+const decryptResult = await encryptionClient.decrypt(ciphertext)
   .withLockContext(lockContext);
 ```
 
@@ -244,7 +244,7 @@ const bulkPlaintexts = [
   { id: '3', plaintext: 'Charlie' },
 ];
 
-const bulkResult = await protectClient.bulkEncrypt(bulkPlaintexts, {
+const bulkResult = await encryptionClient.bulkEncrypt(bulkPlaintexts, {
   column: users.name,
   table: users,
 });
@@ -276,7 +276,7 @@ try {
 **Stash Encryption:** Type-safe Result pattern:
 
 ```typescript
-const result = await protectClient.encrypt(plaintext, options);
+const result = await encryptionClient.encrypt(plaintext, options);
 
 if (result.failure) {
   // Type-safe error handling with autocomplete
@@ -375,12 +375,12 @@ const users = encryptedTable('users', {
 });
 
 // One-time initialization
-const protectClient = await Encryption({
+const encryptionClient = await Encryption({
   schemas: [users],
 });
 
 // Encrypt
-const encryptResult = await protectClient.encrypt(
+const encryptResult = await encryptionClient.encrypt(
   'secret@squirrel.example',
   { column: users.email, table: users }
 );
@@ -392,7 +392,7 @@ if (encryptResult.failure) {
 const ciphertext = encryptResult.data;
 
 // Decrypt
-const decryptResult = await protectClient.decrypt(ciphertext);
+const decryptResult = await encryptionClient.decrypt(ciphertext);
 
 if (decryptResult.failure) {
   throw new Error(decryptResult.failure.message);

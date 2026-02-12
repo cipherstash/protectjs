@@ -3,13 +3,13 @@
 import type { FormData } from '@/components/form'
 import { db } from '@/db'
 import { users } from '@/db/schema'
-import { protectClient } from '@/protect'
+import { encryptionClient } from '@/protect'
 import { users as protectedUsers } from '@/protect/schema'
 
 export async function createUser(data: FormData) {
   console.log(data)
 
-  const result = await protectClient.encryptModel(data, protectedUsers)
+  const result = await encryptionClient.encryptModel(data, protectedUsers)
 
   if (result.failure) {
     console.error(result.failure.message)

@@ -1,6 +1,6 @@
 import { db } from '@/core/db'
 import { users } from '@/core/db/schema'
-import { getLockContext, protectClient } from '@/core/protect'
+import { encryptionClient, getLockContext } from '@/core/protect'
 import { getCtsToken } from '@cipherstash/nextjs'
 import type { EncryptedData } from '@cipherstash/stack'
 import { auth, currentUser } from '@clerk/nextjs/server'
@@ -25,7 +25,7 @@ async function getUsers(): Promise<EncryptedUser[]> {
     const lockContext = getLockContext(cts_token)
 
     const promises = results.map(async (row) => {
-      const decryptResult = await protectClient
+      const decryptResult = await encryptionClient
         .decrypt(row.email as EncryptedData)
         .withLockContext(lockContext)
 

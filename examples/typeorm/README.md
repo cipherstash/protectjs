@@ -80,7 +80,7 @@ export const protectedUser = encryptedTable('user', {
   phone: encryptedColumn('phone').equality(),
 })
 
-export const protectClient = await Encryption({
+export const encryptionClient = await Encryption({
   schemas: [protectedUser],
 })
 ```
@@ -91,7 +91,7 @@ export const protectClient = await Encryption({
 // src/helpers/protect-entity.ts
 import { ProtectEntityHelper } from './helpers/protect-entity'
 
-const helper = new ProtectEntityHelper(protectClient)
+const helper = new ProtectEntityHelper(encryptionClient)
 
 // 🚀 Bulk create with encryption (recommended for production)
 const users = await helper.bulkEncryptAndSave(
@@ -155,7 +155,7 @@ email: EncryptedData | null
 
 ```typescript
 // Encrypt individual fields
-const emailResult = await protectClient.encrypt('user@example.com', {
+const emailResult = await encryptionClient.encrypt('user@example.com', {
   table: protectedUser,
   column: protectedUser.email,
 })
@@ -203,7 +203,7 @@ const newUser = {
   ssn: '111-22-3333'
 }
 
-const encryptedModelResult = await protectClient.encryptModel(newUser, protectedUser)
+const encryptedModelResult = await encryptionClient.encryptModel(newUser, protectedUser)
 
 if (encryptedModelResult.failure) {
   throw new Error(`Model encryption failed: ${encryptedModelResult.failure.message}`)
@@ -286,7 +286,7 @@ export const encryptedDataTransformer = {
 
 ### 2. Error Handling
 ```typescript
-const result = await protectClient.encrypt(data, { table, column })
+const result = await encryptionClient.encrypt(data, { table, column })
 
 if (result.failure) {
   // Always handle failures gracefully
@@ -298,7 +298,7 @@ if (result.failure) {
 ### 3. Environment Configuration
 ```typescript
 // Use environment variables for all sensitive data
-export const protectClient = await Encryption({
+export const encryptionClient = await Encryption({
   schemas: [protectedUser],
 })
 ```

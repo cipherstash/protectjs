@@ -142,21 +142,21 @@ const config: EncryptionClientConfig = {
   schemas: [users, orders],
 }
 
-export const protectClient = await Encryption(config);
+export const encryptionClient = await Encryption(config);
 ```
 
 ## Step 5: Encrypt data
 
-Stash Encryption provides the `encrypt` function on `protectClient` to encrypt data.
+Stash Encryption provides the `encrypt` function on `encryptionClient` to encrypt data.
 `encrypt` takes a plaintext string, and an object with the table and column as parameters.
 
 Start encrypting data by adding this to `src/index.ts`:
 
 ```typescript
 import { users } from "./protect/schema";
-import { protectClient } from "./protect";
+import { encryptionClient } from "./protect";
 
-const encryptResult = await protectClient.encrypt("secret@squirrel.example", {
+const encryptResult = await encryptionClient.encrypt("secret@squirrel.example", {
   column: users.email,
   table: users,
 });
@@ -209,9 +209,9 @@ Use the `decrypt` function to decrypt data.
 `decrypt` takes an encrypted data object as a parameter.
 
 ```typescript
-import { protectClient } from "./protect";
+import { encryptionClient } from "./protect";
 
-const decryptResult = await protectClient.decrypt(ciphertext);
+const decryptResult = await encryptionClient.decrypt(ciphertext);
 
 if (decryptResult.failure) {
   // Handle the failure

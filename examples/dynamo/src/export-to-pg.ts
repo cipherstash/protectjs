@@ -4,7 +4,7 @@ import pg from 'pg'
 // Insert data in dynamo, scan it back out, insert/copy into PG, query from PG.
 import { createTable, docClient, dynamoClient } from './common/dynamo'
 import { log } from './common/log'
-import { protectClient, users } from './common/protect'
+import { encryptionClient, users } from './common/protect'
 const PgClient = pg.Client
 
 const tableName = 'UsersExportToPG'
@@ -32,7 +32,7 @@ const main = async () => {
   })
 
   const protectDynamo = protectDynamoDB({
-    protectClient,
+    encryptionClient,
   })
 
   const user = {
@@ -128,7 +128,7 @@ const main = async () => {
 
   log('inserted rows', insertResult.rows)
 
-  const decryptRowsResult = await protectClient.bulkDecryptModels<User>(
+  const decryptRowsResult = await encryptionClient.bulkDecryptModels<User>(
     insertResult.rows,
   )
 

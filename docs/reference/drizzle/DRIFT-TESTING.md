@@ -64,7 +64,7 @@ const context: ExecutionContext = {
   db,                    // Drizzle database instance
   transactions,          // Table schema
   protect,               // Protect operators (eq, gte, like, etc.)
-  protectClient,         // Raw protect client for manual encryption
+  encryptionClient,         // Raw protect client for manual encryption
   protectTransactions,   // Protect schema for encryption
   eq, gte, lte, ilike,   // Drizzle operators
   and, or, desc, asc,    // Drizzle combinators
@@ -308,8 +308,8 @@ When writing `ts:run` blocks, these variables are available:
 ### Protect Client (Manual Encryption)
 | Variable | Description |
 |----------|-------------|
-| `protectClient.encrypt(value, opts)` | Encrypt a single value |
-| `protectClient.bulkDecryptModels(results)` | Decrypt query results |
+| `encryptionClient.encrypt(value, opts)` | Encrypt a single value |
+| `encryptionClient.bulkDecryptModels(results)` | Decrypt query results |
 
 ### Drizzle Operators
 | Variable | Description |
@@ -385,7 +385,7 @@ Verify you're using the correct column names from the `transactions` schema:
 For manual encryption pattern (`drizzle-protect.md`), ensure you call `bulkDecryptModels()`:
 ```typescript
 const results = await db.select().from(transactions)
-const decrypted = await protectClient.bulkDecryptModels(results)
+const decrypted = await encryptionClient.bulkDecryptModels(results)
 return decrypted.data  // Not results!
 ```
 

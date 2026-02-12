@@ -1,7 +1,7 @@
 import { ClientForm } from '@/components/form'
 import { db } from '@/db'
 import { users } from '@/db/schema'
-import { protectClient } from '@/protect'
+import { encryptionClient } from '@/protect'
 import { users as protectedUsers } from '@/protect/schema'
 
 type User = {
@@ -13,7 +13,7 @@ type User = {
 export default async function Home() {
   const u = await db.select().from(users).limit(10)
 
-  const decryptedUsers = await protectClient.bulkDecryptModels(u)
+  const decryptedUsers = await encryptionClient.bulkDecryptModels(u)
 
   if (decryptedUsers.failure) {
     throw new Error(decryptedUsers.failure.message)

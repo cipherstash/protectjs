@@ -38,27 +38,27 @@ export const protectedExample = encryptedTable('example_table', {
 import { Encryption } from '@cipherstash/stack'
 import { * as protectSchemas } from './schemas'
 
-export const protectClient = Encryption({
+export const encryptionClient = Encryption({
   schemas: [...protectSchemas]
 })
 ```
 
 `protect/example.(ts/js)`
 ```js
-import { protectClient } from './index'
+import { encryptionClient } from './index'
 import { * as protectSchemas } from './schemas'
 
 const sensitiveData = "Let's encrypt some data."
 
 /** 
- * There is no need to wrap any protectClient method in a try/catch as it will always return a Result pattern.
+ * There is no need to wrap any encryptionClient method in a try/catch as it will always return a Result pattern.
  * ---
  * The Result will either contain a `failure` OR a `data` key. You should ALWAYS check for the `failure` key first.
  * If the `failure` key is present, you should handle the error accordingly.
  * If the `data` key is present, the operation was successful.
  */
 //
-const encryptResult = protectClient.encrypt(sensitiveData, {
+const encryptResult = encryptionClient.encrypt(sensitiveData, {
   table: protectSchemas.protectedExample
   column: protectSchemas.protectedExample.sensitiveData
 })
@@ -85,7 +85,7 @@ const encryptedData = encryptResult.data
  **/
 console.log('encryptedData:', encryptedData)
 
-const decryptResult = protectClient.decrypt(encryptedData)
+const decryptResult = encryptionClient.decrypt(encryptedData)
 
 if (decryptResult.failure) {
   // Again, you as the developer can determine exactly how you want to handle the failure scenario.

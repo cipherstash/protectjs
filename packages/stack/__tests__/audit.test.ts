@@ -19,10 +19,10 @@ type User = {
   number?: number
 }
 
-let protectClient: EncryptionClient
+let encryptionClient: EncryptionClient
 
 beforeAll(async () => {
-  protectClient = await Encryption({
+  encryptionClient = await Encryption({
     schemas: [users],
   })
 })
@@ -31,7 +31,7 @@ describe('encryption and decryption with audit', () => {
   it('should encrypt and decrypt a payload with audit metadata', async () => {
     const email = 'very_secret_data'
 
-    const ciphertext = await protectClient
+    const ciphertext = await encryptionClient
       .encrypt(email, {
         column: users.auditable,
         table: users,
@@ -50,7 +50,7 @@ describe('encryption and decryption with audit', () => {
     // Verify encrypted field
     expect(ciphertext.data).toHaveProperty('c')
 
-    const plaintext = await protectClient.decrypt(ciphertext.data).audit({
+    const plaintext = await encryptionClient.decrypt(ciphertext.data).audit({
       metadata: {
         sub: 'cj@cjb.io',
         type: 'decrypt',
@@ -75,7 +75,7 @@ describe('encryption and decryption with audit', () => {
     }
 
     // Encrypt the model with audit
-    const encryptedModel = await protectClient
+    const encryptedModel = await encryptionClient
       .encryptModel<User>(decryptedModel, users)
       .audit({
         metadata: {
@@ -100,7 +100,7 @@ describe('encryption and decryption with audit', () => {
     expect(encryptedModel.data.number).toBe(1)
 
     // Decrypt the model with audit
-    const decryptedResult = await protectClient
+    const decryptedResult = await encryptionClient
       .decryptModel<User>(encryptedModel.data)
       .audit({
         metadata: {
@@ -129,7 +129,7 @@ describe('encryption and decryption with audit', () => {
     }
 
     // Encrypt the model with audit
-    const encryptedModel = await protectClient
+    const encryptedModel = await encryptionClient
       .encryptModel<User>(decryptedModel, users)
       .audit({
         metadata: {
@@ -154,7 +154,7 @@ describe('encryption and decryption with audit', () => {
     expect(encryptedModel.data.number).toBe(1)
 
     // Decrypt the model with audit
-    const decryptedResult = await protectClient
+    const decryptedResult = await encryptionClient
       .decryptModel<User>(encryptedModel.data)
       .audit({
         metadata: {
@@ -196,7 +196,7 @@ describe('bulk encryption with audit', () => {
     ]
 
     // Encrypt the models with audit
-    const encryptedModels = await protectClient
+    const encryptedModels = await encryptionClient
       .bulkEncryptModels<User>(decryptedModels, users)
       .audit({
         metadata: {
@@ -228,7 +228,7 @@ describe('bulk encryption with audit', () => {
     expect(encryptedModels.data[1].number).toBe(2)
 
     // Decrypt the models with audit
-    const decryptedResult = await protectClient
+    const decryptedResult = await encryptionClient
       .bulkDecryptModels<User>(encryptedModels.data)
       .audit({
         metadata: {
@@ -276,7 +276,7 @@ describe('bulk encryption with audit', () => {
     ]
 
     // Encrypt the models with audit
-    const encryptedModels = await protectClient
+    const encryptedModels = await encryptionClient
       .bulkEncryptModels<User>(decryptedModels, users)
       .audit({
         metadata: {
@@ -301,7 +301,7 @@ describe('bulk encryption with audit', () => {
     expect(encryptedModels.data[2].auditable).toHaveProperty('c')
 
     // Decrypt the models with audit
-    const decryptedResult = await protectClient
+    const decryptedResult = await encryptionClient
       .bulkDecryptModels<User>(decryptedModels)
       .audit({
         metadata: {
@@ -319,7 +319,7 @@ describe('bulk encryption with audit', () => {
 
   it('should return empty array if models is empty with audit', async () => {
     // Encrypt empty array of models with audit
-    const encryptedModels = await protectClient
+    const encryptedModels = await encryptionClient
       .bulkEncryptModels<User>([], users)
       .audit({
         metadata: {
@@ -335,7 +335,7 @@ describe('bulk encryption with audit', () => {
     expect(encryptedModels.data).toEqual([])
 
     // Decrypt empty array of models with audit
-    const decryptedResult = await protectClient
+    const decryptedResult = await encryptionClient
       .bulkDecryptModels<User>([])
       .audit({
         metadata: {
@@ -376,7 +376,7 @@ describe('audit with lock context', () => {
     }
 
     // Encrypt the model with both audit and lock context
-    const encryptedModel = await protectClient
+    const encryptedModel = await encryptionClient
       .encryptModel(decryptedModel, users)
       .withLockContext(lockContext.data)
       .audit({
@@ -391,7 +391,7 @@ describe('audit with lock context', () => {
     }
 
     // Decrypt the model with both audit and lock context
-    const decryptedResult = await protectClient
+    const decryptedResult = await encryptionClient
       .decryptModel(encryptedModel.data)
       .withLockContext(lockContext.data)
       .audit({
@@ -438,7 +438,7 @@ describe('audit with lock context', () => {
     ]
 
     // Encrypt the models with both audit and lock context
-    const encryptedModels = await protectClient
+    const encryptedModels = await encryptionClient
       .bulkEncryptModels(decryptedModels, users)
       .withLockContext(lockContext.data)
       .audit({
@@ -453,7 +453,7 @@ describe('audit with lock context', () => {
     }
 
     // Decrypt the models with both audit and lock context
-    const decryptedResult = await protectClient
+    const decryptedResult = await encryptionClient
       .bulkDecryptModels(encryptedModels.data)
       .withLockContext(lockContext.data)
       .audit({

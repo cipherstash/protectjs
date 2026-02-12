@@ -12,7 +12,7 @@ const users = encryptedTable('users', {
 
 describe('createSearchTerms (deprecated - backward compatibility)', () => {
   it('should create search terms with default return type', async () => {
-    const protectClient = await Encryption({ schemas: [users] })
+    const encryptionClient = await Encryption({ schemas: [users] })
 
     const searchTerms = [
       {
@@ -27,7 +27,8 @@ describe('createSearchTerms (deprecated - backward compatibility)', () => {
       },
     ] as SearchTerm[]
 
-    const searchTermsResult = await protectClient.createSearchTerms(searchTerms)
+    const searchTermsResult =
+      await encryptionClient.createSearchTerms(searchTerms)
 
     if (searchTermsResult.failure) {
       throw new Error(`[encryption]: ${searchTermsResult.failure.message}`)
@@ -43,7 +44,7 @@ describe('createSearchTerms (deprecated - backward compatibility)', () => {
   }, 30000)
 
   it('should create search terms with composite-literal return type', async () => {
-    const protectClient = await Encryption({ schemas: [users] })
+    const encryptionClient = await Encryption({ schemas: [users] })
 
     const searchTerms = [
       {
@@ -54,7 +55,8 @@ describe('createSearchTerms (deprecated - backward compatibility)', () => {
       },
     ] as SearchTerm[]
 
-    const searchTermsResult = await protectClient.createSearchTerms(searchTerms)
+    const searchTermsResult =
+      await encryptionClient.createSearchTerms(searchTerms)
 
     if (searchTermsResult.failure) {
       throw new Error(`[encryption]: ${searchTermsResult.failure.message}`)
@@ -66,7 +68,7 @@ describe('createSearchTerms (deprecated - backward compatibility)', () => {
   }, 30000)
 
   it('should create search terms with escaped-composite-literal return type', async () => {
-    const protectClient = await Encryption({ schemas: [users] })
+    const encryptionClient = await Encryption({ schemas: [users] })
 
     const searchTerms = [
       {
@@ -77,7 +79,8 @@ describe('createSearchTerms (deprecated - backward compatibility)', () => {
       },
     ] as SearchTerm[]
 
-    const searchTermsResult = await protectClient.createSearchTerms(searchTerms)
+    const searchTermsResult =
+      await encryptionClient.createSearchTerms(searchTerms)
 
     if (searchTermsResult.failure) {
       throw new Error(`[encryption]: ${searchTermsResult.failure.message}`)
@@ -91,7 +94,7 @@ describe('createSearchTerms (deprecated - backward compatibility)', () => {
   }, 30000)
 
   it('should create search terms with composite-literal return type for numbers', async () => {
-    const protectClient = await Encryption({ schemas: [users] })
+    const encryptionClient = await Encryption({ schemas: [users] })
 
     const searchTerms = [
       {
@@ -102,7 +105,8 @@ describe('createSearchTerms (deprecated - backward compatibility)', () => {
       },
     ]
 
-    const searchTermsResult = await protectClient.createSearchTerms(searchTerms)
+    const searchTermsResult =
+      await encryptionClient.createSearchTerms(searchTerms)
 
     if (searchTermsResult.failure) {
       throw new Error(`[encryption]: ${searchTermsResult.failure.message}`)
@@ -114,7 +118,7 @@ describe('createSearchTerms (deprecated - backward compatibility)', () => {
   }, 30000)
 
   it('should create search terms with escaped-composite-literal return type for numbers', async () => {
-    const protectClient = await Encryption({ schemas: [users] })
+    const encryptionClient = await Encryption({ schemas: [users] })
 
     const searchTerms = [
       {
@@ -125,7 +129,8 @@ describe('createSearchTerms (deprecated - backward compatibility)', () => {
       },
     ]
 
-    const searchTermsResult = await protectClient.createSearchTerms(searchTerms)
+    const searchTermsResult =
+      await encryptionClient.createSearchTerms(searchTerms)
 
     if (searchTermsResult.failure) {
       throw new Error(`[encryption]: ${searchTermsResult.failure.message}`)

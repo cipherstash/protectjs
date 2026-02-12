@@ -7,7 +7,7 @@ import type {
   EncryptionClient,
 } from '@cipherstash/stack'
 import { handleError, toItemWithEqlPayloads } from '../helpers'
-import type { ProtectDynamoDBError } from '../types'
+import type { EncryptedDynamoDBError } from '../types'
 import {
   DynamoDBOperation,
   type DynamoDBOperationOptions,
@@ -16,24 +16,24 @@ import {
 export class BulkDecryptModelsOperation<
   T extends Record<string, unknown>,
 > extends DynamoDBOperation<Decrypted<T>[]> {
-  private protectClient: EncryptionClient
+  private encryptionClient: EncryptionClient
   private items: Record<string, Encrypted | unknown>[]
   private protectTable: EncryptedTable<EncryptedTableColumn>
 
   constructor(
-    protectClient: EncryptionClient,
+    encryptionClient: EncryptionClient,
     items: Record<string, Encrypted | unknown>[],
     protectTable: EncryptedTable<EncryptedTableColumn>,
     options?: DynamoDBOperationOptions,
   ) {
     super(options)
-    this.protectClient = protectClient
+    this.encryptionClient = encryptionClient
     this.items = items
     this.protectTable = protectTable
   }
 
   public async execute(): Promise<
-    Result<Decrypted<T>[], ProtectDynamoDBError>
+    Result<Decrypted<T>[], EncryptedDynamoDBError>
   > {
     return await withResult(
       async () => {
@@ -41,7 +41,7 @@ export class BulkDecryptModelsOperation<
           toItemWithEqlPayloads(item, this.protectTable),
         )
 
-        const decryptResult = await this.protectClient
+        const decryptResult = await this.encryptionClient
           .bulkDecryptModels<T>(itemsWithEqlPayloads as T[])
           .audit(this.getAuditData())
 

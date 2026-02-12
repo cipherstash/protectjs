@@ -10,9 +10,9 @@ import { transactions } from '../db/schema'
 export const transactionsSchema = extractProtectSchema(transactions)
 
 // Initialize Stash Encryption client
-export const protectClient = await Encryption({
+export const encryptionClient = await Encryption({
   schemas: [transactionsSchema],
 })
 
 // Create Protect operators for encrypted field queries
-export const protectOps = createProtectOperators(protectClient)
+export const protectOps = createProtectOperators(encryptionClient)

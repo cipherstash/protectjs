@@ -32,13 +32,13 @@ const users = encryptedTable('users', {
 })
 
 // Initialize the Encryption client
-const protectClient = await Encryption({
+const encryptionClient = await Encryption({
   schemas: [users],
 })
 
 // Create the DynamoDB helper instance
 const protectDynamo = protectDynamoDB({
-  protectClient,
+  encryptionClient,
 })
 
 // Encrypt and store a user

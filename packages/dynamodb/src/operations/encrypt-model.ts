@@ -5,7 +5,7 @@ import type {
   EncryptionClient,
 } from '@cipherstash/stack'
 import { deepClone, handleError, toEncryptedDynamoItem } from '../helpers'
-import type { ProtectDynamoDBError } from '../types'
+import type { EncryptedDynamoDBError } from '../types'
 import {
   DynamoDBOperation,
   type DynamoDBOperationOptions,
@@ -14,26 +14,26 @@ import {
 export class EncryptModelOperation<
   T extends Record<string, unknown>,
 > extends DynamoDBOperation<T> {
-  private protectClient: EncryptionClient
+  private encryptionClient: EncryptionClient
   private item: T
   private protectTable: EncryptedTable<EncryptedTableColumn>
 
   constructor(
-    protectClient: EncryptionClient,
+    encryptionClient: EncryptionClient,
     item: T,
     protectTable: EncryptedTable<EncryptedTableColumn>,
     options?: DynamoDBOperationOptions,
   ) {
     super(options)
-    this.protectClient = protectClient
+    this.encryptionClient = encryptionClient
     this.item = item
     this.protectTable = protectTable
   }
 
-  public async execute(): Promise<Result<T, ProtectDynamoDBError>> {
+  public async execute(): Promise<Result<T, EncryptedDynamoDBError>> {
     return await withResult(
       async () => {
-        const encryptResult = await this.protectClient
+        const encryptResult = await this.encryptionClient
           .encryptModel(deepClone(this.item), this.protectTable)
           .audit(this.getAuditData())
 

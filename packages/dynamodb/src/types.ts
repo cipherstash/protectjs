@@ -12,22 +12,22 @@ import type { DecryptModelOperation } from './operations/decrypt-model'
 import type { EncryptModelOperation } from './operations/encrypt-model'
 import type { SearchTermsOperation } from './operations/search-terms'
 
-export interface ProtectDynamoDBConfig {
-  protectClient: EncryptionClient
+export interface EncryptedDynamoDBConfig {
+  encryptionClient: EncryptionClient
   options?: {
     logger?: {
       error: (message: string, error: Error) => void
     }
-    errorHandler?: (error: ProtectDynamoDBError) => void
+    errorHandler?: (error: EncryptedDynamoDBError) => void
   }
 }
 
-export interface ProtectDynamoDBError extends Error {
-  code: ProtectErrorCode | 'PROTECT_DYNAMODB_ERROR'
+export interface EncryptedDynamoDBError extends Error {
+  code: ProtectErrorCode | 'DYNAMODB_ENCRYPTION_ERROR'
   details?: Record<string, unknown>
 }
 
-export interface ProtectDynamoDBInstance {
+export interface EncryptedDynamoDBInstance {
   encryptModel<T extends Record<string, unknown>>(
     item: T,
     protectTable: EncryptedTable<EncryptedTableColumn>,
@@ -49,7 +49,7 @@ export interface ProtectDynamoDBInstance {
   ): BulkDecryptModelsOperation<T>
 
   /**
-   * @deprecated Use `protectClient.encryptQuery(terms)` instead and extract the `hm` field for DynamoDB key lookups.
+   * @deprecated Use `encryptionClient.encryptQuery(terms)` instead and extract the `hm` field for DynamoDB key lookups.
    *
    * @example
    * ```typescript
@@ -58,9 +58,18 @@ export interface ProtectDynamoDBInstance {
    * const hmac = result.data[0]
    *
    * // After (new API)
-   * const [encrypted] = await protectClient.encryptQuery([{ value, column, table, queryType: 'equality' }])
+   * const [encrypted] = await encryptionClient.encryptQuery([{ value, column, table, queryType: 'equality' }])
    * const hmac = encrypted.hm
    * ```
    */
   createSearchTerms(terms: SearchTerm[]): SearchTermsOperation
 }
+
+/** @deprecated Use `EncryptedDynamoDBConfig` instead. */
+export type ProtectDynamoDBConfig = EncryptedDynamoDBConfig
+/** @deprecated Use `EncryptedDynamoDBError` instead. */
+export type ProtectDynamoDBError = EncryptedDynamoDBError
+/** @deprecated Use `EncryptedDynamoDBInstance` instead. */
+export type ProtectDynamoDBInstance = EncryptedDynamoDBInstance
+/** @deprecated Use `'DYNAMODB_ENCRYPTION_ERROR'` instead. */
+export const PROTECT_DYNAMODB_ERROR = 'DYNAMODB_ENCRYPTION_ERROR' as const

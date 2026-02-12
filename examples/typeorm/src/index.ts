@@ -2,8 +2,8 @@ import 'reflect-metadata'
 import 'dotenv/config'
 import { AppDataSource } from './data-source'
 import { User } from './entity/User'
-import { ProtectEntityHelper } from './helpers/protect-entity'
-import { initializeProtectClient, protectedUser } from './protect'
+import { EncryptionEntityHelper } from './helpers/protect-entity'
+import { initializeEncryptionClient, protectedUser } from './protect'
 
 async function main() {
   try {
@@ -12,11 +12,11 @@ async function main() {
     console.log('✅ Database connection established')
 
     // Initialize the Encryption client
-    const protectClient = await initializeProtectClient()
+    const encryptionClient = await initializeEncryptionClient()
     console.log('✅ Encryption client initialized')
 
     // Initialize the helper for streamlined operations
-    const helper = new ProtectEntityHelper(protectClient)
+    const helper = new EncryptionEntityHelper(encryptionClient)
 
     console.log('\n🔐 Stash Encryption TypeORM Integration Demo')
     console.log('=====================================')
@@ -31,15 +31,15 @@ async function main() {
 
     // Encrypt individual fields
     const [emailResult, ssnResult, phoneResult] = await Promise.all([
-      protectClient.encrypt(emailToInsert, {
+      encryptionClient.encrypt(emailToInsert, {
         table: protectedUser,
         column: protectedUser.email,
       }),
-      protectClient.encrypt(ssnToInsert, {
+      encryptionClient.encrypt(ssnToInsert, {
         table: protectedUser,
         column: protectedUser.ssn,
       }),
-      protectClient.encrypt(phoneToInsert, {
+      encryptionClient.encrypt(phoneToInsert, {
         table: protectedUser,
         column: protectedUser.phone,
       }),
@@ -195,7 +195,7 @@ async function main() {
     }
 
     // Encrypt the entire model
-    const encryptedModelResult = await protectClient.encryptModel(
+    const encryptedModelResult = await encryptionClient.encryptModel(
       newUser,
       protectedUser,
     )

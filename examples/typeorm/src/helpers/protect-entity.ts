@@ -8,8 +8,8 @@ import { AppDataSource } from '../data-source'
 /**
  * Helper functions for working with encrypted entities in TypeORM
  */
-export class ProtectEntityHelper {
-  constructor(private protectClient: EncryptionClient) {}
+export class EncryptionEntityHelper {
+  constructor(private encryptionClient: EncryptionClient) {}
 
   /**
    * Bulk encrypt and save entities to the database
@@ -60,10 +60,13 @@ export class ProtectEntityHelper {
         plaintext: entity[fieldName] || null,
       }))
 
-      const encryptedResult = await this.protectClient.bulkEncrypt(plaintexts, {
-        table,
-        column,
-      })
+      const encryptedResult = await this.encryptionClient.bulkEncrypt(
+        plaintexts,
+        {
+          table,
+          column,
+        },
+      )
 
       if (encryptedResult.failure) {
         throw new Error(
@@ -148,7 +151,8 @@ export class ProtectEntityHelper {
     }
 
     // Bulk decrypt
-    const decryptedResult = await this.protectClient.bulkDecrypt(encryptedData)
+    const decryptedResult =
+      await this.encryptionClient.bulkDecrypt(encryptedData)
 
     if (decryptedResult.failure) {
       throw new Error(
@@ -203,7 +207,7 @@ export class ProtectEntityHelper {
     fieldConfig: { table: any; column: any },
   ): Promise<T | null> {
     // Use encryptQuery instead of deprecated createSearchTerms
-    const encryptedResult = await this.protectClient.encryptQuery([
+    const encryptedResult = await this.encryptionClient.encryptQuery([
       {
         value: searchValue,
         column: fieldConfig.column,

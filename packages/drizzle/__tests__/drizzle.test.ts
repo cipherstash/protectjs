@@ -1,5 +1,5 @@
 import 'dotenv/config'
-import { Encryption } from '@cipherstash/stack'
+import { Encryption, type EncryptionClient } from '@cipherstash/stack'
 import { and, eq, inArray, sql } from 'drizzle-orm'
 import { integer, pgTable, text, timestamp } from 'drizzle-orm/pg-core'
 import { drizzle } from 'drizzle-orm/postgres-js'
@@ -56,7 +56,7 @@ const drizzleUsersTable = pgTable('protect-ci', {
   testRunId: text('test_run_id'),
 })
 
-// Extract Stash Encryption schema from Drizzle table
+// Extract Encryption schema from Drizzle table
 const users = extractProtectSchema(drizzleUsersTable)
 
 // Hard code this as the CI database doesn't support order by on encrypted columns
@@ -78,15 +78,15 @@ interface DecryptedUser {
   }
 }
 
-let protectClient: Awaited<ReturnType<typeof Encryption>>
-let protectOps: ReturnType<typeof createProtectOperators>
+let encryptionClient: EncryptionClient
+let encryptionOps: ReturnType<typeof createProtectOperators>
 let db: ReturnType<typeof drizzle>
 const testData: TestUser[] = []
 
 beforeAll(async () => {
-  // Initialize Stash Encryption client using schema extracted from Drizzle table
-  protectClient = await Encryption({ schemas: [users] })
-  protectOps = createProtectOperators(protectClient)
+  // Initialize Encryption client using schema extracted from Drizzle table
+  encryptionClient = await Encryption({ schemas: [users] })
+  encryptionOps = createProtectOperators(encryptionClient)
 
   const client = postgres(process.env.DATABASE_URL as string)
   db = drizzle({ client })
@@ -146,7 +146,10 @@ beforeAll(async () => {
   ]
 
   // Encrypt and insert test data using Drizzle
-  const encryptedUser = await protectClient.bulkEncryptModels(testUsers, users)
+  const encryptedUser = await encryptionClient.bulkEncryptModels(
+    testUsers,
+    users,
+  )
 
   if (encryptedUser.failure) {
     throw new Error(`Encryption failed: ${encryptedUser.failure.message}`)
@@ -180,7 +183,7 @@ afterAll(async () => {
     .where(eq(drizzleUsersTable.testRunId, TEST_RUN_ID))
 }, 30000)
 
-describe('Drizzle ORM Integration with Stash Encryption', () => {
+describe('Drizzle ORM Integration with Encryption', () => {
   it('should perform equality search using Protect operators', async () => {
     const searchEmail = 'jane.smith@example.com'
 
@@ -197,14 +200,14 @@ describe('Drizzle ORM Integration with Stash Encryption', () => {
       .where(
         and(
           eq(drizzleUsersTable.testRunId, TEST_RUN_ID),
-          await protectOps.eq(drizzleUsersTable.email, searchEmail),
+          await encryptionOps.eq(drizzleUsersTable.email, searchEmail),
         ),
       )
 
     expect(results).toHaveLength(1)
 
     // Decrypt and verify
-    const decrypted = await protectClient.decryptModel(results[0])
+    const decrypted = await encryptionClient.decryptModel(results[0])
     if (decrypted.failure) {
       throw new Error(`Decryption failed: ${decrypted.failure.message}`)
     }
@@ -229,7 +232,7 @@ describe('Drizzle ORM Integration with Stash Encryption', () => {
       .where(
         and(
           eq(drizzleUsersTable.testRunId, TEST_RUN_ID),
-          await protectOps.ilike(drizzleUsersTable.email, searchText),
+          await encryptionOps.ilike(drizzleUsersTable.email, searchText),
         ),
       )
 
@@ -237,7 +240,7 @@ describe('Drizzle ORM Integration with Stash Encryption', () => {
     expect(results.length).toBeGreaterThan(0)
 
     // Decrypt and verify
-    const decryptedResults = await protectClient.bulkDecryptModels(results)
+    const decryptedResults = await encryptionClient.bulkDecryptModels(results)
     if (decryptedResults.failure) {
       throw new Error(
         `Bulk decryption failed: ${decryptedResults.failure.message}`,
@@ -273,7 +276,7 @@ describe('Drizzle ORM Integration with Stash Encryption', () => {
       .where(
         and(
           eq(drizzleUsersTable.testRunId, TEST_RUN_ID),
-          await protectOps.gte(drizzleUsersTable.age, minAge),
+          await encryptionOps.gte(drizzleUsersTable.age, minAge),
         ),
       )
 
@@ -281,7 +284,7 @@ describe('Drizzle ORM Integration with Stash Encryption', () => {
     expect(results.length).toBeGreaterThan(0)
 
     // Decrypt and verify
-    const decryptedResults = await protectClient.bulkDecryptModels(results)
+    const decryptedResults = await encryptionClient.bulkDecryptModels(results)
     if (decryptedResults.failure) {
       throw new Error(
         `Bulk decryption failed: ${decryptedResults.failure.message}`,
@@ -316,14 +319,14 @@ describe('Drizzle ORM Integration with Stash Encryption', () => {
       })
       .from(drizzleUsersTable)
       .where(eq(drizzleUsersTable.testRunId, TEST_RUN_ID))
-      .orderBy(protectOps.asc(drizzleUsersTable.age))
+      .orderBy(encryptionOps.asc(drizzleUsersTable.age))
 
     const results = await a
 
     expect(results.length).toBeGreaterThan(0)
 
     // Decrypt and verify sorting
-    const decryptedResults = await protectClient.bulkDecryptModels(results)
+    const decryptedResults = await encryptionClient.bulkDecryptModels(results)
     if (decryptedResults.failure) {
       throw new Error(
         `Bulk decryption failed: ${decryptedResults.failure.message}`,
@@ -360,16 +363,16 @@ describe('Drizzle ORM Integration with Stash Encryption', () => {
       })
       .from(drizzleUsersTable)
       .where(
-        await protectOps.and(
+        await encryptionOps.and(
           eq(drizzleUsersTable.testRunId, TEST_RUN_ID),
-          protectOps.gte(drizzleUsersTable.age, minAge),
-          protectOps.lte(drizzleUsersTable.age, maxAge),
-          protectOps.ilike(drizzleUsersTable.email, searchText),
+          encryptionOps.gte(drizzleUsersTable.age, minAge),
+          encryptionOps.lte(drizzleUsersTable.age, maxAge),
+          encryptionOps.ilike(drizzleUsersTable.email, searchText),
         ),
       )
 
     // Decrypt and verify
-    const decryptedResults = await protectClient.bulkDecryptModels(results)
+    const decryptedResults = await encryptionClient.bulkDecryptModels(results)
     if (decryptedResults.failure) {
       throw new Error(
         `Bulk decryption failed: ${decryptedResults.failure.message}`,
@@ -412,11 +415,11 @@ describe('Drizzle ORM Integration with Stash Encryption', () => {
       })
       .from(drizzleUsersTable)
       .where(
-        await protectOps.and(
+        await encryptionOps.and(
           eq(drizzleUsersTable.testRunId, TEST_RUN_ID),
-          protectOps.or(
-            protectOps.eq(drizzleUsersTable.email, targetEmails[0]),
-            protectOps.eq(drizzleUsersTable.email, targetEmails[1]),
+          encryptionOps.or(
+            encryptionOps.eq(drizzleUsersTable.email, targetEmails[0]),
+            encryptionOps.eq(drizzleUsersTable.email, targetEmails[1]),
             eq(drizzleUsersTable.id, fallbackId),
           ),
         ),
@@ -424,7 +427,7 @@ describe('Drizzle ORM Integration with Stash Encryption', () => {
 
     expect(results.length).toBe(targetEmails.length + 1) // +1 for fallbackId row
 
-    const decryptedResults = await protectClient.bulkDecryptModels(results)
+    const decryptedResults = await encryptionClient.bulkDecryptModels(results)
     if (decryptedResults.failure) {
       throw new Error(
         `Bulk decryption failed: ${decryptedResults.failure.message}`,
@@ -459,7 +462,7 @@ describe('Drizzle ORM Integration with Stash Encryption', () => {
     }
 
     // Decrypt and verify nested fields
-    const decrypted = await protectClient.decryptModel(results[0])
+    const decrypted = await encryptionClient.decryptModel(results[0])
     if (decrypted.failure) {
       throw new Error(`Decryption failed: ${decrypted.failure.message}`)
     }
@@ -490,7 +493,7 @@ describe('Drizzle ORM Integration with Stash Encryption', () => {
       .where(
         and(
           eq(drizzleUsersTable.testRunId, TEST_RUN_ID),
-          await protectOps.inArray(drizzleUsersTable.email, searchEmails),
+          await encryptionOps.inArray(drizzleUsersTable.email, searchEmails),
         ),
       )
 
@@ -498,7 +501,7 @@ describe('Drizzle ORM Integration with Stash Encryption', () => {
     expect(results.length).toBe(2)
 
     // Decrypt and verify
-    const decryptedResults = await protectClient.bulkDecryptModels(results)
+    const decryptedResults = await encryptionClient.bulkDecryptModels(results)
     if (decryptedResults.failure) {
       throw new Error(
         `Bulk decryption failed: ${decryptedResults.failure.message}`,
@@ -530,7 +533,7 @@ describe('Drizzle ORM Integration with Stash Encryption', () => {
       .where(
         and(
           eq(drizzleUsersTable.testRunId, TEST_RUN_ID),
-          await protectOps.between(drizzleUsersTable.age, minAge, maxAge),
+          await encryptionOps.between(drizzleUsersTable.age, minAge, maxAge),
         ),
       )
 
@@ -538,7 +541,7 @@ describe('Drizzle ORM Integration with Stash Encryption', () => {
     expect(results.length).toBeGreaterThan(0)
 
     // Decrypt and verify
-    const decryptedResults = await protectClient.bulkDecryptModels(results)
+    const decryptedResults = await encryptionClient.bulkDecryptModels(results)
     if (decryptedResults.failure) {
       throw new Error(
         `Bulk decryption failed: ${decryptedResults.failure.message}`,

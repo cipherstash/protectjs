@@ -16,19 +16,19 @@ const currentLevel = getLevelValue(envLogLevel)
 
 function debug(...args: unknown[]): void {
   if (currentLevel <= getLevelValue('debug')) {
-    console.debug('[protect] DEBUG', ...args)
+    console.debug('[encryption] DEBUG', ...args)
   }
 }
 
 function info(...args: unknown[]): void {
   if (currentLevel <= getLevelValue('info')) {
-    console.info('[protect] INFO', ...args)
+    console.info('[encryption] INFO', ...args)
   }
 }
 
 function error(...args: unknown[]): void {
   if (currentLevel <= getLevelValue('error')) {
-    console.error('[protect] ERROR', ...args)
+    console.error('[encryption] ERROR', ...args)
   }
 }
 

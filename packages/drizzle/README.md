@@ -124,7 +124,7 @@ import { usersTable } from '../db/schema'
 export const users = extractProtectSchema(usersTable)
 
 // Initialize Stash Encryption client
-export const protectClient = await Encryption({
+export const encryptionClient = await Encryption({
   schemas: [users]
 })
 ```
@@ -134,10 +134,10 @@ export const protectClient = await Encryption({
 ```typescript
 // protect/operators.ts
 import { createProtectOperators } from '@cipherstash/drizzle/pg'
-import { protectClient } from './config'
+import { encryptionClient } from './config'
 
 // Create operators that automatically handle encryption in queries
-export const protectOps = createProtectOperators(protectClient)
+export const protectOps = createProtectOperators(encryptionClient)
 ```
 
 ## Usage Examples
@@ -151,7 +151,7 @@ const newUsers = [
 ]
 
 // Encrypt all models at once
-const encryptedUsers = await protectClient.bulkEncryptModels(newUsers, users)
+const encryptedUsers = await encryptionClient.bulkEncryptModels(newUsers, users)
 if (encryptedUsers.failure) {
   throw new Error(`Encryption failed: ${encryptedUsers.failure.message}`)
 }
@@ -173,7 +173,7 @@ const results = await db
   .from(usersTable)
 
 // Decrypt all results
-const decrypted = await protectClient.bulkDecryptModels(results)
+const decrypted = await encryptionClient.bulkDecryptModels(results)
 if (decrypted.failure) {
   throw new Error(`Decryption failed: ${decrypted.failure.message}`)
 }
@@ -213,7 +213,7 @@ const results = await db
   )
 
 // Decrypt results
-const decrypted = await protectClient.bulkDecryptModels(results)
+const decrypted = await encryptionClient.bulkDecryptModels(results)
 ```
 
 ### Sorting encrypted columns
@@ -224,7 +224,7 @@ const results = await db
   .from(usersTable)
   .orderBy(protectOps.asc(usersTable.age))
 
-const decrypted = await protectClient.bulkDecryptModels(results)
+const decrypted = await encryptionClient.bulkDecryptModels(results)
 ```
 
 > [!IMPORTANT]
@@ -317,11 +317,11 @@ Extracts a Stash Encryption schema from a Drizzle table definition.
 
 **Returns:** Stash Encryption schema object
 
-### `createProtectOperators(protectClient)`
+### `createProtectOperators(encryptionClient)`
 
 Creates Drizzle-compatible operators that automatically handle encryption.
 
 **Parameters:**
-- `protectClient` - Initialized Stash Encryption client
+- `encryptionClient` - Initialized Stash Encryption client
 
 **Returns:** Object with all operator functions

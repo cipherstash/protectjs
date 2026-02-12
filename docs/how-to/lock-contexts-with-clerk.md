@@ -97,7 +97,7 @@ If you want to override the default context, you can pass a custom context to th
 ```typescript
 import { LockContext } from '@cipherstash/stack/identity'
 
-// protectClient from the previous steps
+// encryptionClient from the previous steps
 const lc = new LockContext({
   context: {
     identityClaim: ['sub'], // this is the default context

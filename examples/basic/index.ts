@@ -1,6 +1,6 @@
 import 'dotenv/config'
 import readline from 'node:readline'
-import { protectClient, users } from './protect'
+import { encryptionClient, users } from './protect'
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -18,13 +18,13 @@ const askQuestion = (): Promise<string> => {
 async function main() {
   const input = await askQuestion()
 
-  const encryptResult = await protectClient.encrypt(input, {
+  const encryptResult = await encryptionClient.encrypt(input, {
     column: users.name,
     table: users,
   })
 
   if (encryptResult.failure) {
-    throw new Error(`[protect]: ${encryptResult.failure.message}`)
+    throw new Error(`[encryption]: ${encryptResult.failure.message}`)
   }
 
   const ciphertext = encryptResult.data
@@ -32,10 +32,10 @@ async function main() {
   console.log('Encrypting your name...')
   console.log('The ciphertext is:', ciphertext)
 
-  const decryptResult = await protectClient.decrypt(ciphertext)
+  const decryptResult = await encryptionClient.decrypt(ciphertext)
 
   if (decryptResult.failure) {
-    throw new Error(`[protect]: ${decryptResult.failure.message}`)
+    throw new Error(`[encryption]: ${decryptResult.failure.message}`)
   }
 
   const plaintext = decryptResult.data
@@ -58,13 +58,13 @@ async function main() {
     bulkPlaintexts.map((p) => p.plaintext),
   )
 
-  const bulkEncryptResult = await protectClient.bulkEncrypt(bulkPlaintexts, {
+  const bulkEncryptResult = await encryptionClient.bulkEncrypt(bulkPlaintexts, {
     column: users.name,
     table: users,
   })
 
   if (bulkEncryptResult.failure) {
-    throw new Error(`[protect]: ${bulkEncryptResult.failure.message}`)
+    throw new Error(`[encryption]: ${bulkEncryptResult.failure.message}`)
   }
 
   console.log('Bulk encrypted data:', bulkEncryptResult.data)

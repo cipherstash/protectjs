@@ -8,16 +8,16 @@ const users = encryptedTable('users', {
 })
 
 describe('k-field backward compatibility', () => {
-  let protectClient: EncryptionClient
+  let encryptionClient: EncryptionClient
 
   beforeAll(async () => {
-    protectClient = await Encryption({ schemas: [users] })
+    encryptionClient = await Encryption({ schemas: [users] })
   })
 
   it('should encrypt new data WITHOUT k field (forward compatibility)', async () => {
     const testData = 'test@example.com'
 
-    const result = await protectClient.encrypt(testData, {
+    const result = await encryptionClient.encrypt(testData, {
       column: users.email,
       table: users,
     })
@@ -37,7 +37,7 @@ describe('k-field backward compatibility', () => {
     // First encrypt some data
     const testData = 'legacy@example.com'
 
-    const encrypted = await protectClient.encrypt(testData, {
+    const encrypted = await encryptionClient.encrypt(testData, {
       column: users.email,
       table: users,
     })
@@ -54,7 +54,7 @@ describe('k-field backward compatibility', () => {
     }
 
     // Decrypt should succeed even with legacy k field present
-    const result = await protectClient.decrypt(legacyPayload)
+    const result = await encryptionClient.decrypt(legacyPayload)
 
     if (result.failure) {
       throw new Error(`Decryption failed: ${result.failure.message}`)

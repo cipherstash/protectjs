@@ -37,7 +37,7 @@ import { EncryptQueryOperation } from './operations/encrypt-query'
 
 export const noClientError = () =>
   new Error(
-    'The EQL client has not been initialized. Please call init() before using the client.',
+    'The Encryption client has not been initialized. Please call init() before using the client.',
   )
 
 /** The EncryptionClient is the main entry point for interacting with the CipherStash encryption library.
@@ -76,7 +76,7 @@ export class EncryptionClient {
         )
 
         logger.debug(
-          'Initializing the Stash Encryption client with the following encrypt config:',
+          'Initializing the Encryption client with the following encrypt config:',
           {
             encryptConfig: validated,
           },
@@ -95,7 +95,7 @@ export class EncryptionClient {
 
         this.encryptConfig = validated
 
-        logger.info('Successfully initialized the Stash Encryption client.')
+        logger.info('Successfully initialized the Encryption client.')
         return this
       },
       (error: unknown) => ({

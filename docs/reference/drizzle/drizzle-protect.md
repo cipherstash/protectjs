@@ -6,9 +6,9 @@ This page demonstrates how to perform queries on encrypted data using **Drizzle 
 **Pattern:** Manually encrypt query values before passing them to standard Drizzle operators.
 
 **How it works:**
-- Explicitly call `protectClient.encrypt()` for each query value
+- Explicitly call `encryptionClient.encrypt()` for each query value
 - Use standard Drizzle operators (`eq()`, `gte()`, `lte()`) with pre-encrypted values
-- Manually decrypt results using `protectClient.bulkDecryptModels()`
+- Manually decrypt results using `encryptionClient.bulkDecryptModels()`
 
 This verbose pattern demonstrates the low-level encryption workflow. For cleaner syntax, see the [encryption operators pattern](/reference/drizzle/drizzle).
 
@@ -23,9 +23,9 @@ This example uses a `transactions` table with the following encrypted fields:
 
 **Key differences from encryption operators pattern:**
 
-1. **Manual encryption** of query parameters using `protectClient.encrypt()`
+1. **Manual encryption** of query parameters using `encryptionClient.encrypt()`
 2. **Standard Drizzle operators** (`eq()`, `gte()`, `lte()`) with pre-encrypted values
-3. **Manual decryption** of results using `protectClient.bulkDecryptModels()`
+3. **Manual decryption** of results using `encryptionClient.bulkDecryptModels()`
 
 This gives you explicit visibility into the encryption/decryption workflow at the cost of more verbose code.
 
@@ -55,7 +55,7 @@ The simplest query - retrieve all transactions from the database. Note that resu
 
 ```ts:run
 const results = await db.select().from(transactions)
-const decrypted = await protectClient.bulkDecryptModels(results)
+const decrypted = await encryptionClient.bulkDecryptModels(results)
 return decrypted.data
 ```
 
@@ -69,7 +69,7 @@ const results = await db.select({
   amount: transactions.amount,
   createdAt: transactions.createdAt
 }).from(transactions)
-const decrypted = await protectClient.bulkDecryptModels(results)
+const decrypted = await encryptionClient.bulkDecryptModels(results)
 return decrypted.data
 ```
 
@@ -79,7 +79,7 @@ Retrieve only the first 5 transactions with manual decryption.
 
 ```ts:run
 const results = await db.select().from(transactions).limit(5)
-const decrypted = await protectClient.bulkDecryptModels(results)
+const decrypted = await encryptionClient.bulkDecryptModels(results)
 return decrypted.data
 ```
 
@@ -92,7 +92,7 @@ const results = await db.select()
   .from(transactions)
   .limit(5)
   .offset(5)
-const decrypted = await protectClient.bulkDecryptModels(results)
+const decrypted = await encryptionClient.bulkDecryptModels(results)
 return decrypted.data
 ```
 
@@ -106,7 +106,7 @@ Find transactions with a specific amount. First encrypt the search value, then u
 
 ```ts:run
 // Encrypt the search value
-const encryptedAmount = await protectClient.encrypt(800.00, {
+const encryptedAmount = await encryptionClient.encrypt(800.00, {
   table: protectTransactions,
   column: protectTransactions.amount
 })
@@ -117,7 +117,7 @@ const results = await db.select()
   .where(eq(transactions.amount, encryptedAmount.data))
 
 // Manually decrypt results
-const decrypted = await protectClient.bulkDecryptModels(results)
+const decrypted = await encryptionClient.bulkDecryptModels(results)
 return decrypted.data
 ```
 
@@ -127,7 +127,7 @@ Find transactions with a specific description using manual encryption.
 
 ```ts:run
 // Encrypt the search value
-const encryptedDesc = await protectClient.encrypt('Salary deposit', {
+const encryptedDesc = await encryptionClient.encrypt('Salary deposit', {
   table: protectTransactions,
   column: protectTransactions.description
 })
@@ -138,7 +138,7 @@ const results = await db.select()
   .where(eq(transactions.description, encryptedDesc.data))
 
 // Manually decrypt results
-const decrypted = await protectClient.bulkDecryptModels(results)
+const decrypted = await encryptionClient.bulkDecryptModels(results)
 return decrypted.data
 ```
 
@@ -148,11 +148,11 @@ Find transactions matching multiple encrypted fields using manual encryption.
 
 ```ts:run
 // Encrypt both search values
-const encryptedAccount = await protectClient.encrypt('1234567890', {
+const encryptedAccount = await encryptionClient.encrypt('1234567890', {
   table: protectTransactions,
   column: protectTransactions.account_number
 })
-const encryptedAmount = await protectClient.encrypt(800.00, {
+const encryptedAmount = await encryptionClient.encrypt(800.00, {
   table: protectTransactions,
   column: protectTransactions.amount
 })
@@ -168,7 +168,7 @@ const results = await db.select()
   )
 
 // Manually decrypt results
-const decrypted = await protectClient.bulkDecryptModels(results)
+const decrypted = await encryptionClient.bulkDecryptModels(results)
 return decrypted.data
 ```
 
@@ -182,7 +182,7 @@ Find transactions with amounts less than or equal to $150 using manual encryptio
 
 ```ts:run
 // Encrypt the comparison value
-const encryptedAmount = await protectClient.encrypt(150.00, {
+const encryptedAmount = await encryptionClient.encrypt(150.00, {
   table: protectTransactions,
   column: protectTransactions.amount
 })
@@ -193,7 +193,7 @@ const results = await db.select()
   .where(lte(transactions.amount, encryptedAmount.data))
 
 // Manually decrypt results
-const decrypted = await protectClient.bulkDecryptModels(results)
+const decrypted = await encryptionClient.bulkDecryptModels(results)
 return decrypted.data
 ```
 
@@ -203,7 +203,7 @@ Find transactions with amounts greater than or equal to $1250.
 
 ```ts:run
 // Encrypt the comparison value
-const encryptedAmount = await protectClient.encrypt(1250.00, {
+const encryptedAmount = await encryptionClient.encrypt(1250.00, {
   table: protectTransactions,
   column: protectTransactions.amount
 })
@@ -214,7 +214,7 @@ const results = await db.select()
   .where(gte(transactions.amount, encryptedAmount.data))
 
 // Manually decrypt results
-const decrypted = await protectClient.bulkDecryptModels(results)
+const decrypted = await encryptionClient.bulkDecryptModels(results)
 return decrypted.data
 ```
 
@@ -230,7 +230,7 @@ Search for transactions with "gym" in the description. With the manual encryptio
 
 ```ts:run
 // Encrypt the search pattern
-const encryptedPattern = await protectClient.encrypt('%gym%', {
+const encryptedPattern = await encryptionClient.encrypt('%gym%', {
   table: protectTransactions,
   column: protectTransactions.description
 })
@@ -241,7 +241,7 @@ const results = await db.select()
   .where(sql`${transactions.description} ilike ${JSON.stringify(encryptedPattern.data)}::jsonb::eql_v2_encrypted`)
 
 // Manually decrypt results
-const decrypted = await protectClient.bulkDecryptModels(results)
+const decrypted = await encryptionClient.bulkDecryptModels(results)
 return decrypted.data
 ```
 
@@ -251,13 +251,13 @@ Combine text search with manual encryption for other fields. All search values m
 
 ```ts:run
 // Encrypt the amount comparison value
-const encryptedAmount = await protectClient.encrypt(150.00, {
+const encryptedAmount = await encryptionClient.encrypt(150.00, {
   table: protectTransactions,
   column: protectTransactions.amount
 })
 
 // Encrypt the search pattern for text search
-const encryptedPattern = await protectClient.encrypt('%payment%', {
+const encryptedPattern = await encryptionClient.encrypt('%payment%', {
   table: protectTransactions,
   column: protectTransactions.description
 })
@@ -272,7 +272,7 @@ const results = await db.select()
   )
 
 // Manually decrypt results
-const decrypted = await protectClient.bulkDecryptModels(results)
+const decrypted = await encryptionClient.bulkDecryptModels(results)
 return decrypted.data
 ```
 
@@ -286,11 +286,11 @@ Find transactions with amounts between $150 and $1250.
 
 ```ts:run
 // Encrypt both range boundaries
-const encryptedMin = await protectClient.encrypt(150.00, {
+const encryptedMin = await encryptionClient.encrypt(150.00, {
   table: protectTransactions,
   column: protectTransactions.amount
 })
-const encryptedMax = await protectClient.encrypt(1250.00, {
+const encryptedMax = await encryptionClient.encrypt(1250.00, {
   table: protectTransactions,
   column: protectTransactions.amount
 })
@@ -306,7 +306,7 @@ const results = await db.select()
   )
 
 // Manually decrypt results
-const decrypted = await protectClient.bulkDecryptModels(results)
+const decrypted = await encryptionClient.bulkDecryptModels(results)
 return decrypted.data
 ```
 
@@ -320,11 +320,11 @@ const now = new Date()
 const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000)
 
 // Encrypt both date boundaries
-const encryptedStart = await protectClient.encrypt(twoWeeksAgo.getTime(), {
+const encryptedStart = await encryptionClient.encrypt(twoWeeksAgo.getTime(), {
   table: protectTransactions,
   column: protectTransactions.created_at
 })
-const encryptedEnd = await protectClient.encrypt(now.getTime(), {
+const encryptedEnd = await encryptionClient.encrypt(now.getTime(), {
   table: protectTransactions,
   column: protectTransactions.created_at
 })
@@ -340,7 +340,7 @@ const results = await db.select()
   )
 
 // Manually decrypt results
-const decrypted = await protectClient.bulkDecryptModels(results)
+const decrypted = await encryptionClient.bulkDecryptModels(results)
 return decrypted.data
 ```
 
@@ -361,7 +361,7 @@ const results = await db.select()
   .limit(10)
 
 // Manually decrypt results
-const decrypted = await protectClient.bulkDecryptModels(results)
+const decrypted = await encryptionClient.bulkDecryptModels(results)
 return decrypted.data
 ```
 
@@ -376,7 +376,7 @@ const results = await db.select()
   .limit(10)
 
 // Manually decrypt results
-const decrypted = await protectClient.bulkDecryptModels(results)
+const decrypted = await encryptionClient.bulkDecryptModels(results)
 return decrypted.data
 ```
 
@@ -391,7 +391,7 @@ const results = await db.select()
   .limit(10)
 
 // Manually decrypt results
-const decrypted = await protectClient.bulkDecryptModels(results)
+const decrypted = await encryptionClient.bulkDecryptModels(results)
 return decrypted.data
 ```
 
@@ -408,7 +408,7 @@ const results = await db.select({ count: sql`count(*)` })
   .from(transactions)
 
 // Manually decrypt result
-const decrypted = await protectClient.bulkDecryptModels(results)
+const decrypted = await encryptionClient.bulkDecryptModels(results)
 return decrypted.data
 ```
 
@@ -418,7 +418,7 @@ Count transactions with amounts greater than or equal to $1250.
 
 ```ts:run
 // Encrypt the search value
-const encryptedAmount = await protectClient.encrypt(1250.00, {
+const encryptedAmount = await encryptionClient.encrypt(1250.00, {
   table: protectTransactions,
   column: protectTransactions.amount
 })
@@ -428,7 +428,7 @@ const results = await db.select({ count: sql`count(*)` })
   .where(gte(transactions.amount, encryptedAmount.data))
 
 // Manually decrypt result
-const decrypted = await protectClient.bulkDecryptModels(results)
+const decrypted = await encryptionClient.bulkDecryptModels(results)
 return decrypted.data
 ```
 
@@ -443,7 +443,7 @@ const results = await db.select()
   .limit(1)
 
 // Manually decrypt result
-const decrypted = await protectClient.bulkDecryptModels(results)
+const decrypted = await encryptionClient.bulkDecryptModels(results)
 return decrypted.data
 ```
 
@@ -455,10 +455,10 @@ When using the manual encryption pattern instead of encryption operators, you ha
 
 ### Encryption flow
 
-1. **Encrypt search values** using `protectClient.encrypt(plaintext, { table, column })`
+1. **Encrypt search values** using `encryptionClient.encrypt(plaintext, { table, column })`
 2. **Pass encrypted data** to regular Drizzle operators (`eq()`, `gte()`, `ilike()`, etc.)
 3. **Execute query** - PostgreSQL searches encrypted data
-4. **Decrypt results** using `protectClient.bulkDecryptModels(results)`
+4. **Decrypt results** using `encryptionClient.bulkDecryptModels(results)`
 5. **Return plaintext** - Results are now readable
 
 ### Key differences from encryption operators pattern
@@ -492,7 +492,7 @@ When using the manual encryption pattern instead of encryption operators, you ha
 
 ### What's happening behind the scenes
 
-1. **`protectClient.encrypt()`**: Encrypts plaintext and generates search indexes
+1. **`encryptionClient.encrypt()`**: Encrypts plaintext and generates search indexes
 2. **Regular Drizzle operators**: Work with encrypted data as if it were normal data
 3. **PostgreSQL**: Uses special indexes to search encrypted fields efficiently
 4. **`bulkDecryptModels()`**: Batch decrypts all encrypted fields in results
@@ -514,7 +514,7 @@ When using the manual encryption pattern instead of encryption operators, you ha
 
 ```ts
 // Single value encryption
-const encrypted = await protectClient.encrypt(plaintext, {
+const encrypted = await encryptionClient.encrypt(plaintext, {
   table: protectTransactions,
   column: protectTransactions.column_name
 })
@@ -529,7 +529,7 @@ const results = await db.select()
 
 ```ts
 // Bulk decrypt query results
-const decrypted = await protectClient.bulkDecryptModels(results)
+const decrypted = await encryptionClient.bulkDecryptModels(results)
 
 // Use decrypted.data
 return decrypted.data

@@ -5,21 +5,21 @@ import type {
   ProtectErrorCode,
 } from '@cipherstash/stack'
 import { FfiProtectError } from '@cipherstash/stack'
-import type { ProtectDynamoDBError } from './types'
+import type { EncryptedDynamoDBError } from './types'
 export const ciphertextAttrSuffix = '__source'
 export const searchTermAttrSuffix = '__hmac'
 
-export class ProtectDynamoDBErrorImpl
+export class EncryptedDynamoDBErrorImpl
   extends Error
-  implements ProtectDynamoDBError
+  implements EncryptedDynamoDBError
 {
   constructor(
     message: string,
-    public code: ProtectErrorCode | 'PROTECT_DYNAMODB_ERROR',
+    public code: ProtectErrorCode | 'DYNAMODB_ENCRYPTION_ERROR',
     public details?: Record<string, unknown>,
   ) {
     super(message)
-    this.name = 'ProtectDynamoDBError'
+    this.name = 'EncryptedDynamoDBError'
   }
 }
 
@@ -30,11 +30,11 @@ export function handleError(
     logger?: {
       error: (message: string, error: Error) => void
     }
-    errorHandler?: (error: ProtectDynamoDBError) => void
+    errorHandler?: (error: EncryptedDynamoDBError) => void
   },
-): ProtectDynamoDBError {
+): EncryptedDynamoDBError {
   // Preserve FFI error code if available, otherwise use generic DynamoDB error code
-  // Check for FfiProtectError instance or plain ProtectError objects with code property
+  // Check for FfiProtectError instance or plain error objects with code property
   const errorObj = error as Record<string, unknown>
   const errorCode =
     error instanceof FfiProtectError
@@ -44,7 +44,7 @@ export function handleError(
           'code' in errorObj &&
           typeof errorObj.code === 'string'
         ? (errorObj.code as ProtectErrorCode)
-        : 'PROTECT_DYNAMODB_ERROR'
+        : 'DYNAMODB_ENCRYPTION_ERROR'
 
   const errorMessage =
     error instanceof Error
@@ -53,19 +53,19 @@ export function handleError(
         ? errorObj.message
         : String(error)
 
-  const protectError = new ProtectDynamoDBErrorImpl(errorMessage, errorCode, {
+  const dynamoError = new EncryptedDynamoDBErrorImpl(errorMessage, errorCode, {
     context,
   })
 
   if (options?.errorHandler) {
-    options.errorHandler(protectError)
+    options.errorHandler(dynamoError)
   }
 
   if (options?.logger) {
-    options.logger.error(`Error in ${context}`, protectError)
+    options.logger.error(`Error in ${context}`, dynamoError)
   }
 
-  return protectError
+  return dynamoError
 }
 
 export function deepClone<T>(obj: T): T {

@@ -69,11 +69,11 @@ afterAll(async () => {
 
 describe('supabase', () => {
   it('should insert and select encrypted data', async () => {
-    const protectClient = await Encryption({ schemas: [table] })
+    const encryptionClient = await Encryption({ schemas: [table] })
 
     const e = 'hello world'
 
-    const ciphertext = await protectClient.encrypt(e, {
+    const ciphertext = await encryptionClient.encrypt(e, {
       column: table.encrypted,
       table: table,
     })
@@ -106,7 +106,7 @@ describe('supabase', () => {
     }
 
     const dataToDecrypt = data[0].encrypted as Encrypted
-    const plaintext = await protectClient.decrypt(dataToDecrypt)
+    const plaintext = await encryptionClient.decrypt(dataToDecrypt)
 
     expect(plaintext).toEqual({
       data: e,
@@ -114,14 +114,14 @@ describe('supabase', () => {
   }, 30000)
 
   it('should insert and select encrypted model data', async () => {
-    const protectClient = await Encryption({ schemas: [table] })
+    const encryptionClient = await Encryption({ schemas: [table] })
 
     const model = {
       encrypted: 'hello world',
       otherField: 'not encrypted',
     }
 
-    const encryptedModel = await protectClient.encryptModel(model, table)
+    const encryptedModel = await encryptionClient.encryptModel(model, table)
 
     if (encryptedModel.failure) {
       throw new Error(`[encryption]: ${encryptedModel.failure.message}`)
@@ -156,7 +156,7 @@ describe('supabase', () => {
       throw new Error('Expected encrypted payload')
     }
 
-    const decryptedModel = await protectClient.decryptModel(data[0])
+    const decryptedModel = await encryptionClient.decryptModel(data[0])
 
     if (decryptedModel.failure) {
       throw new Error(`[encryption]: ${decryptedModel.failure.message}`)
@@ -169,7 +169,7 @@ describe('supabase', () => {
   }, 30000)
 
   it('should insert and select bulk encrypted model data', async () => {
-    const protectClient = await Encryption({ schemas: [table] })
+    const encryptionClient = await Encryption({ schemas: [table] })
 
     const models = [
       {
@@ -182,7 +182,10 @@ describe('supabase', () => {
       },
     ]
 
-    const encryptedModels = await protectClient.bulkEncryptModels(models, table)
+    const encryptedModels = await encryptionClient.bulkEncryptModels(
+      models,
+      table,
+    )
 
     if (encryptedModels.failure) {
       throw new Error(`[encryption]: ${encryptedModels.failure.message}`)
@@ -218,7 +221,7 @@ describe('supabase', () => {
       throw new Error(`[encryption]: ${error.message}`)
     }
 
-    const decryptedModels = await protectClient.bulkDecryptModels(data)
+    const decryptedModels = await encryptionClient.bulkDecryptModels(data)
 
     if (decryptedModels.failure) {
       throw new Error(`[encryption]: ${decryptedModels.failure.message}`)
@@ -235,7 +238,7 @@ describe('supabase', () => {
   }, 30000)
 
   it('should insert and query encrypted number data with equality', async () => {
-    const protectClient = await Encryption({ schemas: [table] })
+    const encryptionClient = await Encryption({ schemas: [table] })
 
     const testAge = 25
     const model = {
@@ -243,7 +246,7 @@ describe('supabase', () => {
       otherField: 'not encrypted',
     }
 
-    const encryptedModel = await protectClient.encryptModel(model, table)
+    const encryptedModel = await encryptionClient.encryptModel(model, table)
 
     if (encryptedModel.failure) {
       throw new Error(`[encryption]: ${encryptedModel.failure.message}`)
@@ -267,7 +270,7 @@ describe('supabase', () => {
     insertedIds.push(insertedRecordId)
 
     // Create encrypted query for equality search with composite-literal returnType
-    const encryptedResult = await protectClient.encryptQuery([
+    const encryptedResult = await encryptionClient.encryptQuery([
       {
         value: testAge,
         column: table.age,
@@ -298,7 +301,7 @@ describe('supabase', () => {
     // Verify we found our specific row with encrypted age match
     expect(data).toHaveLength(1)
 
-    const decryptedModel = await protectClient.decryptModel(data[0])
+    const decryptedModel = await encryptionClient.decryptModel(data[0])
 
     if (decryptedModel.failure) {
       throw new Error(`[encryption]: ${decryptedModel.failure.message}`)

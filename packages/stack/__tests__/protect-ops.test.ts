@@ -17,17 +17,17 @@ type User = {
   number?: number
 }
 
-let protectClient: EncryptionClient
+let encryptionClient: EncryptionClient
 
 beforeAll(async () => {
-  protectClient = await Encryption({
+  encryptionClient = await Encryption({
     schemas: [users],
   })
 })
 
 describe('encryption and decryption edge cases', () => {
   it('should return null if plaintext is null', async () => {
-    const ciphertext = await protectClient.encrypt(null, {
+    const ciphertext = await encryptionClient.encrypt(null, {
       column: users.email,
       table: users,
     })
@@ -39,7 +39,7 @@ describe('encryption and decryption edge cases', () => {
     // Verify null is preserved
     expect(ciphertext.data).toBeNull()
 
-    const plaintext = await protectClient.decrypt(ciphertext.data)
+    const plaintext = await encryptionClient.decrypt(ciphertext.data)
 
     expect(plaintext).toEqual({
       data: null,
@@ -58,7 +58,7 @@ describe('encryption and decryption edge cases', () => {
     }
 
     // Encrypt the model
-    const encryptedModel = await protectClient.encryptModel<User>(
+    const encryptedModel = await encryptionClient.encryptModel<User>(
       decryptedModel,
       users,
     )
@@ -78,7 +78,7 @@ describe('encryption and decryption edge cases', () => {
     expect(encryptedModel.data.number).toBe(1)
 
     // Decrypt the model
-    const decryptedResult = await protectClient.decryptModel<User>(
+    const decryptedResult = await encryptionClient.decryptModel<User>(
       encryptedModel.data,
     )
 
@@ -108,7 +108,7 @@ describe('encryption and decryption edge cases', () => {
     }
 
     // Encrypt the model
-    const encryptedModel = await protectClient.encryptModel<User>(
+    const encryptedModel = await encryptionClient.encryptModel<User>(
       decryptedModel,
       users,
     )
@@ -128,7 +128,7 @@ describe('encryption and decryption edge cases', () => {
     expect(encryptedModel.data.number).toBe(1)
 
     // Decrypt the model
-    const decryptedResult = await protectClient.decryptModel<User>(
+    const decryptedResult = await encryptionClient.decryptModel<User>(
       encryptedModel.data,
     )
 
@@ -158,7 +158,7 @@ describe('encryption and decryption edge cases', () => {
     }
 
     // Encrypt the model
-    const encryptedModel = await protectClient.encryptModel<User>(
+    const encryptedModel = await encryptionClient.encryptModel<User>(
       decryptedModel,
       users,
     )
@@ -178,7 +178,7 @@ describe('encryption and decryption edge cases', () => {
     expect(encryptedModel.data.number).toBe(1)
 
     // Decrypt the model
-    const decryptedResult = await protectClient.decryptModel<User>(
+    const decryptedResult = await encryptionClient.decryptModel<User>(
       encryptedModel.data,
     )
 
@@ -220,7 +220,7 @@ describe('bulk encryption', () => {
     ]
 
     // Encrypt the models
-    const encryptedModels = await protectClient.bulkEncryptModels<User>(
+    const encryptedModels = await encryptionClient.bulkEncryptModels<User>(
       decryptedModels,
       users,
     )
@@ -246,7 +246,7 @@ describe('bulk encryption', () => {
     expect(encryptedModels.data[1].number).toBe(2)
 
     // Decrypt the models
-    const decryptedResult = await protectClient.bulkDecryptModels<User>(
+    const decryptedResult = await encryptionClient.bulkDecryptModels<User>(
       encryptedModels.data,
     )
 
@@ -276,7 +276,7 @@ describe('bulk encryption', () => {
 
   it('should return empty array if models is empty', async () => {
     // Encrypt empty array of models
-    const encryptedModels = await protectClient.bulkEncryptModels<User>(
+    const encryptedModels = await encryptionClient.bulkEncryptModels<User>(
       [],
       users,
     )
@@ -290,7 +290,7 @@ describe('bulk encryption', () => {
 
   it('should return empty array if decrypting empty array of models', async () => {
     // Decrypt empty array of models
-    const decryptedResult = await protectClient.bulkDecryptModels<User>([])
+    const decryptedResult = await encryptionClient.bulkDecryptModels<User>([])
 
     if (decryptedResult.failure) {
       throw new Error(`[encryption]: ${decryptedResult.failure.message}`)
@@ -330,7 +330,7 @@ describe('bulk encryption edge cases', () => {
     ]
 
     // Encrypt the models
-    const encryptedModels = await protectClient.bulkEncryptModels<User>(
+    const encryptedModels = await encryptionClient.bulkEncryptModels<User>(
       decryptedModels,
       users,
     )
@@ -362,7 +362,7 @@ describe('bulk encryption edge cases', () => {
     expect(encryptedModels.data[2].number).toBe(3)
 
     // Decrypt the models
-    const decryptedResult = await protectClient.bulkDecryptModels<User>(
+    const decryptedResult = await encryptionClient.bulkDecryptModels<User>(
       encryptedModels.data,
     )
 
@@ -402,7 +402,7 @@ describe('bulk encryption edge cases', () => {
     ]
 
     // Encrypt the models
-    const encryptedModels = await protectClient.bulkEncryptModels<User>(
+    const encryptedModels = await encryptionClient.bulkEncryptModels<User>(
       decryptedModels,
       users,
     )
@@ -434,7 +434,7 @@ describe('bulk encryption edge cases', () => {
     expect(encryptedModels.data[2].number).toBe(3)
 
     // Decrypt the models
-    const decryptedResult = await protectClient.bulkDecryptModels<User>(
+    const decryptedResult = await encryptionClient.bulkDecryptModels<User>(
       encryptedModels.data,
     )
 
@@ -469,7 +469,7 @@ describe('bulk encryption edge cases', () => {
     ]
 
     // Encrypt the models
-    const encryptedModels = await protectClient.bulkEncryptModels<User>(
+    const encryptedModels = await encryptionClient.bulkEncryptModels<User>(
       decryptedModels,
       users,
     )
@@ -501,7 +501,7 @@ describe('bulk encryption edge cases', () => {
     expect(encryptedModels.data[2].number).toBe(3)
 
     // Decrypt the models
-    const decryptedResult = await protectClient.bulkDecryptModels<User>(
+    const decryptedResult = await encryptionClient.bulkDecryptModels<User>(
       encryptedModels.data,
     )
 
@@ -525,7 +525,7 @@ describe('error handling', () => {
     }
 
     // First encrypt a valid model
-    const encryptedModel = await protectClient.encryptModel<User>(
+    const encryptedModel = await encryptionClient.encryptModel<User>(
       validModel,
       users,
     )
@@ -540,7 +540,7 @@ describe('error handling', () => {
     }
 
     try {
-      await protectClient.decryptModel<User>(invalidModel as User)
+      await encryptionClient.decryptModel<User>(invalidModel as User)
       throw new Error('Expected decryption to fail')
     } catch (error) {
       expect(error).toBeDefined()
@@ -558,7 +558,7 @@ describe('error handling', () => {
     }
 
     try {
-      await protectClient.encryptModel<User>(model, users)
+      await encryptionClient.encryptModel<User>(model, users)
       throw new Error('Expected encryption to fail')
     } catch (error) {
       expect(error).toBeDefined()
@@ -584,14 +584,17 @@ describe('type safety', () => {
     }
 
     // Encrypt the model
-    const encryptedModel = await protectClient.encryptModel<User>(model, users)
+    const encryptedModel = await encryptionClient.encryptModel<User>(
+      model,
+      users,
+    )
 
     if (encryptedModel.failure) {
       throw new Error(`[encryption]: ${encryptedModel.failure.message}`)
     }
 
     // Decrypt the model
-    const decryptedResult = await protectClient.decryptModel<User>(
+    const decryptedResult = await encryptionClient.decryptModel<User>(
       encryptedModel.data,
     )
 
@@ -617,7 +620,7 @@ describe('performance', () => {
       }))
 
     // Encrypt the models
-    const encryptedModels = await protectClient.bulkEncryptModels<User>(
+    const encryptedModels = await encryptionClient.bulkEncryptModels<User>(
       largeModels,
       users,
     )
@@ -627,7 +630,7 @@ describe('performance', () => {
     }
 
     // Decrypt the models
-    const decryptedResult = await protectClient.bulkDecryptModels<User>(
+    const decryptedResult = await encryptionClient.bulkDecryptModels<User>(
       encryptedModels.data,
     )
 
@@ -657,7 +660,7 @@ describe('encryption and decryption with lock context', () => {
 
     const email = 'hello@example.com'
 
-    const ciphertext = await protectClient
+    const ciphertext = await encryptionClient
       .encrypt(email, {
         column: users.email,
         table: users,
@@ -668,7 +671,7 @@ describe('encryption and decryption with lock context', () => {
       throw new Error(`[encryption]: ${ciphertext.failure.message}`)
     }
 
-    const plaintext = await protectClient
+    const plaintext = await encryptionClient
       .decrypt(ciphertext.data)
       .withLockContext(lockContext.data)
 
@@ -701,7 +704,7 @@ describe('encryption and decryption with lock context', () => {
     }
 
     // Encrypt the model with lock context
-    const encryptedModel = await protectClient
+    const encryptedModel = await encryptionClient
       .encryptModel(decryptedModel, users)
       .withLockContext(lockContext.data)
 
@@ -710,7 +713,7 @@ describe('encryption and decryption with lock context', () => {
     }
 
     // Decrypt the model with lock context
-    const decryptedResult = await protectClient
+    const decryptedResult = await encryptionClient
       .decryptModel(encryptedModel.data)
       .withLockContext(lockContext.data)
 
@@ -746,7 +749,7 @@ describe('encryption and decryption with lock context', () => {
     }
 
     // Encrypt the model with lock context
-    const encryptedModel = await protectClient
+    const encryptedModel = await encryptionClient
       .encryptModel(decryptedModel, users)
       .withLockContext(lockContext.data)
 
@@ -755,7 +758,7 @@ describe('encryption and decryption with lock context', () => {
     }
 
     try {
-      await protectClient.decryptModel(encryptedModel.data)
+      await encryptionClient.decryptModel(encryptedModel.data)
     } catch (error) {
       const e = error as Error
       expect(e.message.startsWith('Failed to retrieve key')).toEqual(true)
@@ -790,7 +793,7 @@ describe('encryption and decryption with lock context', () => {
     ]
 
     // Encrypt the models with lock context
-    const encryptedModels = await protectClient
+    const encryptedModels = await encryptionClient
       .bulkEncryptModels(decryptedModels, users)
       .withLockContext(lockContext.data)
 
@@ -799,7 +802,7 @@ describe('encryption and decryption with lock context', () => {
     }
 
     // Decrypt the models with lock context
-    const decryptedResult = await protectClient
+    const decryptedResult = await encryptionClient
       .bulkDecryptModels(encryptedModels.data)
       .withLockContext(lockContext.data)
 
@@ -825,7 +828,7 @@ describe('special characters', () => {
     const plaintext =
       'complex@string-with/slashes\\backslashes.and#symbols$%&+!@#$%^&*()_+-=[]{}|;:,.<>?/~`'
 
-    const ciphertext = await protectClient.encrypt(plaintext, {
+    const ciphertext = await encryptionClient.encrypt(plaintext, {
       column: users.email,
       table: users,
     })
@@ -834,7 +837,7 @@ describe('special characters', () => {
       throw new Error(`[encryption]: ${ciphertext.failure.message}`)
     }
 
-    const decrypted = await protectClient.decrypt(ciphertext.data)
+    const decrypted = await encryptionClient.decrypt(ciphertext.data)
 
     expect(decrypted).toEqual({
       data: plaintext,

@@ -4,6 +4,6 @@ export const users = encryptedTable('users', {
   email: encryptedColumn('email').equality(),
 })
 
-export const protectClient = await Encryption({
+export const encryptionClient = await Encryption({
   schemas: [users],
 })

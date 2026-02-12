@@ -144,7 +144,7 @@ const config: EncryptionClientConfig = {
   schemas: [protectedUsers], // At least one encryptedTable is required
 }
 
-const protectClient = await Encryption(config);
+const encryptionClient = await Encryption(config);
 ```
 ---
 

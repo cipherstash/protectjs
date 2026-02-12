@@ -19,7 +19,7 @@ const config: EncryptionClientConfig = {
   schemas: [users],
 }
 
-export const protectClient = await Encryption(config)
+export const encryptionClient = await Encryption(config)
 
 // Create a single supabase client for interacting with the database
 const supabaseUrl = process.env.SUPABASE_URL
@@ -46,7 +46,7 @@ app.get('/users', async (c) => {
       users.map(async (user) => {
         // The encrypted data is stored in the EQL format: { c: 'ciphertext' }
         // and the decrypt function expects the data to be in this format.
-        const decryptResult = await protectClient.decrypt(user.email)
+        const decryptResult = await encryptionClient.decrypt(user.email)
 
         if (decryptResult.failure) {
           console.error(
@@ -82,7 +82,7 @@ app.post('/users', async (c) => {
   // The encrypt function expects the plaintext to be of type string
   // and the second argument to be an object with the table and column
   // names of the table where you are storing the data.
-  const encryptedResult = await protectClient.encrypt(email, {
+  const encryptedResult = await encryptionClient.encrypt(email, {
     column: users.email,
     table: users,
   })

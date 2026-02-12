@@ -42,9 +42,9 @@ const config: EncryptionClientConfig = {
   schemas: [users],
 }
 
-const protectClient = await Encryption(config)
+const encryptionClient = await Encryption(config)
 
-const encryptedResult = await protectClient.encryptModel(
+const encryptedResult = await encryptionClient.encryptModel(
   {
     name: 'John Doe',
     email: 'john.doe@example.com'
@@ -74,7 +74,7 @@ const { data, error } = await supabase
 Without the `::jsonb` cast, the encrypted payload would be wrapped in an object with a `data` key, which would require additional handling before decryption. The cast ensures you get the raw encrypted payload that can be directly used with Stash Encryption for decryption:
 
 ```typescript
-const decryptedResult = await protectClient.decryptModel(data[0])
+const decryptedResult = await encryptionClient.decryptModel(data[0])
 
 if (decryptedResult.failure) {
   // Handle the failure
@@ -105,7 +105,7 @@ const config: EncryptionClientConfig = {
   schemas: [users],
 }
 
-const protectClient = await Encryption(config)
+const encryptionClient = await Encryption(config)
 
 const model = {
   name: 'John Doe',
@@ -113,7 +113,7 @@ const model = {
   otherField: 'not encrypted'
 }
 
-const encryptedModel = await protectClient.encryptModel(model, users)
+const encryptedModel = await encryptionClient.encryptModel(model, users)
 
 const { data, error } = await supabase
   .from('users')
@@ -136,7 +136,7 @@ const models = [
   }
 ]
 
-const encryptedModels = await protectClient.bulkEncryptModels(models, users)
+const encryptedModels = await encryptionClient.bulkEncryptModels(models, users)
 
 const { data, error } = await supabase
   .from('users')
@@ -149,7 +149,7 @@ const { data: selectedData, error: selectError } = await supabase
   .select('id, name::jsonb, email::jsonb, otherField')
 
 // Decrypt all models at once
-const decryptedModels = await protectClient.bulkDecryptModels(selectedData)
+const decryptedModels = await encryptionClient.bulkDecryptModels(selectedData)
 ```
 
 ## Exposing EQL schema
@@ -174,7 +174,7 @@ ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA eql_v2 GRANT ALL ON SEQUENC
 When searching encrypted data, you need to convert the encrypted payload into a format that PostgreSQL and the Supabase SDK can understand. The encrypted payload needs to be converted to a raw composite type format by double stringifying the JSON:
 
 ```typescript
-const searchTerms = await protectClient.createSearchTerms([
+const searchTerms = await encryptionClient.createSearchTerms([
   {
     value: 'billy@example.com',
     column: users.email,
@@ -189,7 +189,7 @@ const searchTerm = searchTerms.data[0]
 For certain queries, when including the encrypted search term with an operator that uses the string logic syntax, you need to use the 'escaped-composite-literal' return type:
 
 ```typescript
-const searchTerms = await protectClient.createSearchTerms([
+const searchTerms = await encryptionClient.createSearchTerms([
   {
     value: 'billy@example.com',
     column: users.email,
@@ -208,7 +208,7 @@ Here are examples of different ways to search encrypted data using the Supabase 
 ### Equality Search
 
 ```typescript
-const searchTerms = await protectClient.createSearchTerms([
+const searchTerms = await encryptionClient.createSearchTerms([
   {
     value: 'billy@example.com',
     column: users.email,
@@ -226,7 +226,7 @@ const { data, error } = await supabase
 ### Pattern Matching Search
 
 ```typescript
-const searchTerms = await protectClient.createSearchTerms([
+const searchTerms = await encryptionClient.createSearchTerms([
   {
     value: 'example.com',
     column: users.email,
@@ -247,7 +247,7 @@ When you need to search for multiple encrypted values, you can use the IN operat
 
 ```typescript
 // Encrypt multiple search terms
-const searchTerms = await protectClient.createSearchTerms([
+const searchTerms = await encryptionClient.createSearchTerms([
   {
     value: 'value1',
     column: users.name,
@@ -275,7 +275,7 @@ You can combine multiple encrypted search conditions using the `.or()` syntax. T
 
 ```typescript
 // Encrypt search terms for different columns
-const searchTerms = await protectClient.createSearchTerms([
+const searchTerms = await encryptionClient.createSearchTerms([
   {
     value: 'user@example.com',
     column: users.email,

@@ -16,12 +16,12 @@ const config: EncryptionClientConfig = {
   schemas: [users],
 }
 
-export const protectClient = await Encryption(config)
+export const encryptionClient = await Encryption(config)
 
 export const getLockContext = (cts_token?: CtsToken) => {
   if (!cts_token) {
     throw new Error(
-      '[protect] A CTS token is required in order to get a lock context.',
+      '[encryption] A CTS token is required in order to get a lock context.',
     )
   }
 

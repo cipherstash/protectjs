@@ -26,14 +26,14 @@ export function encryptedToPgComposite(obj: Encrypted): EncryptedPgComposite {
  * @example
  * ```typescript
  * // Before (deprecated):
- * const [encrypted] = await protectClient.encryptQuery([
+ * const [encrypted] = await encryptionClient.encryptQuery([
  *   { value: searchValue, column, table, queryType: 'equality' }
  * ])
  * const literal = encryptedToCompositeLiteral(encrypted)
  * await supabase.from('table').select().eq('column', literal)
  *
  * // After (recommended):
- * const [searchTerm] = await protectClient.encryptQuery([
+ * const [searchTerm] = await encryptionClient.encryptQuery([
  *   { value: searchValue, column, table, queryType: 'equality', returnType: 'composite-literal' }
  * ])
  * await supabase.from('table').select().eq('column', searchTerm)
@@ -55,13 +55,13 @@ export function encryptedToCompositeLiteral(obj: CipherStashEncrypted): string {
  * @example
  * ```typescript
  * // Before (deprecated):
- * const [encrypted] = await protectClient.encryptQuery([
+ * const [encrypted] = await encryptionClient.encryptQuery([
  *   { value: searchValue, column, table, queryType: 'equality' }
  * ])
  * const escapedLiteral = encryptedToEscapedCompositeLiteral(encrypted)
  *
  * // After (recommended):
- * const [searchTerm] = await protectClient.encryptQuery([
+ * const [searchTerm] = await encryptionClient.encryptQuery([
  *   { value: searchValue, column, table, queryType: 'equality', returnType: 'escaped-composite-literal' }
  * ])
  * ```

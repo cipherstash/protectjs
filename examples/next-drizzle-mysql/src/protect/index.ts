@@ -5,4 +5,4 @@ const config: EncryptionClientConfig = {
   schemas: [users],
 }
 
-export const protectClient = await Encryption(config)
+export const encryptionClient = await Encryption(config)

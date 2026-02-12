@@ -114,7 +114,7 @@ const config: EncryptionClientConfig = {
   clientKey: "your-client-key",
 }
 
-const protectClient = await Encryption(config);
+const encryptionClient = await Encryption(config);
 ```
 
 ## Deploying to production

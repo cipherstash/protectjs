@@ -90,7 +90,7 @@ The function takes an array of objects, each with the following properties:
 Example:
 
 ```typescript
-const term = await protectClient.createSearchTerms([{
+const term = await encryptionClient.createSearchTerms([{
   value: 'user@example.com',
   column: schema.email,
   table: schema,
@@ -142,19 +142,19 @@ Pass a string to `encryptQuery` to perform a JSONPath selector query. The string
 
 ```typescript
 // Simple path query
-const pathTerm = await protectClient.encryptQuery('$.user.email', {
+const pathTerm = await encryptionClient.encryptQuery('$.user.email', {
   column: documents.metadata,
   table: documents,
 })
 
 // Nested path query
-const nestedTerm = await protectClient.encryptQuery('$.user.profile.role', {
+const nestedTerm = await encryptionClient.encryptQuery('$.user.profile.role', {
   column: documents.metadata,
   table: documents,
 })
 
 // Array index path query
-const arrayTerm = await protectClient.encryptQuery('$.items[0].name', {
+const arrayTerm = await encryptionClient.encryptQuery('$.items[0].name', {
   column: documents.metadata,
   table: documents,
 })
@@ -177,13 +177,13 @@ Pass an object or array to `encryptQuery` to perform a containment query.
 
 ```typescript
 // Key-value containment
-const roleTerm = await protectClient.encryptQuery({ role: 'admin' }, {
+const roleTerm = await encryptionClient.encryptQuery({ role: 'admin' }, {
   column: documents.metadata,
   table: documents,
 })
 
 // Nested object containment
-const nestedTerm = await protectClient.encryptQuery(
+const nestedTerm = await encryptionClient.encryptQuery(
   { user: { profile: { role: 'admin' } } },
   {
     column: documents.metadata,
@@ -192,7 +192,7 @@ const nestedTerm = await protectClient.encryptQuery(
 )
 
 // Array containment
-const tagsTerm = await protectClient.encryptQuery(['admin', 'user'], {
+const tagsTerm = await encryptionClient.encryptQuery(['admin', 'user'], {
   column: documents.metadata,
   table: documents,
 })
@@ -204,10 +204,10 @@ const tagsTerm = await protectClient.encryptQuery(['admin', 'user'], {
 >
 > ```typescript
 > // Wrong for searchableJson - will fail (works for orderAndRange)
-> await protectClient.encryptQuery(42, { column: documents.metadata, table: documents })
+> await encryptionClient.encryptQuery(42, { column: documents.metadata, table: documents })
 >
 > // Correct - wrap in an object
-> await protectClient.encryptQuery({ value: 42 }, { column: documents.metadata, table: documents })
+> await encryptionClient.encryptQuery({ value: 42 }, { column: documents.metadata, table: documents })
 > ```
 
 <!-- -->
@@ -227,7 +227,7 @@ const tagsTerm = await protectClient.encryptQuery(['admin', 'user'], {
 Use `encryptQuery` with an array to encrypt multiple JSONB query terms in a single call. Each item can have a different plaintext type:
 
 ```typescript
-const terms = await protectClient.encryptQuery([
+const terms = await encryptionClient.encryptQuery([
   {
     value: '$.user.email',        // string → JSONPath selector
     column: documents.metadata,
@@ -257,7 +257,7 @@ console.log(terms.data) // array of encrypted query terms
 To use encrypted JSONB query terms in PostgreSQL queries, specify `returnType: 'composite-literal'` to get the terms formatted for direct use in SQL:
 
 ```typescript
-const term = await protectClient.encryptQuery([{
+const term = await encryptionClient.encryptQuery([{
   value: '$.user.email',
   column: documents.metadata,
   table: documents,
@@ -287,14 +287,14 @@ For advanced use cases, you can specify the query type explicitly instead of rel
 
 ```typescript
 // Explicit steVecSelector
-const selectorTerm = await protectClient.encryptQuery('$.user.email', {
+const selectorTerm = await encryptionClient.encryptQuery('$.user.email', {
   column: documents.metadata,
   table: documents,
   queryType: 'steVecSelector',
 })
 
 // Explicit steVecTerm
-const containTerm = await protectClient.encryptQuery({ role: 'admin' }, {
+const containTerm = await encryptionClient.encryptQuery({ role: 'admin' }, {
   column: documents.metadata,
   table: documents,
   queryType: 'steVecTerm',
@@ -307,7 +307,7 @@ const containTerm = await protectClient.encryptQuery({ role: 'admin' }, {
 >
 > ```typescript
 > // To find documents where a field contains the string "admin"
-> const term = await protectClient.encryptQuery(['admin'], {
+> const term = await encryptionClient.encryptQuery(['admin'], {
 >   column: documents.metadata,
 >   table: documents,
 >   queryType: 'steVecTerm',  // Explicit for clarity
@@ -320,7 +320,7 @@ Use `.equality()` when you need to find exact matches:
 
 ```typescript
 // Find user with specific email
-const term = await protectClient.createSearchTerms([{
+const term = await encryptionClient.createSearchTerms([{
   value: 'user@example.com',
   column: schema.email,
   table: schema,
@@ -344,7 +344,7 @@ Use `.freeTextSearch()` for text-based searches:
 
 ```typescript
 // Search for users with emails containing "example"
-const term = await protectClient.createSearchTerms([{
+const term = await encryptionClient.createSearchTerms([{
   value: 'example',
   column: schema.email,
   table: schema,
@@ -395,12 +395,12 @@ const client = new Client({
   // your connection details
 })
 
-const protectClient = await Encryption({
+const encryptionClient = await Encryption({
   schemas: [schema]
 })
 
 // Insert encrypted data
-const encryptedData = await protectClient.encryptModel({
+const encryptedData = await encryptionClient.encryptModel({
   email: 'user@example.com'
 }, schema)
 
@@ -414,7 +414,7 @@ await client.query(
 )
 
 // Search encrypted data
-const searchTerm = await protectClient.createSearchTerms([{
+const searchTerm = await encryptionClient.createSearchTerms([{
   value: 'example.com',
   column: schema.email,
   table: schema,
@@ -431,7 +431,7 @@ const result = await client.query(
 )
 
 // Decrypt results
-const decryptedData = await protectClient.bulkDecryptModels(result.rows)
+const decryptedData = await encryptionClient.bulkDecryptModels(result.rows)
 ```
 
 ### Using Supabase SDK

@@ -1,14 +1,14 @@
 import { type Result, withResult } from '@byteslice/result'
 import type { EncryptionClient, SearchTerm } from '@cipherstash/stack'
 import { handleError } from '../helpers'
-import type { ProtectDynamoDBError } from '../types'
+import type { EncryptedDynamoDBError } from '../types'
 import {
   DynamoDBOperation,
   type DynamoDBOperationOptions,
 } from './base-operation'
 
 /**
- * @deprecated Use `protectClient.encryptQuery(terms)` instead and extract the `hm` field for DynamoDB key lookups.
+ * @deprecated Use `encryptionClient.encryptQuery(terms)` instead and extract the `hm` field for DynamoDB key lookups.
  *
  * @example
  * ```typescript
@@ -17,33 +17,33 @@ import {
  * const hmac = result.data[0]
  *
  * // After (new API)
- * const [encrypted] = await protectClient.encryptQuery([{ value, column, table, queryType: 'equality' }])
+ * const [encrypted] = await encryptionClient.encryptQuery([{ value, column, table, queryType: 'equality' }])
  * const hmac = encrypted.hm
  * ```
  */
 export class SearchTermsOperation extends DynamoDBOperation<string[]> {
-  private protectClient: EncryptionClient
+  private encryptionClient: EncryptionClient
   private terms: SearchTerm[]
 
   constructor(
-    protectClient: EncryptionClient,
+    encryptionClient: EncryptionClient,
     terms: SearchTerm[],
     options?: DynamoDBOperationOptions,
   ) {
     super(options)
-    this.protectClient = protectClient
+    this.encryptionClient = encryptionClient
     this.terms = terms
   }
 
-  public async execute(): Promise<Result<string[], ProtectDynamoDBError>> {
+  public async execute(): Promise<Result<string[], EncryptedDynamoDBError>> {
     return await withResult(
       async () => {
-        const searchTermsResult = await this.protectClient
+        const searchTermsResult = await this.encryptionClient
           .createSearchTerms(this.terms)
           .audit(this.getAuditData())
 
         if (searchTermsResult.failure) {
-          throw new Error(`[protect]: ${searchTermsResult.failure.message}`)
+          throw new Error(`[encryption]: ${searchTermsResult.failure.message}`)
         }
 
         return searchTermsResult.data.map((term) => {

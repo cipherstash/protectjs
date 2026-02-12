@@ -13,7 +13,7 @@ const FFI_TEST_TIMEOUT = 30_000
  * enabling programmatic error handling.
  */
 describe('FFI Error Code Preservation', () => {
-  let protectClient: EncryptionClient
+  let encryptionClient: EncryptionClient
 
   // Schema with a valid column for testing
   const testSchema = encryptedTable('test_table', {
@@ -34,7 +34,9 @@ describe('FFI Error Code Preservation', () => {
   })
 
   beforeAll(async () => {
-    protectClient = await Encryption({ schemas: [testSchema, noIndexSchema] })
+    encryptionClient = await Encryption({
+      schemas: [testSchema, noIndexSchema],
+    })
   })
 
   describe('FfiProtectError class', () => {
@@ -55,7 +57,7 @@ describe('FFI Error Code Preservation', () => {
         // Create a fake column that doesn't exist in the schema
         const fakeColumn = encryptedColumn('nonexistent_column').equality()
 
-        const result = await protectClient.encryptQuery('test', {
+        const result = await encryptionClient.encryptQuery('test', {
           column: fakeColumn,
           table: testSchema,
           queryType: 'equality',
@@ -72,7 +74,7 @@ describe('FFI Error Code Preservation', () => {
       'returns undefined code for columns without indexes (non-FFI validation)',
       async () => {
         // This error is caught during pre-FFI validation, not by FFI itself
-        const result = await protectClient.encryptQuery('test', {
+        const result = await encryptionClient.encryptQuery('test', {
           column: noIndexSchema.raw,
           table: noIndexSchema,
         })
@@ -90,7 +92,7 @@ describe('FFI Error Code Preservation', () => {
       'returns undefined code for non-FFI validation errors',
       async () => {
         // NaN validation happens before FFI call
-        const result = await protectClient.encryptQuery(Number.NaN, {
+        const result = await encryptionClient.encryptQuery(Number.NaN, {
           column: testSchema.age,
           table: testSchema,
           queryType: 'orderAndRange',
@@ -111,7 +113,7 @@ describe('FFI Error Code Preservation', () => {
       async () => {
         const fakeColumn = encryptedColumn('nonexistent_column').equality()
 
-        const result = await protectClient.encryptQuery([
+        const result = await encryptionClient.encryptQuery([
           {
             value: 'test',
             column: fakeColumn,
@@ -130,7 +132,7 @@ describe('FFI Error Code Preservation', () => {
     it(
       'returns undefined code for non-FFI batch errors',
       async () => {
-        const result = await protectClient.encryptQuery([
+        const result = await encryptionClient.encryptQuery([
           {
             value: Number.NaN,
             column: testSchema.age,
@@ -152,7 +154,7 @@ describe('FFI Error Code Preservation', () => {
       async () => {
         const fakeColumn = encryptedColumn('nonexistent_column')
 
-        const result = await protectClient.encrypt('test', {
+        const result = await encryptionClient.encrypt('test', {
           column: fakeColumn,
           table: testSchema,
         })
@@ -167,7 +169,7 @@ describe('FFI Error Code Preservation', () => {
     it(
       'returns undefined code for non-FFI encrypt errors',
       async () => {
-        const result = await protectClient.encrypt(Number.NaN, {
+        const result = await encryptionClient.encrypt(Number.NaN, {
           column: testSchema.age,
           table: testSchema,
         })
@@ -192,7 +194,7 @@ describe('FFI Error Code Preservation', () => {
           c: 'invalid_ciphertext_data',
         }
 
-        const result = await protectClient.decrypt(invalidCiphertext)
+        const result = await encryptionClient.decrypt(invalidCiphertext)
 
         expect(result.failure).toBeDefined()
         expect(result.failure?.type).toBe(EncryptionErrorTypes.DecryptionError)
@@ -209,7 +211,7 @@ describe('FFI Error Code Preservation', () => {
       async () => {
         const fakeColumn = encryptedColumn('nonexistent_column')
 
-        const result = await protectClient.bulkEncrypt(
+        const result = await encryptionClient.bulkEncrypt(
           [{ plaintext: 'test1' }, { plaintext: 'test2' }],
           {
             column: fakeColumn,
@@ -227,7 +229,7 @@ describe('FFI Error Code Preservation', () => {
     it(
       'returns undefined code for non-FFI validation errors',
       async () => {
-        const result = await protectClient.bulkEncrypt(
+        const result = await encryptionClient.bulkEncrypt(
           [{ plaintext: Number.NaN }],
           {
             column: testSchema.age,
@@ -251,7 +253,7 @@ describe('FFI Error Code Preservation', () => {
           { data: { i: { t: 'test_table', c: 'email' }, v: 2, c: 'invalid2' } },
         ]
 
-        const result = await protectClient.bulkDecrypt(invalidCiphertexts)
+        const result = await encryptionClient.bulkDecrypt(invalidCiphertexts)
 
         expect(result.failure).toBeDefined()
         expect(result.failure?.type).toBe(EncryptionErrorTypes.DecryptionError)
@@ -268,7 +270,10 @@ describe('FFI Error Code Preservation', () => {
       async () => {
         const model = { nonexistent: 'test value' }
 
-        const result = await protectClient.encryptModel(model, badModelSchema)
+        const result = await encryptionClient.encryptModel(
+          model,
+          badModelSchema,
+        )
 
         expect(result.failure).toBeDefined()
         expect(result.failure?.type).toBe(EncryptionErrorTypes.EncryptionError)
@@ -290,7 +295,7 @@ describe('FFI Error Code Preservation', () => {
           },
         }
 
-        const result = await protectClient.decryptModel(malformedModel)
+        const result = await encryptionClient.decryptModel(malformedModel)
 
         expect(result.failure).toBeDefined()
         expect(result.failure?.type).toBe(EncryptionErrorTypes.DecryptionError)
@@ -306,7 +311,7 @@ describe('FFI Error Code Preservation', () => {
       async () => {
         const models = [{ nonexistent: 'value1' }, { nonexistent: 'value2' }]
 
-        const result = await protectClient.bulkEncryptModels(
+        const result = await encryptionClient.bulkEncryptModels(
           models,
           badModelSchema,
         )
@@ -332,7 +337,7 @@ describe('FFI Error Code Preservation', () => {
           },
         ]
 
-        const result = await protectClient.bulkDecryptModels(malformedModels)
+        const result = await encryptionClient.bulkDecryptModels(malformedModels)
 
         expect(result.failure).toBeDefined()
         expect(result.failure?.type).toBe(EncryptionErrorTypes.DecryptionError)
@@ -348,7 +353,7 @@ describe('FFI Error Code Preservation', () => {
       async () => {
         const fakeColumn = encryptedColumn('nonexistent_column').equality()
 
-        const result = await protectClient.createSearchTerms([
+        const result = await encryptionClient.createSearchTerms([
           { value: 'test', column: fakeColumn, table: testSchema },
         ])
 

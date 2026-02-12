@@ -36,10 +36,10 @@ type User = {
   }
 }
 
-let protectClient: EncryptionClient
+let encryptionClient: EncryptionClient
 
 beforeAll(async () => {
-  protectClient = await Encryption({
+  encryptionClient = await Encryption({
     schemas: [users],
   })
 })
@@ -51,7 +51,7 @@ describe('JSON encryption and decryption', () => {
       age: 30,
     }
 
-    const ciphertext = await protectClient.encrypt(json, {
+    const ciphertext = await encryptionClient.encrypt(json, {
       column: users.json,
       table: users,
     })
@@ -63,7 +63,7 @@ describe('JSON encryption and decryption', () => {
     // Verify encrypted field
     expect(ciphertext.data).not.toHaveProperty('k')
 
-    const plaintext = await protectClient.decrypt(ciphertext.data)
+    const plaintext = await encryptionClient.decrypt(ciphertext.data)
 
     expect(plaintext).toEqual({
       data: json,
@@ -103,7 +103,7 @@ describe('JSON encryption and decryption', () => {
       numberValue: 42.5,
     }
 
-    const ciphertext = await protectClient.encrypt(json, {
+    const ciphertext = await encryptionClient.encrypt(json, {
       column: users.json,
       table: users,
     })
@@ -115,7 +115,7 @@ describe('JSON encryption and decryption', () => {
     // Verify encrypted field
     expect(ciphertext.data).not.toHaveProperty('k')
 
-    const plaintext = await protectClient.decrypt(ciphertext.data)
+    const plaintext = await encryptionClient.decrypt(ciphertext.data)
 
     expect(plaintext).toEqual({
       data: json,
@@ -123,7 +123,7 @@ describe('JSON encryption and decryption', () => {
   }, 30000)
 
   it('should handle null JSON payload', async () => {
-    const ciphertext = await protectClient.encrypt(null, {
+    const ciphertext = await encryptionClient.encrypt(null, {
       column: users.json,
       table: users,
     })
@@ -135,7 +135,7 @@ describe('JSON encryption and decryption', () => {
     // Verify null is preserved
     expect(ciphertext.data).toBeNull()
 
-    const plaintext = await protectClient.decrypt(ciphertext.data)
+    const plaintext = await encryptionClient.decrypt(ciphertext.data)
 
     expect(plaintext).toEqual({
       data: null,
@@ -145,7 +145,7 @@ describe('JSON encryption and decryption', () => {
   it('should handle empty JSON object', async () => {
     const json = {}
 
-    const ciphertext = await protectClient.encrypt(json, {
+    const ciphertext = await encryptionClient.encrypt(json, {
       column: users.json,
       table: users,
     })
@@ -157,7 +157,7 @@ describe('JSON encryption and decryption', () => {
     // Verify encrypted field
     expect(ciphertext.data).not.toHaveProperty('k')
 
-    const plaintext = await protectClient.decrypt(ciphertext.data)
+    const plaintext = await encryptionClient.decrypt(ciphertext.data)
 
     expect(plaintext).toEqual({
       data: json,
@@ -172,7 +172,7 @@ describe('JSON encryption and decryption', () => {
       multiline: 'Line 1\nLine 2\tTabbed',
     }
 
-    const ciphertext = await protectClient.encrypt(json, {
+    const ciphertext = await encryptionClient.encrypt(json, {
       column: users.json,
       table: users,
     })
@@ -184,7 +184,7 @@ describe('JSON encryption and decryption', () => {
     // Verify encrypted field
     expect(ciphertext.data).not.toHaveProperty('k')
 
-    const plaintext = await protectClient.decrypt(ciphertext.data)
+    const plaintext = await encryptionClient.decrypt(ciphertext.data)
 
     expect(plaintext).toEqual({
       data: json,
@@ -210,7 +210,7 @@ describe('JSON model encryption and decryption', () => {
       updatedAt: new Date('2021-01-01'),
     }
 
-    const encryptedModel = await protectClient.encryptModel<User>(
+    const encryptedModel = await encryptionClient.encryptModel<User>(
       decryptedModel,
       users,
     )
@@ -229,7 +229,7 @@ describe('JSON model encryption and decryption', () => {
     expect(encryptedModel.data.createdAt).toEqual(new Date('2021-01-01'))
     expect(encryptedModel.data.updatedAt).toEqual(new Date('2021-01-01'))
 
-    const decryptedResult = await protectClient.decryptModel<User>(
+    const decryptedResult = await encryptionClient.decryptModel<User>(
       encryptedModel.data,
     )
 
@@ -250,7 +250,7 @@ describe('JSON model encryption and decryption', () => {
       updatedAt: new Date('2021-01-01'),
     }
 
-    const encryptedModel = await protectClient.encryptModel<User>(
+    const encryptedModel = await encryptionClient.encryptModel<User>(
       decryptedModel,
       users,
     )
@@ -264,7 +264,7 @@ describe('JSON model encryption and decryption', () => {
     expect(encryptedModel.data.address).not.toHaveProperty('k')
     expect(encryptedModel.data.json).toBeNull()
 
-    const decryptedResult = await protectClient.decryptModel<User>(
+    const decryptedResult = await encryptionClient.decryptModel<User>(
       encryptedModel.data,
     )
 
@@ -285,7 +285,7 @@ describe('JSON model encryption and decryption', () => {
       updatedAt: new Date('2021-01-01'),
     }
 
-    const encryptedModel = await protectClient.encryptModel<User>(
+    const encryptedModel = await encryptionClient.encryptModel<User>(
       decryptedModel,
       users,
     )
@@ -299,7 +299,7 @@ describe('JSON model encryption and decryption', () => {
     expect(encryptedModel.data.address).not.toHaveProperty('k')
     expect(encryptedModel.data.json).toBeUndefined()
 
-    const decryptedResult = await protectClient.decryptModel<User>(
+    const decryptedResult = await encryptionClient.decryptModel<User>(
       encryptedModel.data,
     )
 
@@ -319,7 +319,7 @@ describe('JSON bulk encryption and decryption', () => {
       { id: 'user3', plaintext: { name: 'Charlie', age: 35 } },
     ]
 
-    const encryptedData = await protectClient.bulkEncrypt(jsonPayloads, {
+    const encryptedData = await encryptionClient.bulkEncrypt(jsonPayloads, {
       column: users.json,
       table: users,
     })
@@ -341,7 +341,7 @@ describe('JSON bulk encryption and decryption', () => {
     expect(encryptedData.data[2].data).not.toHaveProperty('k')
 
     // Now decrypt the data
-    const decryptedData = await protectClient.bulkDecrypt(encryptedData.data)
+    const decryptedData = await encryptionClient.bulkDecrypt(encryptedData.data)
 
     if (decryptedData.failure) {
       throw new Error(`[encryption]: ${decryptedData.failure.message}`)
@@ -373,7 +373,7 @@ describe('JSON bulk encryption and decryption', () => {
       { id: 'user3', plaintext: { name: 'Charlie', age: 35 } },
     ]
 
-    const encryptedData = await protectClient.bulkEncrypt(jsonPayloads, {
+    const encryptedData = await encryptionClient.bulkEncrypt(jsonPayloads, {
       column: users.json,
       table: users,
     })
@@ -395,7 +395,7 @@ describe('JSON bulk encryption and decryption', () => {
     expect(encryptedData.data[2].data).not.toHaveProperty('k')
 
     // Now decrypt the data
-    const decryptedData = await protectClient.bulkDecrypt(encryptedData.data)
+    const decryptedData = await encryptionClient.bulkDecrypt(encryptedData.data)
 
     if (decryptedData.failure) {
       throw new Error(`[encryption]: ${decryptedData.failure.message}`)
@@ -443,7 +443,7 @@ describe('JSON bulk encryption and decryption', () => {
       },
     ]
 
-    const encryptedModels = await protectClient.bulkEncryptModels<User>(
+    const encryptedModels = await encryptionClient.bulkEncryptModels<User>(
       decryptedModels,
       users,
     )
@@ -468,7 +468,7 @@ describe('JSON bulk encryption and decryption', () => {
     expect(encryptedModels.data[1].createdAt).toEqual(new Date('2021-01-01'))
     expect(encryptedModels.data[1].updatedAt).toEqual(new Date('2021-01-01'))
 
-    const decryptedResult = await protectClient.bulkDecryptModels<User>(
+    const decryptedResult = await encryptionClient.bulkDecryptModels<User>(
       encryptedModels.data,
     )
 
@@ -505,7 +505,7 @@ describe('JSON encryption with lock context', () => {
       },
     }
 
-    const ciphertext = await protectClient
+    const ciphertext = await encryptionClient
       .encrypt(json, {
         column: users.json,
         table: users,
@@ -519,7 +519,7 @@ describe('JSON encryption with lock context', () => {
     // Verify encrypted field
     expect(ciphertext.data).not.toHaveProperty('k')
 
-    const plaintext = await protectClient
+    const plaintext = await encryptionClient
       .decrypt(ciphertext.data)
       .withLockContext(lockContext.data)
 
@@ -554,7 +554,7 @@ describe('JSON encryption with lock context', () => {
       },
     }
 
-    const encryptedModel = await protectClient
+    const encryptedModel = await encryptionClient
       .encryptModel(decryptedModel, users)
       .withLockContext(lockContext.data)
 
@@ -566,7 +566,7 @@ describe('JSON encryption with lock context', () => {
     expect(encryptedModel.data.email).not.toHaveProperty('k')
     expect(encryptedModel.data.json).not.toHaveProperty('k')
 
-    const decryptedResult = await protectClient
+    const decryptedResult = await encryptionClient
       .decryptModel(encryptedModel.data)
       .withLockContext(lockContext.data)
 
@@ -597,7 +597,7 @@ describe('JSON encryption with lock context', () => {
       { id: 'user2', plaintext: { name: 'Bob', age: 30 } },
     ]
 
-    const encryptedData = await protectClient
+    const encryptedData = await encryptionClient
       .bulkEncrypt(jsonPayloads, {
         column: users.json,
         table: users,
@@ -618,7 +618,7 @@ describe('JSON encryption with lock context', () => {
     expect(encryptedData.data[1].data).not.toHaveProperty('k')
 
     // Decrypt with lock context
-    const decryptedData = await protectClient
+    const decryptedData = await encryptionClient
       .bulkDecrypt(encryptedData.data)
       .withLockContext(lockContext.data)
 
@@ -643,7 +643,7 @@ describe('JSON encryption with lock context', () => {
 
 describe('JSON nested object encryption', () => {
   it('should encrypt and decrypt nested JSON objects', async () => {
-    const protectClient = await Encryption({ schemas: [users] })
+    const encryptionClient = await Encryption({ schemas: [users] })
 
     const decryptedModel = {
       id: '1',
@@ -666,7 +666,7 @@ describe('JSON nested object encryption', () => {
       },
     }
 
-    const encryptedModel = await protectClient.encryptModel<User>(
+    const encryptedModel = await encryptionClient.encryptModel<User>(
       decryptedModel,
       users,
     )
@@ -685,7 +685,7 @@ describe('JSON nested object encryption', () => {
     // Verify non-encrypted fields remain unchanged
     expect(encryptedModel.data.id).toBe('1')
 
-    const decryptedResult = await protectClient.decryptModel<User>(
+    const decryptedResult = await encryptionClient.decryptModel<User>(
       encryptedModel.data,
     )
 
@@ -697,7 +697,7 @@ describe('JSON nested object encryption', () => {
   }, 30000)
 
   it('should handle null values in nested JSON objects', async () => {
-    const protectClient = await Encryption({ schemas: [users] })
+    const encryptionClient = await Encryption({ schemas: [users] })
 
     const decryptedModel = {
       id: '2',
@@ -710,7 +710,7 @@ describe('JSON nested object encryption', () => {
       },
     }
 
-    const encryptedModel = await protectClient.encryptModel<User>(
+    const encryptedModel = await encryptionClient.encryptModel<User>(
       decryptedModel,
       users,
     )
@@ -724,7 +724,7 @@ describe('JSON nested object encryption', () => {
     expect(encryptedModel.data.metadata?.profile).toBeNull()
     expect(encryptedModel.data.metadata?.settings?.preferences).toBeNull()
 
-    const decryptedResult = await protectClient.decryptModel<User>(
+    const decryptedResult = await encryptionClient.decryptModel<User>(
       encryptedModel.data,
     )
 
@@ -736,7 +736,7 @@ describe('JSON nested object encryption', () => {
   }, 30000)
 
   it('should handle undefined values in nested JSON objects', async () => {
-    const protectClient = await Encryption({ schemas: [users] })
+    const encryptionClient = await Encryption({ schemas: [users] })
 
     const decryptedModel = {
       id: '3',
@@ -749,7 +749,7 @@ describe('JSON nested object encryption', () => {
       },
     }
 
-    const encryptedModel = await protectClient.encryptModel<User>(
+    const encryptedModel = await encryptionClient.encryptModel<User>(
       decryptedModel,
       users,
     )
@@ -763,7 +763,7 @@ describe('JSON nested object encryption', () => {
     expect(encryptedModel.data.metadata?.profile).toBeUndefined()
     expect(encryptedModel.data.metadata?.settings?.preferences).toBeUndefined()
 
-    const decryptedResult = await protectClient.decryptModel<User>(
+    const decryptedResult = await encryptionClient.decryptModel<User>(
       encryptedModel.data,
     )
 
@@ -795,7 +795,7 @@ describe('JSON edge cases and error handling', () => {
       },
     }
 
-    const ciphertext = await protectClient.encrypt(largeJson, {
+    const ciphertext = await encryptionClient.encrypt(largeJson, {
       column: users.json,
       table: users,
     })
@@ -807,7 +807,7 @@ describe('JSON edge cases and error handling', () => {
     // Verify encrypted field
     expect(ciphertext.data).not.toHaveProperty('k')
 
-    const plaintext = await protectClient.decrypt(ciphertext.data)
+    const plaintext = await encryptionClient.decrypt(ciphertext.data)
 
     expect(plaintext).toEqual({
       data: largeJson,
@@ -819,7 +819,7 @@ describe('JSON edge cases and error handling', () => {
     circularObj.self = circularObj
 
     try {
-      await protectClient.encrypt(circularObj, {
+      await encryptionClient.encrypt(circularObj, {
         column: users.json,
         table: users,
       })
@@ -843,7 +843,7 @@ describe('JSON edge cases and error handling', () => {
       // Note: Functions and undefined are not JSON serializable
     }
 
-    const ciphertext = await protectClient.encrypt(json, {
+    const ciphertext = await encryptionClient.encrypt(json, {
       column: users.json,
       table: users,
     })
@@ -855,7 +855,7 @@ describe('JSON edge cases and error handling', () => {
     // Verify encrypted field
     expect(ciphertext.data).not.toHaveProperty('k')
 
-    const plaintext = await protectClient.decrypt(ciphertext.data)
+    const plaintext = await encryptionClient.decrypt(ciphertext.data)
 
     // Date objects get serialized to strings in JSON
     const expectedJson = {
@@ -891,7 +891,7 @@ describe('JSON performance tests', () => {
       plaintext: item,
     }))
 
-    const encryptedData = await protectClient.bulkEncrypt(jsonPayloads, {
+    const encryptedData = await encryptionClient.bulkEncrypt(jsonPayloads, {
       column: users.json,
       table: users,
     })
@@ -904,7 +904,7 @@ describe('JSON performance tests', () => {
     expect(encryptedData.data).toHaveLength(100)
 
     // Decrypt the data
-    const decryptedData = await protectClient.bulkDecrypt(encryptedData.data)
+    const decryptedData = await encryptionClient.bulkDecrypt(encryptedData.data)
 
     if (decryptedData.failure) {
       throw new Error(`[encryption]: ${decryptedData.failure.message}`)
@@ -944,7 +944,7 @@ describe('JSON advanced scenarios', () => {
       },
     }
 
-    const ciphertext = await protectClient.encrypt(json, {
+    const ciphertext = await encryptionClient.encrypt(json, {
       column: users.json,
       table: users,
     })
@@ -956,7 +956,7 @@ describe('JSON advanced scenarios', () => {
     // Verify encrypted field
     expect(ciphertext.data).not.toHaveProperty('k')
 
-    const plaintext = await protectClient.decrypt(ciphertext.data)
+    const plaintext = await encryptionClient.decrypt(ciphertext.data)
 
     expect(plaintext).toEqual({
       data: json,
@@ -971,7 +971,7 @@ describe('JSON advanced scenarios', () => {
       },
     }
 
-    const ciphertext = await protectClient.encrypt(json, {
+    const ciphertext = await encryptionClient.encrypt(json, {
       column: users.json,
       table: users,
     })
@@ -983,7 +983,7 @@ describe('JSON advanced scenarios', () => {
     // Verify encrypted field
     expect(ciphertext.data).not.toHaveProperty('k')
 
-    const plaintext = await protectClient.decrypt(ciphertext.data)
+    const plaintext = await encryptionClient.decrypt(ciphertext.data)
 
     expect(plaintext).toEqual({
       data: json,
@@ -1006,7 +1006,7 @@ describe('JSON advanced scenarios', () => {
       },
     }
 
-    const ciphertext = await protectClient.encrypt(json, {
+    const ciphertext = await encryptionClient.encrypt(json, {
       column: users.json,
       table: users,
     })
@@ -1018,7 +1018,7 @@ describe('JSON advanced scenarios', () => {
     // Verify encrypted field
     expect(ciphertext.data).not.toHaveProperty('k')
 
-    const plaintext = await protectClient.decrypt(ciphertext.data)
+    const plaintext = await encryptionClient.decrypt(ciphertext.data)
 
     expect(plaintext).toEqual({
       data: json,
@@ -1041,7 +1041,7 @@ describe('JSON advanced scenarios', () => {
       },
     }
 
-    const ciphertext = await protectClient.encrypt(json, {
+    const ciphertext = await encryptionClient.encrypt(json, {
       column: users.json,
       table: users,
     })
@@ -1053,7 +1053,7 @@ describe('JSON advanced scenarios', () => {
     // Verify encrypted field
     expect(ciphertext.data).not.toHaveProperty('k')
 
-    const plaintext = await protectClient.decrypt(ciphertext.data)
+    const plaintext = await encryptionClient.decrypt(ciphertext.data)
 
     expect(plaintext).toEqual({
       data: json,
@@ -1077,7 +1077,7 @@ describe('JSON advanced scenarios', () => {
       },
     }
 
-    const ciphertext = await protectClient.encrypt(json, {
+    const ciphertext = await encryptionClient.encrypt(json, {
       column: users.json,
       table: users,
     })
@@ -1089,7 +1089,7 @@ describe('JSON advanced scenarios', () => {
     // Verify encrypted field
     expect(ciphertext.data).not.toHaveProperty('k')
 
-    const plaintext = await protectClient.decrypt(ciphertext.data)
+    const plaintext = await encryptionClient.decrypt(ciphertext.data)
 
     expect(plaintext).toEqual({
       data: json,
@@ -1110,7 +1110,7 @@ describe('JSON error handling and edge cases', () => {
     invalidJson.circular = invalidJson
 
     try {
-      await protectClient.encrypt(invalidJson, {
+      await encryptionClient.encrypt(invalidJson, {
         column: users.json,
         table: users,
       })
@@ -1136,7 +1136,7 @@ describe('JSON error handling and edge cases', () => {
       },
     }
 
-    const ciphertext = await protectClient.encrypt(json, {
+    const ciphertext = await encryptionClient.encrypt(json, {
       column: users.json,
       table: users,
     })
@@ -1148,7 +1148,7 @@ describe('JSON error handling and edge cases', () => {
     // Verify encrypted field
     expect(ciphertext.data).not.toHaveProperty('k')
 
-    const plaintext = await protectClient.decrypt(ciphertext.data)
+    const plaintext = await encryptionClient.decrypt(ciphertext.data)
 
     expect(plaintext).toEqual({
       data: json,
@@ -1165,7 +1165,7 @@ describe('JSON error handling and edge cases', () => {
       },
     }
 
-    const ciphertext = await protectClient.encrypt(json, {
+    const ciphertext = await encryptionClient.encrypt(json, {
       column: users.json,
       table: users,
     })
@@ -1177,7 +1177,7 @@ describe('JSON error handling and edge cases', () => {
     // Verify encrypted field
     expect(ciphertext.data).not.toHaveProperty('k')
 
-    const plaintext = await protectClient.decrypt(ciphertext.data)
+    const plaintext = await encryptionClient.decrypt(ciphertext.data)
 
     expect(plaintext).toEqual({
       data: json,
@@ -1202,7 +1202,7 @@ describe('JSON error handling and edge cases', () => {
       },
     }
 
-    const ciphertext = await protectClient.encrypt(json, {
+    const ciphertext = await encryptionClient.encrypt(json, {
       column: users.json,
       table: users,
     })
@@ -1214,7 +1214,7 @@ describe('JSON error handling and edge cases', () => {
     // Verify encrypted field
     expect(ciphertext.data).not.toHaveProperty('k')
 
-    const plaintext = await protectClient.decrypt(ciphertext.data)
+    const plaintext = await encryptionClient.decrypt(ciphertext.data)
 
     expect(plaintext).toEqual({
       data: json,

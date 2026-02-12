@@ -49,9 +49,9 @@ type User = {
 
 describe('encrypt models with nested fields', () => {
   it('should encrypt and decrypt a single value from a nested schema', async () => {
-    const protectClient = await Encryption({ schemas: [users] })
+    const encryptionClient = await Encryption({ schemas: [users] })
 
-    const encryptResponse = await protectClient.encrypt('hello world', {
+    const encryptResponse = await encryptionClient.encrypt('hello world', {
       column: users.example.field,
       table: users,
     })
@@ -63,7 +63,7 @@ describe('encrypt models with nested fields', () => {
     // Verify encrypted field
     expect(encryptResponse.data).toHaveProperty('c')
 
-    const decryptResponse = await protectClient.decrypt(encryptResponse.data)
+    const decryptResponse = await encryptionClient.decrypt(encryptResponse.data)
 
     if (decryptResponse.failure) {
       throw new Error(`[encryption]: ${decryptResponse.failure.message}`)
@@ -75,7 +75,7 @@ describe('encrypt models with nested fields', () => {
   })
 
   it('should encrypt and decrypt a model with nested fields', async () => {
-    const protectClient = await Encryption({ schemas: [users] })
+    const encryptionClient = await Encryption({ schemas: [users] })
 
     const decryptedModel = {
       id: '1',
@@ -89,7 +89,7 @@ describe('encrypt models with nested fields', () => {
       },
     }
 
-    const encryptedModel = await protectClient.encryptModel<User>(
+    const encryptedModel = await encryptionClient.encryptModel<User>(
       decryptedModel,
       users,
     )
@@ -109,7 +109,7 @@ describe('encrypt models with nested fields', () => {
     expect(encryptedModel.data.createdAt).toEqual(new Date('2021-01-01'))
     expect(encryptedModel.data.updatedAt).toEqual(new Date('2021-01-01'))
 
-    const decryptedResult = await protectClient.decryptModel<User>(
+    const decryptedResult = await encryptionClient.decryptModel<User>(
       encryptedModel.data,
     )
 
@@ -121,7 +121,7 @@ describe('encrypt models with nested fields', () => {
   }, 30000)
 
   it('should handle null values in nested fields', async () => {
-    const protectClient = await Encryption({ schemas: [users] })
+    const encryptionClient = await Encryption({ schemas: [users] })
 
     const decryptedModel = {
       id: '2',
@@ -135,7 +135,7 @@ describe('encrypt models with nested fields', () => {
       },
     }
 
-    const encryptedModel = await protectClient.encryptModel<User>(
+    const encryptedModel = await encryptionClient.encryptModel<User>(
       decryptedModel,
       users,
     )
@@ -150,7 +150,7 @@ describe('encrypt models with nested fields', () => {
     expect(encryptedModel.data.example.field).toBeNull()
     expect(encryptedModel.data.example.nested?.deeper).toBeNull()
 
-    const decryptedResult = await protectClient.decryptModel<User>(
+    const decryptedResult = await encryptionClient.decryptModel<User>(
       encryptedModel.data,
     )
 
@@ -162,7 +162,7 @@ describe('encrypt models with nested fields', () => {
   }, 30000)
 
   it('should handle undefined values in nested fields', async () => {
-    const protectClient = await Encryption({ schemas: [users] })
+    const encryptionClient = await Encryption({ schemas: [users] })
 
     const decryptedModel = {
       id: '3',
@@ -174,7 +174,7 @@ describe('encrypt models with nested fields', () => {
       },
     }
 
-    const encryptedModel = await protectClient.encryptModel<User>(
+    const encryptedModel = await encryptionClient.encryptModel<User>(
       decryptedModel,
       users,
     )
@@ -188,7 +188,7 @@ describe('encrypt models with nested fields', () => {
     expect(encryptedModel.data.example.field).toBeUndefined()
     expect(encryptedModel.data.example.nested?.deeper).toBeUndefined()
 
-    const decryptedResult = await protectClient.decryptModel<User>(
+    const decryptedResult = await encryptionClient.decryptModel<User>(
       encryptedModel.data,
     )
 
@@ -200,7 +200,7 @@ describe('encrypt models with nested fields', () => {
   }, 30000)
 
   it('should handle mixed null and undefined values in nested fields', async () => {
-    const protectClient = await Encryption({ schemas: [users] })
+    const encryptionClient = await Encryption({ schemas: [users] })
 
     const decryptedModel = {
       id: '4',
@@ -217,7 +217,7 @@ describe('encrypt models with nested fields', () => {
       },
     }
 
-    const encryptedModel = await protectClient.encryptModel<User>(
+    const encryptedModel = await encryptionClient.encryptModel<User>(
       decryptedModel,
       users,
     )
@@ -240,7 +240,7 @@ describe('encrypt models with nested fields', () => {
     expect(encryptedModel.data.createdAt).toEqual(new Date('2021-01-01'))
     expect(encryptedModel.data.updatedAt).toEqual(new Date('2021-01-01'))
 
-    const decryptedResult = await protectClient.decryptModel<User>(
+    const decryptedResult = await encryptionClient.decryptModel<User>(
       encryptedModel.data,
     )
 
@@ -252,7 +252,7 @@ describe('encrypt models with nested fields', () => {
   }, 30000)
 
   it('should handle deeply nested fields', async () => {
-    const protectClient = await Encryption({ schemas: [users] })
+    const encryptionClient = await Encryption({ schemas: [users] })
 
     const decryptedModel = {
       id: '3',
@@ -264,7 +264,7 @@ describe('encrypt models with nested fields', () => {
       },
     }
 
-    const encryptedModel = await protectClient.encryptModel<User>(
+    const encryptedModel = await encryptionClient.encryptModel<User>(
       decryptedModel,
       users,
     )
@@ -280,7 +280,7 @@ describe('encrypt models with nested fields', () => {
     // Verify non-encrypted fields remain unchanged
     expect(encryptedModel.data.id).toBe('3')
 
-    const decryptedResult = await protectClient.decryptModel<User>(
+    const decryptedResult = await encryptionClient.decryptModel<User>(
       encryptedModel.data,
     )
 
@@ -292,7 +292,7 @@ describe('encrypt models with nested fields', () => {
   }, 30000)
 
   it('should handle missing optional nested fields', async () => {
-    const protectClient = await Encryption({ schemas: [users] })
+    const encryptionClient = await Encryption({ schemas: [users] })
 
     const decryptedModel = {
       id: '5',
@@ -301,7 +301,7 @@ describe('encrypt models with nested fields', () => {
       },
     }
 
-    const encryptedModel = await protectClient.encryptModel<User>(
+    const encryptedModel = await encryptionClient.encryptModel<User>(
       decryptedModel,
       users,
     )
@@ -317,7 +317,7 @@ describe('encrypt models with nested fields', () => {
     expect(encryptedModel.data.id).toBe('5')
     expect(encryptedModel.data.example.nested).toBeUndefined()
 
-    const decryptedResult = await protectClient.decryptModel<User>(
+    const decryptedResult = await encryptionClient.decryptModel<User>(
       encryptedModel.data,
     )
 
@@ -330,7 +330,7 @@ describe('encrypt models with nested fields', () => {
 
   describe('bulk operations with nested fields', () => {
     it('should handle bulk encryption and decryption of models with nested fields', async () => {
-      const protectClient = await Encryption({ schemas: [users] })
+      const encryptionClient = await Encryption({ schemas: [users] })
 
       const decryptedModels: User[] = [
         {
@@ -355,7 +355,7 @@ describe('encrypt models with nested fields', () => {
         },
       ]
 
-      const encryptedModels = await protectClient.bulkEncryptModels<User>(
+      const encryptedModels = await encryptionClient.bulkEncryptModels<User>(
         decryptedModels,
         users,
       )
@@ -376,7 +376,7 @@ describe('encrypt models with nested fields', () => {
       expect(encryptedModels.data[0].id).toBe('1')
       expect(encryptedModels.data[1].id).toBe('2')
 
-      const decryptedResults = await protectClient.bulkDecryptModels<User>(
+      const decryptedResults = await encryptionClient.bulkDecryptModels<User>(
         encryptedModels.data,
       )
 
@@ -388,7 +388,7 @@ describe('encrypt models with nested fields', () => {
     }, 30000)
 
     it('should handle bulk operations with null and undefined values in nested fields', async () => {
-      const protectClient = await Encryption({ schemas: [users] })
+      const encryptionClient = await Encryption({ schemas: [users] })
 
       const decryptedModels: User[] = [
         {
@@ -413,7 +413,7 @@ describe('encrypt models with nested fields', () => {
         },
       ]
 
-      const encryptedModels = await protectClient.bulkEncryptModels<User>(
+      const encryptedModels = await encryptionClient.bulkEncryptModels<User>(
         decryptedModels,
         users,
       )
@@ -434,7 +434,7 @@ describe('encrypt models with nested fields', () => {
       expect(encryptedModels.data[0].id).toBe('1')
       expect(encryptedModels.data[1].id).toBe('2')
 
-      const decryptedResults = await protectClient.bulkDecryptModels<User>(
+      const decryptedResults = await encryptionClient.bulkDecryptModels<User>(
         encryptedModels.data,
       )
 
@@ -446,7 +446,7 @@ describe('encrypt models with nested fields', () => {
     }, 30000)
 
     it('should handle bulk operations with missing optional nested fields', async () => {
-      const protectClient = await Encryption({ schemas: [users] })
+      const encryptionClient = await Encryption({ schemas: [users] })
 
       const decryptedModels: User[] = [
         {
@@ -468,7 +468,7 @@ describe('encrypt models with nested fields', () => {
         },
       ]
 
-      const encryptedModels = await protectClient.bulkEncryptModels<User>(
+      const encryptedModels = await encryptionClient.bulkEncryptModels<User>(
         decryptedModels,
         users,
       )
@@ -489,7 +489,7 @@ describe('encrypt models with nested fields', () => {
       expect(encryptedModels.data[0].example.nested).toBeUndefined()
       expect(encryptedModels.data[1].id).toBe('2')
 
-      const decryptedResults = await protectClient.bulkDecryptModels<User>(
+      const decryptedResults = await encryptionClient.bulkDecryptModels<User>(
         encryptedModels.data,
       )
 
@@ -501,11 +501,11 @@ describe('encrypt models with nested fields', () => {
     }, 30000)
 
     it('should handle empty array in bulk operations', async () => {
-      const protectClient = await Encryption({ schemas: [users] })
+      const encryptionClient = await Encryption({ schemas: [users] })
 
       const decryptedModels: User[] = []
 
-      const encryptedModels = await protectClient.bulkEncryptModels<User>(
+      const encryptedModels = await encryptionClient.bulkEncryptModels<User>(
         decryptedModels,
         users,
       )
@@ -516,7 +516,7 @@ describe('encrypt models with nested fields', () => {
 
       expect(encryptedModels.data).toEqual([])
 
-      const decryptedResults = await protectClient.bulkDecryptModels<User>(
+      const decryptedResults = await encryptionClient.bulkDecryptModels<User>(
         encryptedModels.data,
       )
 
@@ -531,7 +531,7 @@ describe('encrypt models with nested fields', () => {
 
 describe('nested fields with a plaintext field', () => {
   it('should handle nested fields with a plaintext field', async () => {
-    const protectClient = await Encryption({ schemas: [users] })
+    const encryptionClient = await Encryption({ schemas: [users] })
 
     const decryptedModel = {
       id: '1',
@@ -546,7 +546,7 @@ describe('nested fields with a plaintext field', () => {
       },
     }
 
-    const encryptedModel = await protectClient.encryptModel<User>(
+    const encryptedModel = await encryptionClient.encryptModel<User>(
       decryptedModel,
       users,
     )
@@ -567,7 +567,7 @@ describe('nested fields with a plaintext field', () => {
     expect(encryptedModel.data.updatedAt).toEqual(new Date('2021-01-01'))
     expect(encryptedModel.data.example.plaintext).toBe('plaintext')
 
-    const decryptedResult = await protectClient.decryptModel<User>(
+    const decryptedResult = await encryptionClient.decryptModel<User>(
       encryptedModel.data,
     )
 
@@ -579,7 +579,7 @@ describe('nested fields with a plaintext field', () => {
   })
 
   it('should handle multiple plaintext fields at different nesting levels', async () => {
-    const protectClient = await Encryption({ schemas: [users] })
+    const encryptionClient = await Encryption({ schemas: [users] })
 
     const decryptedModel = {
       id: '1',
@@ -599,7 +599,7 @@ describe('nested fields with a plaintext field', () => {
       },
     }
 
-    const encryptedModel = await protectClient.encryptModel<User>(
+    const encryptedModel = await encryptionClient.encryptModel<User>(
       decryptedModel,
       users,
     )
@@ -625,7 +625,7 @@ describe('nested fields with a plaintext field', () => {
       'deeply nested plaintext',
     )
 
-    const decryptedResult = await protectClient.decryptModel<User>(
+    const decryptedResult = await encryptionClient.decryptModel<User>(
       encryptedModel.data,
     )
 
@@ -637,7 +637,7 @@ describe('nested fields with a plaintext field', () => {
   })
 
   it('should handle partial path matches in nested objects', async () => {
-    const protectClient = await Encryption({ schemas: [users] })
+    const encryptionClient = await Encryption({ schemas: [users] })
 
     const decryptedModel = {
       id: '1',
@@ -658,7 +658,7 @@ describe('nested fields with a plaintext field', () => {
       },
     }
 
-    const encryptedModel = await protectClient.encryptModel<User>(
+    const encryptedModel = await encryptionClient.encryptModel<User>(
       decryptedModel,
       users,
     )
@@ -681,7 +681,7 @@ describe('nested fields with a plaintext field', () => {
       'not encrypted',
     )
 
-    const decryptedResult = await protectClient.decryptModel<User>(
+    const decryptedResult = await encryptionClient.decryptModel<User>(
       encryptedModel.data,
     )
 
@@ -693,7 +693,7 @@ describe('nested fields with a plaintext field', () => {
   })
 
   it('should handle mixed encrypted and plaintext fields with similar paths', async () => {
-    const protectClient = await Encryption({ schemas: [users] })
+    const encryptionClient = await Encryption({ schemas: [users] })
 
     const decryptedModel = {
       id: '1',
@@ -708,7 +708,7 @@ describe('nested fields with a plaintext field', () => {
       },
     }
 
-    const encryptedModel = await protectClient.encryptModel<User>(
+    const encryptedModel = await encryptionClient.encryptModel<User>(
       decryptedModel,
       users,
     )
@@ -729,7 +729,7 @@ describe('nested fields with a plaintext field', () => {
       'not encrypted',
     )
 
-    const decryptedResult = await protectClient.decryptModel<User>(
+    const decryptedResult = await encryptionClient.decryptModel<User>(
       encryptedModel.data,
     )
 
@@ -742,7 +742,7 @@ describe('nested fields with a plaintext field', () => {
 
   describe('bulk operations with plaintext fields', () => {
     it('should handle bulk encryption and decryption with plaintext fields', async () => {
-      const protectClient = await Encryption({ schemas: [users] })
+      const encryptionClient = await Encryption({ schemas: [users] })
 
       const decryptedModels: User[] = [
         {
@@ -773,7 +773,7 @@ describe('nested fields with a plaintext field', () => {
         },
       ]
 
-      const encryptedModels = await protectClient.bulkEncryptModels<User>(
+      const encryptedModels = await encryptionClient.bulkEncryptModels<User>(
         decryptedModels,
         users,
       )
@@ -804,7 +804,7 @@ describe('nested fields with a plaintext field', () => {
         'nested plaintext 2',
       )
 
-      const decryptedResults = await protectClient.bulkDecryptModels<User>(
+      const decryptedResults = await encryptionClient.bulkDecryptModels<User>(
         encryptedModels.data,
       )
 
@@ -816,7 +816,7 @@ describe('nested fields with a plaintext field', () => {
     })
 
     it('should handle bulk operations with mixed encrypted and non-encrypted fields', async () => {
-      const protectClient = await Encryption({ schemas: [users] })
+      const encryptionClient = await Encryption({ schemas: [users] })
 
       const decryptedModels: User[] = [
         {
@@ -845,7 +845,7 @@ describe('nested fields with a plaintext field', () => {
         },
       ]
 
-      const encryptedModels = await protectClient.bulkEncryptModels<User>(
+      const encryptedModels = await encryptionClient.bulkEncryptModels<User>(
         decryptedModels,
         users,
       )
@@ -878,7 +878,7 @@ describe('nested fields with a plaintext field', () => {
         'not encrypted deeper 2',
       )
 
-      const decryptedResults = await protectClient.bulkDecryptModels<User>(
+      const decryptedResults = await encryptionClient.bulkDecryptModels<User>(
         encryptedModels.data,
       )
 
@@ -890,7 +890,7 @@ describe('nested fields with a plaintext field', () => {
     })
 
     it('should handle bulk operations with deeply nested plaintext fields', async () => {
-      const protectClient = await Encryption({ schemas: [users] })
+      const encryptionClient = await Encryption({ schemas: [users] })
 
       const decryptedModels: User[] = [
         {
@@ -921,7 +921,7 @@ describe('nested fields with a plaintext field', () => {
         },
       ]
 
-      const encryptedModels = await protectClient.bulkEncryptModels<User>(
+      const encryptedModels = await encryptionClient.bulkEncryptModels<User>(
         decryptedModels,
         users,
       )
@@ -948,7 +948,7 @@ describe('nested fields with a plaintext field', () => {
         'deeply nested plaintext 2',
       )
 
-      const decryptedResults = await protectClient.bulkDecryptModels<User>(
+      const decryptedResults = await encryptionClient.bulkDecryptModels<User>(
         encryptedModels.data,
       )
 

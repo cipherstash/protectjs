@@ -264,23 +264,23 @@ const config: EncryptionClientConfig = {
 }
 
 // Pass all your tables to the Encryption function to initialize the client
-export const protectClient = await Encryption(config);
+export const encryptionClient = await Encryption(config);
 ```
 
 The `Encryption` function requires at least one `encryptedTable` be provided in the `schemas` array.
 
 ### Encrypt data
 
-Stash Encryption provides the `encrypt` function on `protectClient` to encrypt data.
+Stash Encryption provides the `encrypt` function on `encryptionClient` to encrypt data.
 `encrypt` takes a plaintext string, and an object with the table and column as parameters.
 
 To start encrypting data, add the following to `src/index.ts`:
 
 ```typescript
 import { users } from "./protect/schema";
-import { protectClient } from "./protect";
+import { encryptionClient } from "./protect";
 
-const encryptResult = await protectClient.encrypt("secret@squirrel.example", {
+const encryptResult = await encryptionClient.encrypt("secret@squirrel.example", {
   column: users.email,
   table: users,
 });
@@ -317,16 +317,16 @@ The `encryptResult` will return one of the following:
 
 ### Decrypt data
 
-Stash Encryption provides the `decrypt` function on `protectClient` to decrypt data.
+Stash Encryption provides the `decrypt` function on `encryptionClient` to decrypt data.
 `decrypt` takes an encrypted data object as a parameter.
 
 To start decrypting data, add the following to `src/index.ts`:
 
 ```typescript
-import { protectClient } from "./protect";
+import { encryptionClient } from "./protect";
 
 // encryptResult is the EQL payload from the previous step
-const decryptResult = await protectClient.decrypt(encryptResult.data);
+const decryptResult = await encryptionClient.decrypt(encryptResult.data);
 
 if (decryptResult.failure) {
   // Handle the failure
@@ -376,7 +376,7 @@ If you are working with a large data set, the model operations are significantly
 Use the `encryptModel` method to encrypt a model's fields that are defined in your schema:
 
 ```typescript
-import { protectClient } from "./protect";
+import { encryptionClient } from "./protect";
 import { users } from "./protect/schema";
 
 // Your model with plaintext values
@@ -387,7 +387,7 @@ const user = {
   createdAt: new Date("2024-01-01"),
 };
 
-const encryptedResult = await protectClient.encryptModel(user, users);
+const encryptedResult = await encryptionClient.encryptModel(user, users);
 
 if (encryptedResult.failure) {
   // Handle the failure
@@ -411,7 +411,7 @@ Stash Encryption provides strong TypeScript support for model operations.
 You can specify your model's type to ensure end-to-end type safety:
 
 ```typescript
-import { protectClient } from "./protect";
+import { encryptionClient } from "./protect";
 import { users } from "./protect/schema";
 
 // Define your model type
@@ -430,7 +430,7 @@ type User = {
 };
 
 // The encryptModel method will ensure type safety
-const encryptedResult = await protectClient.encryptModel<User>(user, users);
+const encryptedResult = await encryptionClient.encryptModel<User>(user, users);
 
 if (encryptedResult.failure) {
   // Handle the failure
@@ -441,7 +441,7 @@ const encryptedUser = encryptedResult.data;
 // but with encrypted fields for those defined in the schema
 
 // Decryption maintains type safety
-const decryptedResult = await protectClient.decryptModel<User>(encryptedUser);
+const decryptedResult = await encryptionClient.decryptModel<User>(encryptedUser);
 
 if (decryptedResult.failure) {
   // Handle the failure
@@ -451,12 +451,12 @@ const decryptedUser = decryptedResult.data;
 // decryptedUser is fully typed as User
 
 // Bulk operations also support type safety
-const bulkEncryptedResult = await protectClient.bulkEncryptModels<User>(
+const bulkEncryptedResult = await encryptionClient.bulkEncryptModels<User>(
   userModels,
   users
 );
 
-const bulkDecryptedResult = await protectClient.bulkDecryptModels<User>(
+const bulkDecryptedResult = await encryptionClient.bulkDecryptModels<User>(
   bulkEncryptedResult.data
 );
 ```
@@ -478,7 +478,7 @@ This type safety helps catch potential issues at compile time and provides bette
 Example with Drizzle infered types:
 
 ```typescript
-import { protectClient } from "./protect";
+import { encryptionClient } from "./protect";
 import { jsonb, pgTable, serial, InferSelectModel } from "drizzle-orm/pg-core";
 import { encryptedTable, encryptedColumn } from "@cipherstash/stack";
 
@@ -499,7 +499,7 @@ const user = {
 };
 
 // Drizzle User type works directly with model operations
-const encryptedResult = await protectClient.encryptModel<User>(
+const encryptedResult = await encryptionClient.encryptModel<User>(
   user,
   protectUsers
 );
@@ -510,9 +510,9 @@ const encryptedResult = await protectClient.encryptModel<User>(
 Use the `decryptModel` method to decrypt a model's encrypted fields:
 
 ```typescript
-import { protectClient } from "./protect";
+import { encryptionClient } from "./protect";
 
-const decryptedResult = await protectClient.decryptModel(encryptedUser);
+const decryptedResult = await encryptionClient.decryptModel(encryptedUser);
 
 if (decryptedResult.failure) {
   // Handle the failure
@@ -532,7 +532,7 @@ console.log("decrypted user:", decryptedUser);
 For better performance when working with multiple models, use the `bulkEncryptModels` and `bulkDecryptModels` methods:
 
 ```typescript
-import { protectClient } from "./protect";
+import { encryptionClient } from "./protect";
 import { users } from "./protect/schema";
 
 // Array of models with plaintext values
@@ -550,7 +550,7 @@ const userModels = [
 ];
 
 // Encrypt multiple models at once
-const encryptedResult = await protectClient.bulkEncryptModels(
+const encryptedResult = await encryptionClient.bulkEncryptModels(
   userModels,
   users
 );
@@ -562,7 +562,7 @@ if (encryptedResult.failure) {
 const encryptedUsers = encryptedResult.data;
 
 // Decrypt multiple models at once
-const decryptedResult = await protectClient.bulkDecryptModels(encryptedUsers);
+const decryptedResult = await encryptionClient.bulkDecryptModels(encryptedUsers);
 
 if (decryptedResult.failure) {
   // Handle the failure
@@ -586,7 +586,7 @@ Stash Encryption provides direct access to ZeroKMS bulk operations through the `
 Use the `bulkEncrypt` method to encrypt multiple plaintext values at once:
 
 ```typescript
-import { protectClient } from "./protect";
+import { encryptionClient } from "./protect";
 import { users } from "./protect/schema";
 
 // Array of plaintext values with optional IDs for correlation
@@ -596,7 +596,7 @@ const plaintexts = [
   { id: "user3", plaintext: "charlie@example.com" },
 ];
 
-const encryptedResult = await protectClient.bulkEncrypt(plaintexts, {
+const encryptedResult = await encryptionClient.bulkEncrypt(plaintexts, {
   column: users.email,
   table: users,
 });
@@ -633,7 +633,7 @@ const plaintexts = [
   { plaintext: "charlie@example.com" },
 ];
 
-const encryptedResult = await protectClient.bulkEncrypt(plaintexts, {
+const encryptedResult = await encryptionClient.bulkEncrypt(plaintexts, {
   column: users.email,
   table: users,
 });
@@ -644,10 +644,10 @@ const encryptedResult = await protectClient.bulkEncrypt(plaintexts, {
 Use the `bulkDecrypt` method to decrypt multiple encrypted values at once:
 
 ```typescript
-import { protectClient } from "./protect";
+import { encryptionClient } from "./protect";
 
 // encryptedData is the result from bulkEncrypt
-const decryptedResult = await protectClient.bulkDecrypt(encryptedData);
+const decryptedResult = await encryptionClient.bulkDecrypt(encryptedData);
 
 if (decryptedResult.failure) {
   // Handle the failure
@@ -696,7 +696,7 @@ The `bulkDecrypt` method returns a `Result` object that represents the overall o
 You can handle mixed results by checking each item:
 
 ```typescript
-const decryptedResult = await protectClient.bulkDecrypt(encryptedData);
+const decryptedResult = await encryptionClient.bulkDecrypt(encryptedData);
 
 if (decryptedResult.failure) {
   // Handle overall operation failure
@@ -727,7 +727,7 @@ const plaintexts = [
   { id: "user3", plaintext: "charlie@example.com" },
 ];
 
-const encryptedResult = await protectClient.bulkEncrypt(plaintexts, {
+const encryptedResult = await encryptionClient.bulkEncrypt(plaintexts, {
   column: users.email,
   table: users,
 });
@@ -735,7 +735,7 @@ const encryptedResult = await protectClient.bulkEncrypt(plaintexts, {
 // Null values are preserved in the encrypted result
 // encryptedResult.data[1].data will be null
 
-const decryptedResult = await protectClient.bulkDecrypt(encryptedResult.data);
+const decryptedResult = await encryptionClient.bulkDecrypt(encryptedResult.data);
 
 // Null values are preserved in the decrypted result
 // decryptedResult.data[1].data will be null
@@ -761,7 +761,7 @@ const plaintexts = [
 ];
 
 // Encrypt with lock context
-const encryptedResult = await protectClient
+const encryptedResult = await encryptionClient
   .bulkEncrypt(plaintexts, {
     column: users.email,
     table: users,
@@ -769,7 +769,7 @@ const encryptedResult = await protectClient
   .withLockContext(lockContext.data);
 
 // Decrypt with lock context
-const decryptedResult = await protectClient
+const decryptedResult = await encryptionClient
   .bulkDecrypt(encryptedResult.data)
   .withLockContext(lockContext.data);
 ```
@@ -786,13 +786,13 @@ const plaintexts = Array.from({ length: 1000 }, (_, i) => ({
 }));
 
 // Single call to ZeroKMS for all 1000 values
-const encryptedResult = await protectClient.bulkEncrypt(plaintexts, {
+const encryptedResult = await encryptionClient.bulkEncrypt(plaintexts, {
   column: users.email,
   table: users,
 });
 
 // Single call to ZeroKMS for all 1000 values
-const decryptedResult = await protectClient.bulkDecrypt(encryptedResult.data);
+const decryptedResult = await encryptionClient.bulkDecrypt(encryptedResult.data);
 ```
 
 The bulk operations maintain the same security guarantees as individual operations - each value gets a unique key - while providing optimal performance through ZeroKMS's bulk processing capabilities.
@@ -879,7 +879,7 @@ To use a lock context, initialize a `LockContext` object with the identity claim
 ```typescript
 import { LockContext } from "@cipherstash/stack/identity";
 
-// protectClient from the previous steps
+// encryptionClient from the previous steps
 const lc = new LockContext();
 ```
 
@@ -907,10 +907,10 @@ const lockContext = identifyResult.data;
 To encrypt data with a lock context, call the optional `withLockContext` method on the `encrypt` function and pass the lock context object as a parameter:
 
 ```typescript
-import { protectClient } from "./protect";
+import { encryptionClient } from "./protect";
 import { users } from "./protect/schema";
 
-const encryptResult = await protectClient
+const encryptResult = await encryptionClient
   .encrypt("plaintext", {
     table: users,
     column: users.email,
@@ -929,9 +929,9 @@ console.log("EQL Payload containing ciphertexts:", encryptResult.data);
 To decrypt data with a lock context, call the optional `withLockContext` method on the `decrypt` function and pass the lock context object as a parameter:
 
 ```typescript
-import { protectClient } from "./protect";
+import { encryptionClient } from "./protect";
 
-const decryptResult = await protectClient
+const decryptResult = await encryptionClient
   .decrypt(encryptResult.data)
   .withLockContext(lockContext);
 
@@ -947,7 +947,7 @@ const plaintext = decryptResult.data;
 All model operations support lock contexts for identity-aware encryption:
 
 ```typescript
-import { protectClient } from "./protect";
+import { encryptionClient } from "./protect";
 import { users } from "./protect/schema";
 
 const myUsers = [
@@ -965,7 +965,7 @@ const myUsers = [
 ];
 
 // Encrypt a model with lock context
-const encryptedResult = await protectClient
+const encryptedResult = await encryptionClient
   .encryptModel(myUsers[0], users)
   .withLockContext(lockContext);
 
@@ -974,16 +974,16 @@ if (encryptedResult.failure) {
 }
 
 // Decrypt a model with lock context
-const decryptedResult = await protectClient
+const decryptedResult = await encryptionClient
   .decryptModel(encryptedResult.data)
   .withLockContext(lockContext);
 
 // Bulk operations also support lock contexts
-const bulkEncryptedResult = await protectClient
+const bulkEncryptedResult = await encryptionClient
   .bulkEncryptModels(myUsers, users)
   .withLockContext(lockContext);
 
-const bulkDecryptedResult = await protectClient
+const bulkDecryptedResult = await encryptionClient
   .bulkDecryptModels(bulkEncryptedResult.data)
   .withLockContext(lockContext);
 ```
@@ -1011,7 +1011,7 @@ In the [CipherStash Dashboard](https://dashboard.cipherstash.com/workspaces/_/en
 import { Encryption } from "@cipherstash/stack";
 import { users } from "./protect/schema";
 
-const protectClient = await Encryption({
+const encryptionClient = await Encryption({
   schemas: [users],
   keyset: {
     // Must be a valid UUID which can be found in the CipherStash Dashboard
@@ -1021,7 +1021,7 @@ const protectClient = await Encryption({
 
 // or with a keyset name
 
-const protectClient = await Encryption({
+const encryptionClient = await Encryption({
   schemas: [users],
   keyset: {
     name: 'Company A'

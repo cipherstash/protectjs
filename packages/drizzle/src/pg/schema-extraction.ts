@@ -21,8 +21,8 @@ import { getEncryptedColumnConfig } from './index.js'
  *   age: encryptedType('age', { dataType: 'number', orderAndRange: true }),
  * })
  *
- * const protectSchema = extractProtectSchema(drizzleUsersTable)
- * const encryptionClient = await Encryption({ schemas: [protectSchema.build()] })
+ * const encryptionSchema = extractProtectSchema(drizzleUsersTable)
+ * const encryptionClient = await Encryption({ schemas: [encryptionSchema.build()] })
  * ```
  */
 // We use any for the PgTable generic because we need to access Drizzle's internal properties

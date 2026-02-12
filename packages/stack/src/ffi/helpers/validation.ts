@@ -7,7 +7,7 @@ import type { FfiIndexTypeName } from '../../types'
  * Returns a failure Result if validation fails, undefined otherwise.
  * Use this in async flows that return Result types.
  *
- * Uses `never` as the success type so the result can be assigned to any Result<T, ProtectError>.
+ * Uses `never` as the success type so the result can be assigned to any Result<T, EncryptionError>.
  *
  * @internal
  */

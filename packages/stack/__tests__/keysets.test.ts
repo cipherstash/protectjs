@@ -9,7 +9,7 @@ const users = encryptedTable('users', {
 
 describe('encryption and decryption with keyset id', () => {
   it('should encrypt and decrypt a payload', async () => {
-    const protectClient = await Encryption({
+    const encryptionClient = await Encryption({
       schemas: [users],
       keyset: {
         id: '4152449b-505a-4186-93b6-d3d87eba7a47',
@@ -18,7 +18,7 @@ describe('encryption and decryption with keyset id', () => {
 
     const email = 'hello@example.com'
 
-    const ciphertext = await protectClient.encrypt(email, {
+    const ciphertext = await encryptionClient.encrypt(email, {
       column: users.email,
       table: users,
     })
@@ -32,7 +32,7 @@ describe('encryption and decryption with keyset id', () => {
 
     const a = ciphertext.data
 
-    const plaintext = await protectClient.decrypt(ciphertext.data)
+    const plaintext = await encryptionClient.decrypt(ciphertext.data)
 
     expect(plaintext).toEqual({
       data: email,
@@ -42,7 +42,7 @@ describe('encryption and decryption with keyset id', () => {
 
 describe('encryption and decryption with keyset name', () => {
   it('should encrypt and decrypt a payload', async () => {
-    const protectClient = await Encryption({
+    const encryptionClient = await Encryption({
       schemas: [users],
       keyset: {
         name: 'Test',
@@ -51,7 +51,7 @@ describe('encryption and decryption with keyset name', () => {
 
     const email = 'hello@example.com'
 
-    const ciphertext = await protectClient.encrypt(email, {
+    const ciphertext = await encryptionClient.encrypt(email, {
       column: users.email,
       table: users,
     })
@@ -65,7 +65,7 @@ describe('encryption and decryption with keyset name', () => {
 
     const a = ciphertext.data
 
-    const plaintext = await protectClient.decrypt(ciphertext.data)
+    const plaintext = await encryptionClient.decrypt(ciphertext.data)
 
     expect(plaintext).toEqual({
       data: email,

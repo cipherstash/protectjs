@@ -18,10 +18,10 @@ type User = {
   number?: number
 }
 
-let protectClient: EncryptionClient
+let encryptionClient: EncryptionClient
 
 beforeAll(async () => {
-  protectClient = await Encryption({
+  encryptionClient = await Encryption({
     schemas: [users],
   })
 })
@@ -44,7 +44,7 @@ describe('encryption and decryption with lock context', () => {
 
     const email = 'hello@example.com'
 
-    const ciphertext = await protectClient
+    const ciphertext = await encryptionClient
       .encrypt(email, {
         column: users.email,
         table: users,
@@ -55,7 +55,7 @@ describe('encryption and decryption with lock context', () => {
       throw new Error(`[encryption]: ${ciphertext.failure.message}`)
     }
 
-    const plaintext = await protectClient
+    const plaintext = await encryptionClient
       .decrypt(ciphertext.data)
       .withLockContext(lockContext.data)
 
@@ -88,7 +88,7 @@ describe('encryption and decryption with lock context', () => {
     }
 
     // Encrypt the model with lock context
-    const encryptedModel = await protectClient
+    const encryptedModel = await encryptionClient
       .encryptModel(decryptedModel, users)
       .withLockContext(lockContext.data)
 
@@ -97,7 +97,7 @@ describe('encryption and decryption with lock context', () => {
     }
 
     // Decrypt the model with lock context
-    const decryptedResult = await protectClient
+    const decryptedResult = await encryptionClient
       .decryptModel(encryptedModel.data)
       .withLockContext(lockContext.data)
 
@@ -133,7 +133,7 @@ describe('encryption and decryption with lock context', () => {
     }
 
     // Encrypt the model with lock context
-    const encryptedModel = await protectClient
+    const encryptedModel = await encryptionClient
       .encryptModel(decryptedModel, users)
       .withLockContext(lockContext.data)
 
@@ -142,7 +142,7 @@ describe('encryption and decryption with lock context', () => {
     }
 
     try {
-      await protectClient.decryptModel(encryptedModel.data)
+      await encryptionClient.decryptModel(encryptedModel.data)
     } catch (error) {
       const e = error as Error
       expect(e.message.startsWith('Failed to retrieve key')).toEqual(true)
@@ -177,7 +177,7 @@ describe('encryption and decryption with lock context', () => {
     ]
 
     // Encrypt the models with lock context
-    const encryptedModels = await protectClient
+    const encryptedModels = await encryptionClient
       .bulkEncryptModels(decryptedModels, users)
       .withLockContext(lockContext.data)
 
@@ -186,7 +186,7 @@ describe('encryption and decryption with lock context', () => {
     }
 
     // Decrypt the models with lock context
-    const decryptedResult = await protectClient
+    const decryptedResult = await encryptionClient
       .bulkDecryptModels(encryptedModels.data)
       .withLockContext(lockContext.data)
 

@@ -22,10 +22,10 @@ type User = {
   number?: number
 }
 
-let protectClient: EncryptionClient
+let encryptionClient: EncryptionClient
 
 beforeAll(async () => {
-  protectClient = await Encryption({
+  encryptionClient = await Encryption({
     schemas: [users],
   })
 })
@@ -39,7 +39,7 @@ describe('bulk encryption and decryption', () => {
         { id: 'user3', plaintext: 'charlie@example.com' },
       ]
 
-      const encryptedData = await protectClient.bulkEncrypt(plaintexts, {
+      const encryptedData = await encryptionClient.bulkEncrypt(plaintexts, {
         column: users.email,
         table: users,
       })
@@ -77,7 +77,7 @@ describe('bulk encryption and decryption', () => {
         { plaintext: 'charlie@example.com' },
       ]
 
-      const encryptedData = await protectClient.bulkEncrypt(plaintexts, {
+      const encryptedData = await encryptionClient.bulkEncrypt(plaintexts, {
         column: users.email,
         table: users,
       })
@@ -106,7 +106,7 @@ describe('bulk encryption and decryption', () => {
         { id: 'user3', plaintext: 'charlie@example.com' },
       ]
 
-      const encryptedData = await protectClient.bulkEncrypt(plaintexts, {
+      const encryptedData = await encryptionClient.bulkEncrypt(plaintexts, {
         column: users.email,
         table: users,
       })
@@ -135,7 +135,7 @@ describe('bulk encryption and decryption', () => {
         { id: 'user3', plaintext: null },
       ]
 
-      const encryptedData = await protectClient.bulkEncrypt(plaintexts, {
+      const encryptedData = await encryptionClient.bulkEncrypt(plaintexts, {
         column: users.email,
         table: users,
       })
@@ -160,7 +160,7 @@ describe('bulk encryption and decryption', () => {
     it('should handle empty array in bulk encrypt', async () => {
       const plaintexts: Array<{ id?: string; plaintext: string | null }> = []
 
-      const encryptedData = await protectClient.bulkEncrypt(plaintexts, {
+      const encryptedData = await encryptionClient.bulkEncrypt(plaintexts, {
         column: users.email,
         table: users,
       })
@@ -182,7 +182,7 @@ describe('bulk encryption and decryption', () => {
         { id: 'user3', plaintext: 'charlie@example.com' },
       ]
 
-      const encryptedData = await protectClient.bulkEncrypt(plaintexts, {
+      const encryptedData = await encryptionClient.bulkEncrypt(plaintexts, {
         column: users.email,
         table: users,
       })
@@ -192,7 +192,9 @@ describe('bulk encryption and decryption', () => {
       }
 
       // Now decrypt the data
-      const decryptedData = await protectClient.bulkDecrypt(encryptedData.data)
+      const decryptedData = await encryptionClient.bulkDecrypt(
+        encryptedData.data,
+      )
 
       if (decryptedData.failure) {
         throw new Error(`[encryption]: ${decryptedData.failure.message}`)
@@ -219,7 +221,7 @@ describe('bulk encryption and decryption', () => {
         { plaintext: 'charlie@example.com' },
       ]
 
-      const encryptedData = await protectClient.bulkEncrypt(plaintexts, {
+      const encryptedData = await encryptionClient.bulkEncrypt(plaintexts, {
         column: users.email,
         table: users,
       })
@@ -229,7 +231,9 @@ describe('bulk encryption and decryption', () => {
       }
 
       // Now decrypt the data
-      const decryptedData = await protectClient.bulkDecrypt(encryptedData.data)
+      const decryptedData = await encryptionClient.bulkDecrypt(
+        encryptedData.data,
+      )
 
       if (decryptedData.failure) {
         throw new Error(`[encryption]: ${decryptedData.failure.message}`)
@@ -256,7 +260,7 @@ describe('bulk encryption and decryption', () => {
         { id: 'user3', plaintext: 'charlie@example.com' },
       ]
 
-      const encryptedData = await protectClient.bulkEncrypt(plaintexts, {
+      const encryptedData = await encryptionClient.bulkEncrypt(plaintexts, {
         column: users.email,
         table: users,
       })
@@ -266,7 +270,9 @@ describe('bulk encryption and decryption', () => {
       }
 
       // Now decrypt the data
-      const decryptedData = await protectClient.bulkDecrypt(encryptedData.data)
+      const decryptedData = await encryptionClient.bulkDecrypt(
+        encryptedData.data,
+      )
 
       if (decryptedData.failure) {
         throw new Error(`[encryption]: ${decryptedData.failure.message}`)
@@ -293,7 +299,7 @@ describe('bulk encryption and decryption', () => {
         { id: 'user3', plaintext: null },
       ]
 
-      const encryptedData = await protectClient.bulkEncrypt(plaintexts, {
+      const encryptedData = await encryptionClient.bulkEncrypt(plaintexts, {
         column: users.email,
         table: users,
       })
@@ -303,7 +309,9 @@ describe('bulk encryption and decryption', () => {
       }
 
       // Now decrypt the data
-      const decryptedData = await protectClient.bulkDecrypt(encryptedData.data)
+      const decryptedData = await encryptionClient.bulkDecrypt(
+        encryptedData.data,
+      )
 
       if (decryptedData.failure) {
         throw new Error(`[encryption]: ${decryptedData.failure.message}`)
@@ -322,7 +330,8 @@ describe('bulk encryption and decryption', () => {
     it('should handle empty array in bulk decrypt', async () => {
       const encryptedPayloads: Array<{ id?: string; data: Encrypted }> = []
 
-      const decryptedData = await protectClient.bulkDecrypt(encryptedPayloads)
+      const decryptedData =
+        await encryptionClient.bulkDecrypt(encryptedPayloads)
 
       if (decryptedData.failure) {
         throw new Error(`[encryption]: ${decryptedData.failure.message}`)
@@ -357,7 +366,7 @@ describe('bulk encryption and decryption', () => {
       ]
 
       // Encrypt with lock context
-      const encryptedData = await protectClient
+      const encryptedData = await encryptionClient
         .bulkEncrypt(plaintexts, {
           column: users.email,
           table: users,
@@ -381,7 +390,7 @@ describe('bulk encryption and decryption', () => {
       expect(encryptedData.data[2].data).toHaveProperty('c')
 
       // Decrypt with lock context
-      const decryptedData = await protectClient
+      const decryptedData = await encryptionClient
         .bulkDecrypt(encryptedData.data)
         .withLockContext(lockContext.data)
 
@@ -424,7 +433,7 @@ describe('bulk encryption and decryption', () => {
       ]
 
       // Encrypt with lock context
-      const encryptedData = await protectClient
+      const encryptedData = await encryptionClient
         .bulkEncrypt(plaintexts, {
           column: users.email,
           table: users,
@@ -440,7 +449,7 @@ describe('bulk encryption and decryption', () => {
       expect(encryptedData.data[1].data).toBeNull()
 
       // Decrypt with lock context
-      const decryptedData = await protectClient
+      const decryptedData = await encryptionClient
         .bulkDecrypt(encryptedData.data)
         .withLockContext(lockContext.data)
 
@@ -478,7 +487,7 @@ describe('bulk encryption and decryption', () => {
       }
 
       // Encrypt first value with USER_JWT lock context
-      const encryptedData1 = await protectClient
+      const encryptedData1 = await encryptionClient
         .bulkEncrypt([{ id: 'user1', plaintext: 'alice@example.com' }], {
           column: users.email,
           table: users,
@@ -490,7 +499,7 @@ describe('bulk encryption and decryption', () => {
       }
 
       // Encrypt second value with USER_2_JWT lock context
-      const encryptedData2 = await protectClient
+      const encryptedData2 = await encryptionClient
         .bulkEncrypt([{ id: 'user2', plaintext: 'bob@example.com' }], {
           column: users.email,
           table: users,
@@ -508,7 +517,7 @@ describe('bulk encryption and decryption', () => {
       ]
 
       // Decrypt with USER_2_JWT lock context
-      const decryptedData = await protectClient
+      const decryptedData = await encryptionClient
         .bulkDecrypt(combinedEncryptedData)
         .withLockContext(lockContext2.data)
 
@@ -541,7 +550,7 @@ describe('bulk encryption and decryption', () => {
       ]
 
       // Encrypt
-      const encryptedData = await protectClient.bulkEncrypt(originalData, {
+      const encryptedData = await encryptionClient.bulkEncrypt(originalData, {
         column: users.email,
         table: users,
       })
@@ -551,7 +560,9 @@ describe('bulk encryption and decryption', () => {
       }
 
       // Decrypt
-      const decryptedData = await protectClient.bulkDecrypt(encryptedData.data)
+      const decryptedData = await encryptionClient.bulkDecrypt(
+        encryptedData.data,
+      )
 
       if (decryptedData.failure) {
         throw new Error(`[encryption]: ${decryptedData.failure.message}`)
@@ -573,7 +584,7 @@ describe('bulk encryption and decryption', () => {
       }))
 
       // Encrypt
-      const encryptedData = await protectClient.bulkEncrypt(originalData, {
+      const encryptedData = await encryptionClient.bulkEncrypt(originalData, {
         column: users.email,
         table: users,
       })
@@ -583,7 +594,9 @@ describe('bulk encryption and decryption', () => {
       }
 
       // Decrypt
-      const decryptedData = await protectClient.bulkDecrypt(encryptedData.data)
+      const decryptedData = await encryptionClient.bulkDecrypt(
+        encryptedData.data,
+      )
 
       if (decryptedData.failure) {
         throw new Error(`[encryption]: ${decryptedData.failure.message}`)

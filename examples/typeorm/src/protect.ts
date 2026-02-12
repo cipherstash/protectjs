@@ -14,13 +14,13 @@ export const protectedUser = encryptedTable('user', {
  * Initialize the Encryption client with the defined schema
  * This will be used throughout the application for encryption/decryption operations
  */
-let protectClient: Awaited<ReturnType<typeof Encryption>>
+let encryptionClient: Awaited<ReturnType<typeof Encryption>>
 
-export async function initializeProtectClient() {
-  if (!protectClient) {
-    protectClient = await Encryption({
+export async function initializeEncryptionClient() {
+  if (!encryptionClient) {
+    encryptionClient = await Encryption({
       schemas: [protectedUser],
     })
   }
-  return protectClient
+  return encryptionClient
 }

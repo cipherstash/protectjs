@@ -24,7 +24,7 @@ These operations automatically handle the encryption of fields defined in your s
 The `encryptModel` method encrypts fields in your model that are defined in your schema while leaving other fields unchanged.
 
 ```typescript
-import { protectClient } from "./protect";
+import { encryptionClient } from "./protect";
 import { users } from "./protect/schema";
 
 const user = {
@@ -35,7 +35,7 @@ const user = {
   metadata: { role: "admin" }, // Will remain unchanged
 };
 
-const encryptedResult = await protectClient.encryptModel(user, users);
+const encryptedResult = await encryptionClient.encryptModel(user, users);
 
 if (encryptedResult.failure) {
   console.error("Encryption failed:", encryptedResult.failure.message);
@@ -57,7 +57,7 @@ const encryptedUser = encryptedResult.data;
 The `decryptModel` method automatically detects and decrypts any encrypted fields in your model.
 
 ```typescript
-const decryptedResult = await protectClient.decryptModel(encryptedUser);
+const decryptedResult = await encryptionClient.decryptModel(encryptedUser);
 
 if (decryptedResult.failure) {
   console.error("Decryption failed:", decryptedResult.failure.message);
@@ -88,7 +88,7 @@ const users = [
   },
 ];
 
-const encryptedResult = await protectClient.bulkEncryptModels(users, users);
+const encryptedResult = await encryptionClient.bulkEncryptModels(users, users);
 
 if (encryptedResult.failure) {
   console.error("Bulk encryption failed:", encryptedResult.failure.message);
@@ -101,7 +101,7 @@ const encryptedUsers = encryptedResult.data;
 ### Bulk decryption
 
 ```typescript
-const decryptedResult = await protectClient.bulkDecryptModels(encryptedUsers);
+const decryptedResult = await encryptionClient.bulkDecryptModels(encryptedUsers);
 
 if (decryptedResult.failure) {
   console.error("Bulk decryption failed:", decryptedResult.failure.message);
@@ -133,16 +133,16 @@ type User = {
 };
 
 // Use the type parameter for type safety
-const encryptedResult = await protectClient.encryptModel<User>(user, users);
-const decryptedResult = await protectClient.decryptModel<User>(encryptedUser);
+const encryptedResult = await encryptionClient.encryptModel<User>(user, users);
+const decryptedResult = await encryptionClient.decryptModel<User>(encryptedUser);
 
 // Bulk operations
-const bulkEncryptedResult = await protectClient.bulkEncryptModels<User>(
+const bulkEncryptedResult = await encryptionClient.bulkEncryptModels<User>(
   userModels,
   users
 );
 const bulkDecryptedResult =
-  await protectClient.bulkDecryptModels<User>(encryptedUsers);
+  await encryptionClient.bulkDecryptModels<User>(encryptedUsers);
 ```
 
 The type system ensures:
@@ -163,7 +163,7 @@ const users = encryptedTable("users", {
 });
 
 // Types are inferred from the schema
-const result = await protectClient.encryptModel(user, users);
+const result = await encryptionClient.encryptModel(user, users);
 // Result type includes encrypted fields for email and address
 ```
 
@@ -173,20 +173,20 @@ All model operations support lock contexts for identity-aware encryption:
 
 ```typescript
 // Single model operations
-const encryptedResult = await protectClient
+const encryptedResult = await encryptionClient
   .encryptModel(user, users)
   .withLockContext(lockContext);
 
-const decryptedResult = await protectClient
+const decryptedResult = await encryptionClient
   .decryptModel(encryptedUser)
   .withLockContext(lockContext);
 
 // Bulk operations
-const bulkEncryptedResult = await protectClient
+const bulkEncryptedResult = await encryptionClient
   .bulkEncryptModels(userModels, users)
   .withLockContext(lockContext);
 
-const bulkDecryptedResult = await protectClient
+const bulkDecryptedResult = await encryptionClient
   .bulkDecryptModels(encryptedUsers)
   .withLockContext(lockContext);
 ```
@@ -196,7 +196,7 @@ const bulkDecryptedResult = await protectClient
 All model operations return a `Result` type that includes either a `data` or `failure` property:
 
 ```typescript
-const result = await protectClient.encryptModel(user, users);
+const result = await encryptionClient.encryptModel(user, users);
 
 if (result.failure) {
   // Handle specific error types

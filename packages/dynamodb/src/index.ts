@@ -9,12 +9,15 @@ import { BulkEncryptModelsOperation } from './operations/bulk-encrypt-models'
 import { DecryptModelOperation } from './operations/decrypt-model'
 import { EncryptModelOperation } from './operations/encrypt-model'
 import { SearchTermsOperation } from './operations/search-terms'
-import type { ProtectDynamoDBConfig, ProtectDynamoDBInstance } from './types'
+import type {
+  EncryptedDynamoDBConfig,
+  EncryptedDynamoDBInstance,
+} from './types'
 
-export function protectDynamoDB(
-  config: ProtectDynamoDBConfig,
-): ProtectDynamoDBInstance {
-  const { protectClient, options } = config
+export function encryptedDynamoDB(
+  config: EncryptedDynamoDBConfig,
+): EncryptedDynamoDBInstance {
+  const { encryptionClient, options } = config
 
   return {
     encryptModel<T extends Record<string, unknown>>(
@@ -22,7 +25,7 @@ export function protectDynamoDB(
       protectTable: EncryptedTable<EncryptedTableColumn>,
     ) {
       return new EncryptModelOperation<T>(
-        protectClient,
+        encryptionClient,
         item,
         protectTable,
         options,
@@ -34,7 +37,7 @@ export function protectDynamoDB(
       protectTable: EncryptedTable<EncryptedTableColumn>,
     ) {
       return new BulkEncryptModelsOperation<T>(
-        protectClient,
+        encryptionClient,
         items,
         protectTable,
         options,
@@ -46,7 +49,7 @@ export function protectDynamoDB(
       protectTable: EncryptedTable<EncryptedTableColumn>,
     ) {
       return new DecryptModelOperation<T>(
-        protectClient,
+        encryptionClient,
         item,
         protectTable,
         options,
@@ -58,7 +61,7 @@ export function protectDynamoDB(
       protectTable: EncryptedTable<EncryptedTableColumn>,
     ) {
       return new BulkDecryptModelsOperation<T>(
-        protectClient,
+        encryptionClient,
         items,
         protectTable,
         options,
@@ -66,12 +69,15 @@ export function protectDynamoDB(
     },
 
     /**
-     * @deprecated Use `protectClient.encryptQuery(terms)` instead and extract the `hm` field for DynamoDB key lookups.
+     * @deprecated Use `encryptionClient.encryptQuery(terms)` instead and extract the `hm` field for DynamoDB key lookups.
      */
     createSearchTerms(terms: SearchTerm[]) {
-      return new SearchTermsOperation(protectClient, terms, options)
+      return new SearchTermsOperation(encryptionClient, terms, options)
     },
   }
 }
+
+/** @deprecated Use `encryptedDynamoDB` instead. */
+export { encryptedDynamoDB as protectDynamoDB }
 
 export * from './types'

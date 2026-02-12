@@ -1,7 +1,7 @@
 import 'dotenv/config'
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { Encryption } from '@cipherstash/stack'
+import { Encryption, type EncryptionClient } from '@cipherstash/stack'
 import * as drizzleOrm from 'drizzle-orm'
 import { integer, pgTable } from 'drizzle-orm/pg-core'
 import { drizzle } from 'drizzle-orm/postgres-js'
@@ -67,15 +67,15 @@ const protectTransactions = extractProtectSchema(transactions)
 describe('Documentation Drift Tests', () => {
   let db: ReturnType<typeof drizzle>
   let client: ReturnType<typeof postgres>
-  let protectClient: Awaited<ReturnType<typeof Encryption>>
-  let protectOps: ReturnType<typeof createProtectOperators>
+  let encryptionClient: EncryptionClient
+  let encryptionOps: ReturnType<typeof createProtectOperators>
   let seedDataIds: number[] = []
 
   beforeAll(async () => {
     client = postgres(process.env.DATABASE_URL as string)
     db = drizzle({ client })
-    protectClient = await Encryption({ schemas: [protectTransactions] })
-    protectOps = createProtectOperators(protectClient)
+    encryptionClient = await Encryption({ schemas: [protectTransactions] })
+    encryptionOps = createProtectOperators(encryptionClient)
 
     // Create test table with EQL encrypted columns (drop if exists for clean state)
     await client`DROP TABLE IF EXISTS "drizzle-docs-test"`
@@ -90,7 +90,7 @@ describe('Documentation Drift Tests', () => {
     `
 
     // Seed test data
-    const encrypted = await protectClient.bulkEncryptModels(
+    const encrypted = await encryptionClient.bulkEncryptModels(
       docSeedData,
       protectTransactions,
     )
@@ -135,8 +135,8 @@ describe('Documentation Drift Tests', () => {
         const context: ExecutionContext = {
           db,
           transactions,
-          protect: protectOps,
-          protectClient,
+          protect: encryptionOps,
+          encryptionClient,
           protectTransactions,
           ...drizzleOrm,
         }
@@ -172,7 +172,7 @@ describe('Documentation Drift Tests', () => {
         const context: ExecutionContext = {
           db,
           transactions,
-          protectClient,
+          encryptionClient,
           protectTransactions,
           ...drizzleOrm,
           // Note: 'protect' intentionally omitted

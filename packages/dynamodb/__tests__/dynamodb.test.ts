@@ -5,8 +5,9 @@ import {
   encryptedTable,
   encryptedValue,
 } from '@cipherstash/stack'
+import type { EncryptionClient } from '@cipherstash/stack'
 import { beforeAll, describe, expect, it } from 'vitest'
-import { protectDynamoDB } from '../src'
+import { encryptedDynamoDB } from '../src'
 
 const schema = encryptedTable('dynamo_cipherstash_test', {
   email: encryptedColumn('email').equality(),
@@ -27,17 +28,17 @@ const schema = encryptedTable('dynamo_cipherstash_test', {
   },
 })
 
-describe('protect dynamodb helpers', () => {
-  let protectClient: Awaited<ReturnType<typeof Encryption>>
-  let protectDynamo: ReturnType<typeof protectDynamoDB>
+describe('dynamodb helpers', () => {
+  let encryptionClient: EncryptionClient
+  let protectDynamo: ReturnType<typeof encryptedDynamoDB>
 
   beforeAll(async () => {
-    protectClient = await Encryption({
+    encryptionClient = await Encryption({
       schemas: [schema],
     })
 
-    protectDynamo = protectDynamoDB({
-      protectClient,
+    protectDynamo = encryptedDynamoDB({
+      encryptionClient,
     })
   })
 
