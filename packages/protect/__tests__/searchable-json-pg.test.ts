@@ -1359,7 +1359,7 @@ describe('searchableJson postgres integration', () => {
 
     it('returns no rows for unknown path (Extended)', async () => {
       const plaintext = { exists: true, marker: 'qf-nomatch' }
-      const { id } = await insertRow(plaintext)
+      await insertRow(plaintext)
 
       const selectorTerm = await encryptQueryTerm(
         '$.nonexistent.path',
