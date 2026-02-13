@@ -266,7 +266,13 @@ describe('supabase', () => {
 
     // Create encrypted query for equality search with composite-literal returnType
     const encryptedResult = await protectClient.encryptQuery([
-      { value: testAge, column: table.age, table: table, queryType: 'equality', returnType: 'composite-literal' },
+      {
+        value: testAge,
+        column: table.age,
+        table: table,
+        queryType: 'equality',
+        returnType: 'composite-literal',
+      },
     ])
 
     if (encryptedResult.failure) {

@@ -1,64 +1,64 @@
-# Implementing Protect.js into a Node.js application
+# Implementing CipherStash Encryption into a Node.js application
 
-Your task is to introduce Protect.js into a Node.js application. Protect.js requires the Node.js runtime so it will still work with framweworks like Next.js and Tanstack Start, since they support running code that only executes on the server.
+Your task is to introduce CipherStash Encryption into a Node.js application. `@cipherstash/stack` requires the Node.js runtime so it will still work with framweworks like Next.js and Tanstack Start, since they support running code that only executes on the server.
 
 ---
 
-## Installing Protect.js
+## Installing @cipherstash/stack
 
-Determine what package manager the application is using. This will either be `pnpm`, `npm`, or `bun` and then use the appropriate package manager to add Protect.js to the application:
+Determine what package manager the application is using. This will either be `pnpm`, `npm`, or `bun` and then use the appropriate package manager to add `@cipherstash/stack` to the application:
 
 ```bash
-npm install @cipehrstash/protect
+npm install @cipherstash/stack
 # or
-pnpm add @cipehrstash/protect
+pnpm add @cipherstash/stack
 # or
-bun add @cipehrstash/protect
+bun add @cipherstash/stack
 ```
 
-If you detect a mono repo, you need to ask the user which application they want Protect.js installed in.
+If you detect a mono repo, you need to ask the user which application they want `@cipherstash/stack` installed in.
 
 ---
 
-## Adding scafolding for the Protect.js client, schemas, and example code
+## Adding scaffolding for the Encryption client, schemas, and example code
 
 In the rool of the application (if the application is configred to use something like `src` then this is where these operations will occur), you need to add a `protect` directory with the following files/content. If the application uses TypeScript use the `.ts` extension, else use the `.js` extension.
 
 `protect/schemas.(ts/js)`
 ```js
-import { csTable, csColumn } from '@cipherstash/protect`
+import { encryptedTable, encryptedColumn } from '@cipherstash/stack/schema'
 
-export const protectedExample = csTable('example_table', {
-  sensitiveData: csColumn('sensitiveData'),
+export const protectedExample = encryptedTable('example_table', {
+  sensitiveData: encryptedColumn('sensitiveData'),
 }
 ```
 
 `protect/index.(ts/js)`
 ```js
-import { protect } from '@cipehrstash/protect'
+import { Encryption } from '@cipherstash/stack'
 import { * as protectSchemas } from './schemas'
 
-export const protectClient = protect({
+export const client = Encryption({
   schemas: [...protectSchemas]
 })
 ```
 
 `protect/example.(ts/js)`
 ```js
-import { protectClient } from './index'
+import { client } from './index'
 import { * as protectSchemas } from './schemas'
 
 const sensitiveData = "Let's encrypt some data."
 
 /** 
- * There is no need to wrap any protectClient method in a try/catch as it will always return a Result pattern.
+ * There is no need to wrap any client method in a try/catch as it will always return a Result pattern.
  * ---
  * The Result will either contain a `failure` OR a `data` key. You should ALWAYS check for the `failure` key first.
  * If the `failure` key is present, you should handle the error accordingly.
  * If the `data` key is present, the operation was successful.
  */
 //
-const encryptResult = protectClient.encrypt(sensitiveData, {
+const encryptResult = client.encrypt(sensitiveData, {
   table: protectSchemas.protectedExample
   column: protectSchemas.protectedExample.sensitiveData
 })
@@ -85,7 +85,7 @@ const encryptedData = encryptResult.data
  **/
 console.log('encryptedData:', encryptedData)
 
-const decryptResult = protectClient.decrypt(encryptedData)
+const decryptResult = client.decrypt(encryptedData)
 
 if (decryptResult.failure) {
   // Again, you as the developer can determine exactly how you want to handle the failure scenario.

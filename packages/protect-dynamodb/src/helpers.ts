@@ -53,11 +53,9 @@ export function handleError(
         ? errorObj.message
         : String(error)
 
-  const protectError = new ProtectDynamoDBErrorImpl(
-    errorMessage,
-    errorCode,
-    { context },
-  )
+  const protectError = new ProtectDynamoDBErrorImpl(errorMessage, errorCode, {
+    context,
+  })
 
   if (options?.errorHandler) {
     options.errorHandler(protectError)

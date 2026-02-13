@@ -1,6 +1,6 @@
 # Searchable encryption
 
-Protect.js supports searching encrypted data, which enables trusted data access so that you can:
+CipherStash Encryption supports searching encrypted data, which enables trusted data access so that you can:
 
 1. Prove to your customers that you can track exactly what data is being accessed in your application.
 2. Provide evidence for compliance requirements, such as [SOC 2](https://cipherstash.com/compliance/soc2) and [BDSG](https://cipherstash.com/compliance/bdsg).
@@ -64,17 +64,16 @@ CipherStash's approach to searchable encryption solves the performance problem w
 
 ### Using Encrypt Query Language (EQL)
 
-CipherStash uses [EQL](https://github.com/cipherstash/encrypt-query-language) to perform queries on encrypted data, and Protect.js makes it easy to use EQL with any TypeScipt application.
+CipherStash uses [EQL](https://github.com/cipherstash/encrypt-query-language) to perform queries on encrypted data, and `@cipherstash/stack` makes it easy to use EQL with any TypeScipt application.
 
 ```ts
 // 1) Encrypt the search term
 const searchTerm = 'alice.johnson@example.com'
 
-const encryptedParam = await protectClient.createSearchTerms([{
-  value: searchTerm,
-  table: protectedUsers,        // Reference to the Protect table schema
-  column: protectedUsers.email, // Your Protect column definition
-}])
+const encryptedParam = await client.encryptQuery(searchTerm, {
+  table: protectedUsers,        // Reference to the encryption table schema
+  column: protectedUsers.email, // Your encryption column definition
+})
 
 if (encryptedParam.failure) {
   // Handle the failure
@@ -89,11 +88,11 @@ const equalitySQL = `
 
 // 3) Execute the query, passing in the Postgres column name
 //    and the encrypted search term as the second parameter
-//    (client is an arbitrary Postgres client)
-const result = await client.query(equalitySQL, [ protectedUser.email.getName(), encryptedParam.data ])
+//    (pgClient is an arbitrary Postgres client)
+const result = await pgClient.query(equalitySQL, [ protectedUser.email.getName(), encryptedParam.data ])
 ```
 
-Using the above approach, Protect.js is generating the EQL payloads and which means you never have to drop down to writing complex SQL queries.
+Using the above approach, `@cipherstash/stack` generates the EQL payloads, which means you never have to drop down to writing complex SQL queries.
 
 So does this solve the original problem of searching on encrypted data?
 
@@ -104,7 +103,7 @@ So does this solve the original problem of searching on encrypted data?
   1 | Alice Johnson  | mBbKmsMMkbKBSN...
 ```
 
-The answer is yes! And you can use Protect.js to [decrypt the results in your application](../../README.md#decrypting-data).
+The answer is yes! And you can use `@cipherstash/stack` to [decrypt the results in your application](../../README.md#decrypting-data).
 
 ## How fast is CipherStash's searchable encryption?
 
@@ -130,7 +129,7 @@ With searchable encryption, you can:
 
 ## Searching encrypted JSON data
 
-Protect.js supports searching encrypted JSONB columns using the `.searchableJson()` schema index.
+CipherStash Encryption supports searching encrypted JSONB columns using the `.searchableJson()` schema index.
 This enables two types of queries on encrypted JSON data:
 
 - **JSONPath queries**: Search by JSON path to find and return values at that path (e.g., `$.user.email`)
@@ -146,7 +145,7 @@ With searchable encryption:
 
 - Data can be encrypted, stored, and searched in your existing PostgreSQL database.
 - Encrypted data can be searched using equality, free text search, range queries, and JSONB path/containment queries.
-- Data remains encrypted, and will be decrypted using the Protect.js library in your application.
+- Data remains encrypted, and will be decrypted using `@cipherstash/stack` in your application.
 - Queries are blazing fast, and won't slow down your application experience.
 - Every decryption event is logged, giving you an audit trail of data access events.
 

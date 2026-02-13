@@ -1,6 +1,6 @@
 # Model operations
 
-Model operations in Protect.js provide a high-level interface for encrypting and decrypting entire objects. 
+Model operations in `@cipherstash/stack` provide a high-level interface for encrypting and decrypting entire objects. 
 These operations automatically handle the encryption of fields defined in your schema while preserving other fields.
 
 ## Table of contents
@@ -24,7 +24,7 @@ These operations automatically handle the encryption of fields defined in your s
 The `encryptModel` method encrypts fields in your model that are defined in your schema while leaving other fields unchanged.
 
 ```typescript
-import { protectClient } from "./protect";
+import { client } from "./protect";
 import { users } from "./protect/schema";
 
 const user = {
@@ -35,7 +35,7 @@ const user = {
   metadata: { role: "admin" }, // Will remain unchanged
 };
 
-const encryptedResult = await protectClient.encryptModel(user, users);
+const encryptedResult = await client.encryptModel(user, users);
 
 if (encryptedResult.failure) {
   console.error("Encryption failed:", encryptedResult.failure.message);
@@ -45,8 +45,8 @@ if (encryptedResult.failure) {
 const encryptedUser = encryptedResult.data;
 // Result: {
 //   id: '1',
-//   email: { k: 'ct', c: 'encrypted_data...' },
-//   address: { k: 'ct', c: 'encrypted_data...' },
+//   email: { c: 'encrypted_data...' },
+//   address: { c: 'encrypted_data...' },
 //   createdAt: Date,
 //   metadata: { role: 'admin' }
 // }
@@ -57,7 +57,7 @@ const encryptedUser = encryptedResult.data;
 The `decryptModel` method automatically detects and decrypts any encrypted fields in your model.
 
 ```typescript
-const decryptedResult = await protectClient.decryptModel(encryptedUser);
+const decryptedResult = await client.decryptModel(encryptedUser);
 
 if (decryptedResult.failure) {
   console.error("Decryption failed:", decryptedResult.failure.message);
@@ -88,7 +88,7 @@ const users = [
   },
 ];
 
-const encryptedResult = await protectClient.bulkEncryptModels(users, users);
+const encryptedResult = await client.bulkEncryptModels(users, users);
 
 if (encryptedResult.failure) {
   console.error("Bulk encryption failed:", encryptedResult.failure.message);
@@ -101,7 +101,7 @@ const encryptedUsers = encryptedResult.data;
 ### Bulk decryption
 
 ```typescript
-const decryptedResult = await protectClient.bulkDecryptModels(encryptedUsers);
+const decryptedResult = await client.bulkDecryptModels(encryptedUsers);
 
 if (decryptedResult.failure) {
   console.error("Bulk decryption failed:", decryptedResult.failure.message);
@@ -115,7 +115,7 @@ const decryptedUsers = decryptedResult.data;
 
 ### Using type parameters
 
-Protect.js provides strong TypeScript support through generic type parameters:
+`@cipherstash/stack` provides strong TypeScript support through generic type parameters:
 
 ```typescript
 // Define your model type
@@ -133,16 +133,16 @@ type User = {
 };
 
 // Use the type parameter for type safety
-const encryptedResult = await protectClient.encryptModel<User>(user, users);
-const decryptedResult = await protectClient.decryptModel<User>(encryptedUser);
+const encryptedResult = await client.encryptModel<User>(user, users);
+const decryptedResult = await client.decryptModel<User>(encryptedUser);
 
 // Bulk operations
-const bulkEncryptedResult = await protectClient.bulkEncryptModels<User>(
+const bulkEncryptedResult = await client.bulkEncryptModels<User>(
   userModels,
   users
 );
 const bulkDecryptedResult =
-  await protectClient.bulkDecryptModels<User>(encryptedUsers);
+  await client.bulkDecryptModels<User>(encryptedUsers);
 ```
 
 The type system ensures:
@@ -157,13 +157,13 @@ The type system ensures:
 The model operations can infer types from your schema definition:
 
 ```typescript
-const users = csTable("users", {
-  email: csColumn("email").freeTextSearch(),
-  address: csColumn("address"),
+const users = encryptedTable("users", {
+  email: encryptedColumn("email").freeTextSearch(),
+  address: encryptedColumn("address"),
 });
 
 // Types are inferred from the schema
-const result = await protectClient.encryptModel(user, users);
+const result = await client.encryptModel(user, users);
 // Result type includes encrypted fields for email and address
 ```
 
@@ -173,20 +173,20 @@ All model operations support lock contexts for identity-aware encryption:
 
 ```typescript
 // Single model operations
-const encryptedResult = await protectClient
+const encryptedResult = await client
   .encryptModel(user, users)
   .withLockContext(lockContext);
 
-const decryptedResult = await protectClient
+const decryptedResult = await client
   .decryptModel(encryptedUser)
   .withLockContext(lockContext);
 
 // Bulk operations
-const bulkEncryptedResult = await protectClient
+const bulkEncryptedResult = await client
   .bulkEncryptModels(userModels, users)
   .withLockContext(lockContext);
 
-const bulkDecryptedResult = await protectClient
+const bulkDecryptedResult = await client
   .bulkDecryptModels(encryptedUsers)
   .withLockContext(lockContext);
 ```
@@ -196,15 +196,15 @@ const bulkDecryptedResult = await protectClient
 All model operations return a `Result` type that includes either a `data` or `failure` property:
 
 ```typescript
-const result = await protectClient.encryptModel(user, users);
+const result = await client.encryptModel(user, users);
 
 if (result.failure) {
   // Handle specific error types
   switch (result.failure.type) {
-    case ProtectErrorTypes.EncryptionError:
+    case EncryptionErrorTypes.EncryptionError:
       console.error("Encryption failed:", result.failure.message);
       break;
-    case ProtectErrorTypes.ClientInitError:
+    case EncryptionErrorTypes.ClientInitError:
       console.error("Client not initialized:", result.failure.message);
       break;
     default:

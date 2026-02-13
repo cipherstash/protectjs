@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest'
-import { toJsonPath, buildNestedObject, parseJsonbPath } from '../src'
+import { describe, expect, it } from 'vitest'
+import { buildNestedObject, parseJsonbPath, toJsonPath } from '../src'
 
 describe('toJsonPath', () => {
   it('converts simple path to JSONPath format', () => {
@@ -11,7 +11,9 @@ describe('toJsonPath', () => {
   })
 
   it('converts deeply nested path', () => {
-    expect(toJsonPath('user.profile.settings.theme')).toBe('$.user.profile.settings.theme')
+    expect(toJsonPath('user.profile.settings.theme')).toBe(
+      '$.user.profile.settings.theme',
+    )
   })
 
   it('returns unchanged if already in JSONPath format', () => {
@@ -67,7 +69,9 @@ describe('toJsonPath', () => {
   })
 
   it('handles deeply nested path after array index', () => {
-    expect(toJsonPath('data[0].user.profile.settings')).toBe('$.data[0].user.profile.settings')
+    expect(toJsonPath('data[0].user.profile.settings')).toBe(
+      '$.data[0].user.profile.settings',
+    )
   })
 
   it('handles root array with nested array', () => {
@@ -82,50 +86,50 @@ describe('buildNestedObject', () => {
 
   it('builds two-level nested object', () => {
     expect(buildNestedObject('user.role', 'admin')).toEqual({
-      user: { role: 'admin' }
+      user: { role: 'admin' },
     })
   })
 
   it('builds deeply nested object', () => {
     expect(buildNestedObject('a.b.c.d', 'value')).toEqual({
-      a: { b: { c: { d: 'value' } } }
+      a: { b: { c: { d: 'value' } } },
     })
   })
 
   it('handles numeric values', () => {
     expect(buildNestedObject('user.age', 30)).toEqual({
-      user: { age: 30 }
+      user: { age: 30 },
     })
   })
 
   it('handles boolean values', () => {
     expect(buildNestedObject('user.active', true)).toEqual({
-      user: { active: true }
+      user: { active: true },
     })
   })
 
   it('handles null values', () => {
     expect(buildNestedObject('user.data', null)).toEqual({
-      user: { data: null }
+      user: { data: null },
     })
   })
 
   it('handles object values', () => {
     const value = { nested: 'object' }
     expect(buildNestedObject('user.config', value)).toEqual({
-      user: { config: { nested: 'object' } }
+      user: { config: { nested: 'object' } },
     })
   })
 
   it('handles array values', () => {
     expect(buildNestedObject('user.tags', ['admin', 'user'])).toEqual({
-      user: { tags: ['admin', 'user'] }
+      user: { tags: ['admin', 'user'] },
     })
   })
 
   it('strips JSONPath prefix from path', () => {
     expect(buildNestedObject('$.user.role', 'admin')).toEqual({
-      user: { role: 'admin' }
+      user: { role: 'admin' },
     })
   })
 
@@ -134,23 +138,33 @@ describe('buildNestedObject', () => {
   })
 
   it('throws on root-only path', () => {
-    expect(() => buildNestedObject('$', 'value')).toThrow('Path must contain at least one segment')
+    expect(() => buildNestedObject('$', 'value')).toThrow(
+      'Path must contain at least one segment',
+    )
   })
 
   it('throws on __proto__ segment', () => {
-    expect(() => buildNestedObject('__proto__.polluted', 'yes')).toThrow('Path contains forbidden segment: __proto__')
+    expect(() => buildNestedObject('__proto__.polluted', 'yes')).toThrow(
+      'Path contains forbidden segment: __proto__',
+    )
   })
 
   it('throws on prototype segment', () => {
-    expect(() => buildNestedObject('user.prototype.hack', 'yes')).toThrow('Path contains forbidden segment: prototype')
+    expect(() => buildNestedObject('user.prototype.hack', 'yes')).toThrow(
+      'Path contains forbidden segment: prototype',
+    )
   })
 
   it('throws on constructor segment', () => {
-    expect(() => buildNestedObject('constructor', 'yes')).toThrow('Path contains forbidden segment: constructor')
+    expect(() => buildNestedObject('constructor', 'yes')).toThrow(
+      'Path contains forbidden segment: constructor',
+    )
   })
 
   it('throws on nested forbidden segment', () => {
-    expect(() => buildNestedObject('a.b.__proto__', 'yes')).toThrow('Path contains forbidden segment: __proto__')
+    expect(() => buildNestedObject('a.b.__proto__', 'yes')).toThrow(
+      'Path contains forbidden segment: __proto__',
+    )
   })
 })
 

@@ -68,7 +68,12 @@ const main = async () => {
 
   // Use encryptQuery to create the search term for GSI query
   const encryptedResult = await protectClient.encryptQuery([
-    { value: 'abc@example.com', column: users.email, table: users, queryType: 'equality' },
+    {
+      value: 'abc@example.com',
+      column: users.email,
+      table: users,
+      queryType: 'equality',
+    },
   ])
 
   if (encryptedResult.failure) {
