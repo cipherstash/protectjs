@@ -40,6 +40,7 @@ jobs:
           echo "CS_CLIENT_ACCESS_KEY=${{ secrets.CS_CLIENT_ACCESS_KEY }}" >> ./packages/protect/.env
           echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> ./packages/protect/.env
           echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> ./packages/protect/.env
+          echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> ./packages/protect/.env
           echo "CS_ZEROKMS_HOST=https://ap-southeast-2.aws.zerokms.cipherstashmanaged.net" >> ./packages/protect/.env
           echo "CS_CTS_HOST=https://ap-southeast-2.aws.cts.cipherstashmanaged.net" >> ./packages/protect/.env
 

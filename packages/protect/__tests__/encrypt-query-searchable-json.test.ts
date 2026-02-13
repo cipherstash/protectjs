@@ -395,6 +395,79 @@ describe('searchableJson with returnType formatting', () => {
     // Format: "(\"json\")" - outer quotes with escaped inner quotes
     expect(data[0]).toMatch(/^"\(.*\)"$/)
   }, 30000)
+
+  describe('single-value returnType', () => {
+    it('returns composite-literal for selector', async () => {
+      const result = await protectClient.encryptQuery('$.user.email', {
+        column: jsonbSchema.metadata,
+        table: jsonbSchema,
+        queryType: 'searchableJson',
+        returnType: 'composite-literal',
+      })
+
+      const data = unwrapResult(result)
+      expect(typeof data).toBe('string')
+      expect(data).toMatch(/^\(".*"\)$/)
+    }, 30000)
+
+    it('returns composite-literal for term', async () => {
+      const result = await protectClient.encryptQuery({ role: 'admin' }, {
+        column: jsonbSchema.metadata,
+        table: jsonbSchema,
+        queryType: 'searchableJson',
+        returnType: 'composite-literal',
+      })
+
+      const data = unwrapResult(result)
+      expect(typeof data).toBe('string')
+      expect(data).toMatch(/^\(".*"\)$/)
+    }, 30000)
+
+    it('returns escaped-composite-literal for selector', async () => {
+      const result = await protectClient.encryptQuery('$.user.email', {
+        column: jsonbSchema.metadata,
+        table: jsonbSchema,
+        queryType: 'searchableJson',
+        returnType: 'escaped-composite-literal',
+      })
+
+      const data = unwrapResult(result)
+      expect(typeof data).toBe('string')
+      expect(data as string).toMatch(/^"\(.*\)"$/)
+      // JSON.parse should yield the composite-literal format
+      const parsed = JSON.parse(data as string)
+      expect(parsed).toMatch(/^\(.*\)$/)
+    }, 30000)
+
+    it('returns escaped-composite-literal for term', async () => {
+      const result = await protectClient.encryptQuery({ role: 'admin' }, {
+        column: jsonbSchema.metadata,
+        table: jsonbSchema,
+        queryType: 'searchableJson',
+        returnType: 'escaped-composite-literal',
+      })
+
+      const data = unwrapResult(result)
+      expect(typeof data).toBe('string')
+      expect(data as string).toMatch(/^"\(.*\)"$/)
+      const parsed = JSON.parse(data as string)
+      expect(parsed).toMatch(/^\(.*\)$/)
+    }, 30000)
+
+    it('returns Encrypted object when returnType is omitted', async () => {
+      const result = await protectClient.encryptQuery('$.user.email', {
+        column: jsonbSchema.metadata,
+        table: jsonbSchema,
+        queryType: 'searchableJson',
+      })
+
+      const data = unwrapResult(result) as any
+      expect(typeof data).toBe('object')
+      expect(data).toHaveProperty('i')
+      expect(data.i).toHaveProperty('t')
+      expect(data.i).toHaveProperty('c')
+    }, 30000)
+  })
 })
 
 describe('searchableJson with LockContext', () => {

@@ -4,10 +4,11 @@ import {
   encryptQuery as ffiEncryptQuery,
 } from '@cipherstash/protect-ffi'
 import { type ProtectError, ProtectErrorTypes } from '../..'
+import { formatEncryptedResult } from '../../helpers'
 import { getErrorCode } from '../helpers/error-code'
 import { logger } from '../../../../utils/logger'
 import type { LockContext } from '../../identify'
-import type { Client, Encrypted, EncryptQueryOptions } from '../../types'
+import type { Client, EncryptedQueryResult, EncryptQueryOptions } from '../../types'
 import { noClientError } from '../index'
 import { ProtectOperation } from './base-operation'
 import { resolveIndexType } from '../helpers/infer-index-type'
@@ -16,7 +17,7 @@ import { validateNumericValue, assertValueIndexCompatibility } from '../helpers/
 /**
  * @internal Use {@link ProtectClient.encryptQuery} instead.
  */
-export class EncryptQueryOperation extends ProtectOperation<Encrypted> {
+export class EncryptQueryOperation extends ProtectOperation<EncryptedQueryResult> {
   constructor(
     private client: Client,
     private plaintext: JsPlaintext | null,
@@ -29,7 +30,7 @@ export class EncryptQueryOperation extends ProtectOperation<Encrypted> {
     return new EncryptQueryOperationWithLockContext(this.client, this.plaintext, this.opts, lockContext, this.auditMetadata)
   }
 
-  public async execute(): Promise<Result<Encrypted, ProtectError>> {
+  public async execute(): Promise<Result<EncryptedQueryResult, ProtectError>> {
     logger.debug('Encrypting query', {
       column: this.opts.column.getName(),
       table: this.opts.table.tableName,
@@ -64,7 +65,7 @@ export class EncryptQueryOperation extends ProtectOperation<Encrypted> {
           this.opts.column.getName()
         )
 
-        return await ffiEncryptQuery(this.client, {
+        const encrypted = await ffiEncryptQuery(this.client, {
           plaintext: this.plaintext as JsPlaintext,
           column: this.opts.column.getName(),
           table: this.opts.table.tableName,
@@ -72,6 +73,8 @@ export class EncryptQueryOperation extends ProtectOperation<Encrypted> {
           queryOp,
           unverifiedContext: metadata,
         })
+
+        return formatEncryptedResult(encrypted, this.opts.returnType)
       },
       (error: unknown) => ({
         type: ProtectErrorTypes.EncryptionError,
@@ -89,7 +92,7 @@ export class EncryptQueryOperation extends ProtectOperation<Encrypted> {
 /**
  * @internal Use {@link ProtectClient.encryptQuery} with `.withLockContext()` instead.
  */
-export class EncryptQueryOperationWithLockContext extends ProtectOperation<Encrypted> {
+export class EncryptQueryOperationWithLockContext extends ProtectOperation<EncryptedQueryResult> {
   constructor(
     private client: Client,
     private plaintext: JsPlaintext | null,
@@ -101,7 +104,7 @@ export class EncryptQueryOperationWithLockContext extends ProtectOperation<Encry
     this.auditMetadata = auditMetadata
   }
 
-  public async execute(): Promise<Result<Encrypted, ProtectError>> {
+  public async execute(): Promise<Result<EncryptedQueryResult, ProtectError>> {
     if (this.plaintext === null || this.plaintext === undefined) {
       return { data: null }
     }
@@ -137,7 +140,7 @@ export class EncryptQueryOperationWithLockContext extends ProtectOperation<Encry
           this.opts.column.getName()
         )
 
-        return await ffiEncryptQuery(this.client, {
+        const encrypted = await ffiEncryptQuery(this.client, {
           plaintext: this.plaintext as JsPlaintext,
           column: this.opts.column.getName(),
           table: this.opts.table.tableName,
@@ -147,6 +150,8 @@ export class EncryptQueryOperationWithLockContext extends ProtectOperation<Encry
           serviceToken: ctsToken,
           unverifiedContext: metadata,
         })
+
+        return formatEncryptedResult(encrypted, this.opts.returnType)
       },
       (error: unknown) => ({
         type: ProtectErrorTypes.EncryptionError,
