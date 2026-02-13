@@ -68,7 +68,7 @@ export default async function Page() {
 Since the CTS token is already available, you can construct a `LockContext` object with the existing CTS token.
 
 ```typescript
-import { LockContext } from '@cipherstash/protect/identify'
+import { LockContext } from '@cipherstash/stack/identity'
 import { getCtsToken } from '@cipherstash/nextjs'
 
 export default async function Page() {
@@ -95,7 +95,7 @@ export default async function Page() {
 If you want to override the default context, you can pass a custom context to the `LockContext` constructor.
 
 ```typescript
-import { LockContext } from '@cipherstash/protect/identify'
+import { LockContext } from '@cipherstash/stack/identity'
 
 // protectClient from the previous steps
 const lc = new LockContext({

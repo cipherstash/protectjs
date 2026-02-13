@@ -1,14 +1,9 @@
 import 'dotenv/config'
-import { describe, expect, it, beforeAll } from 'vitest'
+import { beforeAll, describe, expect, it } from 'vitest'
 import { protect } from '../src'
 
 type ProtectClient = Awaited<ReturnType<typeof protect>>
-import {
-  jsonbSchema,
-  metadata,
-  unwrapResult,
-  expectFailure,
-} from './fixtures'
+import { expectFailure, jsonbSchema, metadata, unwrapResult } from './fixtures'
 
 describe('encryptQuery with steVecSelector', () => {
   let protectClient: ProtectClient
@@ -46,11 +41,14 @@ describe('encryptQuery with steVecSelector', () => {
   }, 30000)
 
   it('fails for non-string plaintext with steVecSelector (object)', async () => {
-    const result = await protectClient.encryptQuery({ role: 'admin' }, {
-      column: jsonbSchema.metadata,
-      table: jsonbSchema,
-      queryType: 'steVecSelector',
-    })
+    const result = await protectClient.encryptQuery(
+      { role: 'admin' },
+      {
+        column: jsonbSchema.metadata,
+        table: jsonbSchema,
+        queryType: 'steVecSelector',
+      },
+    )
 
     expectFailure(result)
   }, 30000)
@@ -64,11 +62,14 @@ describe('encryptQuery with steVecTerm', () => {
   })
 
   it('encrypts an object for containment query', async () => {
-    const result = await protectClient.encryptQuery({ role: 'admin' }, {
-      column: jsonbSchema.metadata,
-      table: jsonbSchema,
-      queryType: 'steVecTerm',
-    })
+    const result = await protectClient.encryptQuery(
+      { role: 'admin' },
+      {
+        column: jsonbSchema.metadata,
+        table: jsonbSchema,
+        queryType: 'steVecTerm',
+      },
+    )
 
     const data = unwrapResult(result)
     expect(data).toBeDefined()
@@ -84,7 +85,7 @@ describe('encryptQuery with steVecTerm', () => {
         column: jsonbSchema.metadata,
         table: jsonbSchema,
         queryType: 'steVecTerm',
-      }
+      },
     )
 
     const data = unwrapResult(result)
@@ -139,11 +140,14 @@ describe('encryptQuery STE Vec validation', () => {
   }, 30000)
 
   it('throws when steVecTerm used on non-ste_vec column', async () => {
-    const result = await protectClient.encryptQuery({ field: 'value' }, {
-      column: metadata.raw, // raw column has no ste_vec index
-      table: metadata,
-      queryType: 'steVecTerm',
-    })
+    const result = await protectClient.encryptQuery(
+      { field: 'value' },
+      {
+        column: metadata.raw, // raw column has no ste_vec index
+        table: metadata,
+        queryType: 'steVecTerm',
+      },
+    )
 
     expectFailure(result)
   }, 30000)
@@ -273,11 +277,14 @@ describe('encryptQuery with queryType inference', () => {
   }, 30000)
 
   it('infers steVecTerm for object plaintext without queryType', async () => {
-    const result = await protectClient.encryptQuery({ role: 'admin' }, {
-      column: jsonbSchema.metadata,
-      table: jsonbSchema,
-      // No queryType - should infer steVecTerm from object
-    })
+    const result = await protectClient.encryptQuery(
+      { role: 'admin' },
+      {
+        column: jsonbSchema.metadata,
+        table: jsonbSchema,
+        // No queryType - should infer steVecTerm from object
+      },
+    )
 
     const data = unwrapResult(result)
     expect(data).toBeDefined()
@@ -342,7 +349,7 @@ describe('encryptQuery with queryType inference', () => {
     const result = await protectClient.encryptQuery([42], {
       column: jsonbSchema.metadata,
       table: jsonbSchema,
-      queryType: 'steVecTerm',  // Explicit - matches inference but proves explicit path works
+      queryType: 'steVecTerm', // Explicit - matches inference but proves explicit path works
     })
 
     const data = unwrapResult(result)
@@ -363,13 +370,13 @@ describe('encryptQuery batch with queryType inference', () => {
   it('infers queryOp for each term independently in batch', async () => {
     const results = await protectClient.encryptQuery([
       {
-        value: '$.user.email',  // string → steVecSelector
+        value: '$.user.email', // string → steVecSelector
         column: jsonbSchema.metadata,
         table: jsonbSchema,
         // No queryType
       },
       {
-        value: { role: 'admin' },  // object → steVecTerm
+        value: { role: 'admin' }, // object → steVecTerm
         column: jsonbSchema.metadata,
         table: jsonbSchema,
         // No queryType

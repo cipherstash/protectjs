@@ -1,0 +1,370 @@
+import { describe, expect, it } from 'vitest'
+import {
+  ProtectColumn,
+  ProtectTable,
+  ProtectValue,
+  buildEncryptConfig,
+  encryptedColumn,
+  encryptedTable,
+  encryptedValue,
+} from '../src/schema/index.js'
+
+describe('schema builders', () => {
+  // -------------------------------------------------------
+  // encryptedColumn
+  // -------------------------------------------------------
+  describe('encryptedColumn', () => {
+    it('returns a ProtectColumn with the correct name', () => {
+      const col = encryptedColumn('email')
+      expect(col).toBeInstanceOf(ProtectColumn)
+      expect(col.getName()).toBe('email')
+    })
+
+    it('defaults castAs to string', () => {
+      const col = encryptedColumn('name')
+      const built = col.build()
+      expect(built.cast_as).toBe('string')
+    })
+
+    it('.dataType("string") sets castAs to string', () => {
+      const col = encryptedColumn('name').dataType('string')
+      expect(col.build().cast_as).toBe('string')
+    })
+
+    it('.dataType("number") sets castAs to number', () => {
+      const col = encryptedColumn('age').dataType('number')
+      expect(col.build().cast_as).toBe('number')
+    })
+
+    it('.dataType("boolean") sets castAs to boolean', () => {
+      const col = encryptedColumn('active').dataType('boolean')
+      expect(col.build().cast_as).toBe('boolean')
+    })
+
+    it('.dataType("date") sets castAs to date', () => {
+      const col = encryptedColumn('created').dataType('date')
+      expect(col.build().cast_as).toBe('date')
+    })
+
+    it('.dataType("bigint") sets castAs to bigint', () => {
+      const col = encryptedColumn('large').dataType('bigint')
+      expect(col.build().cast_as).toBe('bigint')
+    })
+
+    it('.dataType("json") sets castAs to json', () => {
+      const col = encryptedColumn('meta').dataType('json')
+      expect(col.build().cast_as).toBe('json')
+    })
+
+    it('.equality() adds a unique index', () => {
+      const col = encryptedColumn('email').equality()
+      const built = col.build()
+      expect(built.indexes).toHaveProperty('unique')
+      expect(built.indexes.unique).toEqual({ token_filters: [] })
+    })
+
+    it('.equality() with token filters passes them through', () => {
+      const col = encryptedColumn('email').equality([{ kind: 'downcase' }])
+      const built = col.build()
+      expect(built.indexes.unique).toEqual({
+        token_filters: [{ kind: 'downcase' }],
+      })
+    })
+
+    it('.freeTextSearch() adds a match index with defaults', () => {
+      const col = encryptedColumn('bio').freeTextSearch()
+      const built = col.build()
+      expect(built.indexes).toHaveProperty('match')
+      expect(built.indexes.match).toEqual({
+        tokenizer: { kind: 'ngram', token_length: 3 },
+        token_filters: [{ kind: 'downcase' }],
+        k: 6,
+        m: 2048,
+        include_original: true,
+      })
+    })
+
+    it('.freeTextSearch() with custom opts overrides defaults', () => {
+      const col = encryptedColumn('bio').freeTextSearch({
+        tokenizer: { kind: 'standard' },
+        token_filters: [],
+        k: 10,
+        m: 4096,
+        include_original: false,
+      })
+      const built = col.build()
+      expect(built.indexes.match).toEqual({
+        tokenizer: { kind: 'standard' },
+        token_filters: [],
+        k: 10,
+        m: 4096,
+        include_original: false,
+      })
+    })
+
+    it('.orderAndRange() adds an ore index', () => {
+      const col = encryptedColumn('age').orderAndRange()
+      const built = col.build()
+      expect(built.indexes).toHaveProperty('ore')
+      expect(built.indexes.ore).toEqual({})
+    })
+
+    it('.searchableJson() adds a ste_vec index and sets castAs to json', () => {
+      const col = encryptedColumn('metadata').searchableJson()
+      const built = col.build()
+      expect(built.cast_as).toBe('json')
+      expect(built.indexes).toHaveProperty('ste_vec')
+      expect(built.indexes.ste_vec).toEqual({ prefix: 'enabled' })
+    })
+
+    it('chaining multiple indexes: .equality().freeTextSearch().orderAndRange()', () => {
+      const col = encryptedColumn('email')
+        .equality()
+        .freeTextSearch()
+        .orderAndRange()
+      const built = col.build()
+
+      expect(built.indexes).toHaveProperty('unique')
+      expect(built.indexes).toHaveProperty('match')
+      expect(built.indexes).toHaveProperty('ore')
+      expect(built.indexes.unique).toEqual({ token_filters: [] })
+      expect(built.indexes.ore).toEqual({})
+      expect(built.indexes.match).toBeDefined()
+    })
+
+    it('.build() produces the correct schema shape', () => {
+      const col = encryptedColumn('email')
+        .dataType('string')
+        .equality()
+        .orderAndRange()
+      const built = col.build()
+
+      expect(built).toEqual({
+        cast_as: 'string',
+        indexes: {
+          unique: { token_filters: [] },
+          ore: {},
+        },
+      })
+    })
+
+    it('.build() with no indexes produces empty indexes object', () => {
+      const col = encryptedColumn('raw')
+      const built = col.build()
+      expect(built).toEqual({
+        cast_as: 'string',
+        indexes: {},
+      })
+    })
+  })
+
+  // -------------------------------------------------------
+  // encryptedTable
+  // -------------------------------------------------------
+  describe('encryptedTable', () => {
+    it('creates a table with accessible column properties', () => {
+      const table = encryptedTable('users', {
+        email: encryptedColumn('email'),
+      })
+      expect(table.email).toBeInstanceOf(ProtectColumn)
+    })
+
+    it('table.email gives back the ProtectColumn', () => {
+      const emailCol = encryptedColumn('email').equality()
+      const table = encryptedTable('users', { email: emailCol })
+      expect(table.email).toBe(emailCol)
+    })
+
+    it('table.tableName is correct', () => {
+      const table = encryptedTable('users', {
+        email: encryptedColumn('email'),
+      })
+      expect(table.tableName).toBe('users')
+    })
+
+    it('is an instance of ProtectTable', () => {
+      const table = encryptedTable('users', {
+        email: encryptedColumn('email'),
+      })
+      expect(table).toBeInstanceOf(ProtectTable)
+    })
+
+    it('table.build() produces correct config structure', () => {
+      const table = encryptedTable('users', {
+        email: encryptedColumn('email').equality(),
+        age: encryptedColumn('age').dataType('number').orderAndRange(),
+      })
+      const built = table.build()
+
+      expect(built.tableName).toBe('users')
+      expect(built.columns).toEqual({
+        email: {
+          cast_as: 'string',
+          indexes: {
+            unique: { token_filters: [] },
+          },
+        },
+        age: {
+          cast_as: 'number',
+          indexes: {
+            ore: {},
+          },
+        },
+      })
+    })
+
+    it('table.build() rewrites ste_vec prefix for searchableJson columns', () => {
+      const table = encryptedTable('documents', {
+        metadata: encryptedColumn('metadata').searchableJson(),
+      })
+      const built = table.build()
+
+      expect(built.columns.metadata.cast_as).toBe('json')
+      expect(built.columns.metadata.indexes.ste_vec).toEqual({
+        prefix: 'documents/metadata',
+      })
+    })
+
+    it('supports multiple columns', () => {
+      const table = encryptedTable('users', {
+        email: encryptedColumn('email').equality(),
+        name: encryptedColumn('name').freeTextSearch(),
+        age: encryptedColumn('age').dataType('number').orderAndRange(),
+      })
+
+      expect(table.email).toBeInstanceOf(ProtectColumn)
+      expect(table.name).toBeInstanceOf(ProtectColumn)
+      expect(table.age).toBeInstanceOf(ProtectColumn)
+    })
+  })
+
+  // -------------------------------------------------------
+  // buildEncryptConfig
+  // -------------------------------------------------------
+  describe('buildEncryptConfig', () => {
+    it('produces { v: 2, tables: {...} } structure', () => {
+      const table = encryptedTable('users', {
+        email: encryptedColumn('email').equality(),
+      })
+      const config = buildEncryptConfig(table)
+
+      expect(config).toEqual({
+        v: 2,
+        tables: {
+          users: {
+            email: {
+              cast_as: 'string',
+              indexes: {
+                unique: { token_filters: [] },
+              },
+            },
+          },
+        },
+      })
+    })
+
+    it('produces config with multiple tables', () => {
+      const users = encryptedTable('users', {
+        email: encryptedColumn('email').equality(),
+      })
+      const products = encryptedTable('products', {
+        price: encryptedColumn('price').dataType('number').orderAndRange(),
+      })
+      const config = buildEncryptConfig(users, products)
+
+      expect(config.v).toBe(2)
+      expect(Object.keys(config.tables)).toHaveLength(2)
+      expect(config.tables).toHaveProperty('users')
+      expect(config.tables).toHaveProperty('products')
+      expect(config.tables.users).toHaveProperty('email')
+      expect(config.tables.products).toHaveProperty('price')
+    })
+
+    it('v is always 2', () => {
+      const table = encryptedTable('t', {
+        col: encryptedColumn('col'),
+      })
+      const config = buildEncryptConfig(table)
+      expect(config.v).toBe(2)
+    })
+
+    it('config with searchableJson has correct ste_vec prefix', () => {
+      const docs = encryptedTable('documents', {
+        metadata: encryptedColumn('metadata').searchableJson(),
+      })
+      const config = buildEncryptConfig(docs)
+
+      expect(config.tables.documents.metadata.indexes.ste_vec).toEqual({
+        prefix: 'documents/metadata',
+      })
+    })
+  })
+
+  // -------------------------------------------------------
+  // encryptedValue (ProtectValue)
+  // -------------------------------------------------------
+  describe('encryptedValue', () => {
+    it('creates a ProtectValue', () => {
+      const value = encryptedValue('field')
+      expect(value).toBeInstanceOf(ProtectValue)
+    })
+
+    it('returns correct name', () => {
+      const value = encryptedValue('myField')
+      expect(value.getName()).toBe('myField')
+    })
+
+    it('defaults castAs to string', () => {
+      const value = encryptedValue('field')
+      const built = value.build()
+      expect(built.cast_as).toBe('string')
+    })
+
+    it('.dataType("json").build() produces correct shape', () => {
+      const value = encryptedValue('field').dataType('json')
+      const built = value.build()
+      expect(built).toEqual({
+        cast_as: 'json',
+        indexes: {},
+      })
+    })
+
+    it('.dataType("number").build() produces correct shape', () => {
+      const value = encryptedValue('field').dataType('number')
+      const built = value.build()
+      expect(built).toEqual({
+        cast_as: 'number',
+        indexes: {},
+      })
+    })
+
+    it('.build() always has empty indexes', () => {
+      const value = encryptedValue('field').dataType('string')
+      const built = value.build()
+      expect(built.indexes).toEqual({})
+    })
+  })
+
+  // -------------------------------------------------------
+  // encryptedTable with nested ProtectValue columns
+  // -------------------------------------------------------
+  describe('encryptedTable with ProtectValue', () => {
+    it('table.build() processes nested ProtectValue entries', () => {
+      const table = encryptedTable('users', {
+        profile: {
+          firstName: encryptedValue('firstName'),
+          lastName: encryptedValue('lastName').dataType('string'),
+        },
+      })
+
+      const built = table.build()
+      expect(built.tableName).toBe('users')
+      expect(built.columns).toHaveProperty('firstName')
+      expect(built.columns).toHaveProperty('lastName')
+      expect(built.columns.firstName).toEqual({
+        cast_as: 'string',
+        indexes: {},
+      })
+    })
+  })
+})

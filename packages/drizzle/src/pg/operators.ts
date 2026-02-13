@@ -1,10 +1,10 @@
+import type { QueryTypeName } from '@cipherstash/protect'
 import type {
   ProtectClient,
   ProtectColumn,
   ProtectTable,
   ProtectTableColumn,
 } from '@cipherstash/protect/client'
-import type { QueryTypeName } from '@cipherstash/protect'
 import {
   type SQL,
   type SQLWrapper,
@@ -269,7 +269,11 @@ interface ValueToEncrypt {
  */
 async function encryptValues(
   protectClient: ProtectClient,
-  values: Array<{ value: unknown; column: SQLWrapper; queryType?: QueryTypeName }>,
+  values: Array<{
+    value: unknown
+    column: SQLWrapper
+    queryType?: QueryTypeName
+  }>,
   protectTable: ProtectTable<ProtectTableColumn> | undefined,
   protectTableCache: Map<string, ProtectTable<ProtectTableColumn>>,
 ): Promise<unknown[]> {
@@ -314,7 +318,11 @@ async function encryptValues(
     {
       column: ProtectColumn
       table: ProtectTable<ProtectTableColumn>
-      values: Array<{ value: string | number; index: number; queryType?: QueryTypeName }>
+      values: Array<{
+        value: string | number
+        index: number
+        queryType?: QueryTypeName
+      }>
       resultIndices: number[]
     }
   >()
@@ -698,8 +706,8 @@ function createComparisonOperator(
       protectClient,
       defaultProtectTable,
       protectTableCache,
-      undefined,  // min
-      undefined,  // max
+      undefined, // min
+      undefined, // max
       'orderAndRange',
     ) as Promise<SQL>
   }
@@ -732,8 +740,8 @@ function createComparisonOperator(
       protectClient,
       defaultProtectTable,
       protectTableCache,
-      undefined,  // min
-      undefined,  // max
+      undefined, // min
+      undefined, // max
       'equality',
     ) as Promise<SQL>
   }
@@ -855,8 +863,8 @@ function createTextSearchOperator(
     protectClient,
     defaultProtectTable,
     protectTableCache,
-    undefined,  // min
-    undefined,  // max
+    undefined, // min
+    undefined, // max
     'freeTextSearch',
   ) as Promise<SQL>
 }
@@ -1334,7 +1342,11 @@ export function createProtectOperators(protectClient: ProtectClient): {
     // Encrypt all values in the array in a single batch
     const encryptedValues = await encryptValues(
       protectClient,
-      right.map((value) => ({ value, column: left, queryType: 'equality' as const })),
+      right.map((value) => ({
+        value,
+        column: left,
+        queryType: 'equality' as const,
+      })),
       defaultProtectTable,
       protectTableCache,
     )
@@ -1380,7 +1392,11 @@ export function createProtectOperators(protectClient: ProtectClient): {
     // Encrypt all values in the array in a single batch
     const encryptedValues = await encryptValues(
       protectClient,
-      right.map((value) => ({ value, column: left, queryType: 'equality' as const })),
+      right.map((value) => ({
+        value,
+        column: left,
+        queryType: 'equality' as const,
+      })),
       defaultProtectTable,
       protectTableCache,
     )
@@ -1519,7 +1535,11 @@ export function createProtectOperators(protectClient: ProtectClient): {
     // Batch encrypt all values
     const encryptedResults = await encryptValues(
       protectClient,
-      valuesToEncrypt.map((v) => ({ value: v.value, column: v.column, queryType: v.queryType })),
+      valuesToEncrypt.map((v) => ({
+        value: v.value,
+        column: v.column,
+        queryType: v.queryType,
+      })),
       defaultProtectTable,
       protectTableCache,
     )
@@ -1674,7 +1694,11 @@ export function createProtectOperators(protectClient: ProtectClient): {
 
     const encryptedResults = await encryptValues(
       protectClient,
-      valuesToEncrypt.map((v) => ({ value: v.value, column: v.column, queryType: v.queryType })),
+      valuesToEncrypt.map((v) => ({
+        value: v.value,
+        column: v.column,
+        queryType: v.queryType,
+      })),
       defaultProtectTable,
       protectTableCache,
     )

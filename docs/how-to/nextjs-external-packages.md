@@ -1,6 +1,6 @@
 # Next.js
 
-Using `@cipherstash/protect` with Next.js? You need to opt-out from the Server Components bundling and use native Node.js `require` instead. 
+Using `@cipherstash/stack` with Next.js? You need to opt-out from the Server Components bundling and use native Node.js `require` instead. 
 
 ## Using version 15 or later
 
@@ -9,7 +9,7 @@ Using `@cipherstash/protect` with Next.js? You need to opt-out from the Server C
 ```js
 const nextConfig = {
   ...
-  serverExternalPackages: ['@cipherstash/protect'],
+  serverExternalPackages: ['@cipherstash/stack'],
 }
 ```
 
@@ -21,7 +21,7 @@ const nextConfig = {
 const nextConfig = {
   ...
   experimental: {
-    serverComponentsExternalPackages: ['@cipherstash/protect'],
+    serverComponentsExternalPackages: ['@cipherstash/stack'],
   },
 }
 ```

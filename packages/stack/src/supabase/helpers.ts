@@ -1,0 +1,201 @@
+import type { ProtectColumn, ProtectTable, ProtectTableColumn } from '@/schema'
+import type { QueryTypeName } from '@/types'
+import type { FilterOp, PendingOrCondition } from './types'
+
+/**
+ * Get the names of all encrypted columns defined in a table schema.
+ */
+export function getEncryptedColumnNames(
+  schema: ProtectTable<ProtectTableColumn>,
+): string[] {
+  const built = schema.build()
+  return Object.keys(built.columns)
+}
+
+/**
+ * Check whether a column name refers to an encrypted column in the schema.
+ */
+export function isEncryptedColumn(
+  columnName: string,
+  encryptedColumnNames: string[],
+): boolean {
+  return encryptedColumnNames.includes(columnName)
+}
+
+/**
+ * Parse a Supabase select string and add `::jsonb` casts to encrypted columns.
+ *
+ * Input:  `'id, email, name'`
+ * Output: `'id, email::jsonb, name::jsonb'`  (if email and name are encrypted)
+ *
+ * Handles whitespace, already-cast columns, and embedded functions.
+ */
+export function addJsonbCasts(
+  columns: string,
+  encryptedColumnNames: string[],
+): string {
+  return columns
+    .split(',')
+    .map((col) => {
+      const trimmed = col.trim()
+
+      // Skip empty segments
+      if (!trimmed) return col
+
+      // If it already has a cast (e.g. `email::jsonb`), skip
+      if (trimmed.includes('::')) return col
+
+      // If it contains parens (function call) or dots (foreign table), skip
+      if (trimmed.includes('(') || trimmed.includes('.')) return col
+
+      // Check if the column name (possibly with alias) is encrypted
+      // Handle `column_name` or `column_name as alias`
+      const parts = trimmed.split(/\s+/)
+      const colName = parts[0]
+
+      if (isEncryptedColumn(colName, encryptedColumnNames)) {
+        // Preserve original whitespace before the column
+        const leadingWhitespace = col.match(/^(\s*)/)?.[1] ?? ''
+        if (parts.length > 1) {
+          // Has alias: `email as e` -> `email::jsonb as e`
+          return `${leadingWhitespace}${colName}::jsonb ${parts.slice(1).join(' ')}`
+        }
+        return `${leadingWhitespace}${colName}::jsonb`
+      }
+
+      return col
+    })
+    .join(',')
+}
+
+/**
+ * Map a Supabase filter operation to a CipherStash query type.
+ */
+export function mapFilterOpToQueryType(op: FilterOp): QueryTypeName {
+  switch (op) {
+    case 'eq':
+    case 'neq':
+    case 'in':
+    case 'is':
+      return 'equality'
+    case 'like':
+    case 'ilike':
+      return 'freeTextSearch'
+    case 'gt':
+    case 'gte':
+    case 'lt':
+    case 'lte':
+      return 'orderAndRange'
+    default:
+      return 'equality'
+  }
+}
+
+/**
+ * Parse a Supabase `.or()` filter string into structured conditions.
+ *
+ * Input: `'email.eq.john@example.com,name.ilike.%john%'`
+ * Output: `[{ column: 'email', op: 'eq', value: 'john@example.com' }, { column: 'name', op: 'ilike', value: '%john%' }]`
+ */
+export function parseOrString(orString: string): PendingOrCondition[] {
+  const conditions: PendingOrCondition[] = []
+  // Split on commas that are not inside parentheses (nested or/and)
+  const parts = splitOrString(orString)
+
+  for (const part of parts) {
+    const trimmed = part.trim()
+    if (!trimmed) continue
+
+    // Format: column.op.value
+    const firstDot = trimmed.indexOf('.')
+    if (firstDot === -1) continue
+
+    const column = trimmed.slice(0, firstDot)
+    const rest = trimmed.slice(firstDot + 1)
+
+    const secondDot = rest.indexOf('.')
+    if (secondDot === -1) continue
+
+    const op = rest.slice(0, secondDot) as FilterOp
+    const value = rest.slice(secondDot + 1)
+
+    // Handle special value formats
+    const parsedValue = parseOrValue(value)
+
+    conditions.push({ column, op, value: parsedValue })
+  }
+
+  return conditions
+}
+
+/**
+ * Rebuild an `.or()` string from structured conditions.
+ */
+export function rebuildOrString(conditions: PendingOrCondition[]): string {
+  return conditions
+    .map((c) => {
+      const value = formatOrValue(c.value)
+      return `${c.column}.${c.op}.${value}`
+    })
+    .join(',')
+}
+
+// ---------------------------------------------------------------------------
+// Internal helpers
+// ---------------------------------------------------------------------------
+
+function splitOrString(input: string): string[] {
+  const parts: string[] = []
+  let current = ''
+  let depth = 0
+
+  for (const char of input) {
+    if (char === '(') {
+      depth++
+      current += char
+    } else if (char === ')') {
+      depth--
+      current += char
+    } else if (char === ',' && depth === 0) {
+      parts.push(current)
+      current = ''
+    } else {
+      current += char
+    }
+  }
+
+  if (current) {
+    parts.push(current)
+  }
+
+  return parts
+}
+
+function parseOrValue(value: string): unknown {
+  // Handle parenthesized lists: (val1,val2,val3)
+  if (value.startsWith('(') && value.endsWith(')')) {
+    return value
+      .slice(1, -1)
+      .split(',')
+      .map((v) => v.trim())
+  }
+
+  // Handle booleans
+  if (value === 'true') return true
+  if (value === 'false') return false
+
+  // Handle null
+  if (value === 'null') return null
+
+  return value
+}
+
+function formatOrValue(value: unknown): string {
+  if (Array.isArray(value)) {
+    return `(${value.join(',')})`
+  }
+  if (value === null) return 'null'
+  if (value === true) return 'true'
+  if (value === false) return 'false'
+  return String(value)
+}

@@ -1,6 +1,6 @@
 # Documentation Drift Testing
 
-This document describes the documentation drift detection system for the Drizzle + Protect.js integration. The system ensures that code examples in documentation remain executable and accurate as the codebase evolves.
+This document describes the documentation drift detection system for the Drizzle + CipherStash Encryption integration. The system ensures that code examples in documentation remain executable and accurate as the codebase evolves.
 
 ## Overview
 
@@ -27,7 +27,7 @@ packages/drizzle/
 │       └── code-executor.test.ts       # Executor unit tests
 │
 docs/reference/drizzle/
-├── drizzle.md                          # Protect operators pattern (recommended)
+├── drizzle.md                          # Encryption operators pattern (recommended)
 ├── drizzle-protect.md                  # Manual encryption pattern (verbose)
 └── DRIFT-TESTING.md                    # This document
 ```
@@ -63,9 +63,9 @@ The executor (`code-executor.ts`) runs extracted code blocks in a controlled con
 const context: ExecutionContext = {
   db,                    // Drizzle database instance
   transactions,          // Table schema
-  protect,               // Protect operators (eq, gte, like, etc.)
+  protect,               // Encryption operators (eq, gte, like, etc.)
   protectClient,         // Raw protect client for manual encryption
-  protectTransactions,   // Protect schema for encryption
+  protectTransactions,   // Encryption schema for encryption
   eq, gte, lte, ilike,   // Drizzle operators
   and, or, desc, asc,    // Drizzle combinators
   sql, inArray,          // Drizzle utilities
@@ -295,7 +295,7 @@ When writing `ts:run` blocks, these variables are available:
 |----------|------|-------------|
 | `db` | Drizzle instance | Database connection |
 | `transactions` | Table schema | The test table definition |
-| `protectTransactions` | Protect schema | Schema for encryption operations |
+| `protectTransactions` | Encryption schema | Schema for encryption operations |
 
 ### Protect Operators (Auto-Encrypting)
 | Variable | Description |

@@ -1,0 +1,132 @@
+import { getErrorCode } from '@/encryption/ffi/helpers/error-code'
+import { type EncryptionError, EncryptionErrorTypes } from '@/errors'
+import type { LockContext } from '@/identity'
+import type { ProtectTable, ProtectTableColumn } from '@/schema'
+import type { Client, Decrypted } from '@/types'
+import { logger } from '@/utils/logger'
+import { type Result, withResult } from '@byteslice/result'
+import { noClientError } from '../index'
+import {
+  encryptModelFields,
+  encryptModelFieldsWithLockContext,
+} from '../model-helpers'
+import { EncryptionOperation } from './base-operation'
+
+export class EncryptModelOperation<
+  T extends Record<string, unknown>,
+> extends EncryptionOperation<T> {
+  private client: Client
+  private model: Decrypted<T>
+  private table: ProtectTable<ProtectTableColumn>
+
+  constructor(
+    client: Client,
+    model: Decrypted<T>,
+    table: ProtectTable<ProtectTableColumn>,
+  ) {
+    super()
+    this.client = client
+    this.model = model
+    this.table = table
+  }
+
+  public withLockContext(
+    lockContext: LockContext,
+  ): EncryptModelOperationWithLockContext<T> {
+    return new EncryptModelOperationWithLockContext(this, lockContext)
+  }
+
+  public async execute(): Promise<Result<T, EncryptionError>> {
+    logger.debug('Encrypting model WITHOUT a lock context', {
+      table: this.table.tableName,
+    })
+
+    return await withResult(
+      async () => {
+        if (!this.client) {
+          throw noClientError()
+        }
+
+        const auditData = this.getAuditData()
+
+        return await encryptModelFields<T>(
+          this.model,
+          this.table,
+          this.client,
+          auditData,
+        )
+      },
+      (error: unknown) => ({
+        type: EncryptionErrorTypes.EncryptionError,
+        message: (error as Error).message,
+        code: getErrorCode(error),
+      }),
+    )
+  }
+
+  public getOperation(): {
+    client: Client
+    model: Decrypted<T>
+    table: ProtectTable<ProtectTableColumn>
+  } {
+    return {
+      client: this.client,
+      model: this.model,
+      table: this.table,
+    }
+  }
+}
+
+export class EncryptModelOperationWithLockContext<
+  T extends Record<string, unknown>,
+> extends EncryptionOperation<T> {
+  private operation: EncryptModelOperation<T>
+  private lockContext: LockContext
+
+  constructor(operation: EncryptModelOperation<T>, lockContext: LockContext) {
+    super()
+    this.operation = operation
+    this.lockContext = lockContext
+    const auditData = operation.getAuditData()
+    if (auditData) {
+      this.audit(auditData)
+    }
+  }
+
+  public async execute(): Promise<Result<T, EncryptionError>> {
+    return await withResult(
+      async () => {
+        const { client, model, table } = this.operation.getOperation()
+
+        logger.debug('Encrypting model WITH a lock context', {
+          table: table.tableName,
+        })
+
+        if (!client) {
+          throw noClientError()
+        }
+
+        const context = await this.lockContext.getLockContext()
+
+        if (context.failure) {
+          throw new Error(`[encryption]: ${context.failure.message}`)
+        }
+
+        const auditData = this.getAuditData()
+
+        return await encryptModelFieldsWithLockContext<T>(
+          model,
+          table,
+          client,
+          context.data,
+          auditData,
+        )
+      },
+      (error: unknown) => ({
+        type: EncryptionErrorTypes.EncryptionError,
+        message: (error as Error).message,
+        code: getErrorCode(error),
+      }),
+    )
+  }
+}
