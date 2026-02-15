@@ -93,7 +93,7 @@ export class EncryptionClient {
 
         this.encryptConfig = validated
 
-        logger.info('Successfully initialized the Protect.js client.')
+        logger.debug('Successfully initialized the Protect.js client.')
         return this
       },
       (error: unknown) => ({

@@ -449,8 +449,47 @@ const client2 = await Encryption({
 
 ### Logging
 
+The SDK uses [evlog](https://github.com/HugoRCD/evlog) for structured logging. Each encryption operation emits a single wide event with context such as the operation type, table, column, lock context status, and duration.
+
+#### Environment variable
+
 ```bash
-PROTECT_LOG_LEVEL=debug  # debug | info | error
+STASH_LOG_LEVEL=debug  # debug | info | warn | error (default: info)
+```
+
+#### Programmatic configuration
+
+Pass a `logging` option when initializing the client:
+
+```typescript
+const client = await Encryption({
+  schemas: [users],
+  logging: {
+    enabled: true,     // toggle logging on/off (default: true)
+    pretty: true,      // pretty-print in development (default: auto-detected)
+  },
+})
+```
+
+#### Log draining
+
+Send structured logs to an external observability platform by providing a `drain` callback:
+
+```typescript
+import { Encryption } from "@cipherstash/stack"
+
+const client = await Encryption({
+  schemas: [users],
+  logging: {
+    drain: (ctx) => {
+      // Forward to Axiom, Datadog, OTLP, etc.
+      fetch("https://your-service.com/logs", {
+        method: "POST",
+        body: JSON.stringify(ctx.event),
+      })
+    },
+  },
+})
 ```
 
 The SDK never logs plaintext data.
