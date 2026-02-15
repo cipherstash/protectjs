@@ -3,7 +3,7 @@ import { type EncryptionError, EncryptionErrorTypes } from '@/errors'
 import type { LockContext } from '@/identity'
 import type { ProtectTable, ProtectTableColumn } from '@/schema'
 import type { Client, Decrypted } from '@/types'
-import { logger } from '@/utils/logger'
+import { createRequestLogger } from '@/utils/logger'
 import { type Result, withResult } from '@byteslice/result'
 import { noClientError } from '../index'
 import {
@@ -37,11 +37,14 @@ export class EncryptModelOperation<
   }
 
   public async execute(): Promise<Result<T, EncryptionError>> {
-    logger.debug('Encrypting model WITHOUT a lock context', {
+    const log = createRequestLogger()
+    log.set({
+      op: 'encryptModel',
       table: this.table.tableName,
+      lockContext: false,
     })
 
-    return await withResult(
+    const result = await withResult(
       async () => {
         if (!this.client) {
           throw noClientError()
@@ -56,12 +59,17 @@ export class EncryptModelOperation<
           auditData,
         )
       },
-      (error: unknown) => ({
-        type: EncryptionErrorTypes.EncryptionError,
-        message: (error as Error).message,
-        code: getErrorCode(error),
-      }),
+      (error: unknown) => {
+        log.set({ errorCode: getErrorCode(error) ?? 'unknown' })
+        return {
+          type: EncryptionErrorTypes.EncryptionError,
+          message: (error as Error).message,
+          code: getErrorCode(error),
+        }
+      },
     )
+    log.emit()
+    return result
   }
 
   public getOperation(): {
@@ -94,14 +102,17 @@ export class EncryptModelOperationWithLockContext<
   }
 
   public async execute(): Promise<Result<T, EncryptionError>> {
-    return await withResult(
+    const { client, model, table } = this.operation.getOperation()
+
+    const log = createRequestLogger()
+    log.set({
+      op: 'encryptModel',
+      table: table.tableName,
+      lockContext: true,
+    })
+
+    const result = await withResult(
       async () => {
-        const { client, model, table } = this.operation.getOperation()
-
-        logger.debug('Encrypting model WITH a lock context', {
-          table: table.tableName,
-        })
-
         if (!client) {
           throw noClientError()
         }
@@ -122,11 +133,16 @@ export class EncryptModelOperationWithLockContext<
           auditData,
         )
       },
-      (error: unknown) => ({
-        type: EncryptionErrorTypes.EncryptionError,
-        message: (error as Error).message,
-        code: getErrorCode(error),
-      }),
+      (error: unknown) => {
+        log.set({ errorCode: getErrorCode(error) ?? 'unknown' })
+        return {
+          type: EncryptionErrorTypes.EncryptionError,
+          message: (error as Error).message,
+          code: getErrorCode(error),
+        }
+      },
     )
+    log.emit()
+    return result
   }
 }

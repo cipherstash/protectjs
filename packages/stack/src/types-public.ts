@@ -54,5 +54,8 @@ export type {
   ScalarQueryTerm,
 } from '@/types'
 
+// Logging
+export type { LoggingConfig } from '@/utils/logger'
+
 // Runtime values
 export { queryTypes } from '@/types'

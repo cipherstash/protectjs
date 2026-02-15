@@ -1,6 +1,7 @@
 import { EncryptionClient } from '@/encryption/ffi'
 import { buildEncryptConfig } from '@/schema'
 import type { EncryptionClientConfig } from '@/types'
+import { initStackLogger } from '@/utils/logger'
 
 // Re-export schema builders for convenience
 export { encryptedTable, encryptedColumn, encryptedValue } from '@/schema'
@@ -44,6 +45,10 @@ function isValidUuid(uuid: string): boolean {
 export const Encryption = async (
   config: EncryptionClientConfig,
 ): Promise<EncryptionClient> => {
+  if (config.logging) {
+    initStackLogger(config.logging)
+  }
+
   const { schemas, config: clientConfig } = config
 
   if (!schemas.length) {

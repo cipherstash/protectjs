@@ -6,7 +6,7 @@ import {
 import { type EncryptionError, EncryptionErrorTypes } from '@/errors'
 import type { Context, LockContext } from '@/identity'
 import type { Client, EncryptedQueryResult, ScalarQueryTerm } from '@/types'
-import { logger } from '@/utils/logger'
+import { createRequestLogger } from '@/utils/logger'
 import { type Result, withResult } from '@byteslice/result'
 import {
   type JsPlaintext,
@@ -134,19 +134,26 @@ export class BatchEncryptQueryOperation extends EncryptionOperation<
   public async execute(): Promise<
     Result<EncryptedQueryResult[], EncryptionError>
   > {
-    logger.debug('Encrypting query terms', { count: this.terms.length })
+    const log = createRequestLogger()
+    log.set({
+      op: 'batchEncryptQuery',
+      count: this.terms.length,
+      lockContext: false,
+    })
 
     if (this.terms.length === 0) {
+      log.emit()
       return { data: [] }
     }
 
     const { nullIndices, nonNullTerms } = filterNullTerms(this.terms)
 
     if (nonNullTerms.length === 0) {
+      log.emit()
       return { data: this.terms.map(() => null) }
     }
 
-    return await withResult(
+    const result = await withResult(
       async () => {
         if (!this.client) throw noClientError()
 
@@ -163,12 +170,17 @@ export class BatchEncryptQueryOperation extends EncryptionOperation<
 
         return assembleResults(this.terms.length, encrypted, nonNullTerms)
       },
-      (error: unknown) => ({
-        type: EncryptionErrorTypes.EncryptionError,
-        message: (error as Error).message,
-        code: getErrorCode(error),
-      }),
+      (error: unknown) => {
+        log.set({ errorCode: getErrorCode(error) ?? 'unknown' })
+        return {
+          type: EncryptionErrorTypes.EncryptionError,
+          message: (error as Error).message,
+          code: getErrorCode(error),
+        }
+      },
     )
+    log.emit()
+    return result
   }
 }
 
@@ -191,11 +203,15 @@ export class BatchEncryptQueryOperationWithLockContext extends EncryptionOperati
   public async execute(): Promise<
     Result<EncryptedQueryResult[], EncryptionError>
   > {
-    logger.debug('Encrypting query terms with lock context', {
+    const log = createRequestLogger()
+    log.set({
+      op: 'batchEncryptQuery',
       count: this.terms.length,
+      lockContext: true,
     })
 
     if (this.terms.length === 0) {
+      log.emit()
       return { data: [] }
     }
 
@@ -203,17 +219,19 @@ export class BatchEncryptQueryOperationWithLockContext extends EncryptionOperati
     const { nullIndices, nonNullTerms } = filterNullTerms(this.terms)
 
     if (nonNullTerms.length === 0) {
+      log.emit()
       return { data: this.terms.map(() => null) }
     }
 
     const lockContextResult = await this.lockContext.getLockContext()
     if (lockContextResult.failure) {
+      log.emit()
       return { failure: lockContextResult.failure }
     }
 
     const { ctsToken, context } = lockContextResult.data
 
-    return await withResult(
+    const result = await withResult(
       async () => {
         if (!this.client) throw noClientError()
 
@@ -231,11 +249,16 @@ export class BatchEncryptQueryOperationWithLockContext extends EncryptionOperati
 
         return assembleResults(this.terms.length, encrypted, nonNullTerms)
       },
-      (error: unknown) => ({
-        type: EncryptionErrorTypes.EncryptionError,
-        message: (error as Error).message,
-        code: getErrorCode(error),
-      }),
+      (error: unknown) => {
+        log.set({ errorCode: getErrorCode(error) ?? 'unknown' })
+        return {
+          type: EncryptionErrorTypes.EncryptionError,
+          message: (error as Error).message,
+          code: getErrorCode(error),
+        }
+      },
     )
+    log.emit()
+    return result
   }
 }

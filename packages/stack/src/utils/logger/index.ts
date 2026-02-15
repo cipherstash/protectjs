@@ -1,48 +1,68 @@
-function getLevelValue(level: string): number {
-  switch (level) {
-    case 'debug':
-      return 10
-    case 'info':
-      return 20
-    case 'warn':
-      return 25
-    case 'error':
-      return 30
-    default:
-      return 30 // default to error level
-  }
+import { initLogger, createRequestLogger } from 'evlog'
+import type { LoggerConfig } from 'evlog'
+
+export type LoggingConfig = {
+  enabled?: boolean
+  pretty?: boolean
+  drain?: LoggerConfig['drain']
 }
 
-const envLogLevel = process.env.STASH_LOG_LEVEL || 'info'
-const currentLevel = getLevelValue(envLogLevel)
-
-function debug(...args: unknown[]): void {
-  if (currentLevel <= getLevelValue('debug')) {
-    console.debug('[stash] DEBUG', ...args)
-  }
+function samplingFromEnv() {
+  const env = process.env.STASH_LOG_LEVEL
+  if (!env) return undefined
+  const levels = ['debug', 'info', 'warn', 'error'] as const
+  const idx = levels.indexOf(env as (typeof levels)[number])
+  if (idx === -1) return undefined
+  return Object.fromEntries(levels.map((l, i) => [l, i >= idx ? 100 : 0]))
 }
 
-function info(...args: unknown[]): void {
-  if (currentLevel <= getLevelValue('info')) {
-    console.info('[stash] INFO', ...args)
-  }
+let initialized = false
+
+export function initStackLogger(config?: LoggingConfig): void {
+  if (initialized) return
+  initialized = true
+  const rates = samplingFromEnv()
+  initLogger({
+    env: { service: '@cipherstash/stack' },
+    enabled: config?.enabled ?? true,
+    pretty: config?.pretty,
+    ...(rates && { sampling: { rates } }),
+    ...(config?.drain && { drain: config.drain }),
+  })
 }
 
-function warn(...args: unknown[]): void {
-  if (currentLevel <= getLevelValue('warn')) {
-    console.warn('[stash:warn]', ...args)
-  }
+// Auto-init with defaults on first import
+initStackLogger()
+
+export { createRequestLogger }
+
+// Stringify only the first arg (the message string); drop subsequent args
+// which may contain sensitive objects (e.g. encryptConfig, plaintext).
+function safeMessage(args: unknown[]): string {
+  return typeof args[0] === 'string' ? args[0] : ''
 }
 
-function error(...args: unknown[]): void {
-  if (currentLevel <= getLevelValue('error')) {
-    console.error('[stash] ERROR', ...args)
-  }
-}
-
+// Legacy logger for simple one-off logs (used by encryption/ffi/index.ts + identity/index.ts)
 export const logger = {
-  debug,
-  info,
-  warn,
-  error,
+  debug(...args: unknown[]) {
+    const log = createRequestLogger()
+    log.set({ level: 'debug', source: '@cipherstash/stack', message: safeMessage(args) })
+    log.emit()
+  },
+  info(...args: unknown[]) {
+    const log = createRequestLogger()
+    log.set({ source: '@cipherstash/stack' })
+    log.info(safeMessage(args))
+    log.emit()
+  },
+  warn(...args: unknown[]) {
+    const log = createRequestLogger()
+    log.warn(safeMessage(args))
+    log.emit()
+  },
+  error(...args: unknown[]) {
+    const log = createRequestLogger()
+    log.error(safeMessage(args))
+    log.emit()
+  },
 }

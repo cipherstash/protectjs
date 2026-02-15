@@ -3,7 +3,7 @@ import { type EncryptionError, EncryptionErrorTypes } from '@/errors'
 import type { LockContext } from '@/identity'
 import type { ProtectTable, ProtectTableColumn } from '@/schema'
 import type { Client, Decrypted } from '@/types'
-import { logger } from '@/utils/logger'
+import { createRequestLogger } from '@/utils/logger'
 import { type Result, withResult } from '@byteslice/result'
 import { noClientError } from '../index'
 import {
@@ -37,11 +37,15 @@ export class BulkEncryptModelsOperation<
   }
 
   public async execute(): Promise<Result<T[], EncryptionError>> {
-    logger.debug('Bulk encrypting models WITHOUT a lock context', {
+    const log = createRequestLogger()
+    log.set({
+      op: 'bulkEncryptModels',
       table: this.table.tableName,
+      count: this.models.length,
+      lockContext: false,
     })
 
-    return await withResult(
+    const result = await withResult(
       async () => {
         if (!this.client) {
           throw noClientError()
@@ -56,12 +60,17 @@ export class BulkEncryptModelsOperation<
           auditData,
         )
       },
-      (error: unknown) => ({
-        type: EncryptionErrorTypes.EncryptionError,
-        message: (error as Error).message,
-        code: getErrorCode(error),
-      }),
+      (error: unknown) => {
+        log.set({ errorCode: getErrorCode(error) ?? 'unknown' })
+        return {
+          type: EncryptionErrorTypes.EncryptionError,
+          message: (error as Error).message,
+          code: getErrorCode(error),
+        }
+      },
     )
+    log.emit()
+    return result
   }
 
   public getOperation(): {
@@ -97,14 +106,18 @@ export class BulkEncryptModelsOperationWithLockContext<
   }
 
   public async execute(): Promise<Result<T[], EncryptionError>> {
-    return await withResult(
+    const { client, models, table } = this.operation.getOperation()
+
+    const log = createRequestLogger()
+    log.set({
+      op: 'bulkEncryptModels',
+      table: table.tableName,
+      count: models.length,
+      lockContext: true,
+    })
+
+    const result = await withResult(
       async () => {
-        const { client, models, table } = this.operation.getOperation()
-
-        logger.debug('Bulk encrypting models WITH a lock context', {
-          table: table.tableName,
-        })
-
         if (!client) {
           throw noClientError()
         }
@@ -125,11 +138,16 @@ export class BulkEncryptModelsOperationWithLockContext<
           auditData,
         )
       },
-      (error: unknown) => ({
-        type: EncryptionErrorTypes.EncryptionError,
-        message: (error as Error).message,
-        code: getErrorCode(error),
-      }),
+      (error: unknown) => {
+        log.set({ errorCode: getErrorCode(error) ?? 'unknown' })
+        return {
+          type: EncryptionErrorTypes.EncryptionError,
+          message: (error as Error).message,
+          code: getErrorCode(error),
+        }
+      },
     )
+    log.emit()
+    return result
   }
 }

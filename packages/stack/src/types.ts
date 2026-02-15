@@ -4,6 +4,7 @@ import type {
   ProtectTableColumn,
   ProtectValue,
 } from '@/schema'
+import type { LoggingConfig } from '@/utils/logger'
 import type {
   Encrypted as CipherStashEncrypted,
   JsPlaintext,
@@ -85,6 +86,7 @@ type AtLeastOneCsTable<T> = [T, ...T[]]
 export type EncryptionClientConfig = {
   schemas: AtLeastOneCsTable<ProtectTable<ProtectTableColumn>>
   config?: ClientConfig
+  logging?: LoggingConfig
 }
 
 // ---------------------------------------------------------------------------

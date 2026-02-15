@@ -1,6 +1,6 @@
 # @cipherstash/stack
 
-Your all-in-one TypeScript SDK for the CipherStash data security stack.
+The all-in-one TypeScript SDK for the CipherStash data security stack.
 
 [![npm version](https://img.shields.io/npm/v/@cipherstash/stack.svg?style=for-the-badge&labelColor=000000)](https://www.npmjs.com/package/@cipherstash/stack)
 [![License: MIT](https://img.shields.io/npm/l/@cipherstash/stack.svg?style=for-the-badge&labelColor=000000)](https://github.com/cipherstash/protectjs/blob/main/LICENSE.md)

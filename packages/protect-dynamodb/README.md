@@ -1,5 +1,9 @@
 # Protect.js DynamoDB Helpers
 
+> [!WARNING]
+The `@cipherstash/protect-dynamodb` package has been moved into the `@cipherstash/stack` package available at `@cipherstash/stack/dynamodb`.
+Please use the `@cipherstash/stack` package instead, as this package is no longer maintained.
+
 Helpers for using CipherStash [Protect.js](https://github.com/cipherstash/protectjs) with DynamoDB.
 
 [![Built by CipherStash](https://raw.githubusercontent.com/cipherstash/meta/refs/heads/main/csbadge.svg)](https://cipherstash.com)

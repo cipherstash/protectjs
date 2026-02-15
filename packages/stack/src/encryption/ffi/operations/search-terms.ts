@@ -1,5 +1,6 @@
+import { getErrorCode } from '@/encryption/ffi/helpers/error-code'
 import { type EncryptionError, EncryptionErrorTypes } from '@/errors'
-import { logger } from '@/utils/logger'
+import { createRequestLogger } from '@/utils/logger'
 import { type Result, withResult } from '@byteslice/result'
 import { encryptBulk } from '@cipherstash/protect-ffi'
 import type { Client, EncryptedSearchTerm, SearchTerm } from '../../../types'
@@ -21,11 +22,13 @@ export class SearchTermsOperation extends EncryptionOperation<
   public async execute(): Promise<
     Result<EncryptedSearchTerm[], EncryptionError>
   > {
-    logger.debug('Creating search terms', {
-      terms: this.terms,
+    const log = createRequestLogger()
+    log.set({
+      op: 'searchTerms',
+      count: this.terms.length,
     })
 
-    return await withResult(
+    const result = await withResult(
       async () => {
         if (!this.client) {
           throw noClientError()
@@ -54,10 +57,15 @@ export class SearchTermsOperation extends EncryptionOperation<
           return encryptedSearchTerms[index]
         })
       },
-      (error) => ({
-        type: EncryptionErrorTypes.EncryptionError,
-        message: error.message,
-      }),
+      (error) => {
+        log.set({ errorCode: getErrorCode(error) ?? 'unknown' })
+        return {
+          type: EncryptionErrorTypes.EncryptionError,
+          message: error.message,
+        }
+      },
     )
+    log.emit()
+    return result
   }
 }

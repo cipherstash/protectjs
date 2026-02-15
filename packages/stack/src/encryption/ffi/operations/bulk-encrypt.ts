@@ -14,7 +14,7 @@ import type {
   EncryptOptions,
   Encrypted,
 } from '@/types'
-import { logger } from '@/utils/logger'
+import { createRequestLogger } from '@/utils/logger'
 import { type Result, withResult } from '@byteslice/result'
 import { type JsPlaintext, encryptBulk } from '@cipherstash/protect-ffi'
 import { noClientError } from '../index'
@@ -93,12 +93,16 @@ export class BulkEncryptOperation extends EncryptionOperation<BulkEncryptedData>
   }
 
   public async execute(): Promise<Result<BulkEncryptedData, EncryptionError>> {
-    logger.debug('Bulk encrypting data WITHOUT a lock context', {
-      column: this.column.getName(),
+    const log = createRequestLogger()
+    log.set({
+      op: 'bulkEncrypt',
       table: this.table.tableName,
+      column: this.column.getName(),
+      count: this.plaintexts?.length ?? 0,
+      lockContext: false,
     })
 
-    return await withResult(
+    const result = await withResult(
       async () => {
         if (!this.client) {
           throw noClientError()
@@ -126,12 +130,17 @@ export class BulkEncryptOperation extends EncryptionOperation<BulkEncryptedData>
 
         return mapEncryptedDataToResult(this.plaintexts, encryptedData)
       },
-      (error: unknown) => ({
-        type: EncryptionErrorTypes.EncryptionError,
-        message: (error as Error).message,
-        code: getErrorCode(error),
-      }),
+      (error: unknown) => {
+        log.set({ errorCode: getErrorCode(error) ?? 'unknown' })
+        return {
+          type: EncryptionErrorTypes.EncryptionError,
+          message: (error as Error).message,
+          code: getErrorCode(error),
+        }
+      },
     )
+    log.emit()
+    return result
   }
 
   public getOperation(): {
@@ -164,16 +173,20 @@ export class BulkEncryptOperationWithLockContext extends EncryptionOperation<Bul
   }
 
   public async execute(): Promise<Result<BulkEncryptedData, EncryptionError>> {
-    return await withResult(
+    const { client, plaintexts, column, table } =
+      this.operation.getOperation()
+
+    const log = createRequestLogger()
+    log.set({
+      op: 'bulkEncrypt',
+      table: table.tableName,
+      column: column.getName(),
+      count: plaintexts?.length ?? 0,
+      lockContext: true,
+    })
+
+    const result = await withResult(
       async () => {
-        const { client, plaintexts, column, table } =
-          this.operation.getOperation()
-
-        logger.debug('Bulk encrypting data WITH a lock context', {
-          column: column.getName(),
-          table: table.tableName,
-        })
-
         if (!client) {
           throw noClientError()
         }
@@ -207,11 +220,16 @@ export class BulkEncryptOperationWithLockContext extends EncryptionOperation<Bul
 
         return mapEncryptedDataToResult(plaintexts, encryptedData)
       },
-      (error: unknown) => ({
-        type: EncryptionErrorTypes.EncryptionError,
-        message: (error as Error).message,
-        code: getErrorCode(error),
-      }),
+      (error: unknown) => {
+        log.set({ errorCode: getErrorCode(error) ?? 'unknown' })
+        return {
+          type: EncryptionErrorTypes.EncryptionError,
+          message: (error as Error).message,
+          code: getErrorCode(error),
+        }
+      },
     )
+    log.emit()
+    return result
   }
 }

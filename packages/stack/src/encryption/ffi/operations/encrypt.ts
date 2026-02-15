@@ -8,7 +8,7 @@ import type {
   ProtectValue,
 } from '@/schema'
 import type { Client, EncryptOptions, Encrypted } from '@/types'
-import { logger } from '@/utils/logger'
+import { createRequestLogger } from '@/utils/logger'
 import { type Result, withResult } from '@byteslice/result'
 import {
   type JsPlaintext,
@@ -42,12 +42,15 @@ export class EncryptOperation extends EncryptionOperation<Encrypted> {
   }
 
   public async execute(): Promise<Result<Encrypted, EncryptionError>> {
-    logger.debug('Encrypting data WITHOUT a lock context', {
-      column: this.column.getName(),
+    const log = createRequestLogger()
+    log.set({
+      op: 'encrypt',
       table: this.table.tableName,
+      column: this.column.getName(),
+      lockContext: false,
     })
 
-    return await withResult(
+    const result = await withResult(
       async () => {
         if (!this.client) {
           throw noClientError()
@@ -80,12 +83,17 @@ export class EncryptOperation extends EncryptionOperation<Encrypted> {
           unverifiedContext: metadata,
         })
       },
-      (error: unknown) => ({
-        type: EncryptionErrorTypes.EncryptionError,
-        message: (error as Error).message,
-        code: getErrorCode(error),
-      }),
+      (error: unknown) => {
+        log.set({ errorCode: getErrorCode(error) ?? 'unknown' })
+        return {
+          type: EncryptionErrorTypes.EncryptionError,
+          message: (error as Error).message,
+          code: getErrorCode(error),
+        }
+      },
     )
+    log.emit()
+    return result
   }
 
   public getOperation(): {
@@ -118,16 +126,19 @@ export class EncryptOperationWithLockContext extends EncryptionOperation<Encrypt
   }
 
   public async execute(): Promise<Result<Encrypted, EncryptionError>> {
-    return await withResult(
+    const { client, plaintext, column, table } =
+      this.operation.getOperation()
+
+    const log = createRequestLogger()
+    log.set({
+      op: 'encrypt',
+      table: table.tableName,
+      column: column.getName(),
+      lockContext: true,
+    })
+
+    const result = await withResult(
       async () => {
-        const { client, plaintext, column, table } =
-          this.operation.getOperation()
-
-        logger.debug('Encrypting data WITH a lock context', {
-          column: column,
-          table: table,
-        })
-
         if (!client) {
           throw noClientError()
         }
@@ -152,11 +163,16 @@ export class EncryptOperationWithLockContext extends EncryptionOperation<Encrypt
           unverifiedContext: metadata,
         })
       },
-      (error: unknown) => ({
-        type: EncryptionErrorTypes.EncryptionError,
-        message: (error as Error).message,
-        code: getErrorCode(error),
-      }),
+      (error: unknown) => {
+        log.set({ errorCode: getErrorCode(error) ?? 'unknown' })
+        return {
+          type: EncryptionErrorTypes.EncryptionError,
+          message: (error as Error).message,
+          code: getErrorCode(error),
+        }
+      },
     )
+    log.emit()
+    return result
   }
 }

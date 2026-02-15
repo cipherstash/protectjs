@@ -2,7 +2,7 @@ import { getErrorCode } from '@/encryption/ffi/helpers/error-code'
 import { type EncryptionError, EncryptionErrorTypes } from '@/errors'
 import type { LockContext } from '@/identity'
 import type { Client, EncryptQueryOptions, Encrypted } from '@/types'
-import { logger } from '@/utils/logger'
+import { createRequestLogger } from '@/utils/logger'
 import { type Result, withResult } from '@byteslice/result'
 import {
   type JsPlaintext,
@@ -41,22 +41,27 @@ export class EncryptQueryOperation extends EncryptionOperation<Encrypted> {
   }
 
   public async execute(): Promise<Result<Encrypted, EncryptionError>> {
-    logger.debug('Encrypting query', {
-      column: this.opts.column.getName(),
+    const log = createRequestLogger()
+    log.set({
+      op: 'encryptQuery',
       table: this.opts.table.tableName,
+      column: this.opts.column.getName(),
       queryType: this.opts.queryType,
+      lockContext: false,
     })
 
     if (this.plaintext === null || this.plaintext === undefined) {
+      log.emit()
       return { data: null }
     }
 
     const validationError = validateNumericValue(this.plaintext)
     if (validationError?.failure) {
+      log.emit()
       return { failure: validationError.failure }
     }
 
-    return await withResult(
+    const result = await withResult(
       async () => {
         if (!this.client) throw noClientError()
 
@@ -84,12 +89,17 @@ export class EncryptQueryOperation extends EncryptionOperation<Encrypted> {
           unverifiedContext: metadata,
         })
       },
-      (error: unknown) => ({
-        type: EncryptionErrorTypes.EncryptionError,
-        message: (error as Error).message,
-        code: getErrorCode(error),
-      }),
+      (error: unknown) => {
+        log.set({ errorCode: getErrorCode(error) ?? 'unknown' })
+        return {
+          type: EncryptionErrorTypes.EncryptionError,
+          message: (error as Error).message,
+          code: getErrorCode(error),
+        }
+      },
     )
+    log.emit()
+    return result
   }
 
   public getOperation() {
@@ -113,23 +123,35 @@ export class EncryptQueryOperationWithLockContext extends EncryptionOperation<En
   }
 
   public async execute(): Promise<Result<Encrypted, EncryptionError>> {
+    const log = createRequestLogger()
+    log.set({
+      op: 'encryptQuery',
+      table: this.opts.table.tableName,
+      column: this.opts.column.getName(),
+      queryType: this.opts.queryType,
+      lockContext: true,
+    })
+
     if (this.plaintext === null || this.plaintext === undefined) {
+      log.emit()
       return { data: null }
     }
 
     const validationError = validateNumericValue(this.plaintext)
     if (validationError?.failure) {
+      log.emit()
       return { failure: validationError.failure }
     }
 
     const lockContextResult = await this.lockContext.getLockContext()
     if (lockContextResult.failure) {
+      log.emit()
       return { failure: lockContextResult.failure }
     }
 
     const { ctsToken, context } = lockContextResult.data
 
-    return await withResult(
+    const result = await withResult(
       async () => {
         if (!this.client) throw noClientError()
 
@@ -159,11 +181,16 @@ export class EncryptQueryOperationWithLockContext extends EncryptionOperation<En
           unverifiedContext: metadata,
         })
       },
-      (error: unknown) => ({
-        type: EncryptionErrorTypes.EncryptionError,
-        message: (error as Error).message,
-        code: getErrorCode(error),
-      }),
+      (error: unknown) => {
+        log.set({ errorCode: getErrorCode(error) ?? 'unknown' })
+        return {
+          type: EncryptionErrorTypes.EncryptionError,
+          message: (error as Error).message,
+          code: getErrorCode(error),
+        }
+      },
     )
+    log.emit()
+    return result
   }
 }

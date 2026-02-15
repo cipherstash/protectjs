@@ -2,7 +2,7 @@ import { getErrorCode } from '@/encryption/ffi/helpers/error-code'
 import { type EncryptionError, EncryptionErrorTypes } from '@/errors'
 import type { LockContext } from '@/identity'
 import type { Client, Encrypted } from '@/types'
-import { logger } from '@/utils/logger'
+import { createRequestLogger } from '@/utils/logger'
 import { type Result, withResult } from '@byteslice/result'
 import {
   type JsPlaintext,
@@ -32,7 +32,13 @@ export class DecryptOperation extends EncryptionOperation<JsPlaintext | null> {
   }
 
   public async execute(): Promise<Result<JsPlaintext | null, EncryptionError>> {
-    return await withResult(
+    const log = createRequestLogger()
+    log.set({
+      op: 'decrypt',
+      lockContext: false,
+    })
+
+    const result = await withResult(
       async () => {
         if (!this.client) {
           throw noClientError()
@@ -44,21 +50,22 @@ export class DecryptOperation extends EncryptionOperation<JsPlaintext | null> {
 
         const { metadata } = this.getAuditData()
 
-        logger.debug('Decrypting data WITHOUT a lock context', {
-          metadata,
-        })
-
         return await ffiDecrypt(this.client, {
           ciphertext: this.encryptedData,
           unverifiedContext: metadata,
         })
       },
-      (error: unknown) => ({
-        type: EncryptionErrorTypes.DecryptionError,
-        message: (error as Error).message,
-        code: getErrorCode(error),
-      }),
+      (error: unknown) => {
+        log.set({ errorCode: getErrorCode(error) ?? 'unknown' })
+        return {
+          type: EncryptionErrorTypes.DecryptionError,
+          message: (error as Error).message,
+          code: getErrorCode(error),
+        }
+      },
     )
+    log.emit()
+    return result
   }
 
   public getOperation(): {
@@ -89,7 +96,13 @@ export class DecryptOperationWithLockContext extends EncryptionOperation<JsPlain
   }
 
   public async execute(): Promise<Result<JsPlaintext | null, EncryptionError>> {
-    return await withResult(
+    const log = createRequestLogger()
+    log.set({
+      op: 'decrypt',
+      lockContext: true,
+    })
+
+    const result = await withResult(
       async () => {
         const { client, encryptedData } = this.operation.getOperation()
 
@@ -102,10 +115,6 @@ export class DecryptOperationWithLockContext extends EncryptionOperation<JsPlain
         }
 
         const { metadata } = this.getAuditData()
-
-        logger.debug('Decrypting data WITH a lock context', {
-          metadata,
-        })
 
         const context = await this.lockContext.getLockContext()
 
@@ -120,11 +129,16 @@ export class DecryptOperationWithLockContext extends EncryptionOperation<JsPlain
           serviceToken: context.data.ctsToken,
         })
       },
-      (error: unknown) => ({
-        type: EncryptionErrorTypes.DecryptionError,
-        message: (error as Error).message,
-        code: getErrorCode(error),
-      }),
+      (error: unknown) => {
+        log.set({ errorCode: getErrorCode(error) ?? 'unknown' })
+        return {
+          type: EncryptionErrorTypes.DecryptionError,
+          message: (error as Error).message,
+          code: getErrorCode(error),
+        }
+      },
     )
+    log.emit()
+    return result
   }
 }

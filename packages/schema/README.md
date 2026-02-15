@@ -1,5 +1,9 @@
 # @cipherstash/schema
 
+> [!WARNING]
+The `@cipherstash/schema` package has been moved into the `@cipherstash/stack` package available at `@cipherstash/stack/schema`.
+Please use the `@cipherstash/stack` package instead, as this package is no longer maintained.
+
 A TypeScript schema builder for CipherStash Protect.js that enables you to define encryption schemas with searchable encryption capabilities.
 
 ## Overview

@@ -25,13 +25,16 @@ export default defineConfig([
     entry: ['src/bin/stash.ts'],
     outDir: 'dist/bin',
     format: ['esm'],
+    platform: 'node',
     target: 'es2022',
     banner: {
-      js: '#!/usr/bin/env node',
+      js: `#!/usr/bin/env node
+import { createRequire as __createRequire } from 'module';
+var require = __createRequire(import.meta.url);`,
     },
     dts: false,
     sourcemap: true,
     external: [],
-    noExternal: ['dotenv'],
+    noExternal: ['dotenv', '@clack/prompts'],
   },
 ])

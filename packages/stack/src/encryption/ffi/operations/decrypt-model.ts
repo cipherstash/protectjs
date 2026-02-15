@@ -2,7 +2,7 @@ import { getErrorCode } from '@/encryption/ffi/helpers/error-code'
 import { type EncryptionError, EncryptionErrorTypes } from '@/errors'
 import type { LockContext } from '@/identity'
 import type { Client, Decrypted } from '@/types'
-import { logger } from '@/utils/logger'
+import { createRequestLogger } from '@/utils/logger'
 import { type Result, withResult } from '@byteslice/result'
 import { noClientError } from '../index'
 import {
@@ -30,9 +30,13 @@ export class DecryptModelOperation<
   }
 
   public async execute(): Promise<Result<Decrypted<T>, EncryptionError>> {
-    logger.debug('Decrypting model WITHOUT a lock context')
+    const log = createRequestLogger()
+    log.set({
+      op: 'decryptModel',
+      lockContext: false,
+    })
 
-    return await withResult(
+    const result = await withResult(
       async () => {
         if (!this.client) {
           throw noClientError()
@@ -42,12 +46,17 @@ export class DecryptModelOperation<
 
         return await decryptModelFields<T>(this.model, this.client, auditData)
       },
-      (error: unknown) => ({
-        type: EncryptionErrorTypes.DecryptionError,
-        message: (error as Error).message,
-        code: getErrorCode(error),
-      }),
+      (error: unknown) => {
+        log.set({ errorCode: getErrorCode(error) ?? 'unknown' })
+        return {
+          type: EncryptionErrorTypes.DecryptionError,
+          message: (error as Error).message,
+          code: getErrorCode(error),
+        }
+      },
     )
+    log.emit()
+    return result
   }
 
   public getOperation(): {
@@ -78,11 +87,15 @@ export class DecryptModelOperationWithLockContext<
   }
 
   public async execute(): Promise<Result<Decrypted<T>, EncryptionError>> {
-    return await withResult(
+    const log = createRequestLogger()
+    log.set({
+      op: 'decryptModel',
+      lockContext: true,
+    })
+
+    const result = await withResult(
       async () => {
         const { client, model } = this.operation.getOperation()
-
-        logger.debug('Decrypting model WITH a lock context')
 
         if (!client) {
           throw noClientError()
@@ -103,11 +116,16 @@ export class DecryptModelOperationWithLockContext<
           auditData,
         )
       },
-      (error: unknown) => ({
-        type: EncryptionErrorTypes.DecryptionError,
-        message: (error as Error).message,
-        code: getErrorCode(error),
-      }),
+      (error: unknown) => {
+        log.set({ errorCode: getErrorCode(error) ?? 'unknown' })
+        return {
+          type: EncryptionErrorTypes.DecryptionError,
+          message: (error as Error).message,
+          code: getErrorCode(error),
+        }
+      },
     )
+    log.emit()
+    return result
   }
 }

@@ -2,7 +2,7 @@ import { getErrorCode } from '@/encryption/ffi/helpers/error-code'
 import { type EncryptionError, EncryptionErrorTypes } from '@/errors'
 import type { Context, LockContext } from '@/identity'
 import type { BulkDecryptPayload, BulkDecryptedData, Client } from '@/types'
-import { logger } from '@/utils/logger'
+import { createRequestLogger } from '@/utils/logger'
 import { type Result, withResult } from '@byteslice/result'
 import {
   type Encrypted as CipherStashEncrypted,
@@ -84,8 +84,14 @@ export class BulkDecryptOperation extends EncryptionOperation<BulkDecryptedData>
   }
 
   public async execute(): Promise<Result<BulkDecryptedData, EncryptionError>> {
-    logger.debug('Bulk decrypting data WITHOUT a lock context')
-    return await withResult(
+    const log = createRequestLogger()
+    log.set({
+      op: 'bulkDecrypt',
+      count: this.encryptedPayloads?.length ?? 0,
+      lockContext: false,
+    })
+
+    const result = await withResult(
       async () => {
         if (!this.client) throw noClientError()
         if (!this.encryptedPayloads || this.encryptedPayloads.length === 0)
@@ -106,12 +112,17 @@ export class BulkDecryptOperation extends EncryptionOperation<BulkDecryptedData>
 
         return mapDecryptedDataToResult(this.encryptedPayloads, decryptedData)
       },
-      (error: unknown) => ({
-        type: EncryptionErrorTypes.DecryptionError,
-        message: (error as Error).message,
-        code: getErrorCode(error),
-      }),
+      (error: unknown) => {
+        log.set({ errorCode: getErrorCode(error) ?? 'unknown' })
+        return {
+          type: EncryptionErrorTypes.DecryptionError,
+          message: (error as Error).message,
+          code: getErrorCode(error),
+        }
+      },
     )
+    log.emit()
+    return result
   }
 
   public getOperation(): {
@@ -140,11 +151,17 @@ export class BulkDecryptOperationWithLockContext extends EncryptionOperation<Bul
   }
 
   public async execute(): Promise<Result<BulkDecryptedData, EncryptionError>> {
-    return await withResult(
-      async () => {
-        const { client, encryptedPayloads } = this.operation.getOperation()
-        logger.debug('Bulk decrypting data WITH a lock context')
+    const { client, encryptedPayloads } = this.operation.getOperation()
 
+    const log = createRequestLogger()
+    log.set({
+      op: 'bulkDecrypt',
+      count: encryptedPayloads?.length ?? 0,
+      lockContext: true,
+    })
+
+    const result = await withResult(
+      async () => {
         if (!client) throw noClientError()
         if (!encryptedPayloads || encryptedPayloads.length === 0) return []
 
@@ -172,11 +189,16 @@ export class BulkDecryptOperationWithLockContext extends EncryptionOperation<Bul
 
         return mapDecryptedDataToResult(encryptedPayloads, decryptedData)
       },
-      (error: unknown) => ({
-        type: EncryptionErrorTypes.DecryptionError,
-        message: (error as Error).message,
-        code: getErrorCode(error),
-      }),
+      (error: unknown) => {
+        log.set({ errorCode: getErrorCode(error) ?? 'unknown' })
+        return {
+          type: EncryptionErrorTypes.DecryptionError,
+          message: (error as Error).message,
+          code: getErrorCode(error),
+        }
+      },
     )
+    log.emit()
+    return result
   }
 }
