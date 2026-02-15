@@ -14,7 +14,7 @@ import { noClientError } from '../index'
 import { ProtectOperation } from './base-operation'
 import { resolveIndexType } from '../helpers/infer-index-type'
 import { assertValidNumericValue, assertValueIndexCompatibility } from '../helpers/validation'
-import { encryptedToCompositeLiteral, encryptedToEscapedCompositeLiteral } from '../../helpers'
+import { formatEncryptedResult } from '../../helpers'
 
 /**
  * Separates null/undefined values from non-null terms in the input array.
@@ -95,13 +95,7 @@ function assembleResults(
   nonNullTerms.forEach(({ term, originalIndex }, i) => {
     const encrypted = encryptedValues[i]
 
-    if (term.returnType === 'composite-literal') {
-      results[originalIndex] = encryptedToCompositeLiteral(encrypted)
-    } else if (term.returnType === 'escaped-composite-literal') {
-      results[originalIndex] = encryptedToEscapedCompositeLiteral(encrypted)
-    } else {
-      results[originalIndex] = encrypted
-    }
+    results[originalIndex] = formatEncryptedResult(encrypted, term.returnType)
   })
 
   return results

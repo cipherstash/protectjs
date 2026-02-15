@@ -536,6 +536,9 @@ importers:
       json-schema-to-typescript:
         specifier: ^15.0.2
         version: 15.0.4
+      postgres:
+        specifier: ^3.4.7
+        version: 3.4.7
       tsup:
         specifier: catalog:repo
         version: 8.4.0(jiti@2.6.1)(postcss@8.5.6)(tsx@4.19.3)(typescript@5.6.3)
