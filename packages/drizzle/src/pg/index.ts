@@ -192,4 +192,8 @@ export function getEncryptedColumnConfig(
 export { extractProtectSchema } from './schema-extraction.js'
 
 // Re-export operators
-export { createProtectOperators } from './operators.js'
+export {
+  createProtectOperators,
+  ProtectOperatorError,
+  ProtectConfigError,
+} from './operators.js'

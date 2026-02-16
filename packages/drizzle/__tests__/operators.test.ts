@@ -1,11 +1,7 @@
 import type { SQL } from 'drizzle-orm'
 import { pgTable, integer, text } from 'drizzle-orm/pg-core'
 import { describe, expect, it } from 'vitest'
-import { encryptedType } from '../src/pg'
-import {
-  ProtectOperatorError,
-  ProtectConfigError,
-} from '../src/pg/operators'
+import { encryptedType, ProtectOperatorError, ProtectConfigError } from '../src/pg'
 import { setup } from './test-utils'
 
 // ============================================================================

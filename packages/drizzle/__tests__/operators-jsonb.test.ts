@@ -1,7 +1,6 @@
 import { pgTable } from 'drizzle-orm/pg-core'
 import { describe, expect, it } from 'vitest'
-import { encryptedType } from '../src/pg'
-import { ProtectOperatorError } from '../src/pg/operators'
+import { encryptedType, ProtectOperatorError } from '../src/pg'
 import { setup } from './test-utils'
 
 const docsTable = pgTable('json_docs', {
