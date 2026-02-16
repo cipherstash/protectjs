@@ -178,6 +178,31 @@ describe('extractProtectSchema edge cases', () => {
     )
   })
 
+  it('throws when searchableJson is used without dataType: json', () => {
+    const table = pgTable('bad_searchable_json', {
+      col: encryptedType<string>('col', {
+        searchableJson: true,
+      }),
+    })
+
+    expect(() => extractProtectSchema(table)).toThrow(
+      /searchableJson.*requires dataType: 'json'/,
+    )
+  })
+
+  it('throws when searchableJson is used with dataType: number', () => {
+    const table = pgTable('bad_searchable_json_number', {
+      col: encryptedType<number>('col', {
+        dataType: 'number',
+        searchableJson: true,
+      }),
+    })
+
+    expect(() => extractProtectSchema(table)).toThrow(
+      /searchableJson.*requires dataType: 'json'/,
+    )
+  })
+
   it('mixed encrypted and regular columns -> only encrypted columns extracted', () => {
     const table = pgTable('mixed_cols', {
       id: integer('id').primaryKey(),
