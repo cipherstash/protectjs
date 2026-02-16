@@ -1,16 +1,17 @@
 import type { ProtectClient } from '@cipherstash/protect/client'
 import { PgDialect } from 'drizzle-orm/pg-core'
 import { vi } from 'vitest'
-import { createProtectOperators } from '../src/pg'
+import { createProtectOperators } from '@cipherstash/drizzle/pg'
 
 export const ENCRYPTED_VALUE = '{"v":"encrypted-value"}'
 
 export function createMockProtectClient() {
-  const encryptQuery = vi.fn(async (terms: unknown[] | unknown) => ({
-    data: Array.isArray(terms)
-      ? terms.map(() => ENCRYPTED_VALUE)
-      : [ENCRYPTED_VALUE],
-  }))
+  const encryptQuery = vi.fn(async (termsOrValue: unknown) => {
+    if (Array.isArray(termsOrValue)) {
+      return { data: termsOrValue.map(() => ENCRYPTED_VALUE) }
+    }
+    return { data: ENCRYPTED_VALUE }
+  })
 
   return {
     client: { encryptQuery } as unknown as ProtectClient,
