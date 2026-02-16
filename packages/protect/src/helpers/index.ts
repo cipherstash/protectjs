@@ -2,7 +2,11 @@ import type {
   Encrypted as CipherStashEncrypted,
   KeysetIdentifier as KeysetIdentifierFfi,
 } from '@cipherstash/protect-ffi'
-import type { Encrypted, KeysetIdentifier } from '../types'
+import type {
+  Encrypted,
+  EncryptedQueryResult,
+  KeysetIdentifier,
+} from '../types'
 
 export type EncryptedPgComposite = {
   data: Encrypted
@@ -73,6 +77,19 @@ export function encryptedToEscapedCompositeLiteral(
     throw new Error('encryptedToEscapedCompositeLiteral: obj cannot be null')
   }
   return JSON.stringify(encryptedToCompositeLiteral(obj))
+}
+
+export function formatEncryptedResult(
+  encrypted: CipherStashEncrypted,
+  returnType?: string,
+): EncryptedQueryResult {
+  if (returnType === 'composite-literal') {
+    return encryptedToCompositeLiteral(encrypted)
+  }
+  if (returnType === 'escaped-composite-literal') {
+    return encryptedToEscapedCompositeLiteral(encrypted)
+  }
+  return encrypted
 }
 
 /**

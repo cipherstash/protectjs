@@ -7,10 +7,6 @@ import {
 import type { Encrypted as CipherStashEncrypted } from '@cipherstash/protect-ffi'
 import { type ProtectError, ProtectErrorTypes } from '../..'
 import { logger } from '../../../../utils/logger'
-import {
-  encryptedToCompositeLiteral,
-  encryptedToEscapedCompositeLiteral,
-} from '../../helpers'
 import type { Context, LockContext } from '../../identify'
 import type { Client, EncryptedQueryResult, ScalarQueryTerm } from '../../types'
 import { getErrorCode } from '../helpers/error-code'
@@ -21,6 +17,7 @@ import {
 } from '../helpers/validation'
 import { noClientError } from '../index'
 import { ProtectOperation } from './base-operation'
+import { formatEncryptedResult } from '../../helpers'
 
 /**
  * Separates null/undefined values from non-null terms in the input array.
@@ -95,13 +92,7 @@ function assembleResults(
   nonNullTerms.forEach(({ term, originalIndex }, i) => {
     const encrypted = encryptedValues[i]
 
-    if (term.returnType === 'composite-literal') {
-      results[originalIndex] = encryptedToCompositeLiteral(encrypted)
-    } else if (term.returnType === 'escaped-composite-literal') {
-      results[originalIndex] = encryptedToEscapedCompositeLiteral(encrypted)
-    } else {
-      results[originalIndex] = encrypted
-    }
+    results[originalIndex] = formatEncryptedResult(encrypted, term.returnType)
   })
 
   return results

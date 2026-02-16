@@ -720,6 +720,84 @@ describe('encryptQuery', () => {
     }, 30000)
   })
 
+  describe('single-value returnType formatting', () => {
+    it('returns Encrypted by default (no returnType)', async () => {
+      const result = await protectClient.encryptQuery('test@example.com', {
+        column: users.email,
+        table: users,
+        queryType: 'equality',
+      })
+
+      const data = unwrapResult(result)
+
+      expect(data).toMatchObject({
+        i: { t: 'users', c: 'email' },
+        v: 2,
+      })
+      expect(typeof data).toBe('object')
+    }, 30000)
+
+    it('returns composite-literal format when specified', async () => {
+      const result = await protectClient.encryptQuery('test@example.com', {
+        column: users.email,
+        table: users,
+        queryType: 'equality',
+        returnType: 'composite-literal',
+      })
+
+      const data = unwrapResult(result)
+
+      expect(typeof data).toBe('string')
+      // Format: ("json")
+      expect(data).toMatch(/^\(".*"\)$/)
+    }, 30000)
+
+    it('returns escaped-composite-literal format when specified', async () => {
+      const result = await protectClient.encryptQuery('test@example.com', {
+        column: users.email,
+        table: users,
+        queryType: 'equality',
+        returnType: 'escaped-composite-literal',
+      })
+
+      const data = unwrapResult(result)
+
+      expect(typeof data).toBe('string')
+      // Format: "(\"json\")" - outer quotes with escaped inner quotes
+      expect(data).toMatch(/^"\(.*\)"$/)
+    }, 30000)
+
+    it('returns eql format when explicitly specified', async () => {
+      const result = await protectClient.encryptQuery('test@example.com', {
+        column: users.email,
+        table: users,
+        queryType: 'equality',
+        returnType: 'eql',
+      })
+
+      const data = unwrapResult(result)
+
+      expect(data).toMatchObject({
+        i: { t: 'users', c: 'email' },
+        v: 2,
+      })
+      expect(typeof data).toBe('object')
+    }, 30000)
+
+    it('handles null value with composite-literal returnType', async () => {
+      const result = await protectClient.encryptQuery(null, {
+        column: users.email,
+        table: users,
+        queryType: 'equality',
+        returnType: 'composite-literal',
+      })
+
+      const data = unwrapResult(result)
+
+      expect(data).toBeNull()
+    }, 30000)
+  })
+
   describe('LockContext support', () => {
     it('single query with LockContext calls getLockContext', async () => {
       const mockLockContext = createMockLockContext()
