@@ -1,12 +1,6 @@
+import type { ProtectError, Result } from '@cipherstash/protect'
 import type { ProtectClient } from '@cipherstash/protect/client'
 import { expect } from 'vitest'
-
-type Result<T> = {
-  data?: T
-  failure?: {
-    message: string
-  }
-}
 
 type UserProfile = {
   name: string
@@ -63,13 +57,9 @@ function assertEncryptedPayload(
   ).toEqual(expect.objectContaining({ c: expect.any(String) }))
 }
 
-export function unwrapResult<T>(result: Result<T>, operation: string): T {
+export function unwrapResult<T>(result: Result<T, ProtectError>, operation: string): T {
   if (result.failure) {
     throw new Error(`${operation} failed: ${result.failure.message}`)
-  }
-
-  if (result.data === undefined) {
-    throw new Error(`${operation} returned undefined data`)
   }
 
   return result.data
@@ -90,10 +80,7 @@ export async function decryptUserRows(
   rows: EncryptedUserRow[],
 ): Promise<DecryptedUser[]> {
   const decrypted = await protectClient.bulkDecryptModels(rows)
-  return unwrapResult(
-    decrypted as Result<unknown>,
-    'bulkDecryptModels',
-  ) as DecryptedUser[]
+  return unwrapResult(decrypted, 'bulkDecryptModels') as unknown as DecryptedUser[]
 }
 
 export async function decryptUserRow(
@@ -101,10 +88,7 @@ export async function decryptUserRow(
   row: EncryptedUserRow,
 ): Promise<DecryptedUser> {
   const decrypted = await protectClient.decryptModel(row)
-  return unwrapResult(
-    decrypted as Result<unknown>,
-    'decryptModel',
-  ) as DecryptedUser
+  return unwrapResult(decrypted, 'decryptModel') as unknown as DecryptedUser
 }
 
 export function expectUserToMatchPlaintext(
