@@ -1,10 +1,10 @@
+import type { QueryTypeName } from '@cipherstash/protect'
 import type {
   ProtectClient,
   ProtectColumn,
   ProtectTable,
   ProtectTableColumn,
 } from '@cipherstash/protect/client'
-import type { QueryTypeName } from '@cipherstash/protect'
 import {
   type SQL,
   type SQLWrapper,
@@ -269,7 +269,11 @@ interface ValueToEncrypt {
  */
 async function encryptValues(
   protectClient: ProtectClient,
-  values: Array<{ value: unknown; column: SQLWrapper; queryType?: QueryTypeName }>,
+  values: Array<{
+    value: unknown
+    column: SQLWrapper
+    queryType?: QueryTypeName
+  }>,
   protectTable: ProtectTable<ProtectTableColumn> | undefined,
   protectTableCache: Map<string, ProtectTable<ProtectTableColumn>>,
 ): Promise<unknown[]> {
@@ -314,7 +318,11 @@ async function encryptValues(
     {
       column: ProtectColumn
       table: ProtectTable<ProtectTableColumn>
-      values: Array<{ value: string | number; index: number; queryType?: QueryTypeName }>
+      values: Array<{
+        value: string | number
+        index: number
+        queryType?: QueryTypeName
+      }>
       resultIndices: number[]
     }
   >()
@@ -698,8 +706,8 @@ function createComparisonOperator(
       protectClient,
       defaultProtectTable,
       protectTableCache,
-      undefined,  // min
-      undefined,  // max
+      undefined, // min
+      undefined, // max
       'orderAndRange',
     ) as Promise<SQL>
   }
@@ -732,8 +740,8 @@ function createComparisonOperator(
       protectClient,
       defaultProtectTable,
       protectTableCache,
-      undefined,  // min
-      undefined,  // max
+      undefined, // min
+      undefined, // max
       'equality',
     ) as Promise<SQL>
   }
@@ -855,9 +863,71 @@ function createTextSearchOperator(
     protectClient,
     defaultProtectTable,
     protectTableCache,
-    undefined,  // min
-    undefined,  // max
+    undefined, // min
+    undefined, // max
     'freeTextSearch',
+  ) as Promise<SQL>
+}
+
+/**
+ * Creates a JSONB operator (jsonbPathQueryFirst, jsonbGet, jsonbPathExists)
+ */
+function createJsonbOperator(
+  operator: 'jsonbPathQueryFirst' | 'jsonbGet' | 'jsonbPathExists',
+  left: SQLWrapper,
+  right: unknown,
+  columnInfo: ColumnInfo,
+  protectClient: ProtectClient,
+  defaultProtectTable: ProtectTable<ProtectTableColumn> | undefined,
+  protectTableCache: Map<string, ProtectTable<ProtectTableColumn>>,
+): Promise<SQL> {
+  const { config } = columnInfo
+
+  if (!config?.searchableJson) {
+    throw new ProtectOperatorError(
+      `The ${operator} operator requires searchableJson to be enabled on the column configuration.`,
+      {
+        columnName: columnInfo.columnName,
+        tableName: columnInfo.tableName,
+        operator,
+      },
+    )
+  }
+
+  const executeFn = (encrypted: unknown) => {
+    if (encrypted === undefined) {
+      throw new ProtectOperatorError(
+        `Encryption failed for ${operator} operator`,
+        {
+          columnName: columnInfo.columnName,
+          tableName: columnInfo.tableName,
+          operator,
+        },
+      )
+    }
+    switch (operator) {
+      case 'jsonbPathQueryFirst':
+        return sql`eql_v2.jsonb_path_query_first(${left}, ${bindIfParam(encrypted, left)})`
+      case 'jsonbGet':
+        return sql`${left} -> ${bindIfParam(encrypted, left)}`
+      case 'jsonbPathExists':
+        return sql`eql_v2.jsonb_path_exists(${left}, ${bindIfParam(encrypted, left)})`
+    }
+  }
+
+  return createLazyOperator(
+    operator,
+    left,
+    right,
+    executeFn,
+    true,
+    columnInfo,
+    protectClient,
+    defaultProtectTable,
+    protectTableCache,
+    undefined,
+    undefined,
+    'steVecSelector',
   ) as Promise<SQL>
 }
 
@@ -1042,6 +1112,10 @@ export function createProtectOperators(protectClient: ProtectClient): {
    */
   ilike: (left: SQLWrapper, right: unknown) => Promise<SQL> | SQL
   notIlike: (left: SQLWrapper, right: unknown) => Promise<SQL> | SQL
+  // Searchable JSON operators
+  jsonbPathQueryFirst: (left: SQLWrapper, right: unknown) => Promise<SQL>
+  jsonbGet: (left: SQLWrapper, right: unknown) => Promise<SQL>
+  jsonbPathExists: (left: SQLWrapper, right: unknown) => Promise<SQL>
   // Array operators
   inArray: (left: SQLWrapper, right: unknown[] | SQLWrapper) => Promise<SQL>
   notInArray: (left: SQLWrapper, right: unknown[] | SQLWrapper) => Promise<SQL>
@@ -1310,6 +1384,72 @@ export function createProtectOperators(protectClient: ProtectClient): {
   }
 
   /**
+   * JSONB path query first operator - uses eql_v2.jsonb_path_query_first() for encrypted columns
+   */
+  const protectJsonbPathQueryFirst = (
+    left: SQLWrapper,
+    right: unknown,
+  ): Promise<SQL> => {
+    const columnInfo = getColumnInfo(
+      left,
+      defaultProtectTable,
+      protectTableCache,
+    )
+    return createJsonbOperator(
+      'jsonbPathQueryFirst',
+      left,
+      right,
+      columnInfo,
+      protectClient,
+      defaultProtectTable,
+      protectTableCache,
+    )
+  }
+
+  /**
+   * JSONB get operator - uses -> for encrypted columns
+   */
+  const protectJsonbGet = (left: SQLWrapper, right: unknown): Promise<SQL> => {
+    const columnInfo = getColumnInfo(
+      left,
+      defaultProtectTable,
+      protectTableCache,
+    )
+    return createJsonbOperator(
+      'jsonbGet',
+      left,
+      right,
+      columnInfo,
+      protectClient,
+      defaultProtectTable,
+      protectTableCache,
+    )
+  }
+
+  /**
+   * JSONB path exists operator - uses eql_v2.jsonb_path_exists() for encrypted columns
+   */
+  const protectJsonbPathExists = (
+    left: SQLWrapper,
+    right: unknown,
+  ): Promise<SQL> => {
+    const columnInfo = getColumnInfo(
+      left,
+      defaultProtectTable,
+      protectTableCache,
+    )
+    return createJsonbOperator(
+      'jsonbPathExists',
+      left,
+      right,
+      columnInfo,
+      protectClient,
+      defaultProtectTable,
+      protectTableCache,
+    )
+  }
+
+  /**
    * In array operator - encrypts all values in the array
    */
   const protectInArray = async (
@@ -1334,7 +1474,11 @@ export function createProtectOperators(protectClient: ProtectClient): {
     // Encrypt all values in the array in a single batch
     const encryptedValues = await encryptValues(
       protectClient,
-      right.map((value) => ({ value, column: left, queryType: 'equality' as const })),
+      right.map((value) => ({
+        value,
+        column: left,
+        queryType: 'equality' as const,
+      })),
       defaultProtectTable,
       protectTableCache,
     )
@@ -1380,7 +1524,11 @@ export function createProtectOperators(protectClient: ProtectClient): {
     // Encrypt all values in the array in a single batch
     const encryptedValues = await encryptValues(
       protectClient,
-      right.map((value) => ({ value, column: left, queryType: 'equality' as const })),
+      right.map((value) => ({
+        value,
+        column: left,
+        queryType: 'equality' as const,
+      })),
       defaultProtectTable,
       protectTableCache,
     )
@@ -1519,7 +1667,11 @@ export function createProtectOperators(protectClient: ProtectClient): {
     // Batch encrypt all values
     const encryptedResults = await encryptValues(
       protectClient,
-      valuesToEncrypt.map((v) => ({ value: v.value, column: v.column, queryType: v.queryType })),
+      valuesToEncrypt.map((v) => ({
+        value: v.value,
+        column: v.column,
+        queryType: v.queryType,
+      })),
       defaultProtectTable,
       protectTableCache,
     )
@@ -1674,7 +1826,11 @@ export function createProtectOperators(protectClient: ProtectClient): {
 
     const encryptedResults = await encryptValues(
       protectClient,
-      valuesToEncrypt.map((v) => ({ value: v.value, column: v.column, queryType: v.queryType })),
+      valuesToEncrypt.map((v) => ({
+        value: v.value,
+        column: v.column,
+        queryType: v.queryType,
+      })),
       defaultProtectTable,
       protectTableCache,
     )
@@ -1760,6 +1916,11 @@ export function createProtectOperators(protectClient: ProtectClient): {
     like: protectLike,
     ilike: protectIlike,
     notIlike: protectNotIlike,
+
+    // Searchable JSON operators
+    jsonbPathQueryFirst: protectJsonbPathQueryFirst,
+    jsonbGet: protectJsonbGet,
+    jsonbPathExists: protectJsonbPathExists,
 
     // Array operators
     inArray: protectInArray,
