@@ -870,7 +870,21 @@ function createTextSearchOperator(
 }
 
 /**
- * Creates a JSONB operator (jsonbPathQueryFirst, jsonbGet, jsonbPathExists)
+ * Creates a JSONB operator that encrypts a JSON path selector and wraps it
+ * in the appropriate `eql_v2` function call.
+ *
+ * Supports `jsonbPathQueryFirst`, `jsonbGet`, and `jsonbPathExists`.
+ * The column must have `searchableJson` enabled in its {@link EncryptedColumnConfig}.
+ *
+ * @param operator - Which JSONB operation to perform.
+ * @param left - The encrypted column reference.
+ * @param right - The JSON path selector value to encrypt.
+ * @param columnInfo - Resolved column metadata including config and table name.
+ * @param protectClient - The Protect client used for encryption.
+ * @param defaultProtectTable - The default protect table for schema resolution.
+ * @param protectTableCache - Cache of resolved protect tables.
+ * @returns A promise resolving to the SQL condition with an encrypted, cast parameter.
+ * @throws {ProtectOperatorError} If `searchableJson` is not enabled on the column, or if encryption fails.
  */
 function createJsonbOperator(
   operator: 'jsonbPathQueryFirst' | 'jsonbGet' | 'jsonbPathExists',
@@ -1114,9 +1128,59 @@ export function createProtectOperators(protectClient: ProtectClient): {
    */
   ilike: (left: SQLWrapper, right: unknown) => Promise<SQL> | SQL
   notIlike: (left: SQLWrapper, right: unknown) => Promise<SQL> | SQL
-  // Searchable JSON operators
+
+  /**
+   * JSONB path query first operator for encrypted columns with searchable JSON.
+   * Requires `searchableJson` to be set on {@link EncryptedColumnConfig}.
+   *
+   * Encrypts the JSON path selector and calls `eql_v2.jsonb_path_query_first()`,
+   * casting the parameter to `eql_v2_encrypted`.
+   *
+   * @example
+   * Query the first matching value at a JSON path inside an encrypted column.
+   * ```ts
+   * const condition = await protectOps.jsonbPathQueryFirst(docsTable.metadata, '$.profile.email')
+   * const results = await db.select().from(docsTable).where(condition)
+   * ```
+   *
+   * @throws {ProtectOperatorError} If the column does not have `searchableJson` enabled.
+   */
   jsonbPathQueryFirst: (left: SQLWrapper, right: unknown) => Promise<SQL>
+
+  /**
+   * JSONB get operator for encrypted columns with searchable JSON.
+   * Requires `searchableJson` to be set on {@link EncryptedColumnConfig}.
+   *
+   * Encrypts the JSON path selector and uses the `->` operator,
+   * casting the parameter to `eql_v2_encrypted`.
+   *
+   * @example
+   * Get a value at a JSON path inside an encrypted column.
+   * ```ts
+   * const condition = await protectOps.jsonbGet(docsTable.metadata, '$.profile.name')
+   * const results = await db.select().from(docsTable).where(condition)
+   * ```
+   *
+   * @throws {ProtectOperatorError} If the column does not have `searchableJson` enabled.
+   */
   jsonbGet: (left: SQLWrapper, right: unknown) => Promise<SQL>
+
+  /**
+   * JSONB path exists operator for encrypted columns with searchable JSON.
+   * Requires `searchableJson` to be set on {@link EncryptedColumnConfig}.
+   *
+   * Encrypts the JSON path selector and calls `eql_v2.jsonb_path_exists()`,
+   * casting the parameter to `eql_v2_encrypted`.
+   *
+   * @example
+   * Check whether a JSON path exists inside an encrypted column.
+   * ```ts
+   * const condition = await protectOps.jsonbPathExists(docsTable.metadata, '$.profile.email')
+   * const results = await db.select().from(docsTable).where(condition)
+   * ```
+   *
+   * @throws {ProtectOperatorError} If the column does not have `searchableJson` enabled.
+   */
   jsonbPathExists: (left: SQLWrapper, right: unknown) => Promise<SQL>
   // Array operators
   inArray: (left: SQLWrapper, right: unknown[] | SQLWrapper) => Promise<SQL>
@@ -1386,7 +1450,10 @@ export function createProtectOperators(protectClient: ProtectClient): {
   }
 
   /**
-   * JSONB path query first operator - uses eql_v2.jsonb_path_query_first() for encrypted columns
+   * JSONB path query first operator - encrypts the selector and calls
+   * `eql_v2.jsonb_path_query_first()` for encrypted columns with searchable JSON.
+   *
+   * @throws {ProtectOperatorError} If the column lacks `searchableJson` config.
    */
   const protectJsonbPathQueryFirst = (
     left: SQLWrapper,
@@ -1409,7 +1476,10 @@ export function createProtectOperators(protectClient: ProtectClient): {
   }
 
   /**
-   * JSONB get operator - uses -> for encrypted columns
+   * JSONB get operator - encrypts the selector and uses the `->` operator
+   * for encrypted columns with searchable JSON.
+   *
+   * @throws {ProtectOperatorError} If the column lacks `searchableJson` config.
    */
   const protectJsonbGet = (left: SQLWrapper, right: unknown): Promise<SQL> => {
     const columnInfo = getColumnInfo(
@@ -1429,7 +1499,10 @@ export function createProtectOperators(protectClient: ProtectClient): {
   }
 
   /**
-   * JSONB path exists operator - uses eql_v2.jsonb_path_exists() for encrypted columns
+   * JSONB path exists operator - encrypts the selector and calls
+   * `eql_v2.jsonb_path_exists()` for encrypted columns with searchable JSON.
+   *
+   * @throws {ProtectOperatorError} If the column lacks `searchableJson` config.
    */
   const protectJsonbPathExists = (
     left: SQLWrapper,
