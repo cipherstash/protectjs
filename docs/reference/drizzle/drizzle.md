@@ -274,6 +274,64 @@ return results
 
 ---
 
+## JSONB queries with encrypted data
+
+Protect.js supports querying encrypted JSON columns using JSONB operators. These operators require `searchableJson: true` and `dataType: 'json'` in the column's `encryptedType` config.
+
+> [!TIP]
+> For details on the low-level `encryptQuery` API and JSONB query types (`steVecSelector`, `steVecTerm`), see the [Searchable encryption with PostgreSQL](../searchable-encryption-postgres.md#jsonb-queries-with-searchablejson-recommended) reference.
+
+### Extract value with `jsonbPathQueryFirst`
+
+Use `jsonbPathQueryFirst` to extract the first value at a given JSONPath. This is equivalent to the PostgreSQL `jsonb_path_query_first` function.
+
+```typescript
+const results = await db
+  .select()
+  .from(usersTable)
+  .where(await protect.jsonbPathQueryFirst(usersTable.profile, '$.name'))
+```
+
+### Check path existence with `jsonbPathExists`
+
+Use `jsonbPathExists` to check if a JSONPath exists in the JSONB data. This is equivalent to the PostgreSQL `jsonb_path_exists` function.
+
+```typescript
+const results = await db
+  .select()
+  .from(usersTable)
+  .where(await protect.jsonbPathExists(usersTable.profile, '$.bio'))
+```
+
+### Get value with `jsonbGet`
+
+Use `jsonbGet` to get a value using the JSONB `->` operator.
+
+```typescript
+const results = await db
+  .select()
+  .from(usersTable)
+  .where(await protect.jsonbGet(usersTable.profile, '$.name'))
+```
+
+### Combine JSONB operators with other conditions
+
+JSONB operators can be combined with other Protect operators using `and` and `or`.
+
+```typescript
+const results = await db
+  .select()
+  .from(usersTable)
+  .where(
+    await protect.and(
+      protect.jsonbPathQueryFirst(usersTable.profile, '$.name'),
+      protect.eq(usersTable.email, 'jane@example.com'),
+    ),
+  )
+```
+
+---
+
 ## Aggregation operations
 
 ### Count all transactions

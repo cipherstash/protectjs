@@ -94,9 +94,10 @@ export const usersTable = pgTable('users', {
     orderAndRange: true,
   }),
   
-  // JSON object with typed structure
+  // JSON object with searchable JSONB queries
   profile: encryptedType<{ name: string; bio: string }>('profile', {
     dataType: 'json',
+    searchableJson: true,
   }),
   
   createdAt: timestamp('created_at').defaultNow(),
@@ -227,6 +228,33 @@ const decrypted = await protectClient.bulkDecryptModels(results)
 > [!IMPORTANT]
 > Sorting with ORE on Supabase and other databases that don't support operator families will not work as expected.
 
+### Query encrypted JSONB data
+
+```typescript
+// Extract a value at a JSONB path
+const results = await db
+  .select()
+  .from(usersTable)
+  .where(await protectOps.jsonbPathQueryFirst(usersTable.profile, '$.name'))
+
+// Check if a path exists
+const results = await db
+  .select()
+  .from(usersTable)
+  .where(await protectOps.jsonbPathExists(usersTable.profile, '$.bio'))
+
+// Combine JSONB operators with other conditions
+const results = await db
+  .select()
+  .from(usersTable)
+  .where(
+    await protectOps.and(
+      protectOps.jsonbPathQueryFirst(usersTable.profile, '$.name'),
+      protectOps.eq(usersTable.email, 'jane@example.com'),
+    ),
+  )
+```
+
 ### Complex queries with mixed operators
 
 ```typescript
@@ -275,6 +303,14 @@ All operators automatically handle encryption for encrypted columns.
 - `inArray(left, right[])` - In array
 - `notInArray(left, right[])` - Not in array
 
+### JSONB Operators (async)
+- `jsonbPathQueryFirst(column, selector)` - Extract first value at JSONB path
+- `jsonbGet(column, selector)` - Get value using JSONB `->` operator
+- `jsonbPathExists(column, selector)` - Check if path exists in JSONB
+
+> [!IMPORTANT]
+> JSONB operators require `searchableJson: true` and `dataType: 'json'` in the column's `encryptedType` config.
+
 ### Sorting Operators (sync)
 - `asc(column)` - Ascending order
 - `desc(column)` - Descending order
@@ -304,6 +340,7 @@ Creates an encrypted column type for Drizzle schemas.
 - `freeTextSearch?: boolean` - Enable text search (LIKE/ILIKE)
 - `equality?: boolean` - Enable equality queries
 - `orderAndRange?: boolean` - Enable range queries and sorting
+- `searchableJson?: boolean` - Enable JSONB path queries (requires `dataType: 'json'`)
 
 ### `extractProtectSchema(table)`
 
