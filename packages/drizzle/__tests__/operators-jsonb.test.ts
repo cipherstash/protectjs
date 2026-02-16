@@ -36,7 +36,7 @@ describe('createProtectOperators JSONB selector typing', () => {
   })
 
   it('casts jsonbPathExists selector params to eql_v2_encrypted', async () => {
-    const { protectOps, dialect } = setup()
+    const { encryptQuery, protectOps, dialect } = setup()
 
     const condition = await protectOps.jsonbPathExists(
       docsTable.metadata,
@@ -49,10 +49,14 @@ describe('createProtectOperators JSONB selector typing', () => {
     )
     expect(query.params).toHaveLength(1)
     expect(query.params[0]).toContain('encrypted-value')
+    expect(encryptQuery).toHaveBeenCalledTimes(1)
+    expect(encryptQuery.mock.calls[0]?.[0]).toMatchObject([
+      { queryType: 'steVecSelector' },
+    ])
   })
 
   it('casts jsonbGet selector params to eql_v2_encrypted', async () => {
-    const { protectOps, dialect } = setup()
+    const { encryptQuery, protectOps, dialect } = setup()
 
     const condition = await protectOps.jsonbGet(
       docsTable.metadata,
@@ -63,6 +67,10 @@ describe('createProtectOperators JSONB selector typing', () => {
     expect(query.sql).toMatch(/->\s*\$\d+::eql_v2_encrypted/)
     expect(query.params).toHaveLength(1)
     expect(query.params[0]).toContain('encrypted-value')
+    expect(encryptQuery).toHaveBeenCalledTimes(1)
+    expect(encryptQuery.mock.calls[0]?.[0]).toMatchObject([
+      { queryType: 'steVecSelector' },
+    ])
   })
 })
 
