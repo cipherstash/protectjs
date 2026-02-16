@@ -6,8 +6,10 @@ import { createProtectOperators } from '../src/pg'
 export const ENCRYPTED_VALUE = '{"v":"encrypted-value"}'
 
 export function createMockProtectClient() {
-  const encryptQuery = vi.fn(async (terms: unknown[]) => ({
-    data: terms.map(() => ENCRYPTED_VALUE),
+  const encryptQuery = vi.fn(async (terms: unknown[] | unknown) => ({
+    data: Array.isArray(terms)
+      ? terms.map(() => ENCRYPTED_VALUE)
+      : [ENCRYPTED_VALUE],
   }))
 
   return {
