@@ -25,6 +25,7 @@ export type EncryptedColumnConfig = {
   orderAndRange?: boolean
   /**
    * Enable searchable JSON index for JSONB path queries.
+   * Requires dataType: 'json'.
    */
   searchableJson?: boolean
 }
