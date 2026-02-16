@@ -1,34 +1,22 @@
-import type { ProtectClient } from '@cipherstash/protect/client'
-import { PgDialect, pgTable } from 'drizzle-orm/pg-core'
-import { describe, expect, it, vi } from 'vitest'
-import { createProtectOperators, encryptedType } from '../src/pg'
+import { pgTable } from 'drizzle-orm/pg-core'
+import { describe, expect, it } from 'vitest'
+import { encryptedType } from '../src/pg'
+import { ProtectOperatorError } from '../src/pg/operators'
+import { setup } from './test-utils'
 
 const docsTable = pgTable('json_docs', {
   metadata: encryptedType<Record<string, unknown>>('metadata', {
     dataType: 'json',
     searchableJson: true,
   }),
+  noJsonConfig: encryptedType<string>('no_json_config', {
+    equality: true,
+  }),
 })
-
-function createMockProtectClient() {
-  const encryptedSelector = '{"v":"encrypted-selector"}'
-  const encryptQuery = vi.fn(async (terms: unknown[]) => ({
-    data: terms.map(() => encryptedSelector),
-  }))
-
-  return {
-    client: { encryptQuery } as unknown as ProtectClient,
-    encryptQuery,
-    encryptedSelector,
-  }
-}
 
 describe('createProtectOperators JSONB selector typing', () => {
   it('casts jsonbPathQueryFirst selector params to eql_v2_encrypted', async () => {
-    const { client, encryptQuery, encryptedSelector } =
-      createMockProtectClient()
-    const protectOps = createProtectOperators(client)
-    const dialect = new PgDialect()
+    const { encryptQuery, protectOps, dialect } = setup()
 
     const condition = await protectOps.jsonbPathQueryFirst(
       docsTable.metadata,
@@ -40,7 +28,7 @@ describe('createProtectOperators JSONB selector typing', () => {
       /eql_v2\.jsonb_path_query_first\([^,]+,\s*\$\d+::eql_v2_encrypted\)/,
     )
     expect(query.params).toHaveLength(1)
-    expect(typeof query.params[0]).toBe('string')
+    expect(query.params[0]).toContain('encrypted-value')
     expect(encryptQuery).toHaveBeenCalledTimes(1)
     expect(encryptQuery.mock.calls[0]?.[0]).toMatchObject([
       { queryType: 'steVecSelector' },
@@ -48,9 +36,7 @@ describe('createProtectOperators JSONB selector typing', () => {
   })
 
   it('casts jsonbPathExists selector params to eql_v2_encrypted', async () => {
-    const { client } = createMockProtectClient()
-    const protectOps = createProtectOperators(client)
-    const dialect = new PgDialect()
+    const { protectOps, dialect } = setup()
 
     const condition = await protectOps.jsonbPathExists(
       docsTable.metadata,
@@ -62,13 +48,11 @@ describe('createProtectOperators JSONB selector typing', () => {
       /eql_v2\.jsonb_path_exists\([^,]+,\s*\$\d+::eql_v2_encrypted\)/,
     )
     expect(query.params).toHaveLength(1)
-    expect(typeof query.params[0]).toBe('string')
+    expect(query.params[0]).toContain('encrypted-value')
   })
 
   it('casts jsonbGet selector params to eql_v2_encrypted', async () => {
-    const { client } = createMockProtectClient()
-    const protectOps = createProtectOperators(client)
-    const dialect = new PgDialect()
+    const { protectOps, dialect } = setup()
 
     const condition = await protectOps.jsonbGet(
       docsTable.metadata,
@@ -78,6 +62,108 @@ describe('createProtectOperators JSONB selector typing', () => {
 
     expect(query.sql).toMatch(/->\s*\$\d+::eql_v2_encrypted/)
     expect(query.params).toHaveLength(1)
-    expect(typeof query.params[0]).toBe('string')
+    expect(query.params[0]).toContain('encrypted-value')
+  })
+})
+
+describe('JSONB operator error paths', () => {
+  it('throws ProtectOperatorError when column lacks searchableJson config', () => {
+    const { protectOps } = setup()
+
+    expect(() =>
+      protectOps.jsonbPathQueryFirst(docsTable.noJsonConfig, '$.path'),
+    ).toThrow(ProtectOperatorError)
+
+    expect(() =>
+      protectOps.jsonbPathQueryFirst(docsTable.noJsonConfig, '$.path'),
+    ).toThrow(/searchableJson/)
+  })
+
+  it('throws ProtectOperatorError for jsonbPathExists without searchableJson', () => {
+    const { protectOps } = setup()
+
+    expect(() =>
+      protectOps.jsonbPathExists(docsTable.noJsonConfig, '$.path'),
+    ).toThrow(ProtectOperatorError)
+  })
+
+  it('throws ProtectOperatorError for jsonbGet without searchableJson', () => {
+    const { protectOps } = setup()
+
+    expect(() =>
+      protectOps.jsonbGet(docsTable.noJsonConfig, '$.path'),
+    ).toThrow(ProtectOperatorError)
+  })
+
+  it('error includes column name and operator context', () => {
+    const { protectOps } = setup()
+
+    try {
+      protectOps.jsonbPathQueryFirst(docsTable.noJsonConfig, '$.path')
+      expect.fail('Should have thrown')
+    } catch (error) {
+      expect(error).toBeInstanceOf(ProtectOperatorError)
+      const opError = error as ProtectOperatorError
+      expect(opError.context?.columnName).toBe('no_json_config')
+      expect(opError.context?.operator).toBe('jsonbPathQueryFirst')
+    }
+  })
+})
+
+describe('JSONB batched operations', () => {
+  it('batches jsonbPathQueryFirst and jsonbGet in protectOps.and()', async () => {
+    const { encryptQuery, protectOps, dialect } = setup()
+
+    const condition = await protectOps.and(
+      protectOps.jsonbPathQueryFirst(docsTable.metadata, '$.profile.email'),
+      protectOps.jsonbGet(docsTable.metadata, '$.profile.name'),
+    )
+    const query = dialect.sqlToQuery(condition)
+
+    expect(query.sql).toContain('eql_v2.jsonb_path_query_first')
+    expect(query.sql).toContain('->')
+    // Both values should be encrypted
+    expect(encryptQuery).toHaveBeenCalled()
+  })
+
+  it('batches jsonbPathExists and jsonbPathQueryFirst in protectOps.or()', async () => {
+    const { encryptQuery, protectOps, dialect } = setup()
+
+    const condition = await protectOps.or(
+      protectOps.jsonbPathExists(docsTable.metadata, '$.profile.email'),
+      protectOps.jsonbPathQueryFirst(docsTable.metadata, '$.profile.name'),
+    )
+    const query = dialect.sqlToQuery(condition)
+
+    expect(query.sql).toContain('eql_v2.jsonb_path_exists')
+    expect(query.sql).toContain('eql_v2.jsonb_path_query_first')
+    // Both values should be encrypted
+    expect(encryptQuery).toHaveBeenCalled()
+  })
+
+  it('generates SQL combining conditions with AND', async () => {
+    const { protectOps, dialect } = setup()
+
+    const condition = await protectOps.and(
+      protectOps.jsonbPathQueryFirst(docsTable.metadata, '$.a'),
+      protectOps.jsonbPathExists(docsTable.metadata, '$.b'),
+    )
+    const query = dialect.sqlToQuery(condition)
+
+    // AND combines conditions
+    expect(query.sql).toContain(' and ')
+  })
+
+  it('generates SQL combining conditions with OR', async () => {
+    const { protectOps, dialect } = setup()
+
+    const condition = await protectOps.or(
+      protectOps.jsonbPathQueryFirst(docsTable.metadata, '$.a'),
+      protectOps.jsonbPathExists(docsTable.metadata, '$.b'),
+    )
+    const query = dialect.sqlToQuery(condition)
+
+    // OR combines conditions
+    expect(query.sql).toContain(' or ')
   })
 })
