@@ -882,6 +882,8 @@ function createJsonbOperator(
   protectTableCache: Map<string, ProtectTable<ProtectTableColumn>>,
 ): Promise<SQL> {
   const { config } = columnInfo
+  const encryptedSelector = (value: unknown) =>
+    sql`${bindIfParam(value, left)}::eql_v2_encrypted`
 
   if (!config?.searchableJson) {
     throw new ProtectOperatorError(
@@ -907,11 +909,11 @@ function createJsonbOperator(
     }
     switch (operator) {
       case 'jsonbPathQueryFirst':
-        return sql`eql_v2.jsonb_path_query_first(${left}, ${bindIfParam(encrypted, left)})`
+        return sql`eql_v2.jsonb_path_query_first(${left}, ${encryptedSelector(encrypted)})`
       case 'jsonbGet':
-        return sql`${left} -> ${bindIfParam(encrypted, left)}`
+        return sql`${left} -> ${encryptedSelector(encrypted)}`
       case 'jsonbPathExists':
-        return sql`eql_v2.jsonb_path_exists(${left}, ${bindIfParam(encrypted, left)})`
+        return sql`eql_v2.jsonb_path_exists(${left}, ${encryptedSelector(encrypted)})`
     }
   }
 
