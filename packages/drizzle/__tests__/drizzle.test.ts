@@ -48,6 +48,7 @@ const drizzleUsersTable = pgTable('protect-ci', {
     'profile',
     {
       dataType: 'json',
+      searchableJson: true,
     },
   ),
   createdAt: timestamp('created_at').defaultNow(),
@@ -354,5 +355,25 @@ describe('Drizzle ORM Integration with Protect.js', () => {
 
     const decryptedUsers = await decryptUserRows(protectClient, rows)
     expectUsersToMatchPlaintext(decryptedUsers, expectedUsers)
+  }, 30000)
+
+  it('supports jsonbPathExists in WHERE clause', async () => {
+    const rows = await selectEncryptedUsers(
+      and(
+        eq(drizzleUsersTable.testRunId, TEST_RUN_ID),
+        await protectOps.jsonbPathExists(
+          drizzleUsersTable.profile,
+          '$.name',
+        ),
+      ),
+    )
+
+    expect(rows.length).toBeGreaterThan(0)
+    expectRowsToBeEncrypted(rows)
+
+    const decryptedUsers = await decryptUserRows(protectClient, rows)
+    for (const user of decryptedUsers) {
+      expect(user.profile.name).toBeDefined()
+    }
   }, 30000)
 })
