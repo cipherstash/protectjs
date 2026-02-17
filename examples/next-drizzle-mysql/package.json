@@ -1,6 +1,6 @@
 {
   "name": "next-drizzle-mysql",
-  "version": "0.2.16",
+  "version": "0.2.17",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
