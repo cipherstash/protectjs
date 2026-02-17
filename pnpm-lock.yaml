@@ -154,7 +154,7 @@ importers:
         version: link:../../packages/protect
       '@hono/node-server':
         specifier: ^1.13.7
-        version: 1.19.7(hono@4.11.1)
+        version: 1.19.7(hono@4.11.9)
       '@supabase/supabase-js':
         specifier: ^2.47.10
         version: 2.89.0
@@ -162,8 +162,8 @@ importers:
         specifier: ^16.4.7
         version: 16.6.1
       hono:
-        specifier: ^4.6.15
-        version: 4.11.1
+        specifier: ^4.11.4
+        version: 4.11.9
     devDependencies:
       '@types/node':
         specifier: ^20.11.17
@@ -4550,8 +4550,8 @@ packages:
     resolution: {integrity: sha512-0hJU9SCPvmMzIBdZFqNPXWa6dqh7WdH0cII9y+CyS8rG3nL48Bclra9HmKhVVUHyPWNH5Y7xDwAB7bfgSjkUMQ==}
     engines: {node: '>= 0.4'}
 
-  hono@4.11.1:
-    resolution: {integrity: sha512-KsFcH0xxHes0J4zaQgWbYwmz3UPOOskdqZmItstUG93+Wk1ePBLkLGwbP9zlmh1BFUiL8Qp+Xfu9P7feJWpGNg==}
+  hono@4.11.9:
+    resolution: {integrity: sha512-Eaw2YTGM6WOxA6CXbckaEvslr2Ne4NFsKrvc0v97JD5awbmeBLO5w9Ho9L9kmKonrwF9RJlW6BxT1PVv/agBHQ==}
     engines: {node: '>=16.9.0'}
 
   html-escaper@2.0.2:
@@ -7828,9 +7828,9 @@ snapshots:
 
   '@floating-ui/utils@0.2.10': {}
 
-  '@hono/node-server@1.19.7(hono@4.11.1)':
+  '@hono/node-server@1.19.7(hono@4.11.9)':
     dependencies:
-      hono: 4.11.1
+      hono: 4.11.9
 
   '@hookform/resolvers@5.2.2(react-hook-form@7.68.0(react@19.2.3))':
     dependencies:
@@ -10852,7 +10852,7 @@ snapshots:
     dependencies:
       function-bind: 1.1.2
 
-  hono@4.11.1: {}
+  hono@4.11.9: {}
 
   html-escaper@2.0.2: {}
 
