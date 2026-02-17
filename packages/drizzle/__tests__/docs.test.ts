@@ -11,7 +11,7 @@ import {
   createProtectOperators,
   encryptedType,
   extractProtectSchema,
-} from '../src/pg'
+} from '@cipherstash/drizzle/pg'
 import { docSeedData } from './fixtures/doc-seed-data'
 import { type ExecutionContext, executeCodeBlock } from './utils/code-executor'
 import { extractExecutableBlocks } from './utils/markdown-parser'

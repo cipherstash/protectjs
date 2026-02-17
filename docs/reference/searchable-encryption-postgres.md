@@ -116,6 +116,9 @@ console.log(terms.data) // array of encrypted query terms
 
 ### JSONB queries with searchableJson (recommended)
 
+> [!TIP]
+> **Using Drizzle ORM?** The `@cipherstash/drizzle` package provides higher-level JSONB operators (`jsonbPathQueryFirst`, `jsonbGet`, `jsonbPathExists`) that handle encryption automatically. See the [Drizzle JSONB query examples](./drizzle/drizzle.md#jsonb-queries-with-encrypted-data).
+
 For columns storing JSON data, `.searchableJson()` is the recommended approach. It enables encrypted JSONB queries and automatically infers the correct query operation from the plaintext value type.
 
 Use `encryptQuery` to create encrypted query terms for JSONB columns:
