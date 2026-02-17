@@ -55,7 +55,8 @@
       "js-yaml": "3.14.2",
       "test-exclude": "^7.0.1",
       "glob": ">=11.1.0",
-      "qs": ">=6.14.1"
+      "qs": ">=6.14.1",
+      "lodash": ">=4.17.23"
     },
     "peerDependencyRules": {
       "ignoreMissing": [
