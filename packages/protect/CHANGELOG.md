@@ -1,5 +1,28 @@
 # @cipherstash/protect
 
+## 10.5.0
+
+### Minor Changes
+
+- db72e2c: Add `encryptQuery` API for encrypting query terms with explicit query type selection.
+
+  - New `encryptQuery()` method replaces `createSearchTerms()` with improved query type handling
+  - Supports `equality`, `freeTextSearch`, and `orderAndRange` query types
+  - Deprecates `createSearchTerms()` - use `encryptQuery()` instead
+  - Updates drizzle operators to use correct index selection via `queryType` parameter
+
+- e769740: Add encrypted JSONB query support with `searchableJson()` (recommended).
+
+  - New `searchableJson()` schema method enables encrypted JSONB path and containment queries
+  - Automatic query operation inference: string values become JSONPath selector queries, objects/arrays become containment queries
+  - Also supports explicit `queryType: 'steVecSelector'` and `queryType: 'steVecTerm'` for advanced use cases
+  - JSONB path utilities (`toJsonPath`, `buildNestedObject`, `parseJsonbPath`) for building encrypted JSON column queries
+
+### Patch Changes
+
+- Updated dependencies [e769740]
+  - @cipherstash/schema@2.1.0
+
 ## 10.4.0
 
 ### Minor Changes
