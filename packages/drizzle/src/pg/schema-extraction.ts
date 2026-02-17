@@ -91,6 +91,15 @@ export function extractProtectSchema<T extends PgTable<any>>(
         }
       }
 
+      if (config.searchableJson) {
+        if (config.dataType !== 'json') {
+          throw new Error(
+            `Column "${columnName}" has searchableJson enabled but dataType is "${config.dataType ?? 'string'}". searchableJson requires dataType: 'json'.`,
+          )
+        }
+        csCol.searchableJson()
+      }
+
       columns[actualColumnName] = csCol
     }
   }

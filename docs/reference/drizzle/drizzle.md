@@ -274,6 +274,56 @@ return results
 
 ---
 
+## JSONB queries with encrypted data
+
+Protect.js supports querying encrypted JSON columns using JSONB operators. These operators require `searchableJson: true` and `dataType: 'json'` in the column's `encryptedType` config.
+
+> [!TIP]
+> For details on the low-level `encryptQuery` API and JSONB query types (`steVecSelector`, `steVecTerm`), see the [Searchable encryption with PostgreSQL](../searchable-encryption-postgres.md#jsonb-queries-with-searchablejson-recommended) reference.
+
+### Check path existence with `jsonbPathExists`
+
+Use `jsonbPathExists` to check if a JSONPath exists in the JSONB data. This returns a boolean and can be used directly in `WHERE` clauses. This is equivalent to the PostgreSQL `jsonb_path_exists` function.
+
+```typescript
+const results = await db
+  .select()
+  .from(usersTable)
+  .where(await protect.jsonbPathExists(usersTable.profile, '$.bio'))
+```
+
+### Extract value with `jsonbPathQueryFirst`
+
+Use `jsonbPathQueryFirst` to extract the first value at a given JSONPath in a `SELECT` expression. This is equivalent to the PostgreSQL `jsonb_path_query_first` function.
+
+> [!NOTE]
+> `jsonbPathQueryFirst` returns an encrypted value, not a boolean. Use it in `SELECT` expressions, not directly in `WHERE` clauses. Use `jsonbPathExists` to filter rows by path existence.
+
+### Get value with `jsonbGet`
+
+Use `jsonbGet` to get a value using the JSONB `->` operator in a `SELECT` expression.
+
+> [!NOTE]
+> `jsonbGet` returns an encrypted value, not a boolean. Use it in `SELECT` expressions, not directly in `WHERE` clauses. Use `jsonbPathExists` to filter rows by path existence.
+
+### Combine JSONB operators with other conditions
+
+JSONB operators can be combined with other Protect operators using `and` and `or`. Use `jsonbPathExists` for boolean conditions in `WHERE` clauses.
+
+```typescript
+const results = await db
+  .select()
+  .from(usersTable)
+  .where(
+    await protect.and(
+      protect.jsonbPathExists(usersTable.profile, '$.name'),
+      protect.eq(usersTable.email, 'jane@example.com'),
+    ),
+  )
+```
+
+---
+
 ## Aggregation operations
 
 ### Count all transactions

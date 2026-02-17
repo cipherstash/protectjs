@@ -4,5 +4,6 @@ CREATE TABLE "protect-ci" (
   age eql_v2_encrypted,
   score eql_v2_encrypted,
   profile eql_v2_encrypted,
-  created_at TIMESTAMP DEFAULT NOW()
+  created_at TIMESTAMP DEFAULT NOW(),
+  test_run_id TEXT
 );

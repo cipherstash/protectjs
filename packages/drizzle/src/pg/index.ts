@@ -23,6 +23,11 @@ export type EncryptedColumnConfig = {
    * Enable order and range index for sorting and range queries.
    */
   orderAndRange?: boolean
+  /**
+   * Enable searchable JSON index for JSONB path queries.
+   * Requires dataType: 'json'.
+   */
+  searchableJson?: boolean
 }
 
 /**
@@ -53,6 +58,7 @@ const columnConfigMap = new Map<
  * - `freeTextSearch`: Enables free text search index. Can be a boolean for default options, or an object for custom configuration.
  * - `equality`: Enables equality index. Can be a boolean for default options, or an array of token filters.
  * - `orderAndRange`: Enables order and range index for sorting and range queries.
+ * - `searchableJson`: Enables searchable JSON index for JSONB path queries on encrypted JSON columns.
  *
  * See {@link EncryptedColumnConfig}.
  *
@@ -187,4 +193,8 @@ export function getEncryptedColumnConfig(
 export { extractProtectSchema } from './schema-extraction.js'
 
 // Re-export operators
-export { createProtectOperators } from './operators.js'
+export {
+  createProtectOperators,
+  ProtectOperatorError,
+  ProtectConfigError,
+} from './operators.js'
