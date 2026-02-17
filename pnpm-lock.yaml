@@ -36,6 +36,7 @@ overrides:
   test-exclude: ^7.0.1
   glob: '>=11.1.0'
   qs: '>=6.14.1'
+  lodash: '>=4.17.23'
   '@isaacs/brace-expansion': '>=5.0.1'
   fast-xml-parser: '>=5.3.4'
 
@@ -164,7 +165,7 @@ importers:
         specifier: ^16.4.7
         version: 16.6.1
       hono:
-        specifier: ^4.11.4
+        specifier: ^4.11.9
         version: 4.11.9
     devDependencies:
       '@types/node':
@@ -5045,8 +5046,8 @@ packages:
   lodash.startcase@4.4.0:
     resolution: {integrity: sha512-+WKqsK294HMSc2jEbNgpHpd0JfIBhp7rEV4aqXWqFr6AlXov+SlcgB1Fv01y2kGe3Gc8nMW7VA0SrGuSkRfIEg==}
 
-  lodash@4.17.21:
-    resolution: {integrity: sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZVGedAJv8XZ1tvj5FvSg==}
+  lodash@4.17.23:
+    resolution: {integrity: sha512-LgVTMpQtIopCi79SJeDiP0TfWi5CNEc/L/aRdTh3yIvmZXTnheWpKjSZhnvMl8iXbC1tFg9gdHHDMLoV7CnG+w==}
 
   log-symbols@4.1.0:
     resolution: {integrity: sha512-8XPvpAA8uyhfteu8pIvQxpJZ7SYYdpUivZpGy6sFsBuKRY/7rQGavedeB8aK+Zkyq6upMFVL/9AW6vOYzfRyLg==}
@@ -8419,7 +8420,7 @@ snapshots:
       '@nestjs/common': 11.1.9(reflect-metadata@0.2.2)(rxjs@7.8.2)
       dotenv: 16.4.5
       dotenv-expand: 10.0.0
-      lodash: 4.17.21
+      lodash: 4.17.23
       rxjs: 7.8.2
 
   '@nestjs/core@11.1.9(@nestjs/common@11.1.9(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@11.1.9)(reflect-metadata@0.2.2)(rxjs@7.8.2)':
@@ -11376,7 +11377,7 @@ snapshots:
       '@types/lodash': 4.17.21
       is-glob: 4.0.3
       js-yaml: 3.14.2
-      lodash: 4.17.21
+      lodash: 4.17.23
       minimist: 1.2.8
       prettier: 3.7.4
       tinyglobby: 0.2.15
@@ -11487,7 +11488,7 @@ snapshots:
 
   lodash.startcase@4.4.0: {}
 
-  lodash@4.17.21: {}
+  lodash@4.17.23: {}
 
   log-symbols@4.1.0:
     dependencies:
@@ -11689,7 +11690,7 @@ snapshots:
 
   node-emoji@1.11.0:
     dependencies:
-      lodash: 4.17.21
+      lodash: 4.17.23
 
   node-int64@0.4.0: {}
 
