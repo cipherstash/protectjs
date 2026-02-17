@@ -261,6 +261,7 @@ interface ValueToEncrypt {
   readonly column: SQLWrapper
   readonly columnInfo: ColumnInfo
   readonly queryType?: QueryTypeName
+  readonly originalIndex: number
 }
 
 /**
@@ -305,6 +306,7 @@ async function encryptValues(
       column,
       columnInfo,
       queryType,
+      originalIndex: i,
     })
   }
 
@@ -318,6 +320,7 @@ async function encryptValues(
     {
       column: ProtectColumn
       table: ProtectTable<ProtectTableColumn>
+      columnName: string
       values: Array<{
         value: string | number
         index: number
@@ -328,7 +331,7 @@ async function encryptValues(
   >()
 
   let valueIndex = 0
-  for (const { value, column, columnInfo, queryType } of valuesToEncrypt) {
+  for (const { value, columnInfo, queryType, originalIndex } of valuesToEncrypt) {
     // Safe access with validation - we know these exist from earlier checks
     if (
       !columnInfo.config ||
@@ -339,32 +342,25 @@ async function encryptValues(
     }
 
     const columnName = columnInfo.config.name
-    let group = columnGroups.get(columnName)
+    const groupKey = `${columnInfo.tableName ?? 'unknown'}/${columnName}`
+    let group = columnGroups.get(groupKey)
     if (!group) {
       group = {
         column: columnInfo.protectColumn,
         table: columnInfo.protectTable,
+        columnName,
         values: [],
         resultIndices: [],
       }
-      columnGroups.set(columnName, group)
+      columnGroups.set(groupKey, group)
     }
     group.values.push({ value, index: valueIndex++, queryType })
-
-    // Find the original index in the results array
-    const originalIndex = values.findIndex(
-      (v, idx) =>
-        v.column === column &&
-        toPlaintext(v.value) === value &&
-        results[idx] === undefined,
-    )
-    if (originalIndex >= 0) {
-      group.resultIndices.push(originalIndex)
-    }
+    group.resultIndices.push(originalIndex)
   }
 
   // Encrypt all values for each column in batches
-  for (const [columnName, group] of columnGroups) {
+  for (const [, group] of columnGroups) {
+    const { columnName } = group
     try {
       const terms = group.values.map((v) => ({
         value: v.value,
