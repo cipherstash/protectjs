@@ -402,6 +402,7 @@ describe('Batched and/or operators', () => {
     expect(query.sql).toContain('eql_v2.ilike(')
     // SQL uses AND
     expect(query.sql).toContain(' and ')
+    expect(encryptQuery).toHaveBeenCalled()
   })
 
   it('protectOps.or() batches and uses OR', async () => {
@@ -431,7 +432,9 @@ describe('Batched and/or operators', () => {
     const query = dialect.sqlToQuery(condition)
 
     // Should still produce valid SQL with the non-undefined conditions
-    expect(query.sql).toBeTruthy()
+    expect(query.sql).toContain('=')
+    expect(query.sql).toContain('eql_v2.gte(')
+    expect(query.sql).toContain(' and ')
   })
 
   it('protectOps.and() with only non-encrypted conditions', async () => {

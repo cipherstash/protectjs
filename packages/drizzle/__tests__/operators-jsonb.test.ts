@@ -129,8 +129,12 @@ describe('JSONB batched operations', () => {
 
     expect(query.sql).toContain('eql_v2.jsonb_path_query_first')
     expect(query.sql).toContain('->')
-    // Both values should be encrypted
-    expect(encryptQuery).toHaveBeenCalled()
+    // Verify batch encryption happened (at least one call with 2 terms)
+    expect(
+      encryptQuery.mock.calls.some(
+        (call: unknown[]) => Array.isArray(call[0]) && call[0].length === 2,
+      ),
+    ).toBe(true)
   })
 
   it('batches jsonbPathExists and jsonbPathQueryFirst in protectOps.or()', async () => {
@@ -144,8 +148,12 @@ describe('JSONB batched operations', () => {
 
     expect(query.sql).toContain('eql_v2.jsonb_path_exists')
     expect(query.sql).toContain('eql_v2.jsonb_path_query_first')
-    // Both values should be encrypted
-    expect(encryptQuery).toHaveBeenCalled()
+    // Verify batch encryption happened (at least one call with 2 terms)
+    expect(
+      encryptQuery.mock.calls.some(
+        (call: unknown[]) => Array.isArray(call[0]) && call[0].length === 2,
+      ),
+    ).toBe(true)
   })
 
   it('generates SQL combining conditions with AND', async () => {
