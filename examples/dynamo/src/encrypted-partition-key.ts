@@ -51,7 +51,12 @@ const main = async () => {
 
   // Use encryptQuery to create the search term for partition key lookup
   const encryptedResult = await protectClient.encryptQuery([
-    { value: 'abc@example.com', column: users.email, table: users, queryType: 'equality' },
+    {
+      value: 'abc@example.com',
+      column: users.email,
+      table: users,
+      queryType: 'equality',
+    },
   ])
 
   if (encryptedResult.failure) {

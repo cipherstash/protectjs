@@ -1,16 +1,16 @@
 import 'dotenv/config'
-import { describe, expect, it, beforeAll } from 'vitest'
-import { protect, ProtectErrorTypes } from '../src'
+import { beforeAll, describe, expect, it } from 'vitest'
+import { ProtectErrorTypes, protect } from '../src'
 
 type ProtectClient = Awaited<ReturnType<typeof protect>>
 import {
+  createFailingMockLockContext,
+  createMockLockContext,
+  createMockLockContextWithNullContext,
+  expectFailure,
   jsonbSchema,
   metadata,
   unwrapResult,
-  expectFailure,
-  createMockLockContext,
-  createFailingMockLockContext,
-  createMockLockContextWithNullContext,
 } from './fixtures'
 
 /*
@@ -60,11 +60,14 @@ describe('encryptQuery with searchableJson queryType', () => {
   }, 30000)
 
   it('auto-infers ste_vec_term for object plaintext (containment)', async () => {
-    const result = await protectClient.encryptQuery({ role: 'admin' }, {
-      column: jsonbSchema.metadata,
-      table: jsonbSchema,
-      queryType: 'searchableJson',
-    })
+    const result = await protectClient.encryptQuery(
+      { role: 'admin' },
+      {
+        column: jsonbSchema.metadata,
+        table: jsonbSchema,
+        queryType: 'searchableJson',
+      },
+    )
 
     const data = unwrapResult(result)
     expect(data).toBeDefined()
@@ -82,7 +85,7 @@ describe('encryptQuery with searchableJson queryType', () => {
         column: jsonbSchema.metadata,
         table: jsonbSchema,
         queryType: 'searchableJson',
-      }
+      },
     )
 
     const data = unwrapResult(result)
@@ -167,10 +170,13 @@ describe('encryptQuery with searchableJson column and omitted queryType', () => 
   }, 30000)
 
   it('auto-infers ste_vec_term for object plaintext (containment)', async () => {
-    const result = await protectClient.encryptQuery({ role: 'admin' }, {
-      column: jsonbSchema.metadata,
-      table: jsonbSchema,
-    })
+    const result = await protectClient.encryptQuery(
+      { role: 'admin' },
+      {
+        column: jsonbSchema.metadata,
+        table: jsonbSchema,
+      },
+    )
 
     const data = unwrapResult(result)
     expect(data).toBeDefined()
@@ -238,19 +244,19 @@ describe('searchableJson batch operations', () => {
   it('handles mixed plaintext types in single batch', async () => {
     const result = await protectClient.encryptQuery([
       {
-        value: '$.user.email',  // string → ste_vec_selector
+        value: '$.user.email', // string → ste_vec_selector
         column: jsonbSchema.metadata,
         table: jsonbSchema,
         queryType: 'searchableJson',
       },
       {
-        value: { role: 'admin' },  // object → ste_vec_term
+        value: { role: 'admin' }, // object → ste_vec_term
         column: jsonbSchema.metadata,
         table: jsonbSchema,
         queryType: 'searchableJson',
       },
       {
-        value: ['tag1', 'tag2'],  // array → ste_vec_term
+        value: ['tag1', 'tag2'], // array → ste_vec_term
         column: jsonbSchema.metadata,
         table: jsonbSchema,
         queryType: 'searchableJson',
@@ -303,19 +309,19 @@ describe('searchableJson batch operations', () => {
         value: '$.path1',
         column: jsonbSchema.metadata,
         table: jsonbSchema,
-        queryType: 'searchableJson',  // auto-infer
+        queryType: 'searchableJson', // auto-infer
       },
       {
         value: '$.path2',
         column: jsonbSchema.metadata,
         table: jsonbSchema,
-        queryType: 'steVecSelector',  // explicit
+        queryType: 'steVecSelector', // explicit
       },
       {
         value: { key: 'value' },
         column: jsonbSchema.metadata,
         table: jsonbSchema,
-        queryType: 'steVecTerm',  // explicit
+        queryType: 'steVecTerm', // explicit
       },
     ])
 
@@ -513,11 +519,14 @@ describe('searchableJson with LockContext', () => {
   it('executes object plaintext with LockContext mock', async () => {
     const mockLockContext = createMockLockContext()
 
-    const operation = protectClient.encryptQuery({ role: 'admin' }, {
-      column: jsonbSchema.metadata,
-      table: jsonbSchema,
-      queryType: 'searchableJson',
-    })
+    const operation = protectClient.encryptQuery(
+      { role: 'admin' },
+      {
+        column: jsonbSchema.metadata,
+        table: jsonbSchema,
+        queryType: 'searchableJson',
+      },
+    )
 
     const withContext = operation.withLockContext(mockLockContext as any)
     const result = await withContext.execute()
@@ -573,7 +582,7 @@ describe('searchableJson with LockContext', () => {
   it('handles LockContext failure gracefully', async () => {
     const mockLockContext = createFailingMockLockContext(
       ProtectErrorTypes.CtsTokenError,
-      'Mock LockContext failure'
+      'Mock LockContext failure',
     )
 
     const operation = protectClient.encryptQuery('$.user.email', {
@@ -585,7 +594,11 @@ describe('searchableJson with LockContext', () => {
     const withContext = operation.withLockContext(mockLockContext as any)
     const result = await withContext.execute()
 
-    expectFailure(result, 'Mock LockContext failure', ProtectErrorTypes.CtsTokenError)
+    expectFailure(
+      result,
+      'Mock LockContext failure',
+      ProtectErrorTypes.CtsTokenError,
+    )
   }, 30000)
 
   it('handles null value with LockContext', async () => {
@@ -660,16 +673,22 @@ describe('searchableJson equivalence', () => {
   }, 30000)
 
   it('produces identical metadata to omitting queryType for object', async () => {
-    const explicitResult = await protectClient.encryptQuery({ role: 'admin' }, {
-      column: jsonbSchema.metadata,
-      table: jsonbSchema,
-      queryType: 'searchableJson',
-    })
+    const explicitResult = await protectClient.encryptQuery(
+      { role: 'admin' },
+      {
+        column: jsonbSchema.metadata,
+        table: jsonbSchema,
+        queryType: 'searchableJson',
+      },
+    )
 
-    const implicitResult = await protectClient.encryptQuery({ role: 'admin' }, {
-      column: jsonbSchema.metadata,
-      table: jsonbSchema,
-    })
+    const implicitResult = await protectClient.encryptQuery(
+      { role: 'admin' },
+      {
+        column: jsonbSchema.metadata,
+        table: jsonbSchema,
+      },
+    )
 
     const explicitData = unwrapResult(explicitResult)
     const implicitData = unwrapResult(implicitResult)
@@ -681,17 +700,23 @@ describe('searchableJson equivalence', () => {
   }, 30000)
 
   it('produces identical metadata to explicit steVecSelector for string', async () => {
-    const searchableJsonResult = await protectClient.encryptQuery('$.user.email', {
-      column: jsonbSchema.metadata,
-      table: jsonbSchema,
-      queryType: 'searchableJson',
-    })
+    const searchableJsonResult = await protectClient.encryptQuery(
+      '$.user.email',
+      {
+        column: jsonbSchema.metadata,
+        table: jsonbSchema,
+        queryType: 'searchableJson',
+      },
+    )
 
-    const steVecSelectorResult = await protectClient.encryptQuery('$.user.email', {
-      column: jsonbSchema.metadata,
-      table: jsonbSchema,
-      queryType: 'steVecSelector',
-    })
+    const steVecSelectorResult = await protectClient.encryptQuery(
+      '$.user.email',
+      {
+        column: jsonbSchema.metadata,
+        table: jsonbSchema,
+        queryType: 'steVecSelector',
+      },
+    )
 
     const searchableJsonData = unwrapResult(searchableJsonResult)
     const steVecSelectorData = unwrapResult(steVecSelectorResult)
@@ -703,17 +728,23 @@ describe('searchableJson equivalence', () => {
   }, 30000)
 
   it('produces identical metadata to explicit steVecTerm for object', async () => {
-    const searchableJsonResult = await protectClient.encryptQuery({ role: 'admin' }, {
-      column: jsonbSchema.metadata,
-      table: jsonbSchema,
-      queryType: 'searchableJson',
-    })
+    const searchableJsonResult = await protectClient.encryptQuery(
+      { role: 'admin' },
+      {
+        column: jsonbSchema.metadata,
+        table: jsonbSchema,
+        queryType: 'searchableJson',
+      },
+    )
 
-    const steVecTermResult = await protectClient.encryptQuery({ role: 'admin' }, {
-      column: jsonbSchema.metadata,
-      table: jsonbSchema,
-      queryType: 'steVecTerm',
-    })
+    const steVecTermResult = await protectClient.encryptQuery(
+      { role: 'admin' },
+      {
+        column: jsonbSchema.metadata,
+        table: jsonbSchema,
+        queryType: 'steVecTerm',
+      },
+    )
 
     const searchableJsonData = unwrapResult(searchableJsonResult)
     const steVecTermData = unwrapResult(steVecTermResult)
@@ -735,11 +766,14 @@ describe('searchableJson edge cases', () => {
   // Valid edge cases that should succeed
 
   it('succeeds for empty object', async () => {
-    const result = await protectClient.encryptQuery({}, {
-      column: jsonbSchema.metadata,
-      table: jsonbSchema,
-      queryType: 'searchableJson',
-    })
+    const result = await protectClient.encryptQuery(
+      {},
+      {
+        column: jsonbSchema.metadata,
+        table: jsonbSchema,
+        queryType: 'searchableJson',
+      },
+    )
 
     const data = unwrapResult(result)
     expect(data).toMatchObject({
@@ -765,11 +799,14 @@ describe('searchableJson edge cases', () => {
   }, 30000)
 
   it('succeeds for object with wrapped number', async () => {
-    const result = await protectClient.encryptQuery({ value: 42 }, {
-      column: jsonbSchema.metadata,
-      table: jsonbSchema,
-      queryType: 'searchableJson',
-    })
+    const result = await protectClient.encryptQuery(
+      { value: 42 },
+      {
+        column: jsonbSchema.metadata,
+        table: jsonbSchema,
+        queryType: 'searchableJson',
+      },
+    )
 
     const data = unwrapResult(result)
     expect(data).toMatchObject({
@@ -780,11 +817,14 @@ describe('searchableJson edge cases', () => {
   }, 30000)
 
   it('succeeds for object with wrapped boolean', async () => {
-    const result = await protectClient.encryptQuery({ active: true }, {
-      column: jsonbSchema.metadata,
-      table: jsonbSchema,
-      queryType: 'searchableJson',
-    })
+    const result = await protectClient.encryptQuery(
+      { active: true },
+      {
+        column: jsonbSchema.metadata,
+        table: jsonbSchema,
+        queryType: 'searchableJson',
+      },
+    )
 
     const data = unwrapResult(result)
     expect(data).toMatchObject({
@@ -795,11 +835,14 @@ describe('searchableJson edge cases', () => {
   }, 30000)
 
   it('succeeds for object with null value', async () => {
-    const result = await protectClient.encryptQuery({ field: null }, {
-      column: jsonbSchema.metadata,
-      table: jsonbSchema,
-      queryType: 'searchableJson',
-    })
+    const result = await protectClient.encryptQuery(
+      { field: null },
+      {
+        column: jsonbSchema.metadata,
+        table: jsonbSchema,
+        queryType: 'searchableJson',
+      },
+    )
 
     const data = unwrapResult(result)
     expect(data).toMatchObject({
@@ -810,21 +853,24 @@ describe('searchableJson edge cases', () => {
   }, 30000)
 
   it('succeeds for deeply nested object (3+ levels)', async () => {
-    const result = await protectClient.encryptQuery({
-      level1: {
-        level2: {
-          level3: {
-            level4: {
-              value: 'deep',
+    const result = await protectClient.encryptQuery(
+      {
+        level1: {
+          level2: {
+            level3: {
+              level4: {
+                value: 'deep',
+              },
             },
           },
         },
       },
-    }, {
-      column: jsonbSchema.metadata,
-      table: jsonbSchema,
-      queryType: 'searchableJson',
-    })
+      {
+        column: jsonbSchema.metadata,
+        table: jsonbSchema,
+        queryType: 'searchableJson',
+      },
+    )
 
     const data = unwrapResult(result)
     expect(data).toMatchObject({

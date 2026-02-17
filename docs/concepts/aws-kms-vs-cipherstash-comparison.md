@@ -1,6 +1,6 @@
-# Why Protect.js Makes Encryption Simple: A Comparison with AWS KMS
+# Why CipherStash Encryption Makes Encryption Simple: A Comparison with AWS KMS
 
-Encrypting data shouldn't require managing binary buffers, base64 encoding, key ARNs, or building custom search solutions. Protect.js eliminates these complexities, giving you encryption that "just works" with a developer-friendly API.
+Encrypting data shouldn't require managing binary buffers, base64 encoding, key ARNs, or building custom search solutions. CipherStash Encryption eliminates these complexities, giving you encryption that "just works" with a developer-friendly API.
 
 ## The Simple Truth: Encrypting a Value
 
@@ -55,23 +55,24 @@ const encrypted = await encryptWithKMS('secret@squirrel.example');
 - ❌ Region configuration
 - ❌ AWS credential setup
 
-### Protect.js: One Simple Call
+### CipherStash Encryption: One Simple Call
 
 ```typescript
-import { protect, csTable, csColumn } from '@cipherstash/protect';
+import { Encryption } from '@cipherstash/stack';
+import { encryptedTable, encryptedColumn } from '@cipherstash/stack/schema';
 
 // One-time setup: Define your schema
-const users = csTable('users', {
-  email: csColumn('email'),
+const users = encryptedTable('users', {
+  email: encryptedColumn('email'),
 });
 
 // One-time setup: Initialize client
-const protectClient = await protect({
+const client = await Encryption({
   schemas: [users],
 });
 
 // Encrypt: One line, no manual encoding, no key management
-const encryptResult = await protectClient.encrypt(
+const encryptResult = await client.encrypt(
   'secret@squirrel.example',
   { column: users.email, table: users }
 );
@@ -125,11 +126,11 @@ async function decryptWithKMS(base64Ciphertext: string): Promise<string> {
 }
 ```
 
-### Protect.js: One Line
+### CipherStash Encryption: One Line
 
 ```typescript
 // Decrypt: One call, returns typed value
-const decryptResult = await protectClient.decrypt(ciphertext);
+const decryptResult = await client.decrypt(ciphertext);
 
 if (decryptResult.failure) {
   throw new Error(decryptResult.failure.message);
@@ -147,26 +148,25 @@ const plaintext = decryptResult.data; // Already a string, typed correctly
 - Storing plaintext indexes (defeats the purpose of encryption)
 - Building a custom searchable encryption solution (months of work)
 
-**Protect.js:** Searchable encryption is built-in and works with PostgreSQL:
+**CipherStash Encryption:** Searchable encryption is built-in and works with PostgreSQL:
 
 ```typescript
 // Just add search capabilities to your schema
-const users = csTable('users', {
-  email: csColumn('email')
+const users = encryptedTable('users', {
+  email: encryptedColumn('email')
     .freeTextSearch()      // Full-text search
     .equality()           // WHERE email = ?
     .orderAndRange(),     // ORDER BY, range queries
 });
 
 // Encrypt as usual
-const encryptResult = await protectClient.encrypt(
+const encryptResult = await client.encrypt(
   'secret@squirrel.example',
   { column: users.email, table: users }
 );
 
 // Create search terms and query directly in PostgreSQL
-const searchTerms = await protectClient.createSearchTerms({
-  terms: ['secret'],
+const searchTerms = await client.encryptQuery('secret', {
   column: users.email,
   table: users,
 });
@@ -196,23 +196,23 @@ const command = new EncryptCommand({
 // You must manually ensure the same context is used for decryption
 ```
 
-**Protect.js:** Built-in identity-aware encryption with `LockContext`:
+**CipherStash Encryption:** Built-in identity-aware encryption with `LockContext`:
 
 ```typescript
-import { LockContext } from '@cipherstash/protect/identify';
+import { LockContext } from '@cipherstash/stack/identity';
 
 // Create lock context from user JWT (one line)
 const lc = new LockContext();
 const lockContext = await lc.identify(userJwt);
 
 // Encrypt with lock context (chainable API)
-const encryptResult = await protectClient.encrypt(
+const encryptResult = await client.encrypt(
   'secret@squirrel.example',
   { column: users.email, table: users }
 ).withLockContext(lockContext);
 
-// Decrypt requires the same lock context (enforced by Protect.js)
-const decryptResult = await protectClient.decrypt(ciphertext)
+// Decrypt requires the same lock context (enforced by @cipherstash/stack)
+const decryptResult = await client.decrypt(ciphertext)
   .withLockContext(lockContext);
 ```
 
@@ -234,17 +234,17 @@ const encryptedItems = await Promise.all(
 // Hope you don't hit rate limits or need to retry
 ```
 
-**Protect.js:** Native bulk encryption optimized for performance:
+**CipherStash Encryption:** Native bulk encryption optimized for performance:
 
 ```typescript
-// Protect.js: One call for bulk encryption
+// @cipherstash/stack: One call for bulk encryption
 const bulkPlaintexts = [
   { id: '1', plaintext: 'Alice' },
   { id: '2', plaintext: 'Bob' },
   { id: '3', plaintext: 'Charlie' },
 ];
 
-const bulkResult = await protectClient.bulkEncrypt(bulkPlaintexts, {
+const bulkResult = await client.bulkEncrypt(bulkPlaintexts, {
   column: users.name,
   table: users,
 });
@@ -273,10 +273,10 @@ try {
 }
 ```
 
-**Protect.js:** Type-safe Result pattern:
+**CipherStash Encryption:** Type-safe Result pattern:
 
 ```typescript
-const result = await protectClient.encrypt(plaintext, options);
+const result = await client.encrypt(plaintext, options);
 
 if (result.failure) {
   // Type-safe error handling with autocomplete
@@ -300,7 +300,7 @@ if (result.failure) {
 const plaintext: string = Buffer.from(response.Plaintext).toString('utf-8');
 ```
 
-**Protect.js:** Full TypeScript support with inferred types:
+**CipherStash Encryption:** Full TypeScript support with inferred types:
 
 ```typescript
 // TypeScript infers the return type automatically
@@ -317,7 +317,7 @@ const base64 = Buffer.from(ciphertext).toString('base64');
 // Store in database as TEXT or BLOB
 ```
 
-**Protect.js:** JSON payload ready for database:
+**CipherStash Encryption:** JSON payload ready for database:
 
 ```typescript
 // Returns JSON payload ready for JSONB storage
@@ -364,23 +364,24 @@ const decrypted = await decrypt(encrypted);
 **Lines of code:** ~25 lines for basic encrypt/decrypt  
 **What you manage:** Key ARNs, binary conversions, base64 encoding, error handling, AWS credentials, regions
 
-### Protect.js: Full Implementation
+### CipherStash Encryption: Full Implementation
 
 ```typescript
-import { protect, csTable, csColumn } from '@cipherstash/protect';
+import { Encryption } from '@cipherstash/stack';
+import { encryptedTable, encryptedColumn } from '@cipherstash/stack/schema';
 
 // One-time schema definition
-const users = csTable('users', {
-  email: csColumn('email'),
+const users = encryptedTable('users', {
+  email: encryptedColumn('email'),
 });
 
 // One-time initialization
-const protectClient = await protect({
+const client = await Encryption({
   schemas: [users],
 });
 
 // Encrypt
-const encryptResult = await protectClient.encrypt(
+const encryptResult = await client.encrypt(
   'secret@squirrel.example',
   { column: users.email, table: users }
 );
@@ -392,7 +393,7 @@ if (encryptResult.failure) {
 const ciphertext = encryptResult.data;
 
 // Decrypt
-const decryptResult = await protectClient.decrypt(ciphertext);
+const decryptResult = await client.decrypt(ciphertext);
 
 if (decryptResult.failure) {
   throw new Error(decryptResult.failure.message);
@@ -402,11 +403,11 @@ const plaintext = decryptResult.data;
 ```
 
 **Lines of code:** ~20 lines including setup  
-**What you manage:** Nothing—Protect.js handles it all
+**What you manage:** Nothing—`@cipherstash/stack` handles it all
 
 ## Feature Comparison
 
-| Feature | AWS KMS | Protect.js |
+| Feature | AWS KMS | CipherStash Encryption |
 |---------|---------|------------|
 | **Basic Encryption** | ✅ Requires manual buffer/base64 handling | ✅ One-line API, JSON payload |
 | **Key Management** | ❌ You manage key ARNs | ✅ Zero-knowledge, automatic |
@@ -430,7 +431,7 @@ const plaintext = decryptResult.data;
 - Implementing identity-aware encryption yourself
 - Managing key ARNs and AWS configuration
 
-**Protect.js** gives you:
+**CipherStash Encryption** gives you:
 - A simple, type-safe API
 - Built-in searchable encryption
 - Built-in identity-aware encryption
@@ -448,7 +449,7 @@ const plaintext = decryptResult.data;
 - You don't need to search encrypted data
 - You're comfortable with manual buffer/base64 handling
 
-### Use Protect.js when:
+### Use CipherStash Encryption when:
 - You're building applications with databases
 - You need to search encrypted data
 - You want a developer-friendly API
@@ -461,6 +462,6 @@ const plaintext = decryptResult.data;
 ## References
 
 - [AWS KMS Documentation](https://docs.aws.amazon.com/kms/)
-- [CipherStash Protect.js Getting Started](./getting-started.md)
+- [CipherStash Encryption Getting Started](./getting-started.md)
 - [CipherStash Schema Reference](./reference/schema.md)
 - [Searchable Encryption Concepts](./concepts/searchable-encryption.md)

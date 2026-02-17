@@ -1,7 +1,7 @@
-# Drizzle + Protect.js Query Examples
+# Drizzle + CipherStash Encryption Query Examples
 ## Manual Encryption Pattern (Verbose)
 
-This page demonstrates how to perform queries on encrypted data using **Drizzle ORM** with **explicit Protect.js encryption calls** for full control.
+This page demonstrates how to perform queries on encrypted data using **Drizzle ORM** with **explicit `@cipherstash/stack` encryption calls** for full control.
 
 **Pattern:** Manually encrypt query values before passing them to standard Drizzle operators.
 
@@ -33,7 +33,7 @@ This gives you explicit visibility into the encryption/decryption workflow at th
 
 ✅ **Use the manual encryption pattern when:**
 - You need fine-grained control over encryption timing
-- You want to understand how Protect.js works internally
+- You want to understand how `@cipherstash/stack` works internally
 - You're building custom abstractions or utilities
 - You need to cache encrypted values for performance
 - You're implementing batch operations with encryption
@@ -348,7 +348,7 @@ return decrypted.data
 
 ## Order by encrypted data
 
-Protect.js supports ordering on encrypted fields using Order-Revealing Encryption (ORE). This allows the database to sort encrypted values without decrypting them, while preserving the original sort order.
+CipherStash Encryption supports ordering on encrypted fields using Order-Revealing Encryption (ORE). This allows the database to sort encrypted values without decrypting them, while preserving the original sort order.
 
 ### Order by encrypted number
 
@@ -477,7 +477,7 @@ When using the manual encryption pattern instead of protect operators, you have 
 
 ✅ **Use manual encryption when:**
 - You need fine-grained control over encryption timing
-- You want to understand how Protect.js works internally
+- You want to understand how `@cipherstash/stack` works internally
 - You're building custom abstractions
 - You need to cache encrypted values
 - You're implementing batch operations
@@ -545,7 +545,7 @@ transactions.amount
 transactions.description
 transactions.createdAt
 
-// Protect schema (for encryption operations)
+// Encryption schema (for encryption operations)
 protectTransactions.account_number   // Note: snake_case
 protectTransactions.amount
 protectTransactions.description
@@ -559,7 +559,7 @@ protectTransactions.created_at       // Note: snake_case
 - **Compare patterns**: Try the same query with both protect operators and manual encryption
 - **Explore the code**: Check out the source code in the repository
 - **Try different queries**: Modify the examples above and run them
-- **Read the docs**: Visit [CipherStash Protect.js documentation](https://docs.cipherstash.com/)
+- **Read the docs**: Visit [CipherStash Encryption documentation](https://docs.cipherstash.com/)
 - **Integrate into your app**: Use these patterns in your own applications
 
 ---

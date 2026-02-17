@@ -10,10 +10,10 @@ import type {
   ProtectValue,
 } from '@cipherstash/schema'
 import { type ProtectError, ProtectErrorTypes } from '../..'
-import { getErrorCode } from '../helpers/error-code'
 import { logger } from '../../../../utils/logger'
 import type { LockContext } from '../../identify'
 import type { Client, EncryptOptions, Encrypted } from '../../types'
+import { getErrorCode } from '../helpers/error-code'
 import { noClientError } from '../index'
 import { ProtectOperation } from './base-operation'
 

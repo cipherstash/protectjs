@@ -44,6 +44,18 @@ jobs:
           echo "CS_ZEROKMS_HOST=https://ap-southeast-2.aws.zerokms.cipherstashmanaged.net" >> ./packages/protect/.env
           echo "CS_CTS_HOST=https://ap-southeast-2.aws.cts.cipherstashmanaged.net" >> ./packages/protect/.env
 
+      - name: Create .env file in ./packages/stack/
+        run: |
+          touch ./packages/stack/.env
+          echo "CS_WORKSPACE_CRN=${{ secrets.CS_WORKSPACE_CRN }}" >> ./packages/stack/.env
+          echo "CS_CLIENT_ID=${{ secrets.CS_CLIENT_ID }}" >> ./packages/stack/.env
+          echo "CS_CLIENT_KEY=${{ secrets.CS_CLIENT_KEY }}" >> ./packages/stack/.env
+          echo "CS_CLIENT_ACCESS_KEY=${{ secrets.CS_CLIENT_ACCESS_KEY }}" >> ./packages/stack/.env
+          echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> ./packages/stack/.env
+          echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> ./packages/stack/.env
+          echo "CS_ZEROKMS_HOST=https://ap-southeast-2.aws.zerokms.cipherstashmanaged.net" >> ./packages/stack/.env
+          echo "CS_CTS_HOST=https://ap-southeast-2.aws.cts.cipherstashmanaged.net" >> ./packages/stack/.env
+
       - name: Create .env file in ./packages/protect-dynamodb/
         run: |
           touch ./packages/protect-dynamodb/.env

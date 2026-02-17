@@ -331,7 +331,12 @@ async function encryptValues(
   >()
 
   let valueIndex = 0
-  for (const { value, columnInfo, queryType, originalIndex } of valuesToEncrypt) {
+  for (const {
+    value,
+    columnInfo,
+    queryType,
+    originalIndex,
+  } of valuesToEncrypt) {
     // Safe access with validation - we know these exist from earlier checks
     if (
       !columnInfo.config ||

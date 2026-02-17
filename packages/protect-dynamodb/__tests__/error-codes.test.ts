@@ -1,12 +1,12 @@
 import 'dotenv/config'
-import { describe, expect, it, beforeAll } from 'vitest'
 import {
-  protect,
   FfiProtectError,
   csColumn,
   csTable,
+  protect,
 } from '@cipherstash/protect'
 import type { ProtectClient } from '@cipherstash/protect'
+import { beforeAll, describe, expect, it } from 'vitest'
 import { protectDynamoDB } from '../src'
 import type { ProtectDynamoDBError } from '../src/types'
 
@@ -41,66 +41,85 @@ describe('ProtectDynamoDB Error Code Preservation', () => {
   })
 
   describe('encryptModel error codes', () => {
-    it('preserves FFI error codes', async () => {
-      const model = { nonexistent: 'test value' }
+    it(
+      'preserves FFI error codes',
+      async () => {
+        const model = { nonexistent: 'test value' }
 
-      const result = await protectDynamo.encryptModel(model, badSchema)
+        const result = await protectDynamo.encryptModel(model, badSchema)
 
-      expect(result.failure).toBeDefined()
-      expect((result.failure as ProtectDynamoDBError).code).toBe(
-        'UNKNOWN_COLUMN',
-      )
-    }, FFI_TEST_TIMEOUT)
+        expect(result.failure).toBeDefined()
+        expect((result.failure as ProtectDynamoDBError).code).toBe(
+          'UNKNOWN_COLUMN',
+        )
+      },
+      FFI_TEST_TIMEOUT,
+    )
   })
 
   describe('decryptModel error codes', () => {
-    it('uses PROTECT_DYNAMODB_ERROR for IO/parsing errors without FFI codes', async () => {
-      // Malformed ciphertext causes IO/parsing errors that don't have FFI error codes
-      const malformedItem = {
-        email__source: 'invalid_ciphertext_data',
-      }
+    it(
+      'uses PROTECT_DYNAMODB_ERROR for IO/parsing errors without FFI codes',
+      async () => {
+        // Malformed ciphertext causes IO/parsing errors that don't have FFI error codes
+        const malformedItem = {
+          email__source: 'invalid_ciphertext_data',
+        }
 
-      const result = await protectDynamo.decryptModel(malformedItem, testSchema)
+        const result = await protectDynamo.decryptModel(
+          malformedItem,
+          testSchema,
+        )
 
-      expect(result.failure).toBeDefined()
-      // FFI returns undefined code for IO/parsing errors, so we fall back to generic code
-      expect((result.failure as ProtectDynamoDBError).code).toBe(
-        'PROTECT_DYNAMODB_ERROR',
-      )
-    }, FFI_TEST_TIMEOUT)
+        expect(result.failure).toBeDefined()
+        // FFI returns undefined code for IO/parsing errors, so we fall back to generic code
+        expect((result.failure as ProtectDynamoDBError).code).toBe(
+          'PROTECT_DYNAMODB_ERROR',
+        )
+      },
+      FFI_TEST_TIMEOUT,
+    )
   })
 
   describe('bulkEncryptModels error codes', () => {
-    it('preserves FFI error codes', async () => {
-      const models = [{ nonexistent: 'value1' }, { nonexistent: 'value2' }]
+    it(
+      'preserves FFI error codes',
+      async () => {
+        const models = [{ nonexistent: 'value1' }, { nonexistent: 'value2' }]
 
-      const result = await protectDynamo.bulkEncryptModels(models, badSchema)
+        const result = await protectDynamo.bulkEncryptModels(models, badSchema)
 
-      expect(result.failure).toBeDefined()
-      expect((result.failure as ProtectDynamoDBError).code).toBe(
-        'UNKNOWN_COLUMN',
-      )
-    }, FFI_TEST_TIMEOUT)
+        expect(result.failure).toBeDefined()
+        expect((result.failure as ProtectDynamoDBError).code).toBe(
+          'UNKNOWN_COLUMN',
+        )
+      },
+      FFI_TEST_TIMEOUT,
+    )
   })
 
   describe('bulkDecryptModels error codes', () => {
-    it('uses PROTECT_DYNAMODB_ERROR for IO/parsing errors without FFI codes', async () => {
-      // Malformed ciphertext causes IO/parsing errors that don't have FFI error codes
-      const malformedItems = [
-        { email__source: 'invalid1' },
-        { email__source: 'invalid2' },
-      ]
+    it(
+      'uses PROTECT_DYNAMODB_ERROR for IO/parsing errors without FFI codes',
+      async () => {
+        // Malformed ciphertext causes IO/parsing errors that don't have FFI error codes
+        const malformedItems = [
+          { email__source: 'invalid1' },
+          { email__source: 'invalid2' },
+        ]
 
-      const result = await protectDynamo.bulkDecryptModels(
-        malformedItems,
-        testSchema,
-      )
+        const result = await protectDynamo.bulkDecryptModels(
+          malformedItems,
+          testSchema,
+        )
 
-      expect(result.failure).toBeDefined()
-      // FFI returns undefined code for IO/parsing errors, so we fall back to generic code
-      expect((result.failure as ProtectDynamoDBError).code).toBe(
-        'PROTECT_DYNAMODB_ERROR',
-      )
-    }, FFI_TEST_TIMEOUT)
+        expect(result.failure).toBeDefined()
+        // FFI returns undefined code for IO/parsing errors, so we fall back to generic code
+        expect((result.failure as ProtectDynamoDBError).code).toBe(
+          'PROTECT_DYNAMODB_ERROR',
+        )
+      },
+      FFI_TEST_TIMEOUT,
+    )
   })
 })

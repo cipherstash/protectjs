@@ -1,0 +1,121 @@
+import type { Encrypted, KeysetIdentifier } from '@/types'
+import type {
+  Encrypted as CipherStashEncrypted,
+  KeysetIdentifier as KeysetIdentifierFfi,
+} from '@cipherstash/protect-ffi'
+
+export type EncryptedPgComposite = {
+  data: Encrypted
+}
+
+/**
+ * Helper function to transform an encrypted payload into a PostgreSQL composite type.
+ * Use this when inserting data via Supabase or similar clients.
+ */
+export function encryptedToPgComposite(obj: Encrypted): EncryptedPgComposite {
+  return {
+    data: obj,
+  }
+}
+
+/**
+ * Helper function to transform an encrypted payload into a PostgreSQL composite literal string.
+ * Use this when querying with `.eq()` or similar equality operations in Supabase.
+ *
+ * @example
+ * ```typescript
+ * const literal = encryptedToCompositeLiteral(encrypted)
+ * await supabase.from('table').select().eq('column', literal)
+ * ```
+ */
+export function encryptedToCompositeLiteral(obj: CipherStashEncrypted): string {
+  if (obj === null) {
+    throw new Error('encryptedToCompositeLiteral: obj cannot be null')
+  }
+  return `(${JSON.stringify(JSON.stringify(obj))})`
+}
+
+/**
+ * Helper function to transform an encrypted payload into an escaped PostgreSQL composite literal string.
+ * Use this when you need the composite literal format to be escaped as a string value.
+ *
+ * @example
+ * ```typescript
+ * const escapedLiteral = encryptedToEscapedCompositeLiteral(encrypted)
+ * ```
+ */
+export function encryptedToEscapedCompositeLiteral(
+  obj: CipherStashEncrypted,
+): string {
+  if (obj === null) {
+    throw new Error('encryptedToEscapedCompositeLiteral: obj cannot be null')
+  }
+  return JSON.stringify(encryptedToCompositeLiteral(obj))
+}
+
+/**
+ * Helper function to transform a model's encrypted fields into PostgreSQL composite types
+ */
+export function modelToEncryptedPgComposites<T extends Record<string, unknown>>(
+  model: T,
+): T {
+  const result: Record<string, unknown> = {}
+
+  for (const [key, value] of Object.entries(model)) {
+    if (isEncryptedPayload(value)) {
+      result[key] = encryptedToPgComposite(value)
+    } else {
+      result[key] = value
+    }
+  }
+
+  return result as T
+}
+
+/**
+ * Helper function to transform multiple models' encrypted fields into PostgreSQL composite types
+ */
+export function bulkModelsToEncryptedPgComposites<
+  T extends Record<string, unknown>,
+>(models: T[]): T[] {
+  return models.map((model) => modelToEncryptedPgComposites(model))
+}
+
+export function toFfiKeysetIdentifier(
+  keyset: KeysetIdentifier | undefined,
+): KeysetIdentifierFfi | undefined {
+  if (!keyset) return undefined
+
+  if ('name' in keyset) {
+    return { Name: keyset.name }
+  }
+
+  return { Uuid: keyset.id }
+}
+
+/**
+ * Helper function to check if a value is an encrypted payload
+ */
+export function isEncryptedPayload(value: unknown): value is Encrypted {
+  if (value === null) return false
+  if (typeof value !== 'object') return false
+
+  const obj = value as Record<string, unknown>
+
+  // Must have version field (number)
+  if (!('v' in obj) || typeof obj.v !== 'number') return false
+
+  // Must have index field (object)
+  if (!('i' in obj) || typeof obj.i !== 'object') return false
+
+  // Must have either ciphertext (c) or searchable vector (sv)
+  if (!('c' in obj) && !('sv' in obj)) return false
+
+  return true
+}
+
+export {
+  toJsonPath,
+  buildNestedObject,
+  parseJsonbPath,
+} from './jsonb'

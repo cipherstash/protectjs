@@ -2,7 +2,7 @@
 
 Some npm users see deployments fail on Linux (e.g., AWS Lambda) when their `package-lock.json` was created on macOS or Windows.
 
-This happens with `package-lock.json` version 3, where npm only records certain optional native pieces for the platform that created the lockfile. As a result, Linux builds can miss the native engine that Protect.js needs at runtime.
+This happens with `package-lock.json` version 3, where npm only records certain optional native pieces for the platform that created the lockfile. As a result, Linux builds can miss the native engine that `@cipherstash/stack` needs at runtime.
 
 ## Who is affected
 
@@ -12,7 +12,7 @@ This happens with `package-lock.json` version 3, where npm only records certain 
 
 ## What you might see
 
-- Build succeeds, but the app fails to start on Linux with an error like “failed to load native addon” or “module not found” related to the Protect.js engine
+- Build succeeds, but the app fails to start on Linux with an error like “failed to load native addon” or “module not found” related to the `@cipherstash/stack` engine
 
 ## Fixes (pick one)
 

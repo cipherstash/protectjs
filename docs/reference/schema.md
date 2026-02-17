@@ -1,6 +1,6 @@
-# Protect.js schema
+# Encryption schema
 
-Protect.js lets you define a schema in TypeScript with properties that map to your database columns, and define indexes and casting for each column which are used when searching on encrypted data.
+CipherStash Encryption lets you define a schema in TypeScript with properties that map to your database columns, and define indexes and casting for each column which are used when searching on encrypted data.
 
 ## Table of contents
 
@@ -10,11 +10,11 @@ Protect.js lets you define a schema in TypeScript with properties that map to yo
   - [Searchable encryption](#searchable-encryption)
   - [Nested objects](#nested-objects)
 - [Available index options](#available-index-options)
-- [Initializing the Protect client](#initializing-the-protect-client)
+- [Initializing the Encryption client](#initializing-the-encryption-client)
 
 ## Creating schema files
 
-You can declare your Protect.js schema directly in TypeScript either in a single `schema.ts` file, or you can split your schema into multiple files. It's up to you.
+You can declare your encryption schema directly in TypeScript either in a single `schema.ts` file, or you can split your schema into multiple files. It's up to you.
 
 Example in a single file:
 
@@ -38,15 +38,15 @@ or in multiple files:
 
 ## Understanding schema files
 
-A schema represents a mapping of your database, and which columns you want to encrypt and index. Thus, it's a collection of tables and columns represented with `csTable` and `csColumn`.
+A schema represents a mapping of your database, and which columns you want to encrypt and index. Thus, it's a collection of tables and columns represented with `encryptedTable` and `encryptedColumn`.
 
 The below is pseudo-code for how these mappings are defined:
 
 ```ts
-import { csTable, csColumn } from "@cipherstash/protect";
+import { encryptedTable, encryptedColumn } from "@cipherstash/stack/schema";
 
-export const tableNameInTypeScript = csTable("tableNameInDatabase", {
-  columnNameInTypeScript: csColumn("columnNameInDatabase"),
+export const tableNameInTypeScript = encryptedTable("tableNameInDatabase", {
+  columnNameInTypeScript: encryptedColumn("columnNameInDatabase"),
 });
 ```
 
@@ -54,13 +54,13 @@ export const tableNameInTypeScript = csTable("tableNameInDatabase", {
 
 Now that you understand how your schema is defined, let's dive into how you can configure your schema.
 
-Start by importing the `csTable` and `csColumn` functions from `@cipherstash/protect` and create a new table with a column.
+Start by importing the `encryptedTable` and `encryptedColumn` functions from `@cipherstash/stack/schema` and create a new table with a column.
 
 ```ts
-import { csTable, csColumn } from "@cipherstash/protect";
+import { encryptedTable, encryptedColumn } from "@cipherstash/stack/schema";
 
-export const protectedUsers = csTable("users", {
-  email: csColumn("email"),
+export const protectedUsers = encryptedTable("users", {
+  email: encryptedColumn("email"),
 });
 ```
 
@@ -69,35 +69,35 @@ export const protectedUsers = csTable("users", {
 If you are looking to enable searchable encryption in a PostgreSQL database, you must declaratively enable the indexes in your schema by chaining the index options to the column.
 
 ```ts
-import { csTable, csColumn } from "@cipherstash/protect";
+import { encryptedTable, encryptedColumn } from "@cipherstash/stack/schema";
 
-export const protectedUsers = csTable("users", {
-  email: csColumn("email").freeTextSearch().equality().orderAndRange(),
+export const protectedUsers = encryptedTable("users", {
+  email: encryptedColumn("email").freeTextSearch().equality().orderAndRange(),
 });
 ```
 
 ### Nested objects
 
-Protect.js supports nested objects in your schema, allowing you to encrypt **but not search on** nested properties. You can define nested objects up to 3 levels deep.
+CipherStash Encryption supports nested objects in your schema, allowing you to encrypt **but not search on** nested properties. You can define nested objects up to 3 levels deep.
 This is useful for data stores that have less structured data, like NoSQL databases.
 
-You can define nested objects by using the `csValue` function to define a value in a nested object. The value naming convention of the `csValue` function is a dot-separated string of the nested object path, e.g. `profile.name` or `profile.address.street`.
+You can define nested objects by using the `encryptedValue` function to define a value in a nested object. The value naming convention of the `encryptedValue` function is a dot-separated string of the nested object path, e.g. `profile.name` or `profile.address.street`.
 
 > [!NOTE]
 > Using nested objects is not recommended for SQL databases, as it will not be searchable.
 > You should either use a JSON data type and encrypt the entire object, or use a separate column for each nested property.
 
 ```ts
-import { csTable, csColumn, csValue } from "@cipherstash/protect";
+import { encryptedTable, encryptedColumn, encryptedValue } from "@cipherstash/stack/schema";
 
-export const protectedUsers = csTable("users", {
-  email: csColumn("email").freeTextSearch().equality().orderAndRange(),
+export const protectedUsers = encryptedTable("users", {
+  email: encryptedColumn("email").freeTextSearch().equality().orderAndRange(),
   profile: {
-    name: csValue("profile.name"),
+    name: encryptedValue("profile.name"),
     address: {
-      street: csValue("profile.address.street"),
+      street: encryptedValue("profile.address.street"),
       location: {
-        coordinates: csValue("profile.address.location.coordinates"),
+        coordinates: encryptedValue("profile.address.location.coordinates"),
       },
     },
   },
@@ -112,7 +112,7 @@ When working with nested objects:
 - Optional nested objects are supported
 
 > [!WARNING]
-> TODO: The schema builder does not validate the values you supply to the `csValue` or `csColumn` functions.
+> TODO: The schema builder does not validate the values you supply to the `encryptedValue` or `encryptedColumn` functions.
 > These values are meant to be unique, and and cause unexpected behavior if they are not defined correctly.
 
 ## Available index options
@@ -131,20 +131,16 @@ The following index options are available for your schema:
 
 You can chain these methods to your column to configure them in any combination.
 
-## Initializing the Protect client
+## Initializing the Encryption client
 
 You will use your defined schemas to initialize the EQL client.
-Simply import your schemas and pass them to the `protect` function.
+Simply import your schemas and pass them to the `Encryption` function.
 
 ```ts
-import { protect, type ProtectClientConfig } from "@cipherstash/protect";
+import { Encryption } from "@cipherstash/stack";
 import { protectedUsers } from "./schemas/users";
 
-const config: ProtectClientConfig = {
-  schemas: [protectedUsers], // At least one csTable is required
-}
-
-const protectClient = await protect(config);
+const client = await Encryption({ schemas: [protectedUsers] });
 ```
 ---
 

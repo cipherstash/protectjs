@@ -5,7 +5,7 @@ import type { ScalarQueryTerm } from '../../types'
  * Used to discriminate between single value and bulk encryption in encryptQuery overloads.
  */
 export function isScalarQueryTermArray(
-  value: unknown
+  value: unknown,
 ): value is readonly ScalarQueryTerm[] {
   return (
     Array.isArray(value) &&
