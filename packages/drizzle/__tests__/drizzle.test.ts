@@ -10,7 +10,7 @@ import {
   createProtectOperators,
   encryptedType,
   extractProtectSchema,
-} from '../src/pg'
+} from '@cipherstash/drizzle/pg'
 import { userSeedData } from './fixtures/user-seed-data'
 import {
   type EncryptedUserRow,
