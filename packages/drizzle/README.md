@@ -231,13 +231,7 @@ const decrypted = await protectClient.bulkDecryptModels(results)
 ### Query encrypted JSONB data
 
 ```typescript
-// Extract a value at a JSONB path
-const results = await db
-  .select()
-  .from(usersTable)
-  .where(await protectOps.jsonbPathQueryFirst(usersTable.profile, '$.name'))
-
-// Check if a path exists
+// Check if a path exists in encrypted JSONB data
 const results = await db
   .select()
   .from(usersTable)
@@ -249,11 +243,15 @@ const results = await db
   .from(usersTable)
   .where(
     await protectOps.and(
-      protectOps.jsonbPathQueryFirst(usersTable.profile, '$.name'),
+      protectOps.jsonbPathExists(usersTable.profile, '$.name'),
       protectOps.eq(usersTable.email, 'jane@example.com'),
     ),
   )
 ```
+
+> [!NOTE]
+> `jsonbPathExists` returns a boolean and can be used directly in `WHERE` clauses.
+> `jsonbPathQueryFirst` and `jsonbGet` return encrypted values, not booleans — use them in `SELECT` expressions, not in `WHERE` clauses.
 
 ### Complex queries with mixed operators
 
