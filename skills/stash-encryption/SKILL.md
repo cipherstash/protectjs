@@ -61,7 +61,38 @@ If `config` is omitted, the client reads `CS_*` environment variables automatica
 ### Logging
 
 ```bash
-PROTECT_LOG_LEVEL=debug  # debug | info | error
+STASH_LOG_LEVEL=debug  # debug | info | warn | error (default: info)
+```
+
+#### Programmatic Logging Configuration
+
+```typescript
+const client = await Encryption({
+  schemas: [users],
+  logging: {
+    enabled: true,     // toggle logging on/off (default: true)
+    pretty: true,      // pretty-print in development (default: auto-detected)
+  },
+})
+```
+
+#### Log Draining
+
+Send structured logs to an external observability platform:
+
+```typescript
+const client = await Encryption({
+  schemas: [users],
+  logging: {
+    drain: (ctx) => {
+      // Forward to Axiom, Datadog, OTLP, etc.
+      fetch("https://your-service.com/logs", {
+        method: "POST",
+        body: JSON.stringify(ctx.event),
+      })
+    },
+  },
+})
 ```
 
 The SDK never logs plaintext data.
@@ -74,6 +105,9 @@ The SDK never logs plaintext data.
 | `@cipherstash/stack/schema` | `encryptedTable`, `encryptedColumn`, `encryptedValue`, schema types |
 | `@cipherstash/stack/identity` | `LockContext` class and identity types |
 | `@cipherstash/stack/secrets` | `Secrets` class and secrets types |
+| `@cipherstash/stack/drizzle` | `encryptedType`, `extractEncryptionSchema`, `createEncryptionOperators` for Drizzle ORM |
+| `@cipherstash/stack/supabase` | `encryptedSupabase` wrapper for Supabase |
+| `@cipherstash/stack/dynamodb` | `encryptedDynamoDB` helper for DynamoDB |
 | `@cipherstash/stack/client` | Client-safe exports (schema builders + types only, no native FFI) |
 | `@cipherstash/stack/types` | All TypeScript types |
 
@@ -111,7 +145,7 @@ const documents = encryptedTable("documents", {
 | `.equality()` | Exact match lookups | `'equality'` |
 | `.freeTextSearch(opts?)` | Full-text / fuzzy search | `'freeTextSearch'` |
 | `.orderAndRange()` | Sorting, comparison, range queries | `'orderAndRange'` |
-| `.searchableJson()` | Encrypted JSONB path and containment queries | `'searchableJson'` |
+| `.searchableJson()` | Encrypted JSONB path and containment queries (auto-sets `dataType` to `'json'`) | `'searchableJson'` |
 | `.dataType(cast)` | Set plaintext data type | N/A |
 
 **Supported data types:** `'string'` (default), `'number'`, `'boolean'`, `'date'`, `'bigint'`, `'json'`
@@ -148,16 +182,18 @@ type UserEncrypted = InferEncrypted<typeof users>
 import { Encryption } from "@cipherstash/stack"
 
 const client = await Encryption({ schemas: [users, documents] })
-
-if (client.failure) {
-  console.error("Init failed:", client.failure.message)
-  // client.failure.type === "ClientInitError"
-} else {
-  // client.data is the EncryptionClient
-}
 ```
 
-At least one schema is required. The `Encryption()` function returns a `Result<EncryptionClient, EncryptionError>`.
+The `Encryption()` function returns `Promise<EncryptionClient>` and throws on error (e.g., bad credentials, missing config, invalid keyset UUID). At least one schema is required.
+
+```typescript
+// Error handling
+try {
+  const client = await Encryption({ schemas: [users] })
+} catch (error) {
+  console.error("Init failed:", error.message)
+}
+```
 
 ## Encrypt and Decrypt Single Values
 
@@ -284,6 +320,29 @@ const rangeQuery = await client.encryptQuery(25, {
 ```
 
 If `queryType` is omitted, it's auto-inferred from the column's configured indexes (priority: unique > match > ore > ste_vec).
+
+### Query Result Formatting (`returnType`)
+
+By default `encryptQuery` returns an `Encrypted` object (the raw EQL JSON payload). Use `returnType` to change the output format:
+
+| `returnType` | Output | Use case |
+|---|---|---|
+| `'eql'` (default) | `Encrypted` object | Parameterized queries, ORMs accepting JSON |
+| `'composite-literal'` | `string` | Supabase `.eq()`, string-based APIs |
+| `'escaped-composite-literal'` | `string` | Embedding inside another string or JSON value |
+
+```typescript
+// Get a composite literal string for use with Supabase
+const term = await client.encryptQuery("alice@example.com", {
+  column: users.email,
+  table: users,
+  queryType: "equality",
+  returnType: "composite-literal",
+})
+// term.data is a string
+```
+
+Each term in a batch can have its own `returnType`.
 
 ### Searchable JSON
 
@@ -463,8 +522,8 @@ All method signatures on the encryption client remain the same. The `Result` pat
 |---|---|---|
 | `encrypt` | `(plaintext, { column, table })` | `EncryptOperation` |
 | `decrypt` | `(encryptedData)` | `DecryptOperation` |
-| `encryptQuery` | `(plaintext, { column, table, queryType? })` | `EncryptQueryOperation` |
-| `encryptQuery` | `(terms: ScalarQueryTerm[])` | `BatchEncryptQueryOperation` |
+| `encryptQuery` | `(plaintext, { column, table, queryType?, returnType? })` | `EncryptQueryOperation` |
+| `encryptQuery` | `(terms: readonly ScalarQueryTerm[])` | `BatchEncryptQueryOperation` |
 | `encryptModel` | `(model, table)` | `EncryptModelOperation<T>` |
 | `decryptModel` | `(encryptedModel)` | `DecryptModelOperation<T>` |
 | `bulkEncrypt` | `(plaintexts, { column, table })` | `BulkEncryptOperation` |
@@ -477,7 +536,7 @@ All operations are thenable (awaitable) and support `.withLockContext()` and `.a
 ### Schema Builders
 
 ```typescript
-encryptedTable(tableName: string, columns: Record<string, ProtectColumn>)
+encryptedTable(tableName: string, columns: Record<string, ProtectColumn | ProtectValue | nested>)
 encryptedColumn(columnName: string) // chainable: .equality(), .freeTextSearch(), .orderAndRange(), .searchableJson(), .dataType()
-encryptedValue(valueName: string)          // for nested encrypted values
+encryptedValue(valueName: string)   // for nested encrypted values, chainable: .dataType()
 ```

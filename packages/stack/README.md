@@ -291,34 +291,64 @@ Each term in a batch can have its own `returnType`.
 
 ### PostgreSQL / Drizzle Integration Pattern
 
-Encrypted data is stored as an [EQL](https://github.com/cipherstash/encrypt-query-language) JSON payload. Install the EQL extension in PostgreSQL to enable searchable queries, then store encrypted data in `eql_v2_encrypted` columns:
+Encrypted data is stored as an [EQL](https://github.com/cipherstash/encrypt-query-language) JSON payload. Install the EQL extension in PostgreSQL to enable searchable queries, then store encrypted data in `eql_v2_encrypted` columns.
 
-```sql
-CREATE TABLE users (
-  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-  email eql_v2_encrypted
-);
-```
+The `@cipherstash/stack/drizzle` module provides `encryptedType` for defining encrypted columns and `createEncryptionOperators` for querying them:
 
 ```typescript
-import { eq } from "drizzle-orm"
-import { pgTable, serial, jsonb } from "drizzle-orm/pg-core"
+import { pgTable, integer, timestamp } from "drizzle-orm/pg-core"
+import { encryptedType, extractEncryptionSchema, createEncryptionOperators } from "@cipherstash/stack/drizzle"
+import { Encryption } from "@cipherstash/stack"
 
+// Define schema with encrypted columns
 const usersTable = pgTable("users", {
-  id: serial("id").primaryKey(),
-  email: jsonb("email").notNull(),
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  email: encryptedType<string>("email", {
+    equality: true,
+    freeTextSearch: true,
+    orderAndRange: true,
+  }),
+  profile: encryptedType<{ name: string; bio: string }>("profile", {
+    dataType: "json",
+    searchableJson: true,
+  }),
 })
 
-// Insert encrypted data
-await db.insert(usersTable).values({ email: encrypted.data })
+// Initialize
+const usersSchema = extractEncryptionSchema(usersTable)
+const client = await Encryption({ schemas: [usersSchema] })
+const ops = createEncryptionOperators(client)
 
-// Search with encrypted query
-const encQuery = await client.encryptQuery("alice@example.com", {
-  column: users.email,
-  table: users,
-  queryType: "equality",
-})
+// Query with auto-encrypting operators
+const results = await db.select().from(usersTable)
+  .where(await ops.eq(usersTable.email, "alice@example.com"))
+
+// JSONB queries on encrypted JSON columns
+const jsonResults = await db.select().from(usersTable)
+  .where(await ops.jsonbPathExists(usersTable.profile, "$.bio"))
 ```
+
+#### Drizzle `encryptedType` Config Options
+
+| Option | Type | Description |
+|---|---|---|
+| `dataType` | `"string"` \| `"number"` \| `"json"` | Plaintext data type (default: `"string"`) |
+| `equality` | `boolean` \| `TokenFilter[]` | Enable equality index |
+| `freeTextSearch` | `boolean` \| `MatchIndexOpts` | Enable free-text search index |
+| `orderAndRange` | `boolean` | Enable ORE index for sorting/range queries |
+| `searchableJson` | `boolean` | Enable JSONB path queries (requires `dataType: "json"`) |
+
+#### Drizzle JSONB Operators
+
+For columns with `searchableJson: true`, three JSONB operators are available:
+
+| Operator | Description |
+|---|---|
+| `jsonbPathExists(col, selector)` | Check if a JSONB path exists (boolean, use in `WHERE`) |
+| `jsonbPathQueryFirst(col, selector)` | Extract first value at a JSONB path |
+| `jsonbGet(col, selector)` | Get value using the JSONB `->` operator |
+
+These operators encrypt the JSON path selector using the `steVecSelector` query type and cast it to `eql_v2_encrypted` for use with the EQL PostgreSQL functions.
 
 ## Identity-Aware Encryption
 

@@ -81,9 +81,10 @@ const usersTable = pgTable("users", {
     orderAndRange: true,
   }),
 
-  // Encrypted JSON object
+  // Encrypted JSON object with searchable JSONB queries
   profile: encryptedType<{ name: string; bio: string }>("profile", {
     dataType: "json",
+    searchableJson: true,
   }),
 
   // Non-encrypted columns
@@ -100,6 +101,7 @@ const usersTable = pgTable("users", {
 | `equality` | `boolean` \| `TokenFilter[]` | Enable equality index |
 | `freeTextSearch` | `boolean` \| `MatchIndexOpts` | Enable free-text search index |
 | `orderAndRange` | `boolean` | Enable ORE index for sorting and range queries |
+| `searchableJson` | `boolean` | Enable JSONB path queries (requires `dataType: "json"`) |
 
 The generic type parameter `<TData>` sets the TypeScript type for the decrypted value.
 
@@ -234,6 +236,50 @@ const results = await db
   .orderBy(encryptionOps.desc(usersTable.age))
 ```
 
+## JSONB Queries
+
+Query encrypted JSON columns using JSONB operators. These require `searchableJson: true` and `dataType: "json"` in the column's `encryptedType` config.
+
+### Check path existence
+
+```typescript
+// Check if a JSONB path exists in an encrypted column
+const results = await db
+  .select()
+  .from(usersTable)
+  .where(await encryptionOps.jsonbPathExists(usersTable.profile, "$.bio"))
+```
+
+### Extract value at path
+
+```typescript
+// Extract the first matching value at a JSONB path
+const result = await encryptionOps.jsonbPathQueryFirst(usersTable.profile, "$.name")
+```
+
+### Get value with `->` operator
+
+```typescript
+// Get a value using the JSONB -> operator
+const result = await encryptionOps.jsonbGet(usersTable.profile, "$.name")
+```
+
+> **Note:** `jsonbPathExists` returns a boolean and can be used in `WHERE` clauses. `jsonbPathQueryFirst` and `jsonbGet` return encrypted values — use them in `SELECT` expressions.
+
+### Combine JSONB with other operators
+
+```typescript
+const results = await db
+  .select()
+  .from(usersTable)
+  .where(
+    await encryptionOps.and(
+      encryptionOps.jsonbPathExists(usersTable.profile, "$.name"),
+      encryptionOps.eq(usersTable.email, "jane@example.com"),
+    ),
+  )
+```
+
 ## Batched Conditions (and / or)
 
 Use `encryptionOps.and()` and `encryptionOps.or()` to batch multiple encrypted conditions into a single ZeroKMS call. This is more efficient than awaiting each operator individually.
@@ -303,6 +349,9 @@ if (!decrypted.failure) {
 | `notIlike(col, pattern)` | NOT ILIKE | `.freeTextSearch()` |
 | `inArray(col, values)` | IN array | `.equality()` |
 | `notInArray(col, values)` | NOT IN array | `.equality()` |
+| `jsonbPathQueryFirst(col, selector)` | Extract first value at JSONB path | `.searchableJson()` |
+| `jsonbGet(col, selector)` | Get value using JSONB `->` operator | `.searchableJson()` |
+| `jsonbPathExists(col, selector)` | Check if JSONB path exists | `.searchableJson()` |
 
 ### Sort Operators (sync)
 
