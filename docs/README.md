@@ -1,6 +1,6 @@
-# Protect.js documentation
+# CipherStash Encryption documentation
 
-The documentation for Protect.js is organized into the following sections:
+The documentation for CipherStash Encryption is organized into the following sections:
 
 - [Getting started](./getting-started.md)
 
@@ -12,7 +12,7 @@ The documentation for Protect.js is organized into the following sections:
 
 - [Configuration and production deployment](./reference/configuration.md)
 - [Searchable encryption with PostgreSQL](./reference/searchable-encryption-postgres.md) (includes JSONB queries with searchableJson)
-- [Protect.js schemas](./reference/schema.md)
+- [Encryption schemas](./reference/schema.md)
 - [Model operations with bulk crypto functions](./reference/model-operations.md)
 
 ### ORMs and frameworks
@@ -21,7 +21,7 @@ The documentation for Protect.js is organized into the following sections:
 
 ### Drizzle ORM Integration
 
-- [Protect Operators Pattern](reference/drizzle/drizzle.md) - Recommended approach with auto-encrypting operators
+- [Encryption Operators Pattern](reference/drizzle/drizzle.md) - Recommended approach with auto-encrypting operators
 - [Manual Encryption Pattern](reference/drizzle/drizzle-protect.md) - Explicit control over encryption workflow
 
 ## How-to guides

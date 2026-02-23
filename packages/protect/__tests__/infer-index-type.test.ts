@@ -1,7 +1,7 @@
-import { describe, expect, it } from 'vitest'
 import { csColumn, csTable } from '@cipherstash/schema'
-import { inferIndexType, validateIndexType } from '../src/index'
+import { describe, expect, it } from 'vitest'
 import { inferQueryOpFromPlaintext } from '../src/ffi/helpers/infer-index-type'
+import { inferIndexType, validateIndexType } from '../src/index'
 
 describe('infer-index-type helpers', () => {
   const users = csTable('users', {
@@ -29,7 +29,9 @@ describe('infer-index-type helpers', () => {
     })
 
     it('returns match when freeTextSearch and orderAndRange (priority: match > ore)', () => {
-      const schema = csTable('t', { col: csColumn('col').freeTextSearch().orderAndRange() })
+      const schema = csTable('t', {
+        col: csColumn('col').freeTextSearch().orderAndRange(),
+      })
       expect(inferIndexType(schema.col)).toBe('match')
     })
 
@@ -50,7 +52,9 @@ describe('infer-index-type helpers', () => {
     })
 
     it('throws for unconfigured index type', () => {
-      expect(() => validateIndexType(users.email, 'match')).toThrow('not configured')
+      expect(() => validateIndexType(users.email, 'match')).toThrow(
+        'not configured',
+      )
     })
 
     it('accepts ste_vec when configured', () => {
@@ -60,7 +64,9 @@ describe('infer-index-type helpers', () => {
 
     it('rejects ste_vec when not configured', () => {
       const schema = csTable('t', { col: csColumn('col').equality() })
-      expect(() => validateIndexType(schema.col, 'ste_vec')).toThrow('not configured')
+      expect(() => validateIndexType(schema.col, 'ste_vec')).toThrow(
+        'not configured',
+      )
     })
   })
 
@@ -85,5 +91,4 @@ describe('infer-index-type helpers', () => {
       expect(inferQueryOpFromPlaintext(true)).toBe('ste_vec_term')
     })
   })
-
 })

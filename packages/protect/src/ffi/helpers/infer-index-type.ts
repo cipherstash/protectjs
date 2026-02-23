@@ -1,7 +1,7 @@
+import type { JsPlaintext, QueryOpName } from '@cipherstash/protect-ffi'
+import type { ProtectColumn } from '@cipherstash/schema'
 import type { FfiIndexTypeName, QueryTypeName } from '../../types'
 import { queryTypeToFfi, queryTypeToQueryOp } from '../../types'
-import type { ProtectColumn } from '@cipherstash/schema'
-import type { QueryOpName, JsPlaintext } from '@cipherstash/protect-ffi'
 
 /**
  * Infer the primary index type from a column's configured indexes.
@@ -22,7 +22,7 @@ export function inferIndexType(column: ProtectColumn): FfiIndexTypeName {
   if (indexes.ste_vec) return 'ste_vec'
 
   throw new Error(
-    `Column "${column.getName()}" has no suitable index for queries`
+    `Column "${column.getName()}" has no suitable index for queries`,
   )
 }
 
@@ -51,7 +51,10 @@ export function inferQueryOpFromPlaintext(plaintext: JsPlaintext): QueryOpName {
 /**
  * Validate that the specified index type is configured on the column
  */
-export function validateIndexType(column: ProtectColumn, indexType: FfiIndexTypeName): void {
+export function validateIndexType(
+  column: ProtectColumn,
+  indexType: FfiIndexTypeName,
+): void {
   const config = column.build()
   const indexes = config.indexes ?? {}
 
@@ -64,7 +67,7 @@ export function validateIndexType(column: ProtectColumn, indexType: FfiIndexType
 
   if (!indexMap[indexType]) {
     throw new Error(
-      `Index type "${indexType}" is not configured on column "${column.getName()}"`
+      `Index type "${indexType}" is not configured on column "${column.getName()}"`,
     )
   }
 }
@@ -83,9 +86,11 @@ export function validateIndexType(column: ProtectColumn, indexType: FfiIndexType
 export function resolveIndexType(
   column: ProtectColumn,
   queryType?: QueryTypeName,
-  plaintext?: JsPlaintext | null
+  plaintext?: JsPlaintext | null,
 ): { indexType: FfiIndexTypeName; queryOp?: QueryOpName } {
-  const indexType = queryType ? queryTypeToFfi[queryType] : inferIndexType(column)
+  const indexType = queryType
+    ? queryTypeToFfi[queryType]
+    : inferIndexType(column)
 
   if (queryType) {
     validateIndexType(column, indexType)
