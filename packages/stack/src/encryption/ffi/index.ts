@@ -41,7 +41,7 @@ export const noClientError = () =>
 /** The EncryptionClient is the main entry point for interacting with the CipherStash Protect.js library.
  * It provides methods for encrypting and decrypting individual values, as well as models (objects) and bulk operations.
  *
- * The client must be initialized using the {@link protect} function before it can be used.
+ * The client must be initialized using the {@link Encryption} function before it can be used.
  */
 export class EncryptionClient {
   private client: Client
@@ -57,7 +57,7 @@ export class EncryptionClient {
    * Initializes the EncryptionClient with the provided configuration.
    * @internal
    * @param config - The configuration object for initializing the client.
-   * @returns A promise that resolves to a {@link Result} containing the initialized EncryptionClient or a {@link ProtectError}.
+   * @returns A promise that resolves to a {@link Result} containing the initialized EncryptionClient or an {@link EncryptionError}.
    **/
   async init(config: {
     encryptConfig: EncryptConfig
@@ -111,25 +111,26 @@ export class EncryptionClient {
    * @returns An EncryptOperation that can be awaited or chained with additional methods.
    *
    * @example
-   * The following example demonstrates how to encrypt a value using the Protect client.
+   * The following example demonstrates how to encrypt a value using the Encryption client.
    * It includes defining an encryption schema with {@link encryptedTable} and {@link encryptedColumn},
-   * initializing the client with {@link protect}, and performing the encryption.
+   * initializing the client with {@link Encryption}, and performing the encryption.
    *
    * `encrypt` returns an {@link EncryptOperation} which can be awaited to get a {@link Result}
-   * which can either be the encrypted value or a {@link ProtectError}.
+   * which can either be the encrypted value or an {@link EncryptionError}.
    *
    * ```typescript
    * // Define encryption schema
-   * import { encryptedTable, encryptedColumn } from "@cipherstash/protect"
+   * import { Encryption } from "@cipherstash/stack"
+   * import { encryptedTable, encryptedColumn } from "@cipherstash/stack/schema"
    * const userSchema = encryptedTable("users", {
    *  email: encryptedColumn("email"),
    * });
    *
-   * // Initialize Protect client
-   * const protectClient = await protect({ schemas: [userSchema] })
+   * // Initialize Encryption client
+   * const client = await Encryption({ schemas: [userSchema] })
    *
    * // Encrypt a value
-   * const encryptedResult = await protectClient.encrypt(
+   * const encryptedResult = await client.encrypt(
    *  "person@example.com",
    *  { column: userSchema.email, table: userSchema }
    * )
@@ -162,7 +163,7 @@ export class EncryptionClient {
    *
    * // Encrypt a value with the lock context
    * // Decryption will then require the same lock context
-   * const encryptedResult = await protectClient.encrypt(
+   * const encryptedResult = await client.encrypt(
    *  "person@example.com",
    *  { column: userSchema.email, table: userSchema }
    * )
@@ -189,20 +190,21 @@ export class EncryptionClient {
    * @returns An EncryptQueryOperation that can be awaited or chained with additional methods.
    *
    * @example
-   * The following example demonstrates how to encrypt a query value using the Protect client.
+   * The following example demonstrates how to encrypt a query value using the Encryption client.
    *
    * ```typescript
    * // Define encryption schema
-   * import { encryptedTable, encryptedColumn } from "@cipherstash/protect"
+   * import { Encryption } from "@cipherstash/stack"
+   * import { encryptedTable, encryptedColumn } from "@cipherstash/stack/schema"
    * const userSchema = encryptedTable("users", {
    *  email: encryptedColumn("email").equality(),
    * });
    *
-   * // Initialize Protect client
-   * const protectClient = await protect({ schemas: [userSchema] })
+   * // Initialize Encryption client
+   * const client = await Encryption({ schemas: [userSchema] })
    *
    * // Encrypt a query value
-   * const encryptedResult = await protectClient.encryptQuery(
+   * const encryptedResult = await client.encryptQuery(
    *  "person@example.com",
    *  { column: userSchema.email, table: userSchema, queryType: 'equality' }
    * )
@@ -220,7 +222,7 @@ export class EncryptionClient {
    *
    * ```typescript
    * // When queryType is omitted, it will be inferred from the column's indexes
-   * const encryptedResult = await protectClient.encryptQuery(
+   * const encryptedResult = await client.encryptQuery(
    *  "person@example.com",
    *  { column: userSchema.email, table: userSchema }
    * )
@@ -286,15 +288,15 @@ export class EncryptionClient {
    * @returns A DecryptOperation that can be awaited or chained with additional methods.
    *
    * @example
-   * The following example demonstrates how to decrypt a value that was previously encrypted using {@link encrypt} client.
+   * The following example demonstrates how to decrypt a value that was previously encrypted using the {@link encrypt} method.
    * It includes encrypting a value first, then decrypting it, and handling the result.
    *
    * ```typescript
-   * const encryptedData = await eqlClient.encrypt(
+   * const encryptedData = await client.encrypt(
    *  "person@example.com",
    *  { column: "email", table: "users" }
    * )
-   * const decryptResult = await eqlClient.decrypt(encryptedData)
+   * const decryptResult = await client.decrypt(encryptedData)
    * if (decryptResult.failure) {
    *   throw new Error(`Decryption failed: ${decryptResult.failure.message}`);
    * }
@@ -304,7 +306,7 @@ export class EncryptionClient {
    * @example
    * Provide a lock context when decrypting:
    * ```typescript
-   *    await eqlClient.decrypt(encryptedData)
+   *    await client.decrypt(encryptedData)
    *      .withLockContext(lockContext)
    * ```
    *

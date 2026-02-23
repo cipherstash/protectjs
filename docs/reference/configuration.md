@@ -2,7 +2,7 @@
 
 CipherStash Encryption is configured with [toml](https://toml.io/en/) files or environment variables, and is used to initialize the Encryption client.
 
-Environment variables will take precedence over configuration files and it's recommented to use them for sensitive values.
+Environment variables will take precedence over configuration files and it's recommended to use them for sensitive values.
 
 ## Table of contents
 
@@ -99,9 +99,8 @@ The following environment variables are supported:
 
 ## Configuring the Encryption client directly
 
-You can also configure the Encryption client directly by passing a `EncryptionClientConfig` object to the `Encryption` function during initialization.
-This is useful if you want to configure the Encryption client specific to your application.
-An exmaple of this might be if you want to use a secret manager to store your client key and access key rather than relying on environment variables or configuration files.
+You can also configure the Encryption client directly by passing an `EncryptionClientConfig` object to the `Encryption` function during initialization.
+This is useful if you want to use a secret manager to store your client key and access key rather than relying on environment variables or configuration files.
 
 ```ts
 import { Encryption, type EncryptionClientConfig } from "@cipherstash/stack";
@@ -118,6 +117,52 @@ const config: EncryptionClientConfig = {
 
 const client = await Encryption(config);
 ```
+
+### Multi-tenant keyset configuration
+
+For multi-tenant applications, you can specify a keyset to isolate encryption keys per tenant.
+A keyset can be identified by name or by UUID:
+
+```ts
+const client = await Encryption({
+  schemas: [users],
+  config: {
+    workspaceCrn: "your-workspace-crn",
+    accessKey: "your-access-key",
+    clientId: "your-client-id",
+    clientKey: "your-client-key",
+    keyset: { name: "tenant-acme" },
+    // or by UUID:
+    // keyset: { id: "550e8400-e29b-41d4-a716-446655440000" },
+  },
+});
+```
+
+Each keyset provides an isolated set of encryption keys, so data encrypted under one keyset cannot be decrypted with another.
+
+### Logging configuration
+
+You can configure structured logging for the Encryption client:
+
+```ts
+const client = await Encryption({
+  schemas: [users],
+  logging: {
+    enabled: true,
+    pretty: true, // Pretty-print log output (auto-detected in development)
+    drain: (ctx) => {
+      // Forward logs to your logging service
+      myLogger.log(ctx)
+    },
+  },
+});
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `enabled` | `boolean` | `true` | Toggle logging on or off. |
+| `pretty` | `boolean` | Auto-detected | Enable pretty-printed log format. |
+| `drain` | `(ctx) => void` | `undefined` | Callback for forwarding log events to an external platform. |
 
 ## Deploying to production
 
