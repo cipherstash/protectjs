@@ -1,4 +1,4 @@
-import type { Encrypted, KeysetIdentifier } from '@/types'
+import type { Encrypted, EncryptedQueryResult, KeysetIdentifier } from '@/types'
 import type {
   Encrypted as CipherStashEncrypted,
   KeysetIdentifier as KeysetIdentifierFfi,
@@ -51,6 +51,26 @@ export function encryptedToEscapedCompositeLiteral(
     throw new Error('encryptedToEscapedCompositeLiteral: obj cannot be null')
   }
   return JSON.stringify(encryptedToCompositeLiteral(obj))
+}
+
+/**
+ * Format an encrypted result based on the requested return type.
+ *
+ * - `'composite-literal'` → PostgreSQL composite literal string `("json")`
+ * - `'escaped-composite-literal'` → escaped variant `"(\"json\")"`
+ * - default (`'eql'` or omitted) → raw encrypted object
+ */
+export function formatEncryptedResult(
+  encrypted: CipherStashEncrypted,
+  returnType?: string,
+): EncryptedQueryResult {
+  if (returnType === 'composite-literal') {
+    return encryptedToCompositeLiteral(encrypted)
+  }
+  if (returnType === 'escaped-composite-literal') {
+    return encryptedToEscapedCompositeLiteral(encrypted)
+  }
+  return encrypted
 }
 
 /**

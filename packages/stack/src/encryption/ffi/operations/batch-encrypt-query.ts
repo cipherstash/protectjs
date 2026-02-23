@@ -1,8 +1,5 @@
 import { getErrorCode } from '@/encryption/ffi/helpers/error-code'
-import {
-  encryptedToCompositeLiteral,
-  encryptedToEscapedCompositeLiteral,
-} from '@/encryption/helpers'
+import { formatEncryptedResult } from '@/encryption/helpers'
 import { type EncryptionError, EncryptionErrorTypes } from '@/errors'
 import type { Context, LockContext } from '@/identity'
 import type { Client, EncryptedQueryResult, ScalarQueryTerm } from '@/types'
@@ -95,13 +92,7 @@ function assembleResults(
   nonNullTerms.forEach(({ term, originalIndex }, i) => {
     const encrypted = encryptedValues[i]
 
-    if (term.returnType === 'composite-literal') {
-      results[originalIndex] = encryptedToCompositeLiteral(encrypted)
-    } else if (term.returnType === 'escaped-composite-literal') {
-      results[originalIndex] = encryptedToEscapedCompositeLiteral(encrypted)
-    } else {
-      results[originalIndex] = encrypted
-    }
+    results[originalIndex] = formatEncryptedResult(encrypted, term.returnType)
   })
 
   return results

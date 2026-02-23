@@ -264,6 +264,31 @@ const terms = [
 const results = await client.encryptQuery(terms)
 ```
 
+### Query Result Formatting (`returnType`)
+
+By default `encryptQuery` returns an `Encrypted` object (the raw EQL JSON payload). Use `returnType` to change the output format:
+
+| `returnType` | Output | Use case |
+|---|---|---|
+| `'eql'` (default) | `Encrypted` object | Parameterized queries, ORMs accepting JSON |
+| `'composite-literal'` | `string` | Supabase `.eq()`, string-based APIs |
+| `'escaped-composite-literal'` | `string` | Embedding inside another string or JSON value |
+
+```typescript
+// Get a composite literal string for use with Supabase
+const term = await client.encryptQuery("alice@example.com", {
+  column: users.email,
+  table: users,
+  queryType: "equality",
+  returnType: "composite-literal",
+})
+
+// term.data is a string — use directly with .eq()
+await supabase.from("users").select().eq("email", term.data)
+```
+
+Each term in a batch can have its own `returnType`.
+
 ### PostgreSQL / Drizzle Integration Pattern
 
 Encrypted data is stored as an [EQL](https://github.com/cipherstash/encrypt-query-language) JSON payload. Install the EQL extension in PostgreSQL to enable searchable queries, then store encrypted data in `eql_v2_encrypted` columns:
@@ -535,7 +560,7 @@ function Encryption(config: EncryptionClientConfig): Promise<EncryptionClient>
 |----|------|-----|
 | `encrypt` | `(plaintext, { column, table })` | `EncryptOperation` (thenable) |
 | `decrypt` | `(encryptedData)` | `DecryptOperation` (thenable) |
-| `encryptQuery` | `(plaintext, { column, table, queryType? })` | `EncryptQueryOperation` (thenable) |
+| `encryptQuery` | `(plaintext, { column, table, queryType?, returnType? })` | `EncryptQueryOperation` (thenable) |
 | `encryptQuery` | `(terms: ScalarQueryTerm[])` | `BatchEncryptQueryOperation` (thenable) |
 | `encryptModel` | `(model, table)` | `EncryptModelOperation<T>` (thenable) |
 | `decryptModel` | `(encryptedModel)` | `DecryptModelOperation<T>` (thenable) |

@@ -7,6 +7,8 @@ This reference guide outlines the different query patterns you can use to search
 - [Prerequisites](#prerequisites)
 - [What is EQL?](#what-is-eql)
 - [Setting up your schema](#setting-up-your-schema)
+- [The `encryptQuery` function](#the-encryptquery-function)
+  - [Formatting encrypted query results with `returnType`](#formatting-encrypted-query-results-with-returntype)
 - [Search capabilities](#search-capabilities)
   - [JSONB queries with searchableJson (recommended)](#jsonb-queries-with-searchablejson-recommended)
     - [JSONPath selector queries](#jsonpath-selector-queries)
@@ -79,8 +81,10 @@ The `encryptQuery` function is used to create encrypted query terms for use in S
 | `value` | The value to search for |
 | `column` | The column to search in |
 | `table` | The table to search in |
+| `queryType` | _(optional)_ The query type — auto-inferred from the column's indexes when omitted |
+| `returnType` | _(optional)_ The output format — `'eql'` (default), `'composite-literal'`, or `'escaped-composite-literal'` |
 
-**Batch query** — pass an array of objects, each with the properties above.
+**Batch query** — pass an array of objects, each with the properties above (including `value`).
 
 Example (single query):
 
@@ -110,6 +114,58 @@ if (terms.failure) {
 }
 
 console.log(terms.data) // array of encrypted query terms
+```
+
+### Formatting encrypted query results with `returnType`
+
+By default, `encryptQuery` returns an `Encrypted` object (the raw EQL JSON payload). You can change the output format using the `returnType` option:
+
+| `returnType` | Return type | Description |
+|---|---|---|
+| `'eql'` (default) | `Encrypted` object | Raw EQL JSON payload. Use with parameterized queries (`$1`) or ORMs that accept JSON objects. |
+| `'composite-literal'` | `string` | PostgreSQL composite literal format `("json")`. Use with Supabase `.eq()` or other APIs that require a string value. |
+| `'escaped-composite-literal'` | `string` | Escaped composite literal `"(\"json\")"`. Use when the query string will be embedded inside another string or JSON value. |
+
+The return type of `encryptQuery` is `EncryptedQueryResult`, which is `Encrypted | string | null` depending on the `returnType` and whether the input was `null`.
+
+**Single query with `returnType`:**
+
+```typescript
+const term = await client.encryptQuery('user@example.com', {
+  column: schema.email,
+  table: schema,
+  queryType: 'equality',
+  returnType: 'composite-literal',
+})
+
+if (term.failure) {
+  // Handle the error
+}
+
+// term.data is a string in composite literal format
+await supabase.from('users').select().eq('email_encrypted', term.data)
+```
+
+**Batch query with `returnType`:**
+
+Each term in a batch can have its own `returnType`:
+
+```typescript
+const terms = await client.encryptQuery([
+  {
+    value: 'user@example.com',
+    column: schema.email,
+    table: schema,
+    queryType: 'equality',
+    returnType: 'composite-literal',     // returns a string
+  },
+  {
+    value: 'alice',
+    column: schema.email,
+    table: schema,
+    queryType: 'freeTextSearch',          // returns an Encrypted object (default)
+  },
+])
 ```
 
 ## Search capabilities
@@ -257,25 +313,61 @@ console.log(terms.data) // array of encrypted query terms
 
 #### Using JSONB queries in SQL
 
-To use encrypted JSONB query terms in PostgreSQL queries, specify `returnType: 'composite-literal'` to get the terms formatted for direct use in SQL:
+To use encrypted JSONB query terms in PostgreSQL queries, you can either use the default `Encrypted` object with parameterized queries, or use `returnType: 'composite-literal'` to get a string formatted for direct use with Supabase or similar APIs.
+
+**With parameterized queries (default `returnType`):**
 
 ```typescript
-const term = await client.encryptQuery([{
-  value: '$.user.email',
+const term = await client.encryptQuery('$.user.email', {
   column: documents.metadata,
   table: documents,
-  returnType: 'composite-literal',
-}])
+})
 
 if (term.failure) {
   // Handle the error
 }
 
-// Use the encrypted term in a PostgreSQL query
-const result = await client.query(
+// Pass the EQL object as a parameterized query value
+const result = await pgClient.query(
   'SELECT * FROM documents WHERE cs_ste_vec_v2(metadata_encrypted) @> $1',
-  [term.data[0]]
+  [term.data]
 )
+```
+
+**With Supabase or string-based APIs (`returnType: 'composite-literal'`):**
+
+```typescript
+const term = await client.encryptQuery('$.user.email', {
+  column: documents.metadata,
+  table: documents,
+  returnType: 'composite-literal',
+})
+
+if (term.failure) {
+  // Handle the error
+}
+
+// term.data is a string — use directly with .eq(), .contains(), etc.
+await supabase.from('documents').select().contains('metadata_encrypted', term.data)
+```
+
+This also works with batch queries — each term can specify its own `returnType`:
+
+```typescript
+const terms = await client.encryptQuery([
+  {
+    value: '$.user.email',
+    column: documents.metadata,
+    table: documents,
+    returnType: 'composite-literal',
+  },
+  {
+    value: { role: 'admin' },
+    column: documents.metadata,
+    table: documents,
+    returnType: 'composite-literal',
+  },
+])
 ```
 
 #### Advanced: Explicit query types
