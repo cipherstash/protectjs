@@ -115,21 +115,100 @@ When working with nested objects:
 > TODO: The schema builder does not validate the values you supply to the `encryptedValue` or `encryptedColumn` functions.
 > These values are meant to be unique, and and cause unexpected behavior if they are not defined correctly.
 
+## Data types
+
+By default, all columns are treated as `'string'`.
+Use the `.dataType()` method to specify a different plaintext data type so the encryption layer knows how to encode the value before encrypting.
+
+```ts
+import { encryptedTable, encryptedColumn } from "@cipherstash/stack/schema";
+
+export const transactions = encryptedTable("transactions", {
+  amount: encryptedColumn("amount").dataType("number").orderAndRange(),
+  isActive: encryptedColumn("is_active").dataType("boolean"),
+  createdAt: encryptedColumn("created_at").dataType("date").orderAndRange(),
+  metadata: encryptedColumn("metadata").dataType("json"),
+});
+```
+
+### Available data types
+
+| Data type | Description |
+|-----------|-------------|
+| `'string'` | Text values. This is the default. |
+| `'number'` | Numeric values (integers and floats). |
+| `'boolean'` | Boolean `true` / `false` values. |
+| `'date'` | Date or timestamp values. |
+| `'bigint'` | Large integer values. |
+| `'json'` | JSON objects. Automatically set when using `.searchableJson()`. |
+
 ## Available index options
 
 The following index options are available for your schema:
 
 | **Method** | **Description** | **SQL equivalent** |
 | ----------- | --------------- | ------------------ |
-| equality   | Enables a exact index for equality queries. | `WHERE email = 'example@example.com'` |
-| freeTextSearch   | Enables a match index for free text queries. | `WHERE description LIKE '%example%'` |
-| orderAndRange   | Enables an sorting and range queries index. | `ORDER BY price ASC` |
-| searchableJson | Enables encrypted JSONB path and containment queries (recommended for JSON columns). | `WHERE metadata @> '{"role":"admin"}'` |
+| `.equality()` | Enables an exact-match index for equality queries. | `WHERE email = 'example@example.com'` |
+| `.freeTextSearch()` | Enables a match index for free text and substring queries. | `WHERE description LIKE '%example%'` |
+| `.orderAndRange()` | Enables sorting and range queries. | `ORDER BY price ASC` |
+| `.searchableJson()` | Enables encrypted JSONB path and containment queries (recommended for JSON columns). | `WHERE metadata @> '{"role":"admin"}'` |
 
 > [!TIP]
-> For columns storing JSON data, `.searchableJson()` is the recommended index. It automatically configures the column for encrypted JSONB path and containment queries. Read more in the [JSONB queries reference](./searchable-encryption-postgres.md#jsonb-queries-with-searchablejson-recommended).
+> For columns storing JSON data, `.searchableJson()` is the recommended index. It automatically configures the column for encrypted JSONB path and containment queries and sets the data type to `'json'`. Read more in the [JSONB queries reference](./searchable-encryption-postgres.md#jsonb-queries-with-searchablejson-recommended).
 
 You can chain these methods to your column to configure them in any combination.
+
+### Token filters
+
+The `.equality()` method accepts an optional array of token filters that are applied before indexing:
+
+```ts
+email: encryptedColumn("email").equality([{ kind: 'downcase' }]),
+```
+
+| Filter | Description |
+|--------|-------------|
+| `{ kind: 'downcase' }` | Converts values to lowercase before comparison, enabling case-insensitive equality matching. |
+
+### Free text search options
+
+The `.freeTextSearch()` method accepts optional configuration:
+
+```ts
+body: encryptedColumn("body").freeTextSearch({
+  tokenizer: { kind: 'ngram', token_length: 4 },
+  k: 8,
+  m: 4096,
+  include_original: true,
+}),
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `tokenizer` | `{ kind: 'standard' }` or `{ kind: 'ngram', token_length: number }` | `{ kind: 'ngram', token_length: 3 }` | Tokenization strategy. |
+| `token_filters` | `TokenFilter[]` | `[{ kind: 'downcase' }]` | Filters applied to tokens before indexing. |
+| `k` | `number` | `6` | Number of hash functions for the bloom filter. |
+| `m` | `number` | `2048` | Size of the bloom filter in bits. |
+| `include_original` | `boolean` | `true` | Whether to include the original value in the index. |
+
+## Type inference from schema
+
+You can infer TypeScript types from your schema definition using the `InferPlaintext` and `InferEncrypted` utility types:
+
+```ts
+import { encryptedTable, encryptedColumn, type InferPlaintext, type InferEncrypted } from "@cipherstash/stack/schema";
+
+const users = encryptedTable("users", {
+  email: encryptedColumn("email").equality(),
+  name: encryptedColumn("name"),
+});
+
+type UserPlaintext = InferPlaintext<typeof users>
+// => { email: string; name: string }
+
+type UserEncrypted = InferEncrypted<typeof users>
+// => { email: Encrypted; name: Encrypted }
+```
 
 ## Initializing the Encryption client
 

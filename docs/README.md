@@ -1,6 +1,6 @@
-# CipherStash Encryption documentation
+# CipherStash documentation
 
-The documentation for CipherStash Encryption is organized into the following sections:
+## Getting started
 
 - [Getting started](./getting-started.md)
 
@@ -10,16 +10,20 @@ The documentation for CipherStash Encryption is organized into the following sec
 
 ## Reference
 
+- [Workspace plans and limits](./reference/plans.md)
 - [Configuration and production deployment](./reference/configuration.md)
-- [Searchable encryption with PostgreSQL](./reference/searchable-encryption-postgres.md) (includes JSONB queries with searchableJson)
 - [Encryption schemas](./reference/schema.md)
 - [Model operations with bulk crypto functions](./reference/model-operations.md)
+- [Searchable encryption with PostgreSQL](./reference/searchable-encryption-postgres.md) (includes JSONB queries with searchableJson)
+- [Secrets management](./reference/secrets.md)
+- [Identity-aware encryption](./reference/identity.md)
 
 ### ORMs and frameworks
 
 - [Supabase SDK](./reference/supabase-sdk.md)
+- [DynamoDB integration](./reference/dynamodb.md)
 
-### Drizzle ORM Integration
+### Drizzle ORM integration
 
 - [Encryption Operators Pattern](reference/drizzle/drizzle.md) - Recommended approach with auto-encrypting operators
 - [Manual Encryption Pattern](reference/drizzle/drizzle-protect.md) - Explicit control over encryption workflow

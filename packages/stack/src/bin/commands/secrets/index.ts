@@ -1,8 +1,9 @@
 import { style } from './helpers.js'
-import { setSecret } from './set.js'
+import { deleteSecret } from './delete.js'
+import { getManySecrets } from './get-many.js'
 import { getSecret } from './get.js'
 import { listSecrets } from './list.js'
-import { deleteSecret } from './delete.js'
+import { setSecret } from './set.js'
 
 function parseFlags(args: string[]): Record<string, string | boolean> {
   const flags: Record<string, string | boolean> = {}
@@ -34,7 +35,10 @@ function parseFlags(args: string[]): Record<string, string | boolean> {
   return flags
 }
 
-function requireFlag(flags: Record<string, string | boolean>, name: string): string {
+function requireFlag(
+  flags: Record<string, string | boolean>,
+  name: string,
+): string {
   const val = flags[name]
   if (!val || typeof val !== 'string') {
     console.error(style.error(`Missing required flag: --${name}`))
@@ -47,13 +51,14 @@ const HELP = `
 ${style.title('Usage:')} stash secrets <command> [options]
 
 ${style.title('Commands:')}
-  set      Store an encrypted secret
-  get      Retrieve and decrypt a secret
-  list     List all secrets in an environment
-  delete   Delete a secret
+  set       Store an encrypted secret
+  get       Retrieve and decrypt a secret
+  get-many  Retrieve and decrypt multiple secrets (min 2, max 100)
+  list      List all secrets in an environment
+  delete    Delete a secret
 
 ${style.title('Options:')}
-  -n, --name          Secret name
+  -n, --name          Secret name (comma-separated for get-many)
   -V, --value         Secret value (set only)
   -e, --environment   Environment name
   -y, --yes           Skip confirmation (delete only)
@@ -61,6 +66,7 @@ ${style.title('Options:')}
 ${style.title('Examples:')}
   stash secrets set -n DATABASE_URL -V "postgres://..." -e production
   stash secrets get -n DATABASE_URL -e production
+  stash secrets get-many -n DATABASE_URL,API_KEY -e production
   stash secrets list -e production
   stash secrets delete -n DATABASE_URL -e production -y
 `.trim()
@@ -88,6 +94,28 @@ export async function secretsCommand(args: string[]) {
       const name = requireFlag(flags, 'name')
       const environment = requireFlag(flags, 'environment')
       await getSecret({ name, environment })
+      break
+    }
+    case 'get-many': {
+      const namesStr = requireFlag(flags, 'name')
+      const names = namesStr
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean)
+      if (names.length < 2) {
+        console.error(
+          style.error(
+            'get-many requires at least 2 secret names (comma-separated)',
+          ),
+        )
+        process.exit(1)
+      }
+      if (names.length > 100) {
+        console.error(style.error('get-many supports maximum 100 secret names'))
+        process.exit(1)
+      }
+      const environment = requireFlag(flags, 'environment')
+      await getManySecrets({ names, environment })
       break
     }
     case 'list': {

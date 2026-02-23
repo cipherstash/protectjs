@@ -33,7 +33,9 @@ Examples:
   stash init --supabase
   stash secrets set -n DATABASE_URL -V "postgres://..." -e production
   stash secrets get -n DATABASE_URL -e production
+  stash secrets get-many -n DATABASE_URL,API_KEY -e production
   stash secrets list -e production
+  stash secrets delete -n DATABASE_URL -e production
 `.trim()
 
 function parseArgs(argv: string[]) {

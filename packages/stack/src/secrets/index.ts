@@ -1,3 +1,18 @@
+/**
+ * Placeholder: Corrected Secrets client interface
+ *
+ * This file reflects the actual dashboard API endpoints as implemented in:
+ *   apps/dashboard/src/app/api/secrets/{get,set,list,get-many,delete}/route.ts
+ *
+ * Key corrections from the original interface:
+ *   1. get, list, get-many are GET endpoints (not POST) with query params
+ *   2. get-many takes a comma-separated `names` string (not a JSON array)
+ *   3. set and delete return { success, message } (not void)
+ *   4. SecretMetadata fields (id, createdAt, updatedAt) are non-optional
+ *   5. GetSecretResponse fields (createdAt, updatedAt) are non-optional
+ *   6. get-many enforces min 2 names (comma required) and max 100 names
+ */
+
 import type { EncryptionClient } from '@/encryption/ffi'
 import { encryptedToPgComposite } from '@/encryption/helpers'
 import { Encryption } from '@/index'
@@ -40,18 +55,20 @@ export interface SecretsConfig {
 }
 
 /**
- * Secret metadata returned from the API
+ * Secret metadata returned from the API (list endpoint).
+ * All fields are always present in API responses.
  */
 export interface SecretMetadata {
-  id?: string
+  id: string
   name: string
   environment: string
-  createdAt?: string
-  updatedAt?: string
+  createdAt: string
+  updatedAt: string
 }
 
 /**
- * API response for listing secrets
+ * API response for listing secrets.
+ * GET /api/secrets/list?workspaceId=...&environment=...
  */
 export interface ListSecretsResponse {
   environment: string
@@ -59,7 +76,11 @@ export interface ListSecretsResponse {
 }
 
 /**
- * API response for getting a secret
+ * API response for getting a single secret.
+ * GET /api/secrets/get?workspaceId=...&environment=...&name=...
+ *
+ * The `encryptedValue` is the raw value stored in the vault's `value` column,
+ * which is the `{ data: Encrypted }` object that was passed to the set endpoint.
  */
 export interface GetSecretResponse {
   name: string
@@ -67,20 +88,81 @@ export interface GetSecretResponse {
   encryptedValue: {
     data: Encrypted
   }
-  createdAt?: string
-  updatedAt?: string
+  createdAt: string
+  updatedAt: string
+}
+
+/**
+ * API response for getting multiple secrets.
+ * GET /api/secrets/get-many?workspaceId=...&environment=...&names=name1,name2,...
+ *
+ * Returns an array of GetSecretResponse objects.
+ * Constraints:
+ *   - `names` must be comma-separated (minimum 2 names)
+ *   - Maximum 100 names per request
+ */
+export type GetManySecretsResponse = GetSecretResponse[]
+
+/**
+ * API response for setting a secret.
+ * POST /api/secrets/set
+ */
+export interface SetSecretResponse {
+  success: true
+  message: string
+}
+
+/**
+ * API request body for setting a secret.
+ * POST /api/secrets/set
+ */
+export interface SetSecretRequest {
+  workspaceId: string
+  environment: string
+  name: string
+  encryptedValue: {
+    data: Encrypted
+  }
+}
+
+/**
+ * API response for deleting a secret.
+ * POST /api/secrets/delete
+ */
+export interface DeleteSecretResponse {
+  success: true
+  message: string
+}
+
+/**
+ * API request body for deleting a secret.
+ * POST /api/secrets/delete
+ */
+export interface DeleteSecretRequest {
+  workspaceId: string
+  environment: string
+  name: string
+}
+
+/**
+ * API error response for plan limit violations (403).
+ * Returned by POST /api/secrets/set when the workspace has reached its secret limit.
+ */
+export interface PlanLimitError {
+  error: string
+  code: 'PLAN_LIMIT_REACHED'
 }
 
 export interface DecryptedSecretResponse {
   name: string
   environment: string
   value: string
-  createdAt?: string
-  updatedAt?: string
+  createdAt: string
+  updatedAt: string
 }
 
 /**
- * The Stash client provides a high-level API for managing encrypted secrets
+ * The Secrets client provides a high-level API for managing encrypted secrets
  * stored in CipherStash. Secrets are encrypted locally before being sent to
  * the API, ensuring end-to-end encryption.
  */
@@ -132,15 +214,27 @@ export class Secrets {
   }
 
   /**
-   * Make an API request with error handling
+   * Make an API request with error handling.
+   *
+   * For GET requests, `params` are appended as URL query parameters.
+   * For POST requests, `body` is sent as JSON in the request body.
    */
   private async apiRequest<T>(
-    method: string,
+    method: 'GET' | 'POST',
     path: string,
-    body?: unknown,
+    options?: {
+      body?: unknown
+      params?: Record<string, string>
+    },
   ): Promise<Result<T, SecretsError>> {
     try {
-      const url = `${this.apiBaseUrl}${path}`
+      let url = `${this.apiBaseUrl}${path}`
+
+      if (options?.params) {
+        const searchParams = new URLSearchParams(options.params)
+        url = `${url}?${searchParams.toString()}`
+      }
+
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
         Authorization: this.getAuthHeader(),
@@ -149,7 +243,7 @@ export class Secrets {
       const response = await fetch(url, {
         method,
         headers,
-        body: body ? JSON.stringify(body) : undefined,
+        body: options?.body ? JSON.stringify(options.body) : undefined,
       })
 
       if (!response.ok) {
@@ -157,7 +251,7 @@ export class Secrets {
         let errorMessage = `API request failed with status ${response.status}`
         try {
           const errorJson = JSON.parse(errorText)
-          errorMessage = errorJson.message || errorMessage
+          errorMessage = errorJson.message || errorJson.error || errorMessage
         } catch {
           errorMessage = errorText || errorMessage
         }
@@ -189,23 +283,16 @@ export class Secrets {
    * Store an encrypted secret in the vault.
    * The value is encrypted locally before being sent to the API.
    *
+   * API: POST /api/secrets/set
+   *
    * @param name - The name of the secret
    * @param value - The plaintext value to encrypt and store
-   * @returns A Result indicating success or failure
-   *
-   * @example
-   * ```typescript
-   * const stash = new Secrets({ ... })
-   * const result = await stash.set('DATABASE_URL', 'postgres://user:pass@localhost:5432/mydb')
-   * if (result.failure) {
-   *   console.error('Failed to set secret:', result.failure.message)
-   * }
-   * ```
+   * @returns A Result containing the API response or an error
    */
   async set(
     name: SecretName,
     value: SecretValue,
-  ): Promise<Result<void, SecretsError>> {
+  ): Promise<Result<SetSecretResponse, SecretsError>> {
     await this.ensureInitialized()
 
     if (!this.encryptionClient) {
@@ -236,11 +323,13 @@ export class Secrets {
     const workspaceId = extractWorkspaceIdFromCrn(this.config.workspaceCRN)
 
     // Send encrypted value to API
-    return await this.apiRequest<void>('POST', '/set', {
-      workspaceId,
-      environment: this.config.environment,
-      name,
-      encryptedValue: encryptedToPgComposite(encryptResult.data),
+    return await this.apiRequest<SetSecretResponse>('POST', '/set', {
+      body: {
+        workspaceId,
+        environment: this.config.environment,
+        name,
+        encryptedValue: encryptedToPgComposite(encryptResult.data),
+      },
     })
   }
 
@@ -248,19 +337,10 @@ export class Secrets {
    * Retrieve and decrypt a secret from the vault.
    * The secret is decrypted locally after retrieval.
    *
+   * API: GET /api/secrets/get?workspaceId=...&environment=...&name=...
+   *
    * @param name - The name of the secret to retrieve
    * @returns A Result containing the decrypted value or an error
-   *
-   * @example
-   * ```typescript
-   * const stash = new Secrets({ ... })
-   * const result = await stash.get('DATABASE_URL')
-   * if (result.failure) {
-   *   console.error('Failed to get secret:', result.failure.message)
-   * } else {
-   *   console.log('Secret value:', result.data)
-   * }
-   * ```
    */
   async get(name: SecretName): Promise<Result<SecretValue, SecretsError>> {
     await this.ensureInitialized()
@@ -277,11 +357,13 @@ export class Secrets {
     // Extract workspaceId from CRN
     const workspaceId = extractWorkspaceIdFromCrn(this.config.workspaceCRN)
 
-    // Fetch encrypted value from API
-    const apiResult = await this.apiRequest<GetSecretResponse>('POST', '/get', {
-      workspaceId,
-      environment: this.config.environment,
-      name,
+    // Fetch encrypted value from API via GET with query params
+    const apiResult = await this.apiRequest<GetSecretResponse>('GET', '/get', {
+      params: {
+        workspaceId,
+        environment: this.config.environment,
+        name,
+      },
     })
 
     if (apiResult.failure) {
@@ -319,20 +401,14 @@ export class Secrets {
    * The secrets are decrypted locally after retrieval.
    * This method only triggers a single network request to the ZeroKMS.
    *
-   * @param names - The names of the secrets to retrieve
-   * @returns A Result containing an object mapping secret names to their decrypted values
+   * API: GET /api/secrets/get-many?workspaceId=...&environment=...&names=name1,name2,...
    *
-   * @example
-   * ```typescript
-   * const stash = new Secrets({ ... })
-   * const result = await stash.getMany(['DATABASE_URL', 'API_KEY'])
-   * if (result.failure) {
-   *   console.error('Failed to get secrets:', result.failure.message)
-   * } else {
-   *   const dbUrl = result.data.DATABASE_URL // Access by name
-   *   const apiKey = result.data.API_KEY
-   * }
-   * ```
+   * Constraints:
+   *   - Minimum 2 secret names required
+   *   - Maximum 100 secret names per request
+   *
+   * @param names - The names of the secrets to retrieve (min 2, max 100)
+   * @returns A Result containing an object mapping secret names to their decrypted values
    */
   async getMany(
     names: SecretName[],
@@ -348,17 +424,37 @@ export class Secrets {
       }
     }
 
+    if (names.length < 2) {
+      return {
+        failure: {
+          type: 'ClientError',
+          message: 'At least 2 secret names are required for getMany',
+        },
+      }
+    }
+
+    if (names.length > 100) {
+      return {
+        failure: {
+          type: 'ClientError',
+          message: 'Maximum 100 secret names per request',
+        },
+      }
+    }
+
     // Extract workspaceId from CRN
     const workspaceId = extractWorkspaceIdFromCrn(this.config.workspaceCRN)
 
-    // Fetch encrypted value from API
-    const apiResult = await this.apiRequest<GetSecretResponse[]>(
-      'POST',
+    // Fetch encrypted values from API via GET with comma-separated names
+    const apiResult = await this.apiRequest<GetManySecretsResponse>(
+      'GET',
       '/get-many',
       {
-        workspaceId,
-        environment: this.config.environment,
-        names,
+        params: {
+          workspaceId,
+          environment: this.config.environment,
+          names: names.join(','),
+        },
       },
     )
 
@@ -401,29 +497,22 @@ export class Secrets {
    * List all secrets in the environment.
    * Only names and metadata are returned; values remain encrypted.
    *
-   * @returns A Result containing the list of secrets or an error
+   * API: GET /api/secrets/list?workspaceId=...&environment=...
    *
-   * @example
-   * ```typescript
-   * const stash = new Secrets({ ... })
-   * const result = await stash.list()
-   * if (result.failure) {
-   *   console.error('Failed to list secrets:', result.failure.message)
-   * } else {
-   *   console.log('Secrets:', result.data)
-   * }
-   * ```
+   * @returns A Result containing the list of secrets or an error
    */
   async list(): Promise<Result<SecretMetadata[], SecretsError>> {
     // Extract workspaceId from CRN
     const workspaceId = extractWorkspaceIdFromCrn(this.config.workspaceCRN)
 
     const apiResult = await this.apiRequest<ListSecretsResponse>(
-      'POST',
+      'GET',
       '/list',
       {
-        workspaceId,
-        environment: this.config.environment,
+        params: {
+          workspaceId,
+          environment: this.config.environment,
+        },
       },
     )
 
@@ -437,26 +526,23 @@ export class Secrets {
   /**
    * Delete a secret from the vault.
    *
-   * @param name - The name of the secret to delete
-   * @returns A Result indicating success or failure
+   * API: POST /api/secrets/delete
    *
-   * @example
-   * ```typescript
-   * const stash = new Secrets({ ... })
-   * const result = await stash.delete('DATABASE_URL')
-   * if (result.failure) {
-   *   console.error('Failed to delete secret:', result.failure.message)
-   * }
-   * ```
+   * @param name - The name of the secret to delete
+   * @returns A Result containing the API response or an error
    */
-  async delete(name: SecretName): Promise<Result<void, SecretsError>> {
+  async delete(
+    name: SecretName,
+  ): Promise<Result<DeleteSecretResponse, SecretsError>> {
     // Extract workspaceId from CRN
     const workspaceId = extractWorkspaceIdFromCrn(this.config.workspaceCRN)
 
-    return await this.apiRequest<void>('POST', '/delete', {
-      workspaceId,
-      environment: this.config.environment,
-      name,
+    return await this.apiRequest<DeleteSecretResponse>('POST', '/delete', {
+      body: {
+        workspaceId,
+        environment: this.config.environment,
+        name,
+      },
     })
   }
 }
