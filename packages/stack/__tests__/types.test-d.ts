@@ -6,7 +6,7 @@ import type {
   EncryptedColumn,
   EncryptedTable,
   EncryptedTableColumn,
-  ProtectValue,
+  EncryptedValue,
 } from '../src/schema/index.js'
 import type {
   Decrypted,
@@ -19,10 +19,10 @@ import type {
   OtherFields,
   QueryTypeName,
 } from '../src/types.js'
-import { EncryptionClient } from '../src/encryption/ffi/index.js'
+import type { EncryptionClient } from '../src/encryption/ffi/index.js'
 
 describe('Type inference', () => {
-  it('encryptedTable returns EncryptedTable with column access', () => {
+  it('encryptedTable returns ProtectTable with column access', () => {
     const table = encryptedTable('users', {
       email: encryptedColumn('email'),
     })
@@ -30,24 +30,26 @@ describe('Type inference', () => {
     expectTypeOf(table.tableName).toBeString()
   })
 
-  it('encryptedTable is also a EncryptedTable', () => {
+  it('encryptedTable is also a ProtectTable', () => {
     const table = encryptedTable('users', {
       email: encryptedColumn('email'),
     })
-    expectTypeOf(table).toMatchTypeOf<EncryptedTable<{ email: EncryptedColumn }>>()
+    expectTypeOf(table).toMatchTypeOf<
+      EncryptedTable<{ email: EncryptedColumn }>
+    >()
   })
 
-  it('encryptedColumn returns EncryptedColumn', () => {
+  it('encryptedColumn returns ProtectColumn', () => {
     const col = encryptedColumn('email')
     expectTypeOf(col).toMatchTypeOf<EncryptedColumn>()
   })
 
-  it('encryptedColumn().dataType() returns EncryptedColumn (for chaining)', () => {
+  it('encryptedColumn().dataType() returns ProtectColumn (for chaining)', () => {
     const col = encryptedColumn('age').dataType('number')
     expectTypeOf(col).toMatchTypeOf<EncryptedColumn>()
   })
 
-  it('encryptedColumn().equality() returns EncryptedColumn (for chaining)', () => {
+  it('encryptedColumn().equality() returns ProtectColumn (for chaining)', () => {
     const col = encryptedColumn('email').equality()
     expectTypeOf(col).toMatchTypeOf<EncryptedColumn>()
   })
@@ -96,7 +98,7 @@ describe('Type inference', () => {
     expectTypeOf<'escaped-composite-literal'>().toMatchTypeOf<EncryptedReturnType>()
   })
 
-  it('InferPlaintext maps EncryptedColumn keys to string', () => {
+  it('InferPlaintext maps ProtectColumn keys to string', () => {
     const table = encryptedTable('users', {
       email: encryptedColumn('email'),
       name: encryptedColumn('name'),
@@ -105,7 +107,7 @@ describe('Type inference', () => {
     expectTypeOf<Plaintext>().toMatchTypeOf<{ email: string; name: string }>()
   })
 
-  it('InferEncrypted maps EncryptedColumn keys to Encrypted', () => {
+  it('InferEncrypted maps ProtectColumn keys to Encrypted', () => {
     const table = encryptedTable('users', {
       email: encryptedColumn('email'),
     })
@@ -128,7 +130,7 @@ describe('Type inference', () => {
     type User = { id: string; email: string }
     type Result = EncryptedFromSchema<User, EncryptedTableColumn>
     // When S is the wide EncryptedTableColumn, S[K] is the full union, not EncryptedColumn alone.
-    // The conditional [S[K]] extends [EncryptedColumn | ProtectValue] fails, so fields stay as-is.
+    // The conditional [S[K]] extends [EncryptedColumn | EncryptedValue] fails, so fields stay as-is.
     expectTypeOf<Result>().toEqualTypeOf<{ id: string; email: string }>()
   })
 

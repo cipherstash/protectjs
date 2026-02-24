@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   EncryptedColumn,
   EncryptedTable,
-  ProtectValue,
+  EncryptedValue,
   buildEncryptConfig,
   encryptedColumn,
   encryptedTable,
@@ -301,12 +301,12 @@ describe('schema builders', () => {
   })
 
   // -------------------------------------------------------
-  // encryptedValue (ProtectValue)
+  // encryptedValue (EncryptedValue)
   // -------------------------------------------------------
   describe('encryptedValue', () => {
-    it('creates a ProtectValue', () => {
+    it('creates a EncryptedValue', () => {
       const value = encryptedValue('field')
-      expect(value).toBeInstanceOf(ProtectValue)
+      expect(value).toBeInstanceOf(EncryptedValue)
     })
 
     it('returns correct name', () => {
@@ -346,10 +346,10 @@ describe('schema builders', () => {
   })
 
   // -------------------------------------------------------
-  // encryptedTable with nested ProtectValue columns
+  // encryptedTable with nested EncryptedValue columns
   // -------------------------------------------------------
-  describe('encryptedTable with ProtectValue', () => {
-    it('table.build() processes nested ProtectValue entries', () => {
+  describe('encryptedTable with EncryptedValue', () => {
+    it('table.build() processes nested EncryptedValue entries', () => {
       const table = encryptedTable('users', {
         profile: {
           firstName: encryptedValue('firstName'),
