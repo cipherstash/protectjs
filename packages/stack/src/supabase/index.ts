@@ -1,10 +1,8 @@
-import type { EncryptionClient } from '@/encryption/ffi'
-import type { ProtectTable, ProtectTableColumn } from '@/schema'
+import type { EncryptedTable, EncryptedTableColumn } from '@/schema'
 import { EncryptedQueryBuilderImpl } from './query-builder'
 import type {
   EncryptedSupabaseConfig,
   EncryptedSupabaseInstance,
-  SupabaseClientLike,
 } from './types'
 
 /**
@@ -48,7 +46,7 @@ export function encryptedSupabase(
   return {
     from<T extends Record<string, unknown> = Record<string, unknown>>(
       tableName: string,
-      schema: ProtectTable<ProtectTableColumn>,
+      schema: EncryptedTable<EncryptedTableColumn>,
     ) {
       return new EncryptedQueryBuilderImpl<T>(
         tableName,

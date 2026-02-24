@@ -142,7 +142,11 @@ Each keyset provides an isolated set of encryption keys, so data encrypted under
 
 ### Logging configuration
 
-You can configure structured logging for the Encryption client:
+Logging is disabled by default. You can enable it by setting the `STASH_LOG_LEVEL` environment variable or by configuring it programmatically:
+
+```bash
+STASH_LOG_LEVEL=debug  # debug | info | warn | error
+```
 
 ```ts
 const client = await Encryption({
@@ -160,7 +164,7 @@ const client = await Encryption({
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `enabled` | `boolean` | `true` | Toggle logging on or off. |
+| `enabled` | `boolean` | `false` | Toggle logging on or off. Automatically enabled when `STASH_LOG_LEVEL` is set. |
 | `pretty` | `boolean` | Auto-detected | Enable pretty-printed log format. |
 | `drain` | `(ctx) => void` | `undefined` | Callback for forwarding log events to an external platform. |
 

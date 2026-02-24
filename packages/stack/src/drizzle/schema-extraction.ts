@@ -1,14 +1,14 @@
-import { type ProtectColumn, encryptedColumn, encryptedTable } from '@/schema'
+import { type EncryptedColumn, encryptedColumn, encryptedTable } from '@/schema'
 import type { PgTable } from 'drizzle-orm/pg-core'
 import { getEncryptedColumnConfig } from './index.js'
 
 /**
  * Extracts an encryption schema from a Drizzle table definition.
  * This function identifies columns created with `encryptedType` and
- * builds a corresponding `ProtectTable` with `encryptedColumn` definitions.
+ * builds a corresponding `EncryptedTable` with `encryptedColumn` definitions.
  *
  * @param table - The Drizzle table definition
- * @returns A ProtectTable that can be used with encryption client initialization
+ * @returns A EncryptedTable that can be used with encryption client initialization
  *
  * @example
  * ```ts
@@ -25,7 +25,7 @@ import { getEncryptedColumnConfig } from './index.js'
 // biome-ignore lint/suspicious/noExplicitAny: Drizzle table types don't expose Symbol properties
 export function extractEncryptionSchema<T extends PgTable<any>>(
   table: T,
-): ReturnType<typeof encryptedTable<Record<string, ProtectColumn>>> {
+): ReturnType<typeof encryptedTable<Record<string, EncryptedColumn>>> {
   // Drizzle tables store the name in a Symbol property
   // biome-ignore lint/suspicious/noExplicitAny: Drizzle tables don't expose Symbol properties in types
   const tableName = (table as any)[Symbol.for('drizzle:Name')] as
@@ -37,7 +37,7 @@ export function extractEncryptionSchema<T extends PgTable<any>>(
     )
   }
 
-  const columns: Record<string, ProtectColumn> = {}
+  const columns: Record<string, EncryptedColumn> = {}
 
   // Iterate through table columns
   for (const [columnName, column] of Object.entries(table)) {

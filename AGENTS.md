@@ -102,7 +102,6 @@ If these variables are missing, tests that require live encryption will fail or 
   - Next.js: see `docs/how-to/nextjs-external-packages.md`
   - SST/Serverless: see `docs/how-to/sst-external-packages.md`
   - npm lockfile v3 on Linux: see `docs/how-to/npm-lockfile-v3.md`
-- **Bun is not supported**: Due to Node-API compatibility gaps. Use Node.js.
 - **Do not log plaintext**: The library never logs plaintext by design. Don’t add logs that risk leaking sensitive data.
 - **Result shape is contract**: Operations return `{ data }` or `{ failure }`. Preserve this shape and error `type` values in `ProtectErrorTypes`.
 - **Encrypted payload shape is contract**: Keys like `c` in the EQL payload are validated by tests and downstream tools. Don’t change them.

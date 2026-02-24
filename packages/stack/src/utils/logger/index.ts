@@ -24,7 +24,7 @@ export function initStackLogger(config?: LoggingConfig): void {
   const rates = samplingFromEnv()
   initLogger({
     env: { service: '@cipherstash/stack' },
-    enabled: config?.enabled ?? true,
+    enabled: config?.enabled ?? !!rates,
     pretty: config?.pretty,
     ...(rates && { sampling: { rates } }),
     ...(config?.drain && { drain: config.drain }),
@@ -46,7 +46,11 @@ function safeMessage(args: unknown[]): string {
 export const logger = {
   debug(...args: unknown[]) {
     const log = createRequestLogger()
-    log.set({ level: 'debug', source: '@cipherstash/stack', message: safeMessage(args) })
+    log.set({
+      level: 'debug',
+      source: '@cipherstash/stack',
+      message: safeMessage(args),
+    })
     log.emit()
   },
   info(...args: unknown[]) {

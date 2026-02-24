@@ -14,7 +14,6 @@ These rules guide agents when creating or updating example apps under `examples/
   - Do not change EQL payload shapes or keys (e.g., `c`).
   - `@cipherstash/protect-ffi` is a native Node-API module and must be externalized by bundlers (loaded via runtime `require`).
   - Keep both ESM and CJS exports working; do not break `require`.
-  - Bun is not supported; use Node.js.
 
 - **Prerequisites and workflow**
   - Use Node.js >= 22 and pnpm 9.x.

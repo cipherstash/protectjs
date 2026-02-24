@@ -1,17 +1,17 @@
-import { EncryptionClient } from '@/encryption/ffi'
+import { EncryptionClient } from '@/encryption'
 import { buildEncryptConfig } from '@/schema'
 import type { EncryptionClientConfig } from '@/types'
 import { initStackLogger } from '@/utils/logger'
 
 // Re-export schema builders for convenience
-export { encryptedTable, encryptedColumn, encryptedValue } from '@/schema'
+export { encryptedTable, encryptedColumn, encryptedField } from '@/schema'
 export type {
   InferPlaintext,
   InferEncrypted,
-  ProtectColumn,
-  ProtectTable,
-  ProtectTableColumn,
-  ProtectValue,
+  EncryptedColumn,
+  EncryptedTable,
+  EncryptedTableColumn,
+  EncryptedField,
 } from '@/schema'
 
 export type { EncryptedFromSchema } from '@/types'

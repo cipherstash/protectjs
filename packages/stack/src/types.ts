@@ -1,8 +1,8 @@
 import type {
-  ProtectColumn,
-  ProtectTable,
-  ProtectTableColumn,
-  ProtectValue,
+  EncryptedColumn,
+  EncryptedTable,
+  EncryptedTableColumn,
+  EncryptedField,
 } from '@/schema'
 import type { LoggingConfig } from '@/utils/logger'
 import type {
@@ -84,7 +84,7 @@ export type ClientConfig = {
 type AtLeastOneCsTable<T> = [T, ...T[]]
 
 export type EncryptionClientConfig = {
-  schemas: AtLeastOneCsTable<ProtectTable<ProtectTableColumn>>
+  schemas: AtLeastOneCsTable<EncryptedTable<EncryptedTableColumn>>
   config?: ClientConfig
   logging?: LoggingConfig
 }
@@ -93,9 +93,15 @@ export type EncryptionClientConfig = {
 // Encrypt / decrypt operation options and results
 // ---------------------------------------------------------------------------
 
+/**
+ * Options for single-value encrypt operations.
+ * Use a column from your table schema (from {@link encryptedColumn}) or a nested
+ * field (from {@link encryptedField}) as the target for encryption.
+ */
 export type EncryptOptions = {
-  column: ProtectColumn | ProtectValue
-  table: ProtectTable<ProtectTableColumn>
+  /** The column or nested field to encrypt into. From {@link EncryptedColumn} or {@link EncryptedField}. */
+  column: EncryptedColumn | EncryptedField
+  table: EncryptedTable<EncryptedTableColumn>
 }
 
 /** Format for encrypted query/search term return values */
@@ -106,8 +112,8 @@ export type EncryptedReturnType =
 
 export type SearchTerm = {
   value: JsPlaintext
-  column: ProtectColumn
-  table: ProtectTable<ProtectTableColumn>
+  column: EncryptedColumn
+  table: EncryptedTable<EncryptedTableColumn>
   returnType?: EncryptedReturnType
 }
 
@@ -142,7 +148,7 @@ export type Decrypted<T> = OtherFields<T> & DecryptedFields<T>
  * Fields whose keys match columns defined in `S` become `Encrypted`;
  * all other fields retain their original types from `T`.
  *
- * When `S` is the widened `ProtectTableColumn` (e.g. when a user passes an
+ * When `S` is the widened `EncryptedTableColumn` (e.g. when a user passes an
  * explicit `<User>` type argument without specifying `S`), the type degrades
  * gracefully to `T` — preserving backward compatibility.
  *
@@ -153,16 +159,13 @@ export type Decrypted<T> = OtherFields<T> & DecryptedFields<T>
  * ```typescript
  * type User = { id: string; email: string }
  * // With a schema that defines `email`:
- * type Encrypted = EncryptedFromSchema<User, { email: ProtectColumn }>
+ * type Encrypted = EncryptedFromSchema<User, { email: EncryptedColumn }>
  * // => { id: string; email: Encrypted }
  * ```
  */
-export type EncryptedFromSchema<
-  T,
-  S extends ProtectTableColumn,
-> = {
+export type EncryptedFromSchema<T, S extends EncryptedTableColumn> = {
   [K in keyof T]: [K] extends [keyof S]
-    ? [S[K & keyof S]] extends [ProtectColumn | ProtectValue]
+    ? [S[K & keyof S]] extends [EncryptedColumn | EncryptedField]
       ? Encrypted
       : T[K]
     : T[K]
@@ -243,8 +246,8 @@ export const queryTypeToQueryOp: Partial<Record<QueryTypeName, QueryOpName>> = {
 
 /** @internal */
 export type QueryTermBase = {
-  column: ProtectColumn
-  table: ProtectTable<ProtectTableColumn>
+  column: EncryptedColumn
+  table: EncryptedTable<EncryptedTableColumn>
   queryType?: QueryTypeName
   returnType?: EncryptedReturnType
 }

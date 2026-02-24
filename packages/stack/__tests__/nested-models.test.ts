@@ -1,7 +1,7 @@
 import 'dotenv/config'
 import { LockContext } from '@/identity'
 import { Encryption } from '@/index'
-import { encryptedColumn, encryptedTable, encryptedValue } from '@/schema'
+import { encryptedColumn, encryptedTable, encryptedField } from '@/schema'
 import { describe, expect, it, vi } from 'vitest'
 
 const users = encryptedTable('users', {
@@ -9,9 +9,9 @@ const users = encryptedTable('users', {
   address: encryptedColumn('address').freeTextSearch(),
   name: encryptedColumn('name').freeTextSearch(),
   example: {
-    field: encryptedValue('example.field'),
+    field: encryptedField('example.field'),
     nested: {
-      deeper: encryptedValue('example.nested.deeper'),
+      deeper: encryptedField('example.nested.deeper'),
     },
   },
 })

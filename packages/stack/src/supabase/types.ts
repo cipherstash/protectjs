@@ -1,9 +1,8 @@
-import type { EncryptionClient } from '@/encryption/ffi'
-import type { AuditConfig } from '@/encryption/ffi/operations/base-operation'
+import type { EncryptionClient } from '@/encryption'
+import type { AuditConfig } from '@/encryption/operations/base-operation'
 import type { EncryptionError } from '@/errors'
 import type { LockContext } from '@/identity'
-import type { ProtectColumn, ProtectTable, ProtectTableColumn } from '@/schema'
-import type { QueryTypeName, ScalarQueryTerm } from '@/types'
+import type { EncryptedTable, EncryptedTableColumn } from '@/schema'
 
 // ---------------------------------------------------------------------------
 // Config & instance
@@ -17,7 +16,7 @@ export type EncryptedSupabaseConfig = {
 export interface EncryptedSupabaseInstance {
   from<T extends Record<string, unknown> = Record<string, unknown>>(
     tableName: string,
-    schema: ProtectTable<ProtectTableColumn>,
+    schema: EncryptedTable<EncryptedTableColumn>,
   ): EncryptedQueryBuilder<T>
 }
 
@@ -214,10 +213,14 @@ export interface SupabaseClientLike {
 // Re-export for convenience
 // ---------------------------------------------------------------------------
 
-export type { EncryptionClient } from '@/encryption/ffi'
-export type { ProtectTable, ProtectColumn, ProtectTableColumn } from '@/schema'
+export type { EncryptionClient } from '@/encryption'
+export type {
+  EncryptedTable,
+  EncryptedColumn,
+  EncryptedTableColumn,
+} from '@/schema'
 export type { LockContext } from '@/identity'
-export type { AuditConfig } from '@/encryption/ffi/operations/base-operation'
+export type { AuditConfig } from '@/encryption/operations/base-operation'
 
 // ---------------------------------------------------------------------------
 // Forward declaration for query builder (avoids circular)

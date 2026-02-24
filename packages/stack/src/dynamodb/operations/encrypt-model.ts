@@ -1,5 +1,5 @@
-import type { EncryptionClient } from '@/encryption/ffi'
-import type { ProtectTable, ProtectTableColumn } from '@/schema'
+import type { EncryptionClient } from '@/encryption'
+import type { EncryptedTable, EncryptedTableColumn } from '@/schema'
 import { type Result, withResult } from '@byteslice/result'
 import { deepClone, handleError, toEncryptedDynamoItem } from '../helpers'
 import type { EncryptedDynamoDBError } from '../types'
@@ -13,12 +13,12 @@ export class EncryptModelOperation<
 > extends DynamoDBOperation<T> {
   private encryptionClient: EncryptionClient
   private item: T
-  private table: ProtectTable<ProtectTableColumn>
+  private table: EncryptedTable<EncryptedTableColumn>
 
   constructor(
     encryptionClient: EncryptionClient,
     item: T,
-    table: ProtectTable<ProtectTableColumn>,
+    table: EncryptedTable<EncryptedTableColumn>,
     options?: DynamoDBOperationOptions,
   ) {
     super(options)

@@ -1,5 +1,5 @@
 import 'dotenv/config'
-import type { EncryptionClient } from '@/encryption/ffi'
+import type { EncryptionClient } from '@/encryption'
 import { EncryptionErrorTypes } from '@/errors'
 import { Encryption } from '@/index'
 import { beforeAll, describe, expect, it } from 'vitest'

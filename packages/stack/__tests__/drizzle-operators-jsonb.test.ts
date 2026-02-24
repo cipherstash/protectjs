@@ -1,4 +1,4 @@
-import type { EncryptionClient } from '@/encryption/ffi'
+import type { EncryptionClient } from '@/encryption'
 import { pgTable } from 'drizzle-orm/pg-core'
 import { PgDialect } from 'drizzle-orm/pg-core'
 import { describe, expect, it, vi } from 'vitest'

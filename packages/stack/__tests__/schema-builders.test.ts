@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import {
-  ProtectColumn,
-  ProtectTable,
-  ProtectValue,
+  EncryptedColumn,
+  EncryptedTable,
+  EncryptedField,
   buildEncryptConfig,
   encryptedColumn,
   encryptedTable,
-  encryptedValue,
+  encryptedField,
 } from '../src/schema/index.js'
 
 describe('schema builders', () => {
@@ -14,9 +14,9 @@ describe('schema builders', () => {
   // encryptedColumn
   // -------------------------------------------------------
   describe('encryptedColumn', () => {
-    it('returns a ProtectColumn with the correct name', () => {
+    it('returns a EncryptedColumn with the correct name', () => {
       const col = encryptedColumn('email')
-      expect(col).toBeInstanceOf(ProtectColumn)
+      expect(col).toBeInstanceOf(EncryptedColumn)
       expect(col.getName()).toBe('email')
     })
 
@@ -166,10 +166,10 @@ describe('schema builders', () => {
       const table = encryptedTable('users', {
         email: encryptedColumn('email'),
       })
-      expect(table.email).toBeInstanceOf(ProtectColumn)
+      expect(table.email).toBeInstanceOf(EncryptedColumn)
     })
 
-    it('table.email gives back the ProtectColumn', () => {
+    it('table.email gives back the EncryptedColumn', () => {
       const emailCol = encryptedColumn('email').equality()
       const table = encryptedTable('users', { email: emailCol })
       expect(table.email).toBe(emailCol)
@@ -182,11 +182,11 @@ describe('schema builders', () => {
       expect(table.tableName).toBe('users')
     })
 
-    it('is an instance of ProtectTable', () => {
+    it('is an instance of EncryptedTable', () => {
       const table = encryptedTable('users', {
         email: encryptedColumn('email'),
       })
-      expect(table).toBeInstanceOf(ProtectTable)
+      expect(table).toBeInstanceOf(EncryptedTable)
     })
 
     it('table.build() produces correct config structure', () => {
@@ -232,9 +232,9 @@ describe('schema builders', () => {
         age: encryptedColumn('age').dataType('number').orderAndRange(),
       })
 
-      expect(table.email).toBeInstanceOf(ProtectColumn)
-      expect(table.name).toBeInstanceOf(ProtectColumn)
-      expect(table.age).toBeInstanceOf(ProtectColumn)
+      expect(table.email).toBeInstanceOf(EncryptedColumn)
+      expect(table.name).toBeInstanceOf(EncryptedColumn)
+      expect(table.age).toBeInstanceOf(EncryptedColumn)
     })
   })
 
@@ -301,27 +301,27 @@ describe('schema builders', () => {
   })
 
   // -------------------------------------------------------
-  // encryptedValue (ProtectValue)
+  // encryptedField (EncryptedField)
   // -------------------------------------------------------
-  describe('encryptedValue', () => {
-    it('creates a ProtectValue', () => {
-      const value = encryptedValue('field')
-      expect(value).toBeInstanceOf(ProtectValue)
+  describe('encryptedField', () => {
+    it('creates a EncryptedField', () => {
+      const value = encryptedField('field')
+      expect(value).toBeInstanceOf(EncryptedField)
     })
 
     it('returns correct name', () => {
-      const value = encryptedValue('myField')
+      const value = encryptedField('myField')
       expect(value.getName()).toBe('myField')
     })
 
     it('defaults castAs to string', () => {
-      const value = encryptedValue('field')
+      const value = encryptedField('field')
       const built = value.build()
       expect(built.cast_as).toBe('string')
     })
 
     it('.dataType("json").build() produces correct shape', () => {
-      const value = encryptedValue('field').dataType('json')
+      const value = encryptedField('field').dataType('json')
       const built = value.build()
       expect(built).toEqual({
         cast_as: 'json',
@@ -330,7 +330,7 @@ describe('schema builders', () => {
     })
 
     it('.dataType("number").build() produces correct shape', () => {
-      const value = encryptedValue('field').dataType('number')
+      const value = encryptedField('field').dataType('number')
       const built = value.build()
       expect(built).toEqual({
         cast_as: 'number',
@@ -339,21 +339,21 @@ describe('schema builders', () => {
     })
 
     it('.build() always has empty indexes', () => {
-      const value = encryptedValue('field').dataType('string')
+      const value = encryptedField('field').dataType('string')
       const built = value.build()
       expect(built.indexes).toEqual({})
     })
   })
 
   // -------------------------------------------------------
-  // encryptedTable with nested ProtectValue columns
+  // encryptedTable with nested EncryptedField columns
   // -------------------------------------------------------
-  describe('encryptedTable with ProtectValue', () => {
-    it('table.build() processes nested ProtectValue entries', () => {
+  describe('encryptedTable with EncryptedField', () => {
+    it('table.build() processes nested EncryptedField entries', () => {
       const table = encryptedTable('users', {
         profile: {
-          firstName: encryptedValue('firstName'),
-          lastName: encryptedValue('lastName').dataType('string'),
+          firstName: encryptedField('firstName'),
+          lastName: encryptedField('lastName').dataType('string'),
         },
       })
 

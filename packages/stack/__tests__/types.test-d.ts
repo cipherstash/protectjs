@@ -3,10 +3,10 @@ import { encryptedColumn, encryptedTable } from '../src/schema/index.js'
 import type {
   InferEncrypted,
   InferPlaintext,
-  ProtectColumn,
-  ProtectTable,
-  ProtectTableColumn,
-  ProtectValue,
+  EncryptedColumn,
+  EncryptedTable,
+  EncryptedTableColumn,
+  EncryptedField,
 } from '../src/schema/index.js'
 import type {
   Decrypted,
@@ -19,13 +19,14 @@ import type {
   OtherFields,
   QueryTypeName,
 } from '../src/types.js'
+import type { EncryptionClient } from '../src/encryption/index.js'
 
 describe('Type inference', () => {
   it('encryptedTable returns ProtectTable with column access', () => {
     const table = encryptedTable('users', {
       email: encryptedColumn('email'),
     })
-    expectTypeOf(table.email).toMatchTypeOf<ProtectColumn>()
+    expectTypeOf(table.email).toMatchTypeOf<EncryptedColumn>()
     expectTypeOf(table.tableName).toBeString()
   })
 
@@ -33,22 +34,24 @@ describe('Type inference', () => {
     const table = encryptedTable('users', {
       email: encryptedColumn('email'),
     })
-    expectTypeOf(table).toMatchTypeOf<ProtectTable<{ email: ProtectColumn }>>()
+    expectTypeOf(table).toMatchTypeOf<
+      EncryptedTable<{ email: EncryptedColumn }>
+    >()
   })
 
   it('encryptedColumn returns ProtectColumn', () => {
     const col = encryptedColumn('email')
-    expectTypeOf(col).toMatchTypeOf<ProtectColumn>()
+    expectTypeOf(col).toMatchTypeOf<EncryptedColumn>()
   })
 
   it('encryptedColumn().dataType() returns ProtectColumn (for chaining)', () => {
     const col = encryptedColumn('age').dataType('number')
-    expectTypeOf(col).toMatchTypeOf<ProtectColumn>()
+    expectTypeOf(col).toMatchTypeOf<EncryptedColumn>()
   })
 
   it('encryptedColumn().equality() returns ProtectColumn (for chaining)', () => {
     const col = encryptedColumn('email').equality()
-    expectTypeOf(col).toMatchTypeOf<ProtectColumn>()
+    expectTypeOf(col).toMatchTypeOf<EncryptedColumn>()
   })
 
   it('Decrypted<T> maps Encrypted fields to string', () => {
@@ -114,7 +117,7 @@ describe('Type inference', () => {
 
   it('EncryptedFromSchema maps schema fields to Encrypted, leaves others unchanged', () => {
     type User = { id: string; email: string; createdAt: Date }
-    type Schema = { email: ProtectColumn }
+    type Schema = { email: EncryptedColumn }
     type Result = EncryptedFromSchema<User, Schema>
     expectTypeOf<Result>().toEqualTypeOf<{
       id: string
@@ -123,17 +126,17 @@ describe('Type inference', () => {
     }>()
   })
 
-  it('EncryptedFromSchema with widened ProtectTableColumn degrades to T', () => {
+  it('EncryptedFromSchema with widened EncryptedTableColumn degrades to T', () => {
     type User = { id: string; email: string }
-    type Result = EncryptedFromSchema<User, ProtectTableColumn>
-    // When S is the wide ProtectTableColumn, S[K] is the full union, not ProtectColumn alone.
-    // The conditional [S[K]] extends [ProtectColumn | ProtectValue] fails, so fields stay as-is.
+    type Result = EncryptedFromSchema<User, EncryptedTableColumn>
+    // When S is the wide EncryptedTableColumn, S[K] is the full union, not EncryptedColumn alone.
+    // The conditional [S[K]] extends [EncryptedColumn | EncryptedField] fails, so fields stay as-is.
     expectTypeOf<Result>().toEqualTypeOf<{ id: string; email: string }>()
   })
 
   it('Decrypted reverses EncryptedFromSchema correctly', () => {
     type User = { id: string; email: string; createdAt: Date }
-    type Schema = { email: ProtectColumn }
+    type Schema = { email: EncryptedColumn }
     type EncryptedUser = EncryptedFromSchema<User, Schema>
     type DecryptedUser = Decrypted<EncryptedUser>
     expectTypeOf<DecryptedUser>().toMatchTypeOf<{
@@ -141,5 +144,27 @@ describe('Type inference', () => {
       email: string
       createdAt: Date
     }>()
+  })
+
+  it('encryptModel infers schema-aware return types from table argument', async () => {
+    const users = encryptedTable('users', {
+      name: encryptedColumn('name').equality(),
+      email: encryptedColumn('email').freeTextSearch(),
+    })
+
+    const client = {} as EncryptionClient
+
+    const result = await client.encryptModel(
+      { name: 'John', email: 'john@example.com', age: 30 },
+      users,
+    )
+
+    if (!result.failure) {
+      // Schema fields should be Encrypted
+      expectTypeOf(result.data.name).toEqualTypeOf<Encrypted>()
+      expectTypeOf(result.data.email).toEqualTypeOf<Encrypted>()
+      // Non-schema fields should keep their original type
+      expectTypeOf(result.data.age).toEqualTypeOf<number>()
+    }
   })
 })

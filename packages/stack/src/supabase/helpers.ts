@@ -1,4 +1,4 @@
-import type { ProtectColumn, ProtectTable, ProtectTableColumn } from '@/schema'
+import type { EncryptedTable, EncryptedTableColumn } from '@/schema'
 import type { QueryTypeName } from '@/types'
 import type { FilterOp, PendingOrCondition } from './types'
 
@@ -6,7 +6,7 @@ import type { FilterOp, PendingOrCondition } from './types'
  * Get the names of all encrypted columns defined in a table schema.
  */
 export function getEncryptedColumnNames(
-  schema: ProtectTable<ProtectTableColumn>,
+  schema: EncryptedTable<EncryptedTableColumn>,
 ): string[] {
   const built = schema.build()
   return Object.keys(built.columns)

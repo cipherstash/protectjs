@@ -2,7 +2,7 @@ import {
   inferIndexType,
   inferQueryOpFromPlaintext,
   validateIndexType,
-} from '@/encryption/ffi/helpers/infer-index-type'
+} from '@/encryption/helpers/infer-index-type'
 import { encryptedColumn, encryptedTable } from '@/schema'
 import { describe, expect, it } from 'vitest'
 

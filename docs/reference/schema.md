@@ -81,23 +81,23 @@ export const protectedUsers = encryptedTable("users", {
 CipherStash Encryption supports nested objects in your schema, allowing you to encrypt **but not search on** nested properties. You can define nested objects up to 3 levels deep.
 This is useful for data stores that have less structured data, like NoSQL databases.
 
-You can define nested objects by using the `encryptedValue` function to define a value in a nested object. The value naming convention of the `encryptedValue` function is a dot-separated string of the nested object path, e.g. `profile.name` or `profile.address.street`.
+You can define nested objects by using the `encryptedField` function to define a value in a nested object. The value naming convention of the `encryptedField` function is a dot-separated string of the nested object path, e.g. `profile.name` or `profile.address.street`.
 
 > [!NOTE]
 > Using nested objects is not recommended for SQL databases, as it will not be searchable.
 > You should either use a JSON data type and encrypt the entire object, or use a separate column for each nested property.
 
 ```ts
-import { encryptedTable, encryptedColumn, encryptedValue } from "@cipherstash/stack/schema";
+import { encryptedTable, encryptedColumn, encryptedField } from "@cipherstash/stack/schema";
 
 export const protectedUsers = encryptedTable("users", {
   email: encryptedColumn("email").freeTextSearch().equality().orderAndRange(),
   profile: {
-    name: encryptedValue("profile.name"),
+    name: encryptedField("profile.name"),
     address: {
-      street: encryptedValue("profile.address.street"),
+      street: encryptedField("profile.address.street"),
       location: {
-        coordinates: encryptedValue("profile.address.location.coordinates"),
+        coordinates: encryptedField("profile.address.location.coordinates"),
       },
     },
   },
@@ -112,8 +112,8 @@ When working with nested objects:
 - Optional nested objects are supported
 
 > [!WARNING]
-> TODO: The schema builder does not validate the values you supply to the `encryptedValue` or `encryptedColumn` functions.
-> These values are meant to be unique, and and cause unexpected behavior if they are not defined correctly.
+> TODO: The schema builder does not validate the values you supply to the `encryptedField` or `encryptedColumn` functions.
+> These values are meant to be unique, and cause unexpected behavior if they are not defined correctly.
 
 ## Data types
 
