@@ -178,10 +178,7 @@ export class EncryptionClient {
    * @see {@link LockContext}
    * @see {@link EncryptOperation}
    */
-  encrypt(
-    plaintext: JsPlaintext,
-    opts: EncryptOptions,
-  ): EncryptOperation {
+  encrypt(plaintext: JsPlaintext, opts: EncryptOptions): EncryptOperation {
     return new EncryptOperation(this.client, plaintext, opts)
   }
 
