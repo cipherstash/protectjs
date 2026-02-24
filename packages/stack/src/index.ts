@@ -4,14 +4,14 @@ import type { EncryptionClientConfig } from '@/types'
 import { initStackLogger } from '@/utils/logger'
 
 // Re-export schema builders for convenience
-export { encryptedTable, encryptedColumn, encryptedValue } from '@/schema'
+export { encryptedTable, encryptedColumn, encryptedField } from '@/schema'
 export type {
   InferPlaintext,
   InferEncrypted,
   EncryptedColumn,
   EncryptedTable,
   EncryptedTableColumn,
-  EncryptedValue,
+  EncryptedField,
 } from '@/schema'
 
 export type { EncryptedFromSchema } from '@/types'

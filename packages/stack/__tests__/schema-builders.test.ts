@@ -2,11 +2,11 @@ import { describe, expect, it } from 'vitest'
 import {
   EncryptedColumn,
   EncryptedTable,
-  EncryptedValue,
+  EncryptedField,
   buildEncryptConfig,
   encryptedColumn,
   encryptedTable,
-  encryptedValue,
+  encryptedField,
 } from '../src/schema/index.js'
 
 describe('schema builders', () => {
@@ -301,27 +301,27 @@ describe('schema builders', () => {
   })
 
   // -------------------------------------------------------
-  // encryptedValue (EncryptedValue)
+  // encryptedField (EncryptedField)
   // -------------------------------------------------------
-  describe('encryptedValue', () => {
-    it('creates a EncryptedValue', () => {
-      const value = encryptedValue('field')
-      expect(value).toBeInstanceOf(EncryptedValue)
+  describe('encryptedField', () => {
+    it('creates a EncryptedField', () => {
+      const value = encryptedField('field')
+      expect(value).toBeInstanceOf(EncryptedField)
     })
 
     it('returns correct name', () => {
-      const value = encryptedValue('myField')
+      const value = encryptedField('myField')
       expect(value.getName()).toBe('myField')
     })
 
     it('defaults castAs to string', () => {
-      const value = encryptedValue('field')
+      const value = encryptedField('field')
       const built = value.build()
       expect(built.cast_as).toBe('string')
     })
 
     it('.dataType("json").build() produces correct shape', () => {
-      const value = encryptedValue('field').dataType('json')
+      const value = encryptedField('field').dataType('json')
       const built = value.build()
       expect(built).toEqual({
         cast_as: 'json',
@@ -330,7 +330,7 @@ describe('schema builders', () => {
     })
 
     it('.dataType("number").build() produces correct shape', () => {
-      const value = encryptedValue('field').dataType('number')
+      const value = encryptedField('field').dataType('number')
       const built = value.build()
       expect(built).toEqual({
         cast_as: 'number',
@@ -339,21 +339,21 @@ describe('schema builders', () => {
     })
 
     it('.build() always has empty indexes', () => {
-      const value = encryptedValue('field').dataType('string')
+      const value = encryptedField('field').dataType('string')
       const built = value.build()
       expect(built.indexes).toEqual({})
     })
   })
 
   // -------------------------------------------------------
-  // encryptedTable with nested EncryptedValue columns
+  // encryptedTable with nested EncryptedField columns
   // -------------------------------------------------------
-  describe('encryptedTable with EncryptedValue', () => {
-    it('table.build() processes nested EncryptedValue entries', () => {
+  describe('encryptedTable with EncryptedField', () => {
+    it('table.build() processes nested EncryptedField entries', () => {
       const table = encryptedTable('users', {
         profile: {
-          firstName: encryptedValue('firstName'),
-          lastName: encryptedValue('lastName').dataType('string'),
+          firstName: encryptedField('firstName'),
+          lastName: encryptedField('lastName').dataType('string'),
         },
       })
 

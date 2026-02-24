@@ -5,7 +5,7 @@ import type {
   EncryptedColumn,
   EncryptedTable,
   EncryptedTableColumn,
-  EncryptedValue,
+  EncryptedField,
 } from '@/schema'
 import type {
   BulkEncryptPayload,
@@ -23,7 +23,7 @@ import { EncryptionOperation } from './base-operation'
 // Helper functions for better composability
 const createEncryptPayloads = (
   plaintexts: BulkEncryptPayload,
-  column: EncryptedColumn | EncryptedValue,
+  column: EncryptedColumn | EncryptedField,
   table: EncryptedTable<EncryptedTableColumn>,
   lockContext?: Context,
 ) => {
@@ -71,7 +71,7 @@ const mapEncryptedDataToResult = (
 export class BulkEncryptOperation extends EncryptionOperation<BulkEncryptedData> {
   private client: Client
   private plaintexts: BulkEncryptPayload
-  private column: EncryptedColumn | EncryptedValue
+  private column: EncryptedColumn | EncryptedField
   private table: EncryptedTable<EncryptedTableColumn>
 
   constructor(
@@ -146,7 +146,7 @@ export class BulkEncryptOperation extends EncryptionOperation<BulkEncryptedData>
   public getOperation(): {
     client: Client
     plaintexts: BulkEncryptPayload
-    column: EncryptedColumn | EncryptedValue
+    column: EncryptedColumn | EncryptedField
     table: EncryptedTable<EncryptedTableColumn>
   } {
     return {

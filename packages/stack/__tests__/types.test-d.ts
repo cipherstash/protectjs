@@ -6,7 +6,7 @@ import type {
   EncryptedColumn,
   EncryptedTable,
   EncryptedTableColumn,
-  EncryptedValue,
+  EncryptedField,
 } from '../src/schema/index.js'
 import type {
   Decrypted,
@@ -130,7 +130,7 @@ describe('Type inference', () => {
     type User = { id: string; email: string }
     type Result = EncryptedFromSchema<User, EncryptedTableColumn>
     // When S is the wide EncryptedTableColumn, S[K] is the full union, not EncryptedColumn alone.
-    // The conditional [S[K]] extends [EncryptedColumn | EncryptedValue] fails, so fields stay as-is.
+    // The conditional [S[K]] extends [EncryptedColumn | EncryptedField] fails, so fields stay as-is.
     expectTypeOf<Result>().toEqualTypeOf<{ id: string; email: string }>()
   })
 

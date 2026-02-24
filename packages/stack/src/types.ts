@@ -2,7 +2,7 @@ import type {
   EncryptedColumn,
   EncryptedTable,
   EncryptedTableColumn,
-  EncryptedValue,
+  EncryptedField,
 } from '@/schema'
 import type { LoggingConfig } from '@/utils/logger'
 import type {
@@ -94,7 +94,7 @@ export type EncryptionClientConfig = {
 // ---------------------------------------------------------------------------
 
 export type EncryptOptions = {
-  column: EncryptedColumn | EncryptedValue
+  column: EncryptedColumn | EncryptedField
   table: EncryptedTable<EncryptedTableColumn>
 }
 
@@ -159,7 +159,7 @@ export type Decrypted<T> = OtherFields<T> & DecryptedFields<T>
  */
 export type EncryptedFromSchema<T, S extends EncryptedTableColumn> = {
   [K in keyof T]: [K] extends [keyof S]
-    ? [S[K & keyof S]] extends [EncryptedColumn | EncryptedValue]
+    ? [S[K & keyof S]] extends [EncryptedColumn | EncryptedField]
       ? Encrypted
       : T[K]
     : T[K]

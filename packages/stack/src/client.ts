@@ -11,12 +11,12 @@
  */
 
 // Schema types and utilities - client-safe
-export { encryptedTable, encryptedColumn, encryptedValue } from '@/schema'
+export { encryptedTable, encryptedColumn, encryptedField } from '@/schema'
 export type {
   EncryptedColumn,
   EncryptedTable,
   EncryptedTableColumn,
-  EncryptedValue,
+  EncryptedField,
   InferPlaintext,
   InferEncrypted,
 } from '@/schema'

@@ -1,7 +1,7 @@
 import 'dotenv/config'
 import { LockContext } from '@/identity'
 import { Encryption } from '@/index'
-import { encryptedColumn, encryptedTable, encryptedValue } from '@/schema'
+import { encryptedColumn, encryptedTable, encryptedField } from '@/schema'
 import { beforeAll, describe, expect, it, test } from 'vitest'
 
 const users = encryptedTable('users', {
@@ -10,8 +10,8 @@ const users = encryptedTable('users', {
   age: encryptedColumn('age').dataType('number').equality().orderAndRange(),
   score: encryptedColumn('score').dataType('number').equality().orderAndRange(),
   metadata: {
-    count: encryptedValue('metadata.count').dataType('number'),
-    level: encryptedValue('metadata.level').dataType('number'),
+    count: encryptedField('metadata.count').dataType('number'),
+    level: encryptedField('metadata.level').dataType('number'),
   },
 })
 

@@ -5,7 +5,7 @@ import type {
   EncryptedColumn,
   EncryptedTable,
   EncryptedTableColumn,
-  EncryptedValue,
+  EncryptedField,
 } from '@/schema'
 import type { Client, EncryptOptions, Encrypted } from '@/types'
 import { createRequestLogger } from '@/utils/logger'
@@ -20,7 +20,7 @@ import { EncryptionOperation } from './base-operation'
 export class EncryptOperation extends EncryptionOperation<Encrypted> {
   private client: Client
   private plaintext: JsPlaintext | null
-  private column: EncryptedColumn | EncryptedValue
+  private column: EncryptedColumn | EncryptedField
   private table: EncryptedTable<EncryptedTableColumn>
 
   constructor(
@@ -99,7 +99,7 @@ export class EncryptOperation extends EncryptionOperation<Encrypted> {
   public getOperation(): {
     client: Client
     plaintext: JsPlaintext | null
-    column: EncryptedColumn | EncryptedValue
+    column: EncryptedColumn | EncryptedField
     table: EncryptedTable<EncryptedTableColumn>
   } {
     return {

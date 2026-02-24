@@ -110,12 +110,12 @@ export type EncryptedTableColumn = {
     | EncryptedColumn
     | {
         [key: string]:
-          | EncryptedValue
+          | EncryptedField
           | {
               [key: string]:
-                | EncryptedValue
+                | EncryptedField
                 | {
-                    [key: string]: EncryptedValue
+                    [key: string]: EncryptedField
                   }
             }
       }
@@ -125,7 +125,7 @@ export type EncryptConfig = z.infer<typeof encryptConfigSchema>
 // ------------------------
 // Interface definitions
 // ------------------------
-export class EncryptedValue {
+export class EncryptedField {
   private valueName: string
   private castAsValue: CastAs
 
@@ -135,20 +135,20 @@ export class EncryptedValue {
   }
 
   /**
-   * Set or override the plaintext data type for this value.
+   * Set or override the plaintext data type for this field.
    *
    * By default all values are treated as `'string'`. Use this method to specify
    * a different type so the encryption layer knows how to encode the plaintext
    * before encrypting.
    *
    * @param castAs - The plaintext data type: `'string'`, `'number'`, `'boolean'`, `'date'`, `'bigint'`, or `'json'`.
-   * @returns This `EncryptedValue` instance for method chaining.
+   * @returns This `EncryptedField` instance for method chaining.
    *
    * @example
    * ```typescript
-   * import { encryptedValue } from "@cipherstash/stack/schema"
+   * import { encryptedField } from "@cipherstash/stack/schema"
    *
-   * const age = encryptedValue("age").dataType("number")
+   * const age = encryptedField("age").dataType("number")
    * ```
    */
   dataType(castAs: CastAs) {
@@ -378,13 +378,13 @@ export class EncryptedTable<T extends EncryptedTableColumn> {
         | EncryptedColumn
         | Record<
             string,
-            | EncryptedValue
+            | EncryptedField
             | Record<
                 string,
-                | EncryptedValue
+                | EncryptedField
                 | Record<
                     string,
-                    EncryptedValue | Record<string, EncryptedValue>
+                    EncryptedField | Record<string, EncryptedField>
                   >
               >
           >,
@@ -412,7 +412,7 @@ export class EncryptedTable<T extends EncryptedTableColumn> {
         }
       } else {
         for (const [key, value] of Object.entries(builder)) {
-          if (value instanceof EncryptedValue) {
+          if (value instanceof EncryptedField) {
             builtColumns[value.getName()] = value.build()
           } else {
             processColumn(value, key)
@@ -453,7 +453,7 @@ export class EncryptedTable<T extends EncryptedTableColumn> {
 export type InferPlaintext<T extends EncryptedTable<any>> =
   T extends EncryptedTable<infer C>
     ? {
-        [K in keyof C as C[K] extends EncryptedColumn | EncryptedValue
+        [K in keyof C as C[K] extends EncryptedColumn | EncryptedField
           ? K
           : never]: string
       }
@@ -475,7 +475,7 @@ export type InferPlaintext<T extends EncryptedTable<any>> =
 export type InferEncrypted<T extends EncryptedTable<any>> =
   T extends EncryptedTable<infer C>
     ? {
-        [K in keyof C as C[K] extends EncryptedColumn | EncryptedValue
+        [K in keyof C as C[K] extends EncryptedColumn | EncryptedField
           ? K
           : never]: Encrypted
       }
@@ -559,29 +559,29 @@ export function encryptedColumn(columnName: string) {
 }
 
 /**
- * Define an encrypted value for use in nested or structured schemas.
+ * Define an encrypted field for use in nested or structured schemas.
  *
- * `encryptedValue` is similar to {@link encryptedColumn} but creates a `EncryptedValue`
- * intended for nested fields within a table schema. It supports `.dataType()`
- * for specifying the plaintext type.
+ * `encryptedField` is similar to {@link encryptedColumn} but creates an {@link EncryptedField}
+ * for nested fields that are encrypted but not searchable (no indexes). Use `.dataType()`
+ * to specify the plaintext type.
  *
  * @param valueName - The name of the value field.
- * @returns A new `EncryptedValue` builder.
+ * @returns A new `EncryptedField` builder.
  *
  * @example
  * ```typescript
- * import { encryptedTable, encryptedValue } from "@cipherstash/stack/schema"
+ * import { encryptedTable, encryptedField } from "@cipherstash/stack/schema"
  *
  * const orders = encryptedTable("orders", {
  *   details: {
- *     amount: encryptedValue("amount").dataType("number"),
- *     currency: encryptedValue("currency"),
+ *     amount: encryptedField("amount").dataType("number"),
+ *     currency: encryptedField("currency"),
  *   },
  * })
  * ```
  */
-export function encryptedValue(valueName: string) {
-  return new EncryptedValue(valueName)
+export function encryptedField(valueName: string) {
+  return new EncryptedField(valueName)
 }
 
 // ------------------------
