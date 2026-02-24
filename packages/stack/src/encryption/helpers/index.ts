@@ -29,9 +29,6 @@ export function encryptedToPgComposite(obj: Encrypted): EncryptedPgComposite {
  * ```
  */
 export function encryptedToCompositeLiteral(obj: CipherStashEncrypted): string {
-  if (obj === null) {
-    throw new Error('encryptedToCompositeLiteral: obj cannot be null')
-  }
   return `(${JSON.stringify(JSON.stringify(obj))})`
 }
 
@@ -47,9 +44,6 @@ export function encryptedToCompositeLiteral(obj: CipherStashEncrypted): string {
 export function encryptedToEscapedCompositeLiteral(
   obj: CipherStashEncrypted,
 ): string {
-  if (obj === null) {
-    throw new Error('encryptedToEscapedCompositeLiteral: obj cannot be null')
-  }
   return JSON.stringify(encryptedToCompositeLiteral(obj))
 }
 

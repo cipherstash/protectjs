@@ -27,26 +27,6 @@ beforeAll(async () => {
 })
 
 describe('encryption and decryption edge cases', () => {
-  it('should return null if plaintext is null', async () => {
-    const ciphertext = await protectClient.encrypt(null, {
-      column: users.email,
-      table: users,
-    })
-
-    if (ciphertext.failure) {
-      throw new Error(`[protect]: ${ciphertext.failure.message}`)
-    }
-
-    // Verify null is preserved
-    expect(ciphertext.data).toBeNull()
-
-    const plaintext = await protectClient.decrypt(ciphertext.data)
-
-    expect(plaintext).toEqual({
-      data: null,
-    })
-  }, 30000)
-
   it('should encrypt and decrypt a model', async () => {
     // Create a model with decrypted values
     const decryptedModel = {

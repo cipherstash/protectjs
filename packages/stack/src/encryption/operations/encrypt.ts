@@ -19,13 +19,13 @@ import { EncryptionOperation } from './base-operation'
 
 export class EncryptOperation extends EncryptionOperation<Encrypted> {
   private client: Client
-  private plaintext: JsPlaintext | null
+  private plaintext: JsPlaintext
   private column: EncryptedColumn | EncryptedField
   private table: EncryptedTable<EncryptedTableColumn>
 
   constructor(
     client: Client,
-    plaintext: JsPlaintext | null,
+    plaintext: JsPlaintext,
     opts: EncryptOptions,
   ) {
     super()
@@ -54,10 +54,6 @@ export class EncryptOperation extends EncryptionOperation<Encrypted> {
       async () => {
         if (!this.client) {
           throw noClientError()
-        }
-
-        if (this.plaintext === null) {
-          return null
         }
 
         if (
@@ -98,7 +94,7 @@ export class EncryptOperation extends EncryptionOperation<Encrypted> {
 
   public getOperation(): {
     client: Client
-    plaintext: JsPlaintext | null
+    plaintext: JsPlaintext
     column: EncryptedColumn | EncryptedField
     table: EncryptedTable<EncryptedTableColumn>
   } {
@@ -140,10 +136,6 @@ export class EncryptOperationWithLockContext extends EncryptionOperation<Encrypt
       async () => {
         if (!client) {
           throw noClientError()
-        }
-
-        if (plaintext === null) {
-          return null
         }
 
         const { metadata } = this.getAuditData()

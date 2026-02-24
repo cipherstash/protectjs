@@ -107,17 +107,6 @@ describe('encryptQuery', () => {
   })
 
   describe('edge cases', () => {
-    it('handles null values', async () => {
-      const result = await protectClient.encryptQuery(null, {
-        column: users.email,
-        table: users,
-        queryType: 'equality',
-      })
-
-      const data = unwrapResult(result)
-      expect(data).toBeNull()
-    }, 30000)
-
     it('rejects NaN values', async () => {
       const result = await protectClient.encryptQuery(Number.NaN, {
         column: users.age,
@@ -374,29 +363,6 @@ describe('encryptQuery', () => {
       expect(data).toEqual([])
     }, 30000)
 
-    it('handles null values in batch', async () => {
-      const result = await protectClient.encryptQuery([
-        {
-          value: 'test@example.com',
-          column: users.email,
-          table: users,
-          queryType: 'equality',
-        },
-        {
-          value: null,
-          column: users.bio,
-          table: users,
-          queryType: 'freeTextSearch',
-        },
-      ])
-
-      const data = unwrapResult(result)
-
-      expect(data).toHaveLength(2)
-      expect(data[0]).not.toBeNull()
-      expect(data[1]).toBeNull()
-    }, 30000)
-
     it('auto-infers queryType when omitted', async () => {
       const result = await protectClient.encryptQuery([
         { value: 'user@example.com', column: users.email, table: users },
@@ -444,52 +410,6 @@ describe('encryptQuery', () => {
   })
 
   describe('bulk index preservation', () => {
-    it('preserves exact positions with multiple nulls interspersed', async () => {
-      const result = await protectClient.encryptQuery([
-        {
-          value: null,
-          column: users.email,
-          table: users,
-          queryType: 'equality',
-        },
-        {
-          value: 'user@example.com',
-          column: users.email,
-          table: users,
-          queryType: 'equality',
-        },
-        {
-          value: null,
-          column: users.bio,
-          table: users,
-          queryType: 'freeTextSearch',
-        },
-        {
-          value: null,
-          column: users.age,
-          table: users,
-          queryType: 'orderAndRange',
-        },
-        {
-          value: 42,
-          column: users.age,
-          table: users,
-          queryType: 'orderAndRange',
-        },
-      ])
-
-      const data = unwrapResult(result)
-
-      expect(data).toHaveLength(5)
-      expect(data[0]).toBeNull()
-      expect(data[1]).not.toBeNull()
-      expect(data[1]).toHaveProperty('hm')
-      expect(data[2]).toBeNull()
-      expect(data[3]).toBeNull()
-      expect(data[4]).not.toBeNull()
-      expect(data[4]).toHaveProperty('ob')
-    }, 30000)
-
     it('handles single-item array', async () => {
       const result = await protectClient.encryptQuery([
         {
@@ -507,35 +427,6 @@ describe('encryptQuery', () => {
       expect(data[0]).toHaveProperty('hm')
     }, 30000)
 
-    it('handles all-null array', async () => {
-      const result = await protectClient.encryptQuery([
-        {
-          value: null,
-          column: users.email,
-          table: users,
-          queryType: 'equality',
-        },
-        {
-          value: null,
-          column: users.bio,
-          table: users,
-          queryType: 'freeTextSearch',
-        },
-        {
-          value: null,
-          column: users.age,
-          table: users,
-          queryType: 'orderAndRange',
-        },
-      ])
-
-      const data = unwrapResult(result)
-
-      expect(data).toHaveLength(3)
-      expect(data[0]).toBeNull()
-      expect(data[1]).toBeNull()
-      expect(data[2]).toBeNull()
-    }, 30000)
   })
 
   describe('audit support', () => {
@@ -690,39 +581,6 @@ describe('encryptQuery', () => {
       expect(data[2]).toMatch(/^"\(.*\)"$/)
     }, 30000)
 
-    it('handles returnType with null values', async () => {
-      const result = await protectClient.encryptQuery([
-        {
-          value: null,
-          column: users.email,
-          table: users,
-          queryType: 'equality',
-          returnType: 'composite-literal',
-        },
-        {
-          value: 'test@example.com',
-          column: users.email,
-          table: users,
-          queryType: 'equality',
-          returnType: 'composite-literal',
-        },
-        {
-          value: null,
-          column: users.bio,
-          table: users,
-          queryType: 'freeTextSearch',
-          returnType: 'escaped-composite-literal',
-        },
-      ])
-
-      const data = unwrapResult(result)
-
-      expect(data).toHaveLength(3)
-      expect(data[0]).toBeNull()
-      expect(typeof data[1]).toBe('string')
-      expect(data[1]).toMatch(/^\(".*"\)$/)
-      expect(data[2]).toBeNull()
-    }, 30000)
   })
 
   describe('single-value returnType formatting', () => {
@@ -789,18 +647,6 @@ describe('encryptQuery', () => {
       expect(typeof data).toBe('object')
     }, 30000)
 
-    it('handles null value with composite-literal returnType', async () => {
-      const result = await protectClient.encryptQuery(null, {
-        column: users.email,
-        table: users,
-        queryType: 'equality',
-        returnType: 'composite-literal',
-      })
-
-      const data = unwrapResult(result)
-
-      expect(data).toBeNull()
-    }, 30000)
   })
 
   describe('LockContext support', () => {
@@ -906,24 +752,6 @@ describe('encryptQuery', () => {
         'Mock LockContext failure',
         EncryptionErrorTypes.CtsTokenError,
       )
-    }, 30000)
-
-    it('handles null value with LockContext', async () => {
-      const mockLockContext = createMockLockContext()
-
-      const operation = protectClient.encryptQuery(null, {
-        column: users.email,
-        table: users,
-        queryType: 'equality',
-      })
-
-      const withContext = operation.withLockContext(mockLockContext as any)
-      const result = await withContext.execute()
-
-      // Null values should return null without calling LockContext
-      // since there's nothing to encrypt
-      const data = unwrapResult(result)
-      expect(data).toBeNull()
     }, 30000)
 
     it('handles explicit null context from getLockContext gracefully', async () => {

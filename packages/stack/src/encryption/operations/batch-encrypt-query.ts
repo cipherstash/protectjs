@@ -6,7 +6,6 @@ import type { Client, EncryptedQueryResult, ScalarQueryTerm } from '@/types'
 import { createRequestLogger } from '@/utils/logger'
 import { type Result, withResult } from '@byteslice/result'
 import {
-  type JsPlaintext,
   type QueryPayload,
   encryptQueryBulk as ffiEncryptQueryBulk,
 } from '@cipherstash/protect-ffi'
@@ -18,28 +17,6 @@ import {
 } from '../helpers/validation'
 import { noClientError } from '../index'
 import { EncryptionOperation } from './base-operation'
-
-/**
- * Separates null/undefined values from non-null terms in the input array.
- * Returns a set of indices where values are null/undefined and an array of non-null terms with their original indices.
- */
-function filterNullTerms(terms: readonly ScalarQueryTerm[]): {
-  nullIndices: Set<number>
-  nonNullTerms: { term: ScalarQueryTerm; originalIndex: number }[]
-} {
-  const nullIndices = new Set<number>()
-  const nonNullTerms: { term: ScalarQueryTerm; originalIndex: number }[] = []
-
-  terms.forEach((term, index) => {
-    if (term.value === null || term.value === undefined) {
-      nullIndices.add(index)
-    } else {
-      nonNullTerms.push({ term, originalIndex: index })
-    }
-  })
-
-  return { nullIndices, nonNullTerms }
-}
 
 /**
  * Validates and transforms a single term into a QueryPayload.
@@ -62,7 +39,7 @@ function buildQueryPayload(
   assertValueIndexCompatibility(term.value, indexType, term.column.getName())
 
   const payload: QueryPayload = {
-    plaintext: term.value as JsPlaintext,
+    plaintext: term.value,
     column: term.column.getName(),
     table: term.table.tableName,
     indexType,
@@ -77,25 +54,15 @@ function buildQueryPayload(
 }
 
 /**
- * Reconstructs the results array with nulls in their original positions.
- * Non-null encrypted values are placed at their original indices.
- * Applies formatting based on term.returnType.
+ * Maps encrypted values to formatted results based on term.returnType.
  */
 function assembleResults(
-  totalLength: number,
+  terms: readonly ScalarQueryTerm[],
   encryptedValues: CipherStashEncrypted[],
-  nonNullTerms: { term: ScalarQueryTerm; originalIndex: number }[],
 ): EncryptedQueryResult[] {
-  const results: EncryptedQueryResult[] = new Array(totalLength).fill(null)
-
-  // Fill in encrypted values at their original positions, applying formatting
-  nonNullTerms.forEach(({ term, originalIndex }, i) => {
-    const encrypted = encryptedValues[i]
-
-    results[originalIndex] = formatEncryptedResult(encrypted, term.returnType)
-  })
-
-  return results
+  return terms.map((term, i) =>
+    formatEncryptedResult(encryptedValues[i], term.returnType),
+  )
 }
 
 /**
@@ -137,20 +104,13 @@ export class BatchEncryptQueryOperation extends EncryptionOperation<
       return { data: [] }
     }
 
-    const { nullIndices, nonNullTerms } = filterNullTerms(this.terms)
-
-    if (nonNullTerms.length === 0) {
-      log.emit()
-      return { data: this.terms.map(() => null) }
-    }
-
     const result = await withResult(
       async () => {
         if (!this.client) throw noClientError()
 
         const { metadata } = this.getAuditData()
 
-        const queries: QueryPayload[] = nonNullTerms.map(({ term }) =>
+        const queries: QueryPayload[] = this.terms.map((term) =>
           buildQueryPayload(term),
         )
 
@@ -159,7 +119,7 @@ export class BatchEncryptQueryOperation extends EncryptionOperation<
           unverifiedContext: metadata,
         })
 
-        return assembleResults(this.terms.length, encrypted, nonNullTerms)
+        return assembleResults(this.terms, encrypted)
       },
       (error: unknown) => {
         log.set({ errorCode: getErrorCode(error) ?? 'unknown' })
@@ -206,14 +166,6 @@ export class BatchEncryptQueryOperationWithLockContext extends EncryptionOperati
       return { data: [] }
     }
 
-    // Check for all-null terms BEFORE fetching lockContext to avoid unnecessary network call
-    const { nullIndices, nonNullTerms } = filterNullTerms(this.terms)
-
-    if (nonNullTerms.length === 0) {
-      log.emit()
-      return { data: this.terms.map(() => null) }
-    }
-
     const lockContextResult = await this.lockContext.getLockContext()
     if (lockContextResult.failure) {
       log.emit()
@@ -228,7 +180,7 @@ export class BatchEncryptQueryOperationWithLockContext extends EncryptionOperati
 
         const { metadata } = this.getAuditData()
 
-        const queries: QueryPayload[] = nonNullTerms.map(({ term }) =>
+        const queries: QueryPayload[] = this.terms.map((term) =>
           buildQueryPayload(term, context),
         )
 
@@ -238,7 +190,7 @@ export class BatchEncryptQueryOperationWithLockContext extends EncryptionOperati
           unverifiedContext: metadata,
         })
 
-        return assembleResults(this.terms.length, encrypted, nonNullTerms)
+        return assembleResults(this.terms, encrypted)
       },
       (error: unknown) => {
         log.set({ errorCode: getErrorCode(error) ?? 'unknown' })

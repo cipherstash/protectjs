@@ -206,53 +206,6 @@ describe('encryptQuery batch with STE Vec', () => {
     expect(data[1]).toMatchObject({ i: { t: 'documents', c: 'metadata' } })
   }, 30000)
 
-  it('handles null values with steVecSelector in batch', async () => {
-    const result = await protectClient.encryptQuery([
-      {
-        value: null,
-        column: jsonbSchema.metadata,
-        table: jsonbSchema,
-        queryType: 'steVecSelector',
-      },
-      {
-        value: '$.user.email',
-        column: jsonbSchema.metadata,
-        table: jsonbSchema,
-        queryType: 'steVecSelector',
-      },
-    ])
-
-    const data = unwrapResult(result)
-
-    expect(data).toHaveLength(2)
-    expect(data[0]).toBeNull()
-    expect(data[1]).not.toBeNull()
-    expect(data[1]).toMatchObject({ i: { t: 'documents', c: 'metadata' } })
-  }, 30000)
-
-  it('handles null values with steVecTerm in batch', async () => {
-    const result = await protectClient.encryptQuery([
-      {
-        value: null,
-        column: jsonbSchema.metadata,
-        table: jsonbSchema,
-        queryType: 'steVecTerm',
-      },
-      {
-        value: { role: 'admin' },
-        column: jsonbSchema.metadata,
-        table: jsonbSchema,
-        queryType: 'steVecTerm',
-      },
-    ])
-
-    const data = unwrapResult(result)
-
-    expect(data).toHaveLength(2)
-    expect(data[0]).toBeNull()
-    expect(data[1]).not.toBeNull()
-    expect(data[1]).toMatchObject({ i: { t: 'documents', c: 'metadata' } })
-  }, 30000)
 })
 
 describe('encryptQuery with queryType inference', () => {
@@ -327,18 +280,6 @@ describe('encryptQuery with queryType inference', () => {
     })
 
     expectFailure(result, /Wrap the boolean in a JSON object/)
-  }, 30000)
-
-  it('returns null for null plaintext (no inference needed)', async () => {
-    const result = await protectClient.encryptQuery(null, {
-      column: jsonbSchema.metadata,
-      table: jsonbSchema,
-      // No queryType and null plaintext - should return null
-    })
-
-    // Null returns null, doesn't throw
-    const data = unwrapResult(result)
-    expect(data).toBeNull()
   }, 30000)
 
   it('uses explicit queryType over plaintext inference', async () => {

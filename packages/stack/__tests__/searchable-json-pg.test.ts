@@ -116,29 +116,6 @@ describe('searchableJson postgres integration', () => {
       await verifyRow(rows[0], plaintext)
     }, 30000)
 
-    it('round-trips null values', async () => {
-      const encrypted = await protectClient.encrypt(null, {
-        column: table.metadata,
-        table: table,
-      })
-
-      if (encrypted.failure) throw new Error(encrypted.failure.message)
-      expect(encrypted.data).toBeNull()
-
-      const [inserted] = await sql`
-        INSERT INTO "protect-ci-jsonb" (metadata, test_run_id)
-        VALUES (NULL, ${TEST_RUN_ID})
-        RETURNING id
-      `
-
-      const rows = await sql`
-        SELECT id, (metadata).data as metadata FROM "protect-ci-jsonb"
-        WHERE id = ${inserted.id}
-      `
-
-      expect(rows).toHaveLength(1)
-      expect(rows[0].metadata).toBeNull()
-    }, 30000)
   })
 
   // ─── jsonb_path_query: path-based selector queries ─────────────────

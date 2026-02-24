@@ -113,16 +113,6 @@ describe('encryptQuery with searchableJson queryType', () => {
     expectTerm(data)
   }, 30000)
 
-  it('returns null for null plaintext', async () => {
-    const result = await protectClient.encryptQuery(null, {
-      column: jsonbSchema.metadata,
-      table: jsonbSchema,
-      queryType: 'searchableJson',
-    })
-
-    const data = unwrapResult(result)
-    expect(data).toBeNull()
-  }, 30000)
 
   // Edge cases: number/boolean require wrapping (same as steVecTerm)
 
@@ -185,16 +175,6 @@ describe('encryptQuery with searchableJson column and omitted queryType', () => 
       v: 2,
     })
     expectTerm(data)
-  }, 30000)
-
-  it('returns null for null plaintext', async () => {
-    const result = await protectClient.encryptQuery(null, {
-      column: jsonbSchema.metadata,
-      table: jsonbSchema,
-    })
-
-    const data = unwrapResult(result)
-    expect(data).toBeNull()
   }, 30000)
 
   it('fails for bare number plaintext (requires wrapping)', async () => {
@@ -273,36 +253,6 @@ describe('searchableJson batch operations', () => {
     expectTerm(data[2])
   }, 30000)
 
-  it('handles null values in batch', async () => {
-    const result = await protectClient.encryptQuery([
-      {
-        value: null,
-        column: jsonbSchema.metadata,
-        table: jsonbSchema,
-        queryType: 'searchableJson',
-      },
-      {
-        value: '$.user.email',
-        column: jsonbSchema.metadata,
-        table: jsonbSchema,
-        queryType: 'searchableJson',
-      },
-      {
-        value: null,
-        column: jsonbSchema.metadata,
-        table: jsonbSchema,
-        queryType: 'searchableJson',
-      },
-    ])
-
-    const data = unwrapResult(result)
-    expect(data).toHaveLength(3)
-    expect(data[0]).toBeNull()
-    expect(data[1]).not.toBeNull()
-    expectSelector(data[1])
-    expect(data[2]).toBeNull()
-  }, 30000)
-
   it('can be mixed with explicit steVecSelector/steVecTerm in batch', async () => {
     const result = await protectClient.encryptQuery([
       {
@@ -344,18 +294,12 @@ describe('searchableJson batch operations', () => {
         column: jsonbSchema.metadata,
         table: jsonbSchema,
       },
-      {
-        value: null,
-        column: jsonbSchema.metadata,
-        table: jsonbSchema,
-      },
     ])
 
     const data = unwrapResult(result)
-    expect(data).toHaveLength(3)
+    expect(data).toHaveLength(2)
     expectSelector(data[0])
     expectTerm(data[1])
-    expect(data[2]).toBeNull()
   }, 30000)
 })
 
@@ -605,25 +549,6 @@ describe('searchableJson with LockContext', () => {
       'Mock LockContext failure',
       EncryptionErrorTypes.CtsTokenError,
     )
-  }, 30000)
-
-  it('handles null value with LockContext', async () => {
-    const mockLockContext = createMockLockContext()
-
-    const operation = protectClient.encryptQuery(null, {
-      column: jsonbSchema.metadata,
-      table: jsonbSchema,
-      queryType: 'searchableJson',
-    })
-
-    const withContext = operation.withLockContext(mockLockContext as any)
-    const result = await withContext.execute()
-
-    // Null values should return null without calling LockContext
-    // since there's nothing to encrypt
-    expect(mockLockContext.getLockContext).not.toHaveBeenCalled()
-    const data = unwrapResult(result)
-    expect(data).toBeNull()
   }, 30000)
 
   it('handles explicit null context from getLockContext gracefully', async () => {
@@ -952,35 +877,6 @@ describe('searchableJson batch edge cases', () => {
     expectSelector(batchData[0])
   }, 30000)
 
-  it('handles all-null batch', async () => {
-    const result = await protectClient.encryptQuery([
-      {
-        value: null,
-        column: jsonbSchema.metadata,
-        table: jsonbSchema,
-        queryType: 'searchableJson',
-      },
-      {
-        value: null,
-        column: jsonbSchema.metadata,
-        table: jsonbSchema,
-        queryType: 'searchableJson',
-      },
-      {
-        value: null,
-        column: jsonbSchema.metadata,
-        table: jsonbSchema,
-        queryType: 'searchableJson',
-      },
-    ])
-
-    const data = unwrapResult(result)
-    expect(data).toHaveLength(3)
-    expect(data[0]).toBeNull()
-    expect(data[1]).toBeNull()
-    expect(data[2]).toBeNull()
-  }, 30000)
-
   it('handles empty batch', async () => {
     const result = await protectClient.encryptQuery([])
 
@@ -1013,48 +909,4 @@ describe('searchableJson batch edge cases', () => {
     })
   }, 30000)
 
-  it('handles multiple interspersed nulls at various positions', async () => {
-    const result = await protectClient.encryptQuery([
-      {
-        value: null,
-        column: jsonbSchema.metadata,
-        table: jsonbSchema,
-        queryType: 'searchableJson',
-      },
-      {
-        value: '$.user.email',
-        column: jsonbSchema.metadata,
-        table: jsonbSchema,
-        queryType: 'searchableJson',
-      },
-      {
-        value: null,
-        column: jsonbSchema.metadata,
-        table: jsonbSchema,
-        queryType: 'searchableJson',
-      },
-      {
-        value: { role: 'admin' },
-        column: jsonbSchema.metadata,
-        table: jsonbSchema,
-        queryType: 'searchableJson',
-      },
-      {
-        value: null,
-        column: jsonbSchema.metadata,
-        table: jsonbSchema,
-        queryType: 'searchableJson',
-      },
-    ])
-
-    const data = unwrapResult(result)
-    expect(data).toHaveLength(5)
-    expect(data[0]).toBeNull()
-    expect(data[1]).not.toBeNull()
-    expectSelector(data[1])
-    expect(data[2]).toBeNull()
-    expect(data[3]).not.toBeNull()
-    expectTerm(data[3])
-    expect(data[4]).toBeNull()
-  }, 30000)
 })
