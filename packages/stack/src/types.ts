@@ -136,6 +136,38 @@ export type DecryptedFields<T> = {
 /** Model with encrypted fields replaced by plaintext (decrypted) values */
 export type Decrypted<T> = OtherFields<T> & DecryptedFields<T>
 
+/**
+ * Maps a plaintext model type to its encrypted form using the table schema.
+ *
+ * Fields whose keys match columns defined in `S` become `Encrypted`;
+ * all other fields retain their original types from `T`.
+ *
+ * When `S` is the widened `ProtectTableColumn` (e.g. when a user passes an
+ * explicit `<User>` type argument without specifying `S`), the type degrades
+ * gracefully to `T` — preserving backward compatibility.
+ *
+ * @typeParam T - The plaintext model type (e.g. `{ id: string; email: string }`)
+ * @typeParam S - The table schema column definition, inferred from the `table` argument
+ *
+ * @example
+ * ```typescript
+ * type User = { id: string; email: string }
+ * // With a schema that defines `email`:
+ * type Encrypted = EncryptedFromSchema<User, { email: ProtectColumn }>
+ * // => { id: string; email: Encrypted }
+ * ```
+ */
+export type EncryptedFromSchema<
+  T,
+  S extends ProtectTableColumn,
+> = {
+  [K in keyof T]: [K] extends [keyof S]
+    ? [S[K & keyof S]] extends [ProtectColumn | ProtectValue]
+      ? Encrypted
+      : T[K]
+    : T[K]
+}
+
 // ---------------------------------------------------------------------------
 // Bulk operations
 // ---------------------------------------------------------------------------

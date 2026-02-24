@@ -139,27 +139,25 @@ const decrypted = await client.decrypt(encrypted.data)
 
 Encrypt or decrypt an entire object. Only fields matching your schema are encrypted; other fields pass through unchanged.
 
+The return type is **schema-aware**: fields matching the table schema are typed as `Encrypted`, while other fields retain their original types. For best results, let TypeScript infer the type parameters from the arguments:
+
 ```typescript
+type User = { id: string; email: string; createdAt: Date }
+
 const user = {
   id: "user_123",
   email: "alice@example.com",  // defined in schema -> encrypted
   createdAt: new Date(),       // not in schema -> unchanged
 }
 
-// Encrypt a model
+// Let TypeScript infer the return type from the schema
 const encryptedResult = await client.encryptModel(user, users)
+// encryptedResult.data.email    -> Encrypted
+// encryptedResult.data.id       -> string
+// encryptedResult.data.createdAt -> Date
 
 // Decrypt a model
 const decryptedResult = await client.decryptModel(encryptedResult.data)
-```
-
-Type-safe generics are supported:
-
-```typescript
-type User = { id: string; email: string; createdAt: Date }
-
-const result = await client.encryptModel<User>(user, users)
-const back = await client.decryptModel<User>(result.data)
 ```
 
 ### Bulk Operations
@@ -592,11 +590,11 @@ function Encryption(config: EncryptionClientConfig): Promise<EncryptionClient>
 | `decrypt` | `(encryptedData)` | `DecryptOperation` (thenable) |
 | `encryptQuery` | `(plaintext, { column, table, queryType?, returnType? })` | `EncryptQueryOperation` (thenable) |
 | `encryptQuery` | `(terms: ScalarQueryTerm[])` | `BatchEncryptQueryOperation` (thenable) |
-| `encryptModel` | `(model, table)` | `EncryptModelOperation<T>` (thenable) |
+| `encryptModel` | `(model, table)` | `EncryptModelOperation<EncryptedFromSchema<T, S>>` (thenable) |
 | `decryptModel` | `(encryptedModel)` | `DecryptModelOperation<T>` (thenable) |
 | `bulkEncrypt` | `(plaintexts, { column, table })` | `BulkEncryptOperation` (thenable) |
 | `bulkDecrypt` | `(encryptedPayloads)` | `BulkDecryptOperation` (thenable) |
-| `bulkEncryptModels` | `(models, table)` | `BulkEncryptModelsOperation<T>` (thenable) |
+| `bulkEncryptModels` | `(models, table)` | `BulkEncryptModelsOperation<EncryptedFromSchema<T, S>>` (thenable) |
 | `bulkDecryptModels` | `(encryptedModels)` | `BulkDecryptModelsOperation<T>` (thenable) |
 
 All operations are thenable (awaitable) and support `.withLockContext(lockContext)` for identity-aware encryption.

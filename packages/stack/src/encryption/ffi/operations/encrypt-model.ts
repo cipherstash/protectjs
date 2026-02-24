@@ -2,7 +2,7 @@ import { getErrorCode } from '@/encryption/ffi/helpers/error-code'
 import { type EncryptionError, EncryptionErrorTypes } from '@/errors'
 import type { LockContext } from '@/identity'
 import type { ProtectTable, ProtectTableColumn } from '@/schema'
-import type { Client, Decrypted } from '@/types'
+import type { Client } from '@/types'
 import { createRequestLogger } from '@/utils/logger'
 import { type Result, withResult } from '@byteslice/result'
 import { noClientError } from '../index'
@@ -16,12 +16,12 @@ export class EncryptModelOperation<
   T extends Record<string, unknown>,
 > extends EncryptionOperation<T> {
   private client: Client
-  private model: Decrypted<T>
+  private model: Record<string, unknown>
   private table: ProtectTable<ProtectTableColumn>
 
   constructor(
     client: Client,
-    model: Decrypted<T>,
+    model: Record<string, unknown>,
     table: ProtectTable<ProtectTableColumn>,
   ) {
     super()
@@ -52,12 +52,12 @@ export class EncryptModelOperation<
 
         const auditData = this.getAuditData()
 
-        return await encryptModelFields<T>(
+        return await encryptModelFields(
           this.model,
           this.table,
           this.client,
           auditData,
-        )
+        ) as T
       },
       (error: unknown) => {
         log.set({ errorCode: getErrorCode(error) ?? 'unknown' })
@@ -74,7 +74,7 @@ export class EncryptModelOperation<
 
   public getOperation(): {
     client: Client
-    model: Decrypted<T>
+    model: Record<string, unknown>
     table: ProtectTable<ProtectTableColumn>
   } {
     return {
@@ -125,13 +125,13 @@ export class EncryptModelOperationWithLockContext<
 
         const auditData = this.getAuditData()
 
-        return await encryptModelFieldsWithLockContext<T>(
+        return await encryptModelFieldsWithLockContext(
           model,
           table,
           client,
           context.data,
           auditData,
-        )
+        ) as T
       },
       (error: unknown) => {
         log.set({ errorCode: getErrorCode(error) ?? 'unknown' })

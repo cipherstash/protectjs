@@ -9,10 +9,10 @@ import type {
   BulkDecryptPayload,
   BulkEncryptPayload,
   Client,
-  Decrypted,
   EncryptOptions,
   EncryptQueryOptions,
   Encrypted,
+  EncryptedFromSchema,
   KeysetIdentifier,
   ScalarQueryTerm,
 } from '@/types'
@@ -83,10 +83,10 @@ export class EncryptionClient {
         this.client = await newClient({
           encryptConfig: validated,
           clientOpts: {
-            workspaceCrn: config.workspaceCrn,
-            accessKey: config.accessKey,
-            clientId: config.clientId,
-            clientKey: config.clientKey,
+            workspaceCrn: config.workspaceCrn ?? process.env.CS_WORKSPACE_CRN,
+            accessKey: config.accessKey ?? process.env.CS_CLIENT_ACCESS_KEY,
+            clientId: config.clientId ?? process.env.CS_CLIENT_ID,
+            clientKey: config.clientKey ?? process.env.CS_CLIENT_KEY,
             keyset: toFfiKeysetIdentifier(config.keyset),
           },
         })
@@ -324,10 +324,16 @@ export class EncryptionClient {
    * All other fields are passed through unchanged. Returns a thenable operation
    * that supports `.withLockContext()` for identity-aware encryption.
    *
+   * The return type is **schema-aware**: fields matching the table schema are
+   * typed as `Encrypted`, while other fields retain their original types. For
+   * best results, let TypeScript infer the type parameters from the arguments
+   * rather than providing an explicit type argument.
+   *
    * @param input - The model object with plaintext values to encrypt.
    * @param table - The table schema defining which fields to encrypt.
-   * @returns An `EncryptModelOperation<T>` that can be awaited to get a `Result`
-   *   containing the model with encrypted fields, or an `EncryptionError`.
+   * @returns An `EncryptModelOperation` that can be awaited to get a `Result`
+   *   containing the model with schema-defined fields typed as `Encrypted`,
+   *   or an `EncryptionError`.
    *
    * @example
    * ```typescript
@@ -342,7 +348,9 @@ export class EncryptionClient {
    *
    * const client = await Encryption({ schemas: [usersSchema] })
    *
-   * const result = await client.encryptModel<User>(
+   * // Let TypeScript infer the return type from the schema.
+   * // result.data.email is typed as `Encrypted`, result.data.id stays `string`.
+   * const result = await client.encryptModel(
    *   { id: "user_123", email: "alice@example.com", createdAt: new Date() },
    *   usersSchema,
    * )
@@ -350,16 +358,16 @@ export class EncryptionClient {
    * if (result.failure) {
    *   console.error(result.failure.message)
    * } else {
-   *   // result.data.id is unchanged, result.data.email is encrypted
-   *   console.log(result.data)
+   *   console.log(result.data.id)    // string
+   *   console.log(result.data.email) // Encrypted
    * }
    * ```
    */
-  encryptModel<T extends Record<string, unknown>>(
-    input: Decrypted<T>,
-    table: ProtectTable<ProtectTableColumn>,
-  ): EncryptModelOperation<T> {
-    return new EncryptModelOperation(this.client, input, table)
+  encryptModel<T extends Record<string, unknown>, S extends ProtectTableColumn = ProtectTableColumn>(
+    input: T,
+    table: ProtectTable<S>,
+  ): EncryptModelOperation<EncryptedFromSchema<T, S>> {
+    return new EncryptModelOperation(this.client, input as Record<string, unknown>, table)
   }
 
   /**
@@ -403,10 +411,15 @@ export class EncryptionClient {
    * while still using a unique key for each encrypted value. Only fields
    * matching the table schema are encrypted; other fields pass through unchanged.
    *
+   * The return type is **schema-aware**: fields matching the table schema are
+   * typed as `Encrypted`, while other fields retain their original types. For
+   * best results, let TypeScript infer the type parameters from the arguments.
+   *
    * @param input - An array of model objects with plaintext values to encrypt.
    * @param table - The table schema defining which fields to encrypt.
-   * @returns A `BulkEncryptModelsOperation<T>` that can be awaited to get a `Result`
-   *   containing an array of models with encrypted fields, or an `EncryptionError`.
+   * @returns A `BulkEncryptModelsOperation` that can be awaited to get a `Result`
+   *   containing an array of models with schema-defined fields typed as `Encrypted`,
+   *   or an `EncryptionError`.
    *
    * @example
    * ```typescript
@@ -421,7 +434,9 @@ export class EncryptionClient {
    *
    * const client = await Encryption({ schemas: [usersSchema] })
    *
-   * const result = await client.bulkEncryptModels<User>(
+   * // Let TypeScript infer the return type from the schema.
+   * // Each item's email is typed as `Encrypted`, id stays `string`.
+   * const result = await client.bulkEncryptModels(
    *   [
    *     { id: "1", email: "alice@example.com" },
    *     { id: "2", email: "bob@example.com" },
@@ -434,11 +449,11 @@ export class EncryptionClient {
    * }
    * ```
    */
-  bulkEncryptModels<T extends Record<string, unknown>>(
-    input: Array<Decrypted<T>>,
-    table: ProtectTable<ProtectTableColumn>,
-  ): BulkEncryptModelsOperation<T> {
-    return new BulkEncryptModelsOperation(this.client, input, table)
+  bulkEncryptModels<T extends Record<string, unknown>, S extends ProtectTableColumn = ProtectTableColumn>(
+    input: Array<T>,
+    table: ProtectTable<S>,
+  ): BulkEncryptModelsOperation<EncryptedFromSchema<T, S>> {
+    return new BulkEncryptModelsOperation(this.client, input as Array<Record<string, unknown>>, table)
   }
 
   /**

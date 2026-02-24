@@ -13,6 +13,7 @@ import type {
   DecryptedFields,
   Encrypted,
   EncryptedFields,
+  EncryptedFromSchema,
   EncryptedReturnType,
   KeysetIdentifier,
   OtherFields,
@@ -109,5 +110,36 @@ describe('Type inference', () => {
     })
     type Enc = InferEncrypted<typeof table>
     expectTypeOf<Enc>().toMatchTypeOf<{ email: Encrypted }>()
+  })
+
+  it('EncryptedFromSchema maps schema fields to Encrypted, leaves others unchanged', () => {
+    type User = { id: string; email: string; createdAt: Date }
+    type Schema = { email: ProtectColumn }
+    type Result = EncryptedFromSchema<User, Schema>
+    expectTypeOf<Result>().toEqualTypeOf<{
+      id: string
+      email: Encrypted
+      createdAt: Date
+    }>()
+  })
+
+  it('EncryptedFromSchema with widened ProtectTableColumn degrades to T', () => {
+    type User = { id: string; email: string }
+    type Result = EncryptedFromSchema<User, ProtectTableColumn>
+    // When S is the wide ProtectTableColumn, S[K] is the full union, not ProtectColumn alone.
+    // The conditional [S[K]] extends [ProtectColumn | ProtectValue] fails, so fields stay as-is.
+    expectTypeOf<Result>().toEqualTypeOf<{ id: string; email: string }>()
+  })
+
+  it('Decrypted reverses EncryptedFromSchema correctly', () => {
+    type User = { id: string; email: string; createdAt: Date }
+    type Schema = { email: ProtectColumn }
+    type EncryptedUser = EncryptedFromSchema<User, Schema>
+    type DecryptedUser = Decrypted<EncryptedUser>
+    expectTypeOf<DecryptedUser>().toMatchTypeOf<{
+      id: string
+      email: string
+      createdAt: Date
+    }>()
   })
 })

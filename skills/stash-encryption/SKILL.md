@@ -224,6 +224,8 @@ Null values are preserved: encrypting `null` returns `null`.
 
 Encrypt or decrypt an entire object. Only fields matching your schema are encrypted; other fields pass through unchanged.
 
+The return type is **schema-aware**: fields matching the table schema are typed as `Encrypted`, while other fields retain their original types. For best results, let TypeScript infer the type parameters from the arguments rather than providing an explicit `<User>`.
+
 ```typescript
 type User = { id: string; email: string; createdAt: Date }
 
@@ -233,20 +235,24 @@ const user = {
   createdAt: new Date(),       // not in schema -> unchanged
 }
 
-// Encrypt model
-const encResult = await client.encryptModel<User>(user, users)
+// Encrypt model — let TypeScript infer the return type from the schema
+const encResult = await client.encryptModel(user, users)
 if (!encResult.failure) {
-  // encResult.data has email encrypted, id and createdAt unchanged
+  // encResult.data.email is typed as Encrypted
+  // encResult.data.id is typed as string
+  // encResult.data.createdAt is typed as Date
 }
 
 // Decrypt model
-const decResult = await client.decryptModel<User>(encResult.data)
+const decResult = await client.decryptModel(encResult.data)
 if (!decResult.failure) {
   console.log(decResult.data.email) // "alice@example.com"
 }
 ```
 
 The `Decrypted<T>` type maps encrypted fields back to their plaintext types.
+
+Passing an explicit type parameter (e.g., `client.encryptModel<User>(...)`) still works for backward compatibility — the return type degrades to `User` in that case.
 
 ## Bulk Operations
 
@@ -524,11 +530,11 @@ All method signatures on the encryption client remain the same. The `Result` pat
 | `decrypt` | `(encryptedData)` | `DecryptOperation` |
 | `encryptQuery` | `(plaintext, { column, table, queryType?, returnType? })` | `EncryptQueryOperation` |
 | `encryptQuery` | `(terms: readonly ScalarQueryTerm[])` | `BatchEncryptQueryOperation` |
-| `encryptModel` | `(model, table)` | `EncryptModelOperation<T>` |
+| `encryptModel` | `(model, table)` | `EncryptModelOperation<EncryptedFromSchema<T, S>>` |
 | `decryptModel` | `(encryptedModel)` | `DecryptModelOperation<T>` |
 | `bulkEncrypt` | `(plaintexts, { column, table })` | `BulkEncryptOperation` |
 | `bulkDecrypt` | `(encryptedPayloads)` | `BulkDecryptOperation` |
-| `bulkEncryptModels` | `(models, table)` | `BulkEncryptModelsOperation<T>` |
+| `bulkEncryptModels` | `(models, table)` | `BulkEncryptModelsOperation<EncryptedFromSchema<T, S>>` |
 | `bulkDecryptModels` | `(encryptedModels)` | `BulkDecryptModelsOperation<T>` |
 
 All operations are thenable (awaitable) and support `.withLockContext()` and `.audit()` chaining.

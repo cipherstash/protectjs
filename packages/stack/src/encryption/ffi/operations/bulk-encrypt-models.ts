@@ -2,7 +2,7 @@ import { getErrorCode } from '@/encryption/ffi/helpers/error-code'
 import { type EncryptionError, EncryptionErrorTypes } from '@/errors'
 import type { LockContext } from '@/identity'
 import type { ProtectTable, ProtectTableColumn } from '@/schema'
-import type { Client, Decrypted } from '@/types'
+import type { Client } from '@/types'
 import { createRequestLogger } from '@/utils/logger'
 import { type Result, withResult } from '@byteslice/result'
 import { noClientError } from '../index'
@@ -16,12 +16,12 @@ export class BulkEncryptModelsOperation<
   T extends Record<string, unknown>,
 > extends EncryptionOperation<T[]> {
   private client: Client
-  private models: Decrypted<T>[]
+  private models: Record<string, unknown>[]
   private table: ProtectTable<ProtectTableColumn>
 
   constructor(
     client: Client,
-    models: Decrypted<T>[],
+    models: Record<string, unknown>[],
     table: ProtectTable<ProtectTableColumn>,
   ) {
     super()
@@ -53,12 +53,12 @@ export class BulkEncryptModelsOperation<
 
         const auditData = this.getAuditData()
 
-        return await bulkEncryptModels<T>(
+        return await bulkEncryptModels(
           this.models,
           this.table,
           this.client,
           auditData,
-        )
+        ) as T[]
       },
       (error: unknown) => {
         log.set({ errorCode: getErrorCode(error) ?? 'unknown' })
@@ -75,7 +75,7 @@ export class BulkEncryptModelsOperation<
 
   public getOperation(): {
     client: Client
-    models: Decrypted<T>[]
+    models: Record<string, unknown>[]
     table: ProtectTable<ProtectTableColumn>
   } {
     return {
@@ -130,13 +130,13 @@ export class BulkEncryptModelsOperationWithLockContext<
 
         const auditData = this.getAuditData()
 
-        return await bulkEncryptModelsWithLockContext<T>(
+        return await bulkEncryptModelsWithLockContext(
           models,
           table,
           client,
           context.data,
           auditData,
-        )
+        ) as T[]
       },
       (error: unknown) => {
         log.set({ errorCode: getErrorCode(error) ?? 'unknown' })
