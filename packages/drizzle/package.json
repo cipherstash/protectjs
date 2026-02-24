@@ -1,6 +1,6 @@
 {
 	"name": "@cipherstash/drizzle",
-	"version": "2.3.0",
+	"version": "3.0.0",
 	"description": "CipherStash Protect.js Drizzle ORM integration for TypeScript",
 	"keywords": [
 		"encrypted",
@@ -43,8 +43,8 @@
 		"release": "tsup"
 	},
 	"peerDependencies": {
-		"@cipherstash/protect": ">=10",
-		"@cipherstash/schema": ">=2",
+		"@cipherstash/protect": ">=10.5.0",
+		"@cipherstash/schema": ">=2.1.0",
 		"@types/pg": "*",
 		"drizzle-kit": ">=0.20",
 		"drizzle-orm": ">=0.33",
