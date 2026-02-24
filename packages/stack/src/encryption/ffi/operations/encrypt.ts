@@ -2,10 +2,10 @@ import { getErrorCode } from '@/encryption/ffi/helpers/error-code'
 import { type EncryptionError, EncryptionErrorTypes } from '@/errors'
 import type { LockContext } from '@/identity'
 import type {
-  ProtectColumn,
-  ProtectTable,
-  ProtectTableColumn,
-  ProtectValue,
+  EncryptedColumn,
+  EncryptedTable,
+  EncryptedTableColumn,
+  EncryptedValue,
 } from '@/schema'
 import type { Client, EncryptOptions, Encrypted } from '@/types'
 import { createRequestLogger } from '@/utils/logger'
@@ -20,8 +20,8 @@ import { EncryptionOperation } from './base-operation'
 export class EncryptOperation extends EncryptionOperation<Encrypted> {
   private client: Client
   private plaintext: JsPlaintext | null
-  private column: ProtectColumn | ProtectValue
-  private table: ProtectTable<ProtectTableColumn>
+  private column: EncryptedColumn | EncryptedValue
+  private table: EncryptedTable<EncryptedTableColumn>
 
   constructor(
     client: Client,
@@ -99,8 +99,8 @@ export class EncryptOperation extends EncryptionOperation<Encrypted> {
   public getOperation(): {
     client: Client
     plaintext: JsPlaintext | null
-    column: ProtectColumn | ProtectValue
-    table: ProtectTable<ProtectTableColumn>
+    column: EncryptedColumn | EncryptedValue
+    table: EncryptedTable<EncryptedTableColumn>
   } {
     return {
       client: this.client,
@@ -126,8 +126,7 @@ export class EncryptOperationWithLockContext extends EncryptionOperation<Encrypt
   }
 
   public async execute(): Promise<Result<Encrypted, EncryptionError>> {
-    const { client, plaintext, column, table } =
-      this.operation.getOperation()
+    const { client, plaintext, column, table } = this.operation.getOperation()
 
     const log = createRequestLogger()
     log.set({

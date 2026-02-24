@@ -1,4 +1,4 @@
-import type { ProtectTable, ProtectTableColumn } from '@/schema'
+import type { EncryptedTable, EncryptedTableColumn } from '@/schema'
 import type { EncryptedValue } from '@/types'
 import type { ProtectErrorCode } from '@cipherstash/protect-ffi'
 import { ProtectError as FfiProtectError } from '@cipherstash/protect-ffi'
@@ -151,7 +151,7 @@ export function toEncryptedDynamoItem(
 
 export function toItemWithEqlPayloads(
   decrypted: Record<string, EncryptedValue | unknown>,
-  encryptionSchema: ProtectTable<ProtectTableColumn>,
+  encryptionSchema: EncryptedTable<EncryptedTableColumn>,
 ): Record<string, unknown> {
   function processValue(
     attrName: string,

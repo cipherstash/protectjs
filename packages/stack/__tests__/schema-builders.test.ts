@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
-  ProtectColumn,
-  ProtectTable,
+  EncryptedColumn,
+  EncryptedTable,
   ProtectValue,
   buildEncryptConfig,
   encryptedColumn,
@@ -14,9 +14,9 @@ describe('schema builders', () => {
   // encryptedColumn
   // -------------------------------------------------------
   describe('encryptedColumn', () => {
-    it('returns a ProtectColumn with the correct name', () => {
+    it('returns a EncryptedColumn with the correct name', () => {
       const col = encryptedColumn('email')
-      expect(col).toBeInstanceOf(ProtectColumn)
+      expect(col).toBeInstanceOf(EncryptedColumn)
       expect(col.getName()).toBe('email')
     })
 
@@ -166,10 +166,10 @@ describe('schema builders', () => {
       const table = encryptedTable('users', {
         email: encryptedColumn('email'),
       })
-      expect(table.email).toBeInstanceOf(ProtectColumn)
+      expect(table.email).toBeInstanceOf(EncryptedColumn)
     })
 
-    it('table.email gives back the ProtectColumn', () => {
+    it('table.email gives back the EncryptedColumn', () => {
       const emailCol = encryptedColumn('email').equality()
       const table = encryptedTable('users', { email: emailCol })
       expect(table.email).toBe(emailCol)
@@ -182,11 +182,11 @@ describe('schema builders', () => {
       expect(table.tableName).toBe('users')
     })
 
-    it('is an instance of ProtectTable', () => {
+    it('is an instance of EncryptedTable', () => {
       const table = encryptedTable('users', {
         email: encryptedColumn('email'),
       })
-      expect(table).toBeInstanceOf(ProtectTable)
+      expect(table).toBeInstanceOf(EncryptedTable)
     })
 
     it('table.build() produces correct config structure', () => {
@@ -232,9 +232,9 @@ describe('schema builders', () => {
         age: encryptedColumn('age').dataType('number').orderAndRange(),
       })
 
-      expect(table.email).toBeInstanceOf(ProtectColumn)
-      expect(table.name).toBeInstanceOf(ProtectColumn)
-      expect(table.age).toBeInstanceOf(ProtectColumn)
+      expect(table.email).toBeInstanceOf(EncryptedColumn)
+      expect(table.name).toBeInstanceOf(EncryptedColumn)
+      expect(table.age).toBeInstanceOf(EncryptedColumn)
     })
   })
 

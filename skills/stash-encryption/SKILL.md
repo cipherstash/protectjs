@@ -24,7 +24,7 @@ Comprehensive guide for implementing field-level encryption with `@cipherstash/s
 npm install @cipherstash/stack
 ```
 
-The package includes a native FFI module (`@cipherstash/protect-ffi`). You must opt out of bundling it in tools like Webpack, esbuild, or Next.js (`serverExternalPackages`). Bun is not supported.
+The package includes a native FFI module (`@cipherstash/protect-ffi`). You must opt out of bundling it in tools like Webpack, esbuild, or Next.js (`serverExternalPackages`).
 
 ## Configuration
 
@@ -542,7 +542,7 @@ All operations are thenable (awaitable) and support `.withLockContext()` and `.a
 ### Schema Builders
 
 ```typescript
-encryptedTable(tableName: string, columns: Record<string, ProtectColumn | ProtectValue | nested>)
+encryptedTable(tableName: string, columns: Record<string, EncryptedColumn | ProtectValue | nested>)
 encryptedColumn(columnName: string) // chainable: .equality(), .freeTextSearch(), .orderAndRange(), .searchableJson(), .dataType()
 encryptedValue(valueName: string)   // for nested encrypted values, chainable: .dataType()
 ```

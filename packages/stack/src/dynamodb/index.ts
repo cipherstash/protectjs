@@ -1,4 +1,4 @@
-import type { ProtectTable, ProtectTableColumn } from '@/schema'
+import type { EncryptedTable, EncryptedTableColumn } from '@/schema'
 import type { EncryptedValue } from '@/types'
 import { BulkDecryptModelsOperation } from './operations/bulk-decrypt-models'
 import { BulkEncryptModelsOperation } from './operations/bulk-encrypt-models'
@@ -44,7 +44,7 @@ export function encryptedDynamoDB(
   return {
     encryptModel<T extends Record<string, unknown>>(
       item: T,
-      table: ProtectTable<ProtectTableColumn>,
+      table: EncryptedTable<EncryptedTableColumn>,
     ) {
       return new EncryptModelOperation<T>(
         encryptionClient,
@@ -56,7 +56,7 @@ export function encryptedDynamoDB(
 
     bulkEncryptModels<T extends Record<string, unknown>>(
       items: T[],
-      table: ProtectTable<ProtectTableColumn>,
+      table: EncryptedTable<EncryptedTableColumn>,
     ) {
       return new BulkEncryptModelsOperation<T>(
         encryptionClient,
@@ -68,7 +68,7 @@ export function encryptedDynamoDB(
 
     decryptModel<T extends Record<string, unknown>>(
       item: Record<string, EncryptedValue | unknown>,
-      table: ProtectTable<ProtectTableColumn>,
+      table: EncryptedTable<EncryptedTableColumn>,
     ) {
       return new DecryptModelOperation<T>(
         encryptionClient,
@@ -80,7 +80,7 @@ export function encryptedDynamoDB(
 
     bulkDecryptModels<T extends Record<string, unknown>>(
       items: Record<string, EncryptedValue | unknown>[],
-      table: ProtectTable<ProtectTableColumn>,
+      table: EncryptedTable<EncryptedTableColumn>,
     ) {
       return new BulkDecryptModelsOperation<T>(
         encryptionClient,

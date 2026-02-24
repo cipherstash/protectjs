@@ -2,10 +2,10 @@ import { getErrorCode } from '@/encryption/ffi/helpers/error-code'
 import { type EncryptionError, EncryptionErrorTypes } from '@/errors'
 import type { Context, LockContext } from '@/identity'
 import type {
-  ProtectColumn,
-  ProtectTable,
-  ProtectTableColumn,
-  ProtectValue,
+  EncryptedColumn,
+  EncryptedTable,
+  EncryptedTableColumn,
+  EncryptedValue,
 } from '@/schema'
 import type {
   BulkEncryptPayload,
@@ -23,8 +23,8 @@ import { EncryptionOperation } from './base-operation'
 // Helper functions for better composability
 const createEncryptPayloads = (
   plaintexts: BulkEncryptPayload,
-  column: ProtectColumn | ProtectValue,
-  table: ProtectTable<ProtectTableColumn>,
+  column: EncryptedColumn | EncryptedValue,
+  table: EncryptedTable<EncryptedTableColumn>,
   lockContext?: Context,
 ) => {
   return plaintexts
@@ -71,8 +71,8 @@ const mapEncryptedDataToResult = (
 export class BulkEncryptOperation extends EncryptionOperation<BulkEncryptedData> {
   private client: Client
   private plaintexts: BulkEncryptPayload
-  private column: ProtectColumn | ProtectValue
-  private table: ProtectTable<ProtectTableColumn>
+  private column: EncryptedColumn | EncryptedValue
+  private table: EncryptedTable<EncryptedTableColumn>
 
   constructor(
     client: Client,
@@ -146,8 +146,8 @@ export class BulkEncryptOperation extends EncryptionOperation<BulkEncryptedData>
   public getOperation(): {
     client: Client
     plaintexts: BulkEncryptPayload
-    column: ProtectColumn | ProtectValue
-    table: ProtectTable<ProtectTableColumn>
+    column: EncryptedColumn | EncryptedValue
+    table: EncryptedTable<EncryptedTableColumn>
   } {
     return {
       client: this.client,
@@ -173,8 +173,7 @@ export class BulkEncryptOperationWithLockContext extends EncryptionOperation<Bul
   }
 
   public async execute(): Promise<Result<BulkEncryptedData, EncryptionError>> {
-    const { client, plaintexts, column, table } =
-      this.operation.getOperation()
+    const { client, plaintexts, column, table } = this.operation.getOperation()
 
     const log = createRequestLogger()
     log.set({

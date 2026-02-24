@@ -5,8 +5,8 @@ import {
   modelToEncryptedPgComposites,
 } from '@/encryption/helpers'
 import type { LockContext } from '@/identity'
-import type { ProtectTable, ProtectTableColumn } from '@/schema'
-import { ProtectColumn } from '@/schema'
+import type { EncryptedTable, EncryptedTableColumn } from '@/schema'
+import { EncryptedColumn } from '@/schema'
 import type { ScalarQueryTerm } from '@/types'
 import type { JsPlaintext } from '@cipherstash/protect-ffi'
 import {
@@ -46,7 +46,7 @@ export class EncryptedQueryBuilderImpl<
   T extends Record<string, unknown> = Record<string, unknown>,
 > {
   private tableName: string
-  private schema: ProtectTable<ProtectTableColumn>
+  private schema: EncryptedTable<EncryptedTableColumn>
   private encryptionClient: EncryptionClient
   private supabaseClient: SupabaseClientLike
   private encryptedColumnNames: string[]
@@ -72,7 +72,7 @@ export class EncryptedQueryBuilderImpl<
 
   constructor(
     tableName: string,
-    schema: ProtectTable<ProtectTableColumn>,
+    schema: EncryptedTable<EncryptedTableColumn>,
     encryptionClient: EncryptionClient,
     supabaseClient: SupabaseClientLike,
   ) {
@@ -983,13 +983,13 @@ export class EncryptedQueryBuilderImpl<
   // Helpers
   // ---------------------------------------------------------------------------
 
-  private getColumnMap(): Record<string, ProtectColumn> {
-    const map: Record<string, ProtectColumn> = {}
+  private getColumnMap(): Record<string, EncryptedColumn> {
+    const map: Record<string, EncryptedColumn> = {}
     const schema = this.schema as unknown as Record<string, unknown>
 
     for (const colName of this.encryptedColumnNames) {
       const col = schema[colName]
-      if (col instanceof ProtectColumn) {
+      if (col instanceof EncryptedColumn) {
         map[colName] = col
       }
     }

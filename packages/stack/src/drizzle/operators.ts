@@ -1,5 +1,5 @@
 import type { EncryptionClient } from '@/encryption/ffi'
-import type { ProtectColumn, ProtectTable, ProtectTableColumn } from '@/schema'
+import type { EncryptedColumn, EncryptedTable, EncryptedTableColumn } from '@/schema'
 import { type QueryTypeName, queryTypes } from '@/types'
 import {
   type SQL,
@@ -127,8 +127,8 @@ function getDrizzleTableFromColumn(drizzleColumn: SQLWrapper): unknown {
  */
 function getEncryptedTableFromColumn(
   drizzleColumn: SQLWrapper,
-  tableCache: Map<string, ProtectTable<ProtectTableColumn>>,
-): ProtectTable<ProtectTableColumn> | undefined {
+  tableCache: Map<string, EncryptedTable<EncryptedTableColumn>>,
+): EncryptedTable<EncryptedTableColumn> | undefined {
   const drizzleTable = getDrizzleTableFromColumn(drizzleColumn)
   if (!drizzleTable) {
     return undefined
@@ -162,8 +162,8 @@ function getEncryptedTableFromColumn(
  */
 function getEncryptedColumn(
   drizzleColumn: SQLWrapper,
-  encryptedTable: ProtectTable<ProtectTableColumn>,
-): ProtectColumn | undefined {
+  encryptedTable: EncryptedTable<EncryptedTableColumn>,
+): EncryptedColumn | undefined {
   const column = drizzleColumn as unknown as Record<string, unknown>
   const columnName = column.name as string | undefined
   if (!columnName) {
@@ -171,16 +171,16 @@ function getEncryptedColumn(
   }
 
   const tableRecord = encryptedTable as unknown as Record<string, unknown>
-  return tableRecord[columnName] as ProtectColumn | undefined
+  return tableRecord[columnName] as EncryptedColumn | undefined
 }
 
 /**
  * Column metadata extracted from a Drizzle column
  */
 interface ColumnInfo {
-  readonly encryptedColumn: ProtectColumn | undefined
+  readonly encryptedColumn: EncryptedColumn | undefined
   readonly config: (EncryptedColumnConfig & { name: string }) | undefined
-  readonly encryptedTable: ProtectTable<ProtectTableColumn> | undefined
+  readonly encryptedTable: EncryptedTable<EncryptedTableColumn> | undefined
   readonly columnName: string
   readonly tableName: string | undefined
 }
@@ -191,8 +191,8 @@ interface ColumnInfo {
  */
 function getColumnInfo(
   drizzleColumn: SQLWrapper,
-  encryptedTable: ProtectTable<ProtectTableColumn> | undefined,
-  tableCache: Map<string, ProtectTable<ProtectTableColumn>>,
+  encryptedTable: EncryptedTable<EncryptedTableColumn> | undefined,
+  tableCache: Map<string, EncryptedTable<EncryptedTableColumn>>,
 ): ColumnInfo {
   const column = drizzleColumn as unknown as Record<string, unknown>
   const columnName = (column.name as string | undefined) || 'unknown'
@@ -268,8 +268,8 @@ async function encryptValues(
     column: SQLWrapper
     queryType?: QueryTypeName
   }>,
-  encryptedTable: ProtectTable<ProtectTableColumn> | undefined,
-  tableCache: Map<string, ProtectTable<ProtectTableColumn>>,
+  encryptedTable: EncryptedTable<EncryptedTableColumn> | undefined,
+  tableCache: Map<string, EncryptedTable<EncryptedTableColumn>>,
 ): Promise<unknown[]> {
   if (values.length === 0) {
     return []
@@ -311,8 +311,8 @@ async function encryptValues(
   const columnGroups = new Map<
     string,
     {
-      column: ProtectColumn
-      table: ProtectTable<ProtectTableColumn>
+      column: EncryptedColumn
+      table: EncryptedTable<EncryptedTableColumn>
       columnName: string
       values: Array<{
         value: string | number
@@ -407,8 +407,8 @@ async function encryptValue(
   encryptionClient: EncryptionClient,
   value: unknown,
   drizzleColumn: SQLWrapper,
-  encryptedTable: ProtectTable<ProtectTableColumn> | undefined,
-  tableCache: Map<string, ProtectTable<ProtectTableColumn>>,
+  encryptedTable: EncryptedTable<EncryptedTableColumn> | undefined,
+  tableCache: Map<string, EncryptedTable<EncryptedTableColumn>>,
   queryType?: QueryTypeName,
 ): Promise<unknown> {
   const results = await encryptValues(
@@ -471,8 +471,8 @@ function createLazyOperator(
   needsEncryption: boolean,
   columnInfo: ColumnInfo,
   encryptionClient: EncryptionClient,
-  defaultTable: ProtectTable<ProtectTableColumn> | undefined,
-  tableCache: Map<string, ProtectTable<ProtectTableColumn>>,
+  defaultTable: EncryptedTable<EncryptedTableColumn> | undefined,
+  tableCache: Map<string, EncryptedTable<EncryptedTableColumn>>,
   min?: unknown,
   max?: unknown,
   queryType?: QueryTypeName,
@@ -605,8 +605,8 @@ async function executeLazyOperator(
 async function executeLazyOperatorDirect(
   lazyOp: LazyOperator,
   encryptionClient: EncryptionClient,
-  defaultTable: ProtectTable<ProtectTableColumn> | undefined,
-  tableCache: Map<string, ProtectTable<ProtectTableColumn>>,
+  defaultTable: EncryptedTable<EncryptedTableColumn> | undefined,
+  tableCache: Map<string, EncryptedTable<EncryptedTableColumn>>,
 ): Promise<SQL> {
   if (!lazyOp.needsEncryption) {
     return lazyOp.execute(lazyOp.right)
@@ -652,8 +652,8 @@ function createComparisonOperator(
   right: unknown,
   columnInfo: ColumnInfo,
   encryptionClient: EncryptionClient,
-  defaultTable: ProtectTable<ProtectTableColumn> | undefined,
-  tableCache: Map<string, ProtectTable<ProtectTableColumn>>,
+  defaultTable: EncryptedTable<EncryptedTableColumn> | undefined,
+  tableCache: Map<string, EncryptedTable<EncryptedTableColumn>>,
 ): Promise<SQL> | SQL {
   const { config } = columnInfo
 
@@ -754,8 +754,8 @@ function createRangeOperator(
   max: unknown,
   columnInfo: ColumnInfo,
   encryptionClient: EncryptionClient,
-  defaultTable: ProtectTable<ProtectTableColumn> | undefined,
-  tableCache: Map<string, ProtectTable<ProtectTableColumn>>,
+  defaultTable: EncryptedTable<EncryptedTableColumn> | undefined,
+  tableCache: Map<string, EncryptedTable<EncryptedTableColumn>>,
 ): Promise<SQL> | SQL {
   const { config } = columnInfo
 
@@ -813,8 +813,8 @@ function createTextSearchOperator(
   right: unknown,
   columnInfo: ColumnInfo,
   encryptionClient: EncryptionClient,
-  defaultTable: ProtectTable<ProtectTableColumn> | undefined,
-  tableCache: Map<string, ProtectTable<ProtectTableColumn>>,
+  defaultTable: EncryptedTable<EncryptedTableColumn> | undefined,
+  tableCache: Map<string, EncryptedTable<EncryptedTableColumn>>,
 ): Promise<SQL> | SQL {
   const { config } = columnInfo
 
@@ -876,8 +876,8 @@ function createJsonbOperator(
   right: unknown,
   columnInfo: ColumnInfo,
   encryptionClient: EncryptionClient,
-  defaultTable: ProtectTable<ProtectTableColumn> | undefined,
-  tableCache: Map<string, ProtectTable<ProtectTableColumn>>,
+  defaultTable: EncryptedTable<EncryptedTableColumn> | undefined,
+  tableCache: Map<string, EncryptedTable<EncryptedTableColumn>>,
 ): Promise<SQL> {
   const { config } = columnInfo
   const encryptedSelector = (value: unknown) =>
@@ -1169,8 +1169,8 @@ export function createEncryptionOperators(encryptionClient: EncryptionClient): {
   arrayOverlaps: typeof arrayOverlaps
 } {
   // Create a cache for encrypted tables keyed by table name
-  const tableCache = new Map<string, ProtectTable<ProtectTableColumn>>()
-  const defaultTable: ProtectTable<ProtectTableColumn> | undefined = undefined
+  const tableCache = new Map<string, EncryptedTable<EncryptedTableColumn>>()
+  const defaultTable: EncryptedTable<EncryptedTableColumn> | undefined = undefined
 
   /**
    * Equality operator - encrypts value and uses regular Drizzle operator

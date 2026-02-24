@@ -65,9 +65,6 @@ yarn add @cipherstash/stack
 pnpm add @cipherstash/stack
 ```
 
-> [!TIP]
-> [Bun](https://bun.sh/) is not currently supported due to a lack of [Node-API compatibility](https://github.com/oven-sh/bun/issues/158). Under the hood, `@cipherstash/stack` uses [CipherStash Client](#cipherstash-client) which is written in Rust and embedded using [Neon](https://github.com/neon-bindings/neon).
-
 > [!NOTE] 
 > **You need to opt out of bundling when using `@cipherstash/stack`.**
 >

@@ -160,7 +160,7 @@ The type system ensures:
 
 ### Using explicit type parameters
 
-You can still pass an explicit type parameter for backward compatibility. When you do, the schema type parameter defaults to the widened `ProtectTableColumn`, and the return type degrades gracefully to your provided type (same behavior as before):
+You can still pass an explicit type parameter for backward compatibility. When you do, the schema type parameter defaults to the widened `EncryptedTableColumn`, and the return type degrades gracefully to your provided type (same behavior as before):
 
 ```typescript
 // Explicit type parameter — return type is User (no schema-aware mapping)

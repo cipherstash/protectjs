@@ -1,8 +1,8 @@
 import { type EncryptionError, EncryptionErrorTypes } from '@/errors'
 import {
   type EncryptConfig,
-  type ProtectTable,
-  type ProtectTableColumn,
+  type EncryptedTable,
+  type EncryptedTableColumn,
   encryptConfigSchema,
 } from '@/schema'
 import type {
@@ -35,10 +35,10 @@ import { EncryptQueryOperation } from './operations/encrypt-query'
 
 export const noClientError = () =>
   new Error(
-    'The EQL client has not been initialized. Please call init() before using the client.',
+    'The Encryption client has not been initialized. Please call init() before using the client.',
   )
 
-/** The EncryptionClient is the main entry point for interacting with the CipherStash Protect.js library.
+/** The EncryptionClient is the main entry point for interacting with the CipherStash Encryption library.
  * It provides methods for encrypting and decrypting individual values, as well as models (objects) and bulk operations.
  *
  * The client must be initialized using the {@link Encryption} function before it can be used.
@@ -74,7 +74,7 @@ export class EncryptionClient {
         )
 
         logger.debug(
-          'Initializing the Protect.js client with the following encrypt config:',
+          'Initializing the Encryption client with the following config:',
           {
             encryptConfig: validated,
           },
@@ -93,7 +93,7 @@ export class EncryptionClient {
 
         this.encryptConfig = validated
 
-        logger.debug('Successfully initialized the Protect.js client.')
+        logger.debug('Successfully initialized the Encryption client.')
         return this
       },
       (error: unknown) => ({
@@ -363,11 +363,18 @@ export class EncryptionClient {
    * }
    * ```
    */
-  encryptModel<T extends Record<string, unknown>, S extends ProtectTableColumn = ProtectTableColumn>(
+  encryptModel<
+    T extends Record<string, unknown>,
+    S extends EncryptedTableColumn = EncryptedTableColumn,
+  >(
     input: T,
-    table: ProtectTable<S>,
+    table: EncryptedTable<S>,
   ): EncryptModelOperation<EncryptedFromSchema<T, S>> {
-    return new EncryptModelOperation(this.client, input as Record<string, unknown>, table)
+    return new EncryptModelOperation(
+      this.client,
+      input as Record<string, unknown>,
+      table,
+    )
   }
 
   /**
@@ -449,11 +456,18 @@ export class EncryptionClient {
    * }
    * ```
    */
-  bulkEncryptModels<T extends Record<string, unknown>, S extends ProtectTableColumn = ProtectTableColumn>(
+  bulkEncryptModels<
+    T extends Record<string, unknown>,
+    S extends EncryptedTableColumn = EncryptedTableColumn,
+  >(
     input: Array<T>,
-    table: ProtectTable<S>,
+    table: EncryptedTable<S>,
   ): BulkEncryptModelsOperation<EncryptedFromSchema<T, S>> {
-    return new BulkEncryptModelsOperation(this.client, input as Array<Record<string, unknown>>, table)
+    return new BulkEncryptModelsOperation(
+      this.client,
+      input as Array<Record<string, unknown>>,
+      table,
+    )
   }
 
   /**

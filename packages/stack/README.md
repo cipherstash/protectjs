@@ -627,7 +627,7 @@ await secrets.delete(name)
 import { encryptedTable, encryptedColumn, csValue } from "@cipherstash/stack/schema"
 
 encryptedTable(tableName, columns)
-encryptedColumn(columnName)        // returns ProtectColumn
+encryptedColumn(columnName)        // returns EncryptedColumn
 csValue(valueName)                 // returns ProtectValue (for nested values)
 ```
 
@@ -661,7 +661,6 @@ All method signatures on the encryption client (`encrypt`, `decrypt`, `encryptMo
 
 - **Node.js** >= 18
 - The package includes a native FFI module (`@cipherstash/protect-ffi`) written in Rust and embedded via [Neon](https://github.com/neon-bindings/neon). You must opt out of bundling this package in tools like Webpack, esbuild, or Next.js (`serverExternalPackages`).
-- [Bun](https://bun.sh/) is not currently supported due to incomplete Node-API compatibility.
 
 ## License
 

@@ -8,10 +8,10 @@ export { encryptedTable, encryptedColumn, encryptedValue } from '@/schema'
 export type {
   InferPlaintext,
   InferEncrypted,
-  ProtectColumn,
-  ProtectTable,
-  ProtectTableColumn,
-  ProtectValue,
+  EncryptedColumn,
+  EncryptedTable,
+  EncryptedTableColumn,
+  EncryptedValue,
 } from '@/schema'
 
 export type { EncryptedFromSchema } from '@/types'

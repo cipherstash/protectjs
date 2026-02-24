@@ -1,7 +1,7 @@
 import { getErrorCode } from '@/encryption/ffi/helpers/error-code'
 import { type EncryptionError, EncryptionErrorTypes } from '@/errors'
 import type { LockContext } from '@/identity'
-import type { ProtectTable, ProtectTableColumn } from '@/schema'
+import type { EncryptedTable, EncryptedTableColumn } from '@/schema'
 import type { Client } from '@/types'
 import { createRequestLogger } from '@/utils/logger'
 import { type Result, withResult } from '@byteslice/result'
@@ -17,12 +17,12 @@ export class EncryptModelOperation<
 > extends EncryptionOperation<T> {
   private client: Client
   private model: Record<string, unknown>
-  private table: ProtectTable<ProtectTableColumn>
+  private table: EncryptedTable<EncryptedTableColumn>
 
   constructor(
     client: Client,
     model: Record<string, unknown>,
-    table: ProtectTable<ProtectTableColumn>,
+    table: EncryptedTable<EncryptedTableColumn>,
   ) {
     super()
     this.client = client
@@ -75,7 +75,7 @@ export class EncryptModelOperation<
   public getOperation(): {
     client: Client
     model: Record<string, unknown>
-    table: ProtectTable<ProtectTableColumn>
+    table: EncryptedTable<EncryptedTableColumn>
   } {
     return {
       client: this.client,

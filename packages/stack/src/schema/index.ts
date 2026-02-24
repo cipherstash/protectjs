@@ -105,17 +105,17 @@ export type UniqueIndexOpts = z.infer<typeof uniqueIndexOptsSchema>
 export type OreIndexOpts = z.infer<typeof oreIndexOptsSchema>
 export type ColumnSchema = z.infer<typeof columnSchema>
 
-export type ProtectTableColumn = {
+export type EncryptedTableColumn = {
   [key: string]:
-    | ProtectColumn
+    | EncryptedColumn
     | {
         [key: string]:
-          | ProtectValue
+          | EncryptedValue
           | {
               [key: string]:
-                | ProtectValue
+                | EncryptedValue
                 | {
-                    [key: string]: ProtectValue
+                    [key: string]: EncryptedValue
                   }
             }
       }
@@ -125,7 +125,7 @@ export type EncryptConfig = z.infer<typeof encryptConfigSchema>
 // ------------------------
 // Interface definitions
 // ------------------------
-export class ProtectValue {
+export class EncryptedValue {
   private valueName: string
   private castAsValue: CastAs
 
@@ -142,7 +142,7 @@ export class ProtectValue {
    * before encrypting.
    *
    * @param castAs - The plaintext data type: `'string'`, `'number'`, `'boolean'`, `'date'`, `'bigint'`, or `'json'`.
-   * @returns This `ProtectValue` instance for method chaining.
+   * @returns This `EncryptedValue` instance for method chaining.
    *
    * @example
    * ```typescript
@@ -168,7 +168,7 @@ export class ProtectValue {
   }
 }
 
-export class ProtectColumn {
+export class EncryptedColumn {
   private columnName: string
   private castAsValue: CastAs
   private indexesValue: {
@@ -191,7 +191,7 @@ export class ProtectColumn {
    * before encrypting.
    *
    * @param castAs - The plaintext data type: `'string'`, `'number'`, `'boolean'`, `'date'`, `'bigint'`, or `'json'`.
-   * @returns This `ProtectColumn` instance for method chaining.
+   * @returns This `EncryptedColumn` instance for method chaining.
    *
    * @example
    * ```typescript
@@ -211,7 +211,7 @@ export class ProtectColumn {
    * ORE allows sorting, comparison, and range queries on encrypted data.
    * Use with `encryptQuery` and `queryType: 'orderAndRange'`.
    *
-   * @returns This `ProtectColumn` instance for method chaining.
+   * @returns This `EncryptedColumn` instance for method chaining.
    *
    * @example
    * ```typescript
@@ -235,7 +235,7 @@ export class ProtectColumn {
    *
    * @param tokenFilters - Optional array of token filters (e.g. `[{ kind: 'downcase' }]`).
    *   When omitted, no token filters are applied.
-   * @returns This `ProtectColumn` instance for method chaining.
+   * @returns This `EncryptedColumn` instance for method chaining.
    *
    * @example
    * ```typescript
@@ -261,7 +261,7 @@ export class ProtectColumn {
    *
    * @param opts - Optional match index configuration. Defaults to 3-character ngram
    *   tokenization with a downcase filter, `k=6`, `m=2048`, and `include_original=true`.
-   * @returns This `ProtectColumn` instance for method chaining.
+   * @returns This `EncryptedColumn` instance for method chaining.
    *
    * @example
    * ```typescript
@@ -308,7 +308,7 @@ export class ProtectColumn {
    * the plaintext type: strings become selector queries, objects/arrays become
    * containment queries.
    *
-   * @returns This `ProtectColumn` instance for method chaining.
+   * @returns This `EncryptedColumn` instance for method chaining.
    *
    * @example
    * ```typescript
@@ -342,7 +342,10 @@ interface TableDefinition {
   columns: Record<string, ColumnSchema>
 }
 
-export class ProtectTable<T extends ProtectTableColumn> {
+export class EncryptedTable<T extends EncryptedTableColumn> {
+  /** @internal Type-level brand so TypeScript can infer `T` from `EncryptedTable<T>`. */
+  declare readonly _columnType: T
+
   constructor(
     public readonly tableName: string,
     private readonly columnBuilders: T,
@@ -372,19 +375,22 @@ export class ProtectTable<T extends ProtectTableColumn> {
 
     const processColumn = (
       builder:
-        | ProtectColumn
+        | EncryptedColumn
         | Record<
             string,
-            | ProtectValue
+            | EncryptedValue
             | Record<
                 string,
-                | ProtectValue
-                | Record<string, ProtectValue | Record<string, ProtectValue>>
+                | EncryptedValue
+                | Record<
+                    string,
+                    EncryptedValue | Record<string, EncryptedValue>
+                  >
               >
           >,
       colName: string,
     ) => {
-      if (builder instanceof ProtectColumn) {
+      if (builder instanceof EncryptedColumn) {
         const builtColumn = builder.build()
 
         // Hanlde building the ste_vec index for JSON columns so users don't have to pass the prefix.
@@ -406,7 +412,7 @@ export class ProtectTable<T extends ProtectTableColumn> {
         }
       } else {
         for (const [key, value] of Object.entries(builder)) {
-          if (value instanceof ProtectValue) {
+          if (value instanceof EncryptedValue) {
             builtColumns[value.getName()] = value.build()
           } else {
             processColumn(value, key)
@@ -431,7 +437,7 @@ export class ProtectTable<T extends ProtectTableColumn> {
 // ------------------------
 
 /**
- * Infer the plaintext (decrypted) type from a ProtectTable schema.
+ * Infer the plaintext (decrypted) type from a EncryptedTable schema.
  *
  * @example
  * ```typescript
@@ -444,17 +450,17 @@ export class ProtectTable<T extends ProtectTableColumn> {
  * // => { email: string; name: string }
  * ```
  */
-export type InferPlaintext<T extends ProtectTable<any>> =
-  T extends ProtectTable<infer C>
+export type InferPlaintext<T extends EncryptedTable<any>> =
+  T extends EncryptedTable<infer C>
     ? {
-        [K in keyof C as C[K] extends ProtectColumn | ProtectValue
+        [K in keyof C as C[K] extends EncryptedColumn | EncryptedValue
           ? K
           : never]: string
       }
     : never
 
 /**
- * Infer the encrypted type from a ProtectTable schema.
+ * Infer the encrypted type from a EncryptedTable schema.
  *
  * @example
  * ```typescript
@@ -466,10 +472,10 @@ export type InferPlaintext<T extends ProtectTable<any>> =
  * // => { email: Encrypted }
  * ```
  */
-export type InferEncrypted<T extends ProtectTable<any>> =
-  T extends ProtectTable<infer C>
+export type InferEncrypted<T extends EncryptedTable<any>> =
+  T extends EncryptedTable<infer C>
     ? {
-        [K in keyof C as C[K] extends ProtectColumn | ProtectValue
+        [K in keyof C as C[K] extends EncryptedColumn | EncryptedValue
           ? K
           : never]: Encrypted
       }
@@ -482,7 +488,7 @@ export type InferEncrypted<T extends ProtectTable<any>> =
 /**
  * Define an encrypted table schema.
  *
- * Creates a `ProtectTable` that maps a database table name to a set of encrypted
+ * Creates a `EncryptedTable` that maps a database table name to a set of encrypted
  * column definitions. Pass the resulting object to `Encryption({ schemas: [...] })`
  * when initializing the client.
  *
@@ -492,8 +498,8 @@ export type InferEncrypted<T extends ProtectTable<any>> =
  *
  * @param tableName - The name of the database table this schema represents.
  * @param columns - An object whose keys are logical column names and values are
- *   `ProtectColumn` instances created with {@link encryptedColumn}.
- * @returns A `ProtectTable<T> & T` that can be used as both a schema definition
+ *   `EncryptedColumn` instances created with {@link encryptedColumn}.
+ * @returns A `EncryptedTable<T> & T` that can be used as both a schema definition
  *   and a column accessor.
  *
  * @example
@@ -512,15 +518,17 @@ export type InferEncrypted<T extends ProtectTable<any>> =
  * await client.encrypt("hello@example.com", { column: users.email, table: users })
  * ```
  */
-export function encryptedTable<T extends ProtectTableColumn>(
+export function encryptedTable<T extends EncryptedTableColumn>(
   tableName: string,
   columns: T,
-): ProtectTable<T> & T {
-  const tableBuilder = new ProtectTable(tableName, columns) as ProtectTable<T> &
-    T
+): EncryptedTable<T> & T {
+  const tableBuilder = new EncryptedTable(
+    tableName,
+    columns,
+  ) as EncryptedTable<T> & T
 
   for (const [colName, colBuilder] of Object.entries(columns)) {
-    ;(tableBuilder as ProtectTableColumn)[colName] = colBuilder
+    ;(tableBuilder as EncryptedTableColumn)[colName] = colBuilder
   }
 
   return tableBuilder
@@ -529,13 +537,13 @@ export function encryptedTable<T extends ProtectTableColumn>(
 /**
  * Define an encrypted column within a table schema.
  *
- * Creates a `ProtectColumn` builder for the given column name. Chain index
+ * Creates a `EncryptedColumn` builder for the given column name. Chain index
  * methods (`.equality()`, `.freeTextSearch()`, `.orderAndRange()`,
  * `.searchableJson()`) and/or `.dataType()` to configure searchable encryption
  * and the plaintext data type.
  *
  * @param columnName - The name of the database column to encrypt.
- * @returns A new `ProtectColumn` builder.
+ * @returns A new `EncryptedColumn` builder.
  *
  * @example
  * ```typescript
@@ -547,18 +555,18 @@ export function encryptedTable<T extends ProtectTableColumn>(
  * ```
  */
 export function encryptedColumn(columnName: string) {
-  return new ProtectColumn(columnName)
+  return new EncryptedColumn(columnName)
 }
 
 /**
  * Define an encrypted value for use in nested or structured schemas.
  *
- * `encryptedValue` is similar to {@link encryptedColumn} but creates a `ProtectValue`
+ * `encryptedValue` is similar to {@link encryptedColumn} but creates a `EncryptedValue`
  * intended for nested fields within a table schema. It supports `.dataType()`
  * for specifying the plaintext type.
  *
  * @param valueName - The name of the value field.
- * @returns A new `ProtectValue` builder.
+ * @returns A new `EncryptedValue` builder.
  *
  * @example
  * ```typescript
@@ -573,7 +581,7 @@ export function encryptedColumn(columnName: string) {
  * ```
  */
 export function encryptedValue(valueName: string) {
-  return new ProtectValue(valueName)
+  return new EncryptedValue(valueName)
 }
 
 // ------------------------
@@ -582,7 +590,7 @@ export function encryptedValue(valueName: string) {
 
 /** @internal */
 export function buildEncryptConfig(
-  ...protectTables: Array<ProtectTable<ProtectTableColumn>>
+  ...protectTables: Array<EncryptedTable<EncryptedTableColumn>>
 ): EncryptConfig {
   const config: EncryptConfig = {
     v: 2,

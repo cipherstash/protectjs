@@ -1,5 +1,5 @@
 import type { EncryptionClient } from '@/encryption/ffi'
-import type { ProtectTable, ProtectTableColumn } from '@/schema'
+import type { EncryptedTable, EncryptedTableColumn } from '@/schema'
 import type { EncryptedValue } from '@/types'
 import type { ProtectErrorCode } from '@cipherstash/protect-ffi'
 import type { BulkDecryptModelsOperation } from './operations/bulk-decrypt-models'
@@ -25,21 +25,21 @@ export interface EncryptedDynamoDBError extends Error {
 export interface EncryptedDynamoDBInstance {
   encryptModel<T extends Record<string, unknown>>(
     item: T,
-    table: ProtectTable<ProtectTableColumn>,
+    table: EncryptedTable<EncryptedTableColumn>,
   ): EncryptModelOperation<T>
 
   bulkEncryptModels<T extends Record<string, unknown>>(
     items: T[],
-    table: ProtectTable<ProtectTableColumn>,
+    table: EncryptedTable<EncryptedTableColumn>,
   ): BulkEncryptModelsOperation<T>
 
   decryptModel<T extends Record<string, unknown>>(
     item: Record<string, EncryptedValue | unknown>,
-    table: ProtectTable<ProtectTableColumn>,
+    table: EncryptedTable<EncryptedTableColumn>,
   ): DecryptModelOperation<T>
 
   bulkDecryptModels<T extends Record<string, unknown>>(
     items: Record<string, EncryptedValue | unknown>[],
-    table: ProtectTable<ProtectTableColumn>,
+    table: EncryptedTable<EncryptedTableColumn>,
   ): BulkDecryptModelsOperation<T>
 }
