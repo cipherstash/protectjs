@@ -1,6 +1,6 @@
 import type { EncryptionClient } from '@/encryption/ffi'
 import type { ProtectColumn, ProtectTable, ProtectTableColumn } from '@/schema'
-import type { QueryTypeName } from '@/types'
+import { type QueryTypeName, queryTypes } from '@/types'
 import {
   type SQL,
   type SQLWrapper,
@@ -702,7 +702,7 @@ function createComparisonOperator(
       tableCache,
       undefined, // min
       undefined, // max
-      'orderAndRange',
+      queryTypes.orderAndRange,
     ) as Promise<SQL>
   }
 
@@ -736,7 +736,7 @@ function createComparisonOperator(
       tableCache,
       undefined, // min
       undefined, // max
-      'equality',
+      queryTypes.equality,
     ) as Promise<SQL>
   }
 
@@ -800,7 +800,7 @@ function createRangeOperator(
     tableCache,
     min,
     max,
-    'orderAndRange',
+    queryTypes.orderAndRange,
   ) as Promise<SQL>
 }
 
@@ -859,7 +859,7 @@ function createTextSearchOperator(
     tableCache,
     undefined, // min
     undefined, // max
-    'freeTextSearch',
+    queryTypes.freeTextSearch,
   ) as Promise<SQL>
 }
 
@@ -927,7 +927,7 @@ function createJsonbOperator(
     tableCache,
     undefined,
     undefined,
-    'steVecSelector',
+    queryTypes.steVecSelector,
   ) as Promise<SQL>
 }
 
@@ -1469,7 +1469,7 @@ export function createEncryptionOperators(encryptionClient: EncryptionClient): {
       right.map((value) => ({
         value,
         column: left,
-        queryType: 'equality' as const,
+        queryType: queryTypes.equality,
       })),
       defaultTable,
       tableCache,
@@ -1515,7 +1515,7 @@ export function createEncryptionOperators(encryptionClient: EncryptionClient): {
       right.map((value) => ({
         value,
         column: left,
-        queryType: 'equality' as const,
+        queryType: queryTypes.equality,
       })),
       defaultTable,
       tableCache,
