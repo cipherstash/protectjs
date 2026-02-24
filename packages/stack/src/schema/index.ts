@@ -105,6 +105,10 @@ export type UniqueIndexOpts = z.infer<typeof uniqueIndexOptsSchema>
 export type OreIndexOpts = z.infer<typeof oreIndexOptsSchema>
 export type ColumnSchema = z.infer<typeof columnSchema>
 
+/**
+ * Shape of table columns: either top-level {@link EncryptedColumn} or nested
+ * objects whose leaves are {@link EncryptedField}. Used with {@link encryptedTable}.
+ */
 export type EncryptedTableColumn = {
   [key: string]:
     | EncryptedColumn
@@ -125,6 +129,12 @@ export type EncryptConfig = z.infer<typeof encryptConfigSchema>
 // ------------------------
 // Interface definitions
 // ------------------------
+
+/**
+ * Builder for a nested encrypted field (encrypted but not searchable).
+ * Create with {@link encryptedField}. Use inside nested objects in {@link encryptedTable};
+ * supports `.dataType()` for plaintext type. No index methods (equality, orderAndRange, etc.).
+ */
 export class EncryptedField {
   private valueName: string
   private castAsValue: CastAs
@@ -498,7 +508,8 @@ export type InferEncrypted<T extends EncryptedTable<any>> =
  *
  * @param tableName - The name of the database table this schema represents.
  * @param columns - An object whose keys are logical column names and values are
- *   `EncryptedColumn` instances created with {@link encryptedColumn}.
+ *   {@link EncryptedColumn} from {@link encryptedColumn}, or nested objects whose
+ *   leaves are {@link EncryptedField} from {@link encryptedField}.
  * @returns A `EncryptedTable<T> & T` that can be used as both a schema definition
  *   and a column accessor.
  *

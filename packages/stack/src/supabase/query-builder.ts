@@ -1,5 +1,5 @@
-import type { EncryptionClient } from '@/encryption/ffi'
-import type { AuditConfig } from '@/encryption/ffi/operations/base-operation'
+import type { EncryptionClient } from '@/encryption'
+import type { AuditConfig } from '@/encryption/operations/base-operation'
 import {
   bulkModelsToEncryptedPgComposites,
   modelToEncryptedPgComposites,

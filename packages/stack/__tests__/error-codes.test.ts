@@ -1,5 +1,5 @@
 import 'dotenv/config'
-import type { EncryptionClient } from '@/encryption/ffi'
+import type { EncryptionClient } from '@/encryption'
 import { Encryption, EncryptionErrorTypes } from '@/index'
 import { encryptedColumn, encryptedTable } from '@/schema'
 import { ProtectError as FfiProtectError } from '@cipherstash/protect-ffi'

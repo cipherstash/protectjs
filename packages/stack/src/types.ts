@@ -93,7 +93,13 @@ export type EncryptionClientConfig = {
 // Encrypt / decrypt operation options and results
 // ---------------------------------------------------------------------------
 
+/**
+ * Options for single-value encrypt operations.
+ * Use a column from your table schema (from {@link encryptedColumn}) or a nested
+ * field (from {@link encryptedField}) as the target for encryption.
+ */
 export type EncryptOptions = {
+  /** The column or nested field to encrypt into. From {@link EncryptedColumn} or {@link EncryptedField}. */
   column: EncryptedColumn | EncryptedField
   table: EncryptedTable<EncryptedTableColumn>
 }

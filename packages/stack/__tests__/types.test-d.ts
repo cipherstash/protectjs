@@ -19,7 +19,7 @@ import type {
   OtherFields,
   QueryTypeName,
 } from '../src/types.js'
-import type { EncryptionClient } from '../src/encryption/ffi/index.js'
+import type { EncryptionClient } from '../src/encryption/index.js'
 
 describe('Type inference', () => {
   it('encryptedTable returns ProtectTable with column access', () => {

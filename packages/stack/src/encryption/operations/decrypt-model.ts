@@ -1,40 +1,38 @@
-import { getErrorCode } from '@/encryption/ffi/helpers/error-code'
+import { getErrorCode } from '@/encryption/helpers/error-code'
 import { type EncryptionError, EncryptionErrorTypes } from '@/errors'
 import type { LockContext } from '@/identity'
-import type { Client, Encrypted } from '@/types'
+import type { Client, Decrypted } from '@/types'
 import { createRequestLogger } from '@/utils/logger'
 import { type Result, withResult } from '@byteslice/result'
-import {
-  type JsPlaintext,
-  decrypt as ffiDecrypt,
-} from '@cipherstash/protect-ffi'
 import { noClientError } from '../index'
+import {
+  decryptModelFields,
+  decryptModelFieldsWithLockContext,
+} from '../helpers/model-helpers'
 import { EncryptionOperation } from './base-operation'
 
-/**
- * Decrypts an encrypted payload using the provided client.
- * This is the type returned by the {@link EncryptionClient.decrypt | decrypt} method of the {@link EncryptionClient}.
- */
-export class DecryptOperation extends EncryptionOperation<JsPlaintext | null> {
+export class DecryptModelOperation<
+  T extends Record<string, unknown>,
+> extends EncryptionOperation<Decrypted<T>> {
   private client: Client
-  private encryptedData: Encrypted
+  private model: T
 
-  constructor(client: Client, encryptedData: Encrypted) {
+  constructor(client: Client, model: T) {
     super()
     this.client = client
-    this.encryptedData = encryptedData
+    this.model = model
   }
 
   public withLockContext(
     lockContext: LockContext,
-  ): DecryptOperationWithLockContext {
-    return new DecryptOperationWithLockContext(this, lockContext)
+  ): DecryptModelOperationWithLockContext<T> {
+    return new DecryptModelOperationWithLockContext(this, lockContext)
   }
 
-  public async execute(): Promise<Result<JsPlaintext | null, EncryptionError>> {
+  public async execute(): Promise<Result<Decrypted<T>, EncryptionError>> {
     const log = createRequestLogger()
     log.set({
-      op: 'decrypt',
+      op: 'decryptModel',
       lockContext: false,
     })
 
@@ -44,16 +42,9 @@ export class DecryptOperation extends EncryptionOperation<JsPlaintext | null> {
           throw noClientError()
         }
 
-        if (this.encryptedData === null) {
-          return null
-        }
+        const auditData = this.getAuditData()
 
-        const { metadata } = this.getAuditData()
-
-        return await ffiDecrypt(this.client, {
-          ciphertext: this.encryptedData,
-          unverifiedContext: metadata,
-        })
+        return await decryptModelFields<T>(this.model, this.client, auditData)
       },
       (error: unknown) => {
         log.set({ errorCode: getErrorCode(error) ?? 'unknown' })
@@ -70,22 +61,22 @@ export class DecryptOperation extends EncryptionOperation<JsPlaintext | null> {
 
   public getOperation(): {
     client: Client
-    encryptedData: Encrypted
-    auditData?: Record<string, unknown>
+    model: T
   } {
     return {
       client: this.client,
-      encryptedData: this.encryptedData,
-      auditData: this.getAuditData(),
+      model: this.model,
     }
   }
 }
 
-export class DecryptOperationWithLockContext extends EncryptionOperation<JsPlaintext | null> {
-  private operation: DecryptOperation
+export class DecryptModelOperationWithLockContext<
+  T extends Record<string, unknown>,
+> extends EncryptionOperation<Decrypted<T>> {
+  private operation: DecryptModelOperation<T>
   private lockContext: LockContext
 
-  constructor(operation: DecryptOperation, lockContext: LockContext) {
+  constructor(operation: DecryptModelOperation<T>, lockContext: LockContext) {
     super()
     this.operation = operation
     this.lockContext = lockContext
@@ -95,26 +86,20 @@ export class DecryptOperationWithLockContext extends EncryptionOperation<JsPlain
     }
   }
 
-  public async execute(): Promise<Result<JsPlaintext | null, EncryptionError>> {
+  public async execute(): Promise<Result<Decrypted<T>, EncryptionError>> {
     const log = createRequestLogger()
     log.set({
-      op: 'decrypt',
+      op: 'decryptModel',
       lockContext: true,
     })
 
     const result = await withResult(
       async () => {
-        const { client, encryptedData } = this.operation.getOperation()
+        const { client, model } = this.operation.getOperation()
 
         if (!client) {
           throw noClientError()
         }
-
-        if (encryptedData === null) {
-          return null
-        }
-
-        const { metadata } = this.getAuditData()
 
         const context = await this.lockContext.getLockContext()
 
@@ -122,12 +107,14 @@ export class DecryptOperationWithLockContext extends EncryptionOperation<JsPlain
           throw new Error(`[encryption]: ${context.failure.message}`)
         }
 
-        return await ffiDecrypt(client, {
-          ciphertext: encryptedData,
-          unverifiedContext: metadata,
-          lockContext: context.data.context,
-          serviceToken: context.data.ctsToken,
-        })
+        const auditData = this.getAuditData()
+
+        return await decryptModelFieldsWithLockContext<T>(
+          model,
+          client,
+          context.data,
+          auditData,
+        )
       },
       (error: unknown) => {
         log.set({ errorCode: getErrorCode(error) ?? 'unknown' })

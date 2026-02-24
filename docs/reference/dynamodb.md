@@ -171,17 +171,17 @@ const decryptedUsers = decryptedResult.data
 
 ## Using nested objects
 
-The DynamoDB helper supports nested object encryption using `encryptedValue`:
+The DynamoDB helper supports nested object encryption using `encryptedField`:
 
 ```typescript
-import { encryptedTable, encryptedColumn, encryptedValue } from '@cipherstash/stack/schema'
+import { encryptedTable, encryptedColumn, encryptedField } from '@cipherstash/stack/schema'
 
 const users = encryptedTable('users', {
   email: encryptedColumn('email'),
   profile: {
-    name: encryptedValue('profile.name'),
+    name: encryptedField('profile.name'),
     address: {
-      street: encryptedValue('profile.address.street'),
+      street: encryptedField('profile.address.street'),
     },
   },
 })

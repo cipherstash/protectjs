@@ -20,4 +20,4 @@ export type {
   InferPlaintext,
   InferEncrypted,
 } from '@/schema'
-export type { EncryptionClient } from '@/encryption/ffi'
+export type { EncryptionClient } from '@/encryption'

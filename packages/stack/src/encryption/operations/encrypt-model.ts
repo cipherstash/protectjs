@@ -1,4 +1,4 @@
-import { getErrorCode } from '@/encryption/ffi/helpers/error-code'
+import { getErrorCode } from '@/encryption/helpers/error-code'
 import { type EncryptionError, EncryptionErrorTypes } from '@/errors'
 import type { LockContext } from '@/identity'
 import type { EncryptedTable, EncryptedTableColumn } from '@/schema'
@@ -9,7 +9,7 @@ import { noClientError } from '../index'
 import {
   encryptModelFields,
   encryptModelFieldsWithLockContext,
-} from '../model-helpers'
+} from '../helpers/model-helpers'
 import { EncryptionOperation } from './base-operation'
 
 export class EncryptModelOperation<
@@ -52,12 +52,12 @@ export class EncryptModelOperation<
 
         const auditData = this.getAuditData()
 
-        return await encryptModelFields(
+        return (await encryptModelFields(
           this.model,
           this.table,
           this.client,
           auditData,
-        ) as T
+        )) as T
       },
       (error: unknown) => {
         log.set({ errorCode: getErrorCode(error) ?? 'unknown' })
@@ -125,13 +125,13 @@ export class EncryptModelOperationWithLockContext<
 
         const auditData = this.getAuditData()
 
-        return await encryptModelFieldsWithLockContext(
+        return (await encryptModelFieldsWithLockContext(
           model,
           table,
           client,
           context.data,
           auditData,
-        ) as T
+        )) as T
       },
       (error: unknown) => {
         log.set({ errorCode: getErrorCode(error) ?? 'unknown' })

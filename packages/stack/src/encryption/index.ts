@@ -20,7 +20,7 @@ import { loadWorkSpaceId } from '@/utils/config'
 import { logger } from '@/utils/logger'
 import { type Result, withResult } from '@byteslice/result'
 import { type JsPlaintext, newClient } from '@cipherstash/protect-ffi'
-import { toFfiKeysetIdentifier } from '../helpers'
+import { toFfiKeysetIdentifier } from './helpers'
 import { isScalarQueryTermArray } from './helpers/type-guards'
 import { BatchEncryptQueryOperation } from './operations/batch-encrypt-query'
 import { BulkDecryptOperation } from './operations/bulk-decrypt'
@@ -107,7 +107,7 @@ export class EncryptionClient {
    * Encrypt a value - returns a promise which resolves to an encrypted value.
    *
    * @param plaintext - The plaintext value to be encrypted. Can be null.
-   * @param opts - Options specifying the column and table for encryption.
+   * @param opts - Options specifying the column (or nested field) and table for encryption. See {@link EncryptOptions}.
    * @returns An EncryptOperation that can be awaited or chained with additional methods.
    *
    * @example
@@ -170,8 +170,11 @@ export class EncryptionClient {
    *  .withLockContext(lockContext)
    * ```
    *
+   * @see {@link EncryptOptions}
    * @see {@link Result}
    * @see {@link encryptedTable}
+   * @see {@link encryptedColumn}
+   * @see {@link encryptedField}
    * @see {@link LockContext}
    * @see {@link EncryptOperation}
    */
@@ -512,7 +515,7 @@ export class EncryptionClient {
    * your application data. Null plaintext values are preserved as null.
    *
    * @param plaintexts - An array of objects with `plaintext` (and optional `id`) fields.
-   * @param opts - Options specifying the target column and table for encryption.
+   * @param opts - Options specifying the target column (or nested {@link encryptedField}) and table. See {@link EncryptOptions}.
    * @returns A `BulkEncryptOperation` that can be awaited to get a `Result`
    *   containing an array of `{ id?, data: Encrypted }` objects, or an `EncryptionError`.
    *

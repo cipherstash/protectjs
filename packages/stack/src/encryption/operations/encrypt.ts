@@ -1,4 +1,4 @@
-import { getErrorCode } from '@/encryption/ffi/helpers/error-code'
+import { getErrorCode } from '@/encryption/helpers/error-code'
 import { type EncryptionError, EncryptionErrorTypes } from '@/errors'
 import type { LockContext } from '@/identity'
 import type {

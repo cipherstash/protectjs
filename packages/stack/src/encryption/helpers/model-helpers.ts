@@ -1,4 +1,4 @@
-import type { AuditData } from '@/encryption/ffi/operations/base-operation'
+import type { AuditData } from '@/encryption/operations/base-operation'
 import { isEncryptedPayload } from '@/encryption/helpers'
 import type { GetLockContextResponse } from '@/identity'
 import type { EncryptedTable, EncryptedTableColumn } from '@/schema'

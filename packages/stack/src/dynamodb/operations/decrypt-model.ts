@@ -1,4 +1,4 @@
-import type { EncryptionClient } from '@/encryption/ffi'
+import type { EncryptionClient } from '@/encryption'
 import type { EncryptedTable, EncryptedTableColumn } from '@/schema'
 import type { Decrypted, EncryptedValue } from '@/types'
 import { type Result, withResult } from '@byteslice/result'

@@ -13,7 +13,7 @@
  *   6. get-many enforces min 2 names (comma required) and max 100 names
  */
 
-import type { EncryptionClient } from '@/encryption/ffi'
+import type { EncryptionClient } from '@/encryption/index.js'
 import { encryptedToPgComposite } from '@/encryption/helpers'
 import { Encryption } from '@/index'
 import { encryptedColumn, encryptedTable } from '@/schema'

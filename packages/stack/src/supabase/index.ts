@@ -1,10 +1,8 @@
-import type { EncryptionClient } from '@/encryption/ffi'
 import type { EncryptedTable, EncryptedTableColumn } from '@/schema'
 import { EncryptedQueryBuilderImpl } from './query-builder'
 import type {
   EncryptedSupabaseConfig,
   EncryptedSupabaseInstance,
-  SupabaseClientLike,
 } from './types'
 
 /**

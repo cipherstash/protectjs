@@ -1,5 +1,9 @@
-import type { EncryptionClient } from '@/encryption/ffi'
-import type { EncryptedColumn, EncryptedTable, EncryptedTableColumn } from '@/schema'
+import type { EncryptionClient } from '@/encryption/index.js'
+import type {
+  EncryptedColumn,
+  EncryptedTable,
+  EncryptedTableColumn,
+} from '@/schema'
 import { type QueryTypeName, queryTypes } from '@/types'
 import {
   type SQL,
@@ -1170,7 +1174,8 @@ export function createEncryptionOperators(encryptionClient: EncryptionClient): {
 } {
   // Create a cache for encrypted tables keyed by table name
   const tableCache = new Map<string, EncryptedTable<EncryptedTableColumn>>()
-  const defaultTable: EncryptedTable<EncryptedTableColumn> | undefined = undefined
+  const defaultTable: EncryptedTable<EncryptedTableColumn> | undefined =
+    undefined
 
   /**
    * Equality operator - encrypts value and uses regular Drizzle operator

@@ -1,4 +1,4 @@
-import type { ScalarQueryTerm } from '../../../types'
+import type { ScalarQueryTerm } from '../../types'
 
 /**
  * Type guard to check if a value is an array of ScalarQueryTerm objects.

@@ -1,4 +1,4 @@
-import type { EncryptedColumn, EncryptedTable, EncryptedTableColumn } from '@/schema'
+import type { EncryptedTable, EncryptedTableColumn } from '@/schema'
 import type { QueryTypeName } from '@/types'
 import type { FilterOp, PendingOrCondition } from './types'
 

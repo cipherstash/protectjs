@@ -1,4 +1,4 @@
-import { EncryptionClient } from '@/encryption/ffi'
+import { EncryptionClient } from '@/encryption'
 import { buildEncryptConfig } from '@/schema'
 import type { EncryptionClientConfig } from '@/types'
 import { initStackLogger } from '@/utils/logger'

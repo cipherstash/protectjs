@@ -1,4 +1,4 @@
-import { getErrorCode } from '@/encryption/ffi/helpers/error-code'
+import { getErrorCode } from '@/encryption/helpers/error-code'
 import { type EncryptionError, EncryptionErrorTypes } from '@/errors'
 import type { LockContext } from '@/identity'
 import type { Client, Decrypted } from '@/types'
@@ -8,7 +8,7 @@ import { noClientError } from '../index'
 import {
   bulkDecryptModels,
   bulkDecryptModelsWithLockContext,
-} from '../model-helpers'
+} from '../helpers/model-helpers'
 import { EncryptionOperation } from './base-operation'
 
 export class BulkDecryptModelsOperation<

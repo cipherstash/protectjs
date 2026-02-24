@@ -1,4 +1,4 @@
-import { getErrorCode } from '@/encryption/ffi/helpers/error-code'
+import { getErrorCode } from '@/encryption/helpers/error-code'
 import { formatEncryptedResult } from '@/encryption/helpers'
 import { type EncryptionError, EncryptionErrorTypes } from '@/errors'
 import type { LockContext } from '@/identity'
@@ -41,7 +41,9 @@ export class EncryptQueryOperation extends EncryptionOperation<EncryptedQueryRes
     )
   }
 
-  public async execute(): Promise<Result<EncryptedQueryResult, EncryptionError>> {
+  public async execute(): Promise<
+    Result<EncryptedQueryResult, EncryptionError>
+  > {
     const log = createRequestLogger()
     log.set({
       op: 'encryptQuery',
@@ -125,7 +127,9 @@ export class EncryptQueryOperationWithLockContext extends EncryptionOperation<En
     this.auditMetadata = auditMetadata
   }
 
-  public async execute(): Promise<Result<EncryptedQueryResult, EncryptionError>> {
+  public async execute(): Promise<
+    Result<EncryptedQueryResult, EncryptionError>
+  > {
     const log = createRequestLogger()
     log.set({
       op: 'encryptQuery',

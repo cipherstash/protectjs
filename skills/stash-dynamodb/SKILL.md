@@ -38,7 +38,7 @@ Non-encrypted attributes pass through unchanged. On decryption, the `__source` a
 ### 1. Define Encrypted Schema
 
 ```typescript
-import { encryptedTable, encryptedColumn, encryptedValue } from "@cipherstash/stack/schema"
+import { encryptedTable, encryptedColumn, encryptedField } from "@cipherstash/stack/schema"
 
 const users = encryptedTable("users", {
   email: encryptedColumn("email").equality(),   // searchable via HMAC
@@ -48,15 +48,15 @@ const users = encryptedTable("users", {
 })
 ```
 
-Nested objects are supported with `encryptedValue`:
+Nested objects are supported with `encryptedField`:
 
 ```typescript
 const users = encryptedTable("users", {
   email: encryptedColumn("email").equality(),
   profile: {
-    ssn: encryptedValue("profile.ssn"),
+    ssn: encryptedField("profile.ssn"),
     address: {
-      street: encryptedValue("profile.address.street"),
+      street: encryptedField("profile.address.street"),
     },
   },
 })

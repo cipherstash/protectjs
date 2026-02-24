@@ -1,9 +1,8 @@
-import type { EncryptionClient } from '@/encryption/ffi'
-import type { AuditConfig } from '@/encryption/ffi/operations/base-operation'
+import type { EncryptionClient } from '@/encryption'
+import type { AuditConfig } from '@/encryption/operations/base-operation'
 import type { EncryptionError } from '@/errors'
 import type { LockContext } from '@/identity'
-import type { EncryptedColumn, EncryptedTable, EncryptedTableColumn } from '@/schema'
-import type { QueryTypeName, ScalarQueryTerm } from '@/types'
+import type { EncryptedTable, EncryptedTableColumn } from '@/schema'
 
 // ---------------------------------------------------------------------------
 // Config & instance
@@ -214,10 +213,14 @@ export interface SupabaseClientLike {
 // Re-export for convenience
 // ---------------------------------------------------------------------------
 
-export type { EncryptionClient } from '@/encryption/ffi'
-export type { EncryptedTable, EncryptedColumn, EncryptedTableColumn } from '@/schema'
+export type { EncryptionClient } from '@/encryption'
+export type {
+  EncryptedTable,
+  EncryptedColumn,
+  EncryptedTableColumn,
+} from '@/schema'
 export type { LockContext } from '@/identity'
-export type { AuditConfig } from '@/encryption/ffi/operations/base-operation'
+export type { AuditConfig } from '@/encryption/operations/base-operation'
 
 // ---------------------------------------------------------------------------
 // Forward declaration for query builder (avoids circular)
