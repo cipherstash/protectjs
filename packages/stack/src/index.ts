@@ -14,6 +14,8 @@ export type {
   ProtectValue,
 } from '@/schema'
 
+export type { EncryptedFromSchema } from '@/types'
+
 // Re-export error types
 export { EncryptionErrorTypes, getErrorMessage } from '@/errors'
 export type {

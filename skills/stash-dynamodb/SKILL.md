@@ -352,8 +352,8 @@ const dynamo = encryptedDynamoDB({
 
 | Method | Signature | Returns |
 |---|---|---|
-| `encryptModel` | `(item: T, table)` | `EncryptModelOperation<T>` |
-| `bulkEncryptModels` | `(items: T[], table)` | `BulkEncryptModelsOperation<T>` |
+| `encryptModel` | `(item: T, table)` | `EncryptModelOperation<EncryptedFromSchema<T, S>>` |
+| `bulkEncryptModels` | `(items: T[], table)` | `BulkEncryptModelsOperation<EncryptedFromSchema<T, S>>` |
 | `decryptModel` | `(item, table)` | `DecryptModelOperation<T>` |
 | `bulkDecryptModels` | `(items[], table)` | `BulkDecryptModelsOperation<T>` |
 

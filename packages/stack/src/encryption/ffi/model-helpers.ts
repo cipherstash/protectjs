@@ -324,12 +324,12 @@ export async function decryptModelFields<T extends Record<string, unknown>>(
 /**
  * Helper function to convert a decrypted model to a model with encrypted fields
  */
-export async function encryptModelFields<T extends Record<string, unknown>>(
-  model: Decrypted<T>,
+export async function encryptModelFields(
+  model: Record<string, unknown>,
   table: ProtectTable<ProtectTableColumn>,
   client: Client,
   auditData?: AuditData,
-): Promise<T> {
+): Promise<Record<string, unknown>> {
   if (!client) {
     throw new Error('Client not initialized')
   }
@@ -371,7 +371,7 @@ export async function encryptModelFields<T extends Record<string, unknown>>(
     setNestedValue(result, parts, value)
   }
 
-  return result as T
+  return result
 }
 
 /**
@@ -436,15 +436,13 @@ export async function decryptModelFieldsWithLockContext<
 /**
  * Helper function to convert a decrypted model to a model with encrypted fields with lock context
  */
-export async function encryptModelFieldsWithLockContext<
-  T extends Record<string, unknown>,
->(
-  model: Decrypted<T>,
+export async function encryptModelFieldsWithLockContext(
+  model: Record<string, unknown>,
   table: ProtectTable<ProtectTableColumn>,
   client: Client,
   lockContext: GetLockContextResponse,
   auditData?: AuditData,
-): Promise<T> {
+): Promise<Record<string, unknown>> {
   if (!client) {
     throw new Error('Client not initialized')
   }
@@ -492,7 +490,7 @@ export async function encryptModelFieldsWithLockContext<
     setNestedValue(result, parts, value)
   }
 
-  return result as T
+  return result
 }
 
 /**
@@ -624,12 +622,12 @@ function prepareBulkModelsForOperation<T extends Record<string, unknown>>(
 /**
  * Helper function to convert multiple decrypted models to models with encrypted fields
  */
-export async function bulkEncryptModels<T extends Record<string, unknown>>(
-  models: Decrypted<T>[],
+export async function bulkEncryptModels(
+  models: Record<string, unknown>[],
   table: ProtectTable<ProtectTableColumn>,
   client: Client,
   auditData?: AuditData,
-): Promise<T[]> {
+): Promise<Record<string, unknown>[]> {
   if (!client) {
     throw new Error('Client not initialized')
   }
@@ -687,7 +685,7 @@ export async function bulkEncryptModels<T extends Record<string, unknown>>(
       setNestedValue(result, parts, value)
     }
 
-    return result as T
+    return result
   })
 }
 
@@ -834,15 +832,13 @@ export async function bulkDecryptModelsWithLockContext<
 /**
  * Helper function to convert multiple decrypted models to models with encrypted fields with lock context
  */
-export async function bulkEncryptModelsWithLockContext<
-  T extends Record<string, unknown>,
->(
-  models: Decrypted<T>[],
+export async function bulkEncryptModelsWithLockContext(
+  models: Record<string, unknown>[],
   table: ProtectTable<ProtectTableColumn>,
   client: Client,
   lockContext: GetLockContextResponse,
   auditData?: AuditData,
-): Promise<T[]> {
+): Promise<Record<string, unknown>[]> {
   if (!client) {
     throw new Error('Client not initialized')
   }
@@ -903,6 +899,6 @@ export async function bulkEncryptModelsWithLockContext<
       setNestedValue(result, parts, value)
     }
 
-    return result as T
+    return result
   })
 }

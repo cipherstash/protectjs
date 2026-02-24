@@ -113,59 +113,65 @@ const decryptedUsers = decryptedResult.data;
 
 ## Type safety
 
-### Using type parameters
+### Schema-aware return types (recommended)
 
-`@cipherstash/stack` provides strong TypeScript support through generic type parameters:
+`encryptModel` and `bulkEncryptModels` return **schema-aware types** when you let TypeScript infer the type parameters from the arguments.
+Fields matching the table schema are typed as `Encrypted`, while other fields retain their original types:
 
 ```typescript
-// Define your model type
+import { encryptedTable, encryptedColumn } from "@cipherstash/stack/schema";
+
 type User = {
   id: string;
-  email: string | null;
-  address: string | null;
+  email: string;
+  address: string;
   createdAt: Date;
-  metadata?: {
-    preferences?: {
-      notifications: boolean;
-      theme: string;
-    };
-  };
 };
 
-// Use the type parameter for type safety
-const encryptedResult = await client.encryptModel<User>(user, users);
-const decryptedResult = await client.decryptModel<User>(encryptedUser);
-
-// Bulk operations
-const bulkEncryptedResult = await client.bulkEncryptModels<User>(
-  userModels,
-  users
-);
-const bulkDecryptedResult =
-  await client.bulkDecryptModels<User>(encryptedUsers);
-```
-
-The type system ensures:
-
-- Type safety for input models
-- Correct handling of optional and nullable fields
-- Preservation of nested object structures
-- Type safety for encrypted and decrypted results
-
-### Type inference from schema
-
-The model operations can infer types from your schema definition:
-
-```typescript
 const users = encryptedTable("users", {
   email: encryptedColumn("email").freeTextSearch(),
   address: encryptedColumn("address"),
 });
 
-// Types are inferred from the schema
-const result = await client.encryptModel(user, users);
-// Result type includes encrypted fields for email and address
+// Let TypeScript infer the return type from the schema
+const encryptedResult = await client.encryptModel(user, users);
+
+// encryptedResult.data.email  -> Encrypted (schema field)
+// encryptedResult.data.address -> Encrypted (schema field)
+// encryptedResult.data.id      -> string    (not in schema)
+// encryptedResult.data.createdAt -> Date    (not in schema)
+
+// Decryption works the same way
+const decryptedResult = await client.decryptModel(encryptedResult.data);
+
+// Bulk operations
+const bulkEncryptedResult = await client.bulkEncryptModels(userModels, users);
+const bulkDecryptedResult = await client.bulkDecryptModels(
+  bulkEncryptedResult.data
+);
 ```
+
+The type system ensures:
+
+- Schema-defined fields are typed as `Encrypted` in the return value
+- Non-schema fields retain their original types
+- Correct handling of optional and nullable fields
+- Preservation of nested object structures
+
+### Using explicit type parameters
+
+You can still pass an explicit type parameter for backward compatibility. When you do, the schema type parameter defaults to the widened `ProtectTableColumn`, and the return type degrades gracefully to your provided type (same behavior as before):
+
+```typescript
+// Explicit type parameter — return type is User (no schema-aware mapping)
+const result = await client.encryptModel<User>(user, users);
+
+// For full schema-aware types with explicit parameters, provide both:
+const result = await client.encryptModel<User, typeof users>(user, users);
+```
+
+> [!TIP]
+> For the best developer experience, omit the type parameter and let TypeScript infer the schema-aware return type from the `table` argument.
 
 ## Identity-aware model operations
 
