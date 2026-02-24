@@ -170,7 +170,7 @@ All bulk methods make a single call to ZeroKMS regardless of the number of recor
 const plaintexts = [
   { id: "u1", plaintext: "alice@example.com" },
   { id: "u2", plaintext: "bob@example.com" },
-  { id: "u3", plaintext: null },  // null values are preserved
+  { id: "u3", plaintext: "charlie@example.com" },
 ]
 
 const encrypted = await client.bulkEncrypt(plaintexts, {
