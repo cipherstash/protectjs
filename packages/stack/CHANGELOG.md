@@ -1,5 +1,11 @@
 # @cipherstash/stack
 
+## 0.3.0
+
+### Minor Changes
+
+- afe0a55: Improved encrypt model return types to account for Encrypted values.
+
 ## 0.2.0
 
 ### Minor Changes
