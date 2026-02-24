@@ -1,6 +1,6 @@
 import type { EncryptionClient } from '@/encryption/ffi'
 import type { ProtectColumn, ProtectTable, ProtectTableColumn } from '@/schema'
-import type { QueryTypeName } from '@/types'
+import { type QueryTypeName, queryTypes } from '@/types'
 import {
   type SQL,
   type SQLWrapper,
@@ -254,6 +254,7 @@ interface ValueToEncrypt {
   readonly column: SQLWrapper
   readonly columnInfo: ColumnInfo
   readonly queryType?: QueryTypeName
+  readonly originalIndex: number
 }
 
 /**
@@ -298,6 +299,7 @@ async function encryptValues(
       column,
       columnInfo,
       queryType,
+      originalIndex: i,
     })
   }
 
@@ -311,6 +313,7 @@ async function encryptValues(
     {
       column: ProtectColumn
       table: ProtectTable<ProtectTableColumn>
+      columnName: string
       values: Array<{
         value: string | number
         index: number
@@ -321,7 +324,12 @@ async function encryptValues(
   >()
 
   let valueIndex = 0
-  for (const { value, column, columnInfo, queryType } of valuesToEncrypt) {
+  for (const {
+    value,
+    columnInfo,
+    queryType,
+    originalIndex,
+  } of valuesToEncrypt) {
     // Safe access with validation - we know these exist from earlier checks
     if (
       !columnInfo.config ||
@@ -332,32 +340,25 @@ async function encryptValues(
     }
 
     const columnName = columnInfo.config.name
-    let group = columnGroups.get(columnName)
+    const groupKey = `${columnInfo.tableName ?? 'unknown'}/${columnName}`
+    let group = columnGroups.get(groupKey)
     if (!group) {
       group = {
         column: columnInfo.encryptedColumn,
         table: columnInfo.encryptedTable,
+        columnName,
         values: [],
         resultIndices: [],
       }
-      columnGroups.set(columnName, group)
+      columnGroups.set(groupKey, group)
     }
     group.values.push({ value, index: valueIndex++, queryType })
-
-    // Find the original index in the results array
-    const originalIndex = values.findIndex(
-      (v, idx) =>
-        v.column === column &&
-        toPlaintext(v.value) === value &&
-        results[idx] === undefined,
-    )
-    if (originalIndex >= 0) {
-      group.resultIndices.push(originalIndex)
-    }
+    group.resultIndices.push(originalIndex)
   }
 
   // Encrypt all values for each column in batches
-  for (const [columnName, group] of columnGroups) {
+  for (const [, group] of columnGroups) {
+    const { columnName } = group
     try {
       const terms = group.values.map((v) => ({
         value: v.value,
@@ -701,7 +702,7 @@ function createComparisonOperator(
       tableCache,
       undefined, // min
       undefined, // max
-      'orderAndRange',
+      queryTypes.orderAndRange,
     ) as Promise<SQL>
   }
 
@@ -735,7 +736,7 @@ function createComparisonOperator(
       tableCache,
       undefined, // min
       undefined, // max
-      'equality',
+      queryTypes.equality,
     ) as Promise<SQL>
   }
 
@@ -799,7 +800,7 @@ function createRangeOperator(
     tableCache,
     min,
     max,
-    'orderAndRange',
+    queryTypes.orderAndRange,
   ) as Promise<SQL>
 }
 
@@ -858,7 +859,75 @@ function createTextSearchOperator(
     tableCache,
     undefined, // min
     undefined, // max
-    'freeTextSearch',
+    queryTypes.freeTextSearch,
+  ) as Promise<SQL>
+}
+
+/**
+ * Creates a JSONB operator that encrypts a JSON path selector and wraps it
+ * in the appropriate `eql_v2` function call.
+ *
+ * Supports `jsonbPathQueryFirst`, `jsonbGet`, and `jsonbPathExists`.
+ * The column must have `searchableJson` enabled in its {@link EncryptedColumnConfig}.
+ */
+function createJsonbOperator(
+  operator: 'jsonbPathQueryFirst' | 'jsonbGet' | 'jsonbPathExists',
+  left: SQLWrapper,
+  right: unknown,
+  columnInfo: ColumnInfo,
+  encryptionClient: EncryptionClient,
+  defaultTable: ProtectTable<ProtectTableColumn> | undefined,
+  tableCache: Map<string, ProtectTable<ProtectTableColumn>>,
+): Promise<SQL> {
+  const { config } = columnInfo
+  const encryptedSelector = (value: unknown) =>
+    sql`${bindIfParam(value, left)}::eql_v2_encrypted`
+
+  if (!config?.searchableJson) {
+    throw new EncryptionOperatorError(
+      `The ${operator} operator requires searchableJson to be enabled on the column configuration.`,
+      {
+        columnName: columnInfo.columnName,
+        tableName: columnInfo.tableName,
+        operator,
+      },
+    )
+  }
+
+  const executeFn = (encrypted: unknown) => {
+    if (encrypted === undefined) {
+      throw new EncryptionOperatorError(
+        `Encryption failed for ${operator} operator`,
+        {
+          columnName: columnInfo.columnName,
+          tableName: columnInfo.tableName,
+          operator,
+        },
+      )
+    }
+    switch (operator) {
+      case 'jsonbPathQueryFirst':
+        return sql`eql_v2.jsonb_path_query_first(${left}, ${encryptedSelector(encrypted)})`
+      case 'jsonbGet':
+        return sql`${left} -> ${encryptedSelector(encrypted)}`
+      case 'jsonbPathExists':
+        return sql`eql_v2.jsonb_path_exists(${left}, ${encryptedSelector(encrypted)})`
+    }
+  }
+
+  return createLazyOperator(
+    operator,
+    left,
+    right,
+    executeFn,
+    true,
+    columnInfo,
+    encryptionClient,
+    defaultTable,
+    tableCache,
+    undefined,
+    undefined,
+    queryTypes.steVecSelector,
   ) as Promise<SQL>
 }
 
@@ -1043,6 +1112,39 @@ export function createEncryptionOperators(encryptionClient: EncryptionClient): {
    */
   ilike: (left: SQLWrapper, right: unknown) => Promise<SQL> | SQL
   notIlike: (left: SQLWrapper, right: unknown) => Promise<SQL> | SQL
+
+  /**
+   * JSONB path query first operator for encrypted columns with searchable JSON.
+   * Requires `searchableJson` to be set on {@link EncryptedColumnConfig}.
+   *
+   * Encrypts the JSON path selector and calls `eql_v2.jsonb_path_query_first()`,
+   * casting the parameter to `eql_v2_encrypted`.
+   *
+   * @throws {EncryptionOperatorError} If the column does not have `searchableJson` enabled.
+   */
+  jsonbPathQueryFirst: (left: SQLWrapper, right: unknown) => Promise<SQL>
+
+  /**
+   * JSONB get operator for encrypted columns with searchable JSON.
+   * Requires `searchableJson` to be set on {@link EncryptedColumnConfig}.
+   *
+   * Encrypts the JSON path selector and uses the `->` operator,
+   * casting the parameter to `eql_v2_encrypted`.
+   *
+   * @throws {EncryptionOperatorError} If the column does not have `searchableJson` enabled.
+   */
+  jsonbGet: (left: SQLWrapper, right: unknown) => Promise<SQL>
+
+  /**
+   * JSONB path exists operator for encrypted columns with searchable JSON.
+   * Requires `searchableJson` to be set on {@link EncryptedColumnConfig}.
+   *
+   * Encrypts the JSON path selector and calls `eql_v2.jsonb_path_exists()`,
+   * casting the parameter to `eql_v2_encrypted`.
+   *
+   * @throws {EncryptionOperatorError} If the column does not have `searchableJson` enabled.
+   */
+  jsonbPathExists: (left: SQLWrapper, right: unknown) => Promise<SQL>
   // Array operators
   inArray: (left: SQLWrapper, right: unknown[] | SQLWrapper) => Promise<SQL>
   notInArray: (left: SQLWrapper, right: unknown[] | SQLWrapper) => Promise<SQL>
@@ -1284,6 +1386,66 @@ export function createEncryptionOperators(encryptionClient: EncryptionClient): {
   }
 
   /**
+   * JSONB path query first operator - encrypts the selector and calls
+   * `eql_v2.jsonb_path_query_first()` for encrypted columns with searchable JSON.
+   */
+  const encryptedJsonbPathQueryFirst = (
+    left: SQLWrapper,
+    right: unknown,
+  ): Promise<SQL> => {
+    const columnInfo = getColumnInfo(left, defaultTable, tableCache)
+    return createJsonbOperator(
+      'jsonbPathQueryFirst',
+      left,
+      right,
+      columnInfo,
+      encryptionClient,
+      defaultTable,
+      tableCache,
+    )
+  }
+
+  /**
+   * JSONB get operator - encrypts the selector and uses the `->` operator
+   * for encrypted columns with searchable JSON.
+   */
+  const encryptedJsonbGet = (
+    left: SQLWrapper,
+    right: unknown,
+  ): Promise<SQL> => {
+    const columnInfo = getColumnInfo(left, defaultTable, tableCache)
+    return createJsonbOperator(
+      'jsonbGet',
+      left,
+      right,
+      columnInfo,
+      encryptionClient,
+      defaultTable,
+      tableCache,
+    )
+  }
+
+  /**
+   * JSONB path exists operator - encrypts the selector and calls
+   * `eql_v2.jsonb_path_exists()` for encrypted columns with searchable JSON.
+   */
+  const encryptedJsonbPathExists = (
+    left: SQLWrapper,
+    right: unknown,
+  ): Promise<SQL> => {
+    const columnInfo = getColumnInfo(left, defaultTable, tableCache)
+    return createJsonbOperator(
+      'jsonbPathExists',
+      left,
+      right,
+      columnInfo,
+      encryptionClient,
+      defaultTable,
+      tableCache,
+    )
+  }
+
+  /**
    * In array operator - encrypts all values in the array
    */
   const encryptedInArray = async (
@@ -1307,7 +1469,7 @@ export function createEncryptionOperators(encryptionClient: EncryptionClient): {
       right.map((value) => ({
         value,
         column: left,
-        queryType: 'equality' as const,
+        queryType: queryTypes.equality,
       })),
       defaultTable,
       tableCache,
@@ -1353,7 +1515,7 @@ export function createEncryptionOperators(encryptionClient: EncryptionClient): {
       right.map((value) => ({
         value,
         column: left,
-        queryType: 'equality' as const,
+        queryType: queryTypes.equality,
       })),
       defaultTable,
       tableCache,
@@ -1734,6 +1896,11 @@ export function createEncryptionOperators(encryptionClient: EncryptionClient): {
     like: encryptedLike,
     ilike: encryptedIlike,
     notIlike: encryptedNotIlike,
+
+    // Searchable JSON operators
+    jsonbPathQueryFirst: encryptedJsonbPathQueryFirst,
+    jsonbGet: encryptedJsonbGet,
+    jsonbPathExists: encryptedJsonbPathExists,
 
     // Array operators
     inArray: encryptedInArray,

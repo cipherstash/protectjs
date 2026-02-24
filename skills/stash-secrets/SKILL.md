@@ -62,6 +62,8 @@ const result = await secrets.set("DATABASE_URL", "postgres://user:pass@host:5432
 if (result.failure) {
   console.error("Failed:", result.failure.message)
   // result.failure.type: "ApiError" | "NetworkError" | "ClientError" | "EncryptionError"
+} else {
+  console.log(result.data.message) // success message
 }
 ```
 
@@ -90,6 +92,8 @@ if (!result.failure) {
   console.log(result.data.JWT_SECRET)
 }
 ```
+
+**Constraints:** `getMany` requires a minimum of 2 secret names and a maximum of 100 names per request.
 
 **Use `getMany` over multiple `get` calls** - it's significantly more efficient because it batches the decryption into a single ZeroKMS operation.
 
@@ -180,11 +184,11 @@ interface SecretsConfig {
 
 ```typescript
 interface SecretMetadata {
-  id?: string
+  id: string
   name: string
   environment: string
-  createdAt?: string
-  updatedAt?: string
+  createdAt: string
+  updatedAt: string
 }
 ```
 
@@ -205,11 +209,11 @@ All operations return `Result<T, SecretsError>` with either `data` or `failure`.
 
 | Method | Signature | Returns |
 |---|---|---|
-| `set` | `(name: string, value: string)` | `Promise<Result<void, SecretsError>>` |
+| `set` | `(name: string, value: string)` | `Promise<Result<{ success: true, message: string }, SecretsError>>` |
 | `get` | `(name: string)` | `Promise<Result<string, SecretsError>>` |
-| `getMany` | `(names: string[])` | `Promise<Result<Record<string, string>, SecretsError>>` |
+| `getMany` | `(names: string[])` (min 2, max 100) | `Promise<Result<Record<string, string>, SecretsError>>` |
 | `list` | `()` | `Promise<Result<SecretMetadata[], SecretsError>>` |
-| `delete` | `(name: string)` | `Promise<Result<void, SecretsError>>` |
+| `delete` | `(name: string)` | `Promise<Result<{ success: true, message: string }, SecretsError>>` |
 
 ## Patterns
 
