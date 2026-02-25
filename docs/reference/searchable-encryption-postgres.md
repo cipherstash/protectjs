@@ -126,7 +126,7 @@ By default, `encryptQuery` returns an `Encrypted` object (the raw EQL JSON paylo
 | `'composite-literal'` | `string` | PostgreSQL composite literal format `("json")`. Use with Supabase `.eq()` or other APIs that require a string value. |
 | `'escaped-composite-literal'` | `string` | Escaped composite literal `"(\"json\")"`. Use when the query string will be embedded inside another string or JSON value. |
 
-The return type of `encryptQuery` is `EncryptedQueryResult`, which is `Encrypted | string | null` depending on the `returnType` and whether the input was `null`.
+The return type of `encryptQuery` is `EncryptedQueryResult`, which is `Encrypted | string` depending on the `returnType`.
 
 **Single query with `returnType`:**
 
@@ -193,7 +193,6 @@ const documents = encryptedTable('documents', {
 | `string` (e.g. `'$.user.email'`) | `steVecSelector` | JSONPath selector queries |
 | `object` (e.g. `{ role: 'admin' }`) | `steVecTerm` | Containment queries |
 | `array` (e.g. `['admin', 'user']`) | `steVecTerm` | Containment queries |
-| `null` | Returns `null` | Null handling |
 
 #### JSONPath selector queries
 

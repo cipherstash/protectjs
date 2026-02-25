@@ -75,26 +75,6 @@ describe('Number encryption and decryption', () => {
     30000,
   )
 
-  it('should handle null integer', async () => {
-    const ciphertext = await protectClient.encrypt(null, {
-      column: users.age,
-      table: users,
-    })
-
-    if (ciphertext.failure) {
-      throw new Error(`[protect]: ${ciphertext.failure.message}`)
-    }
-
-    // Verify null is preserved
-    expect(ciphertext.data).toBeNull()
-
-    const plaintext = await protectClient.decrypt(ciphertext.data)
-
-    expect(plaintext).toEqual({
-      data: null,
-    })
-  }, 30000)
-
   // Special case
   it('should treat a negative zero valued float as 0.0', async () => {
     const score = -0.0
@@ -338,51 +318,6 @@ describe('Bulk encryption and decryption', () => {
     expect(decryptedData.data[1]).toHaveProperty('data', 30.7)
     expect(decryptedData.data[2]).toHaveProperty('id', 'user3')
     expect(decryptedData.data[2]).toHaveProperty('data', -35.123)
-  }, 30000)
-
-  it('should handle mixed null and non-null numbers in bulk operations', async () => {
-    const intPayloads = [
-      { id: 'user1', plaintext: 25 },
-      { id: 'user2', plaintext: null },
-      { id: 'user3', plaintext: 35 },
-    ]
-
-    const encryptedData = await protectClient.bulkEncrypt(intPayloads, {
-      column: users.age,
-      table: users,
-    })
-
-    if (encryptedData.failure) {
-      throw new Error(`[protect]: ${encryptedData.failure.message}`)
-    }
-
-    // Verify structure
-    expect(encryptedData.data).toHaveLength(3)
-    expect(encryptedData.data[0]).toHaveProperty('id', 'user1')
-    expect(encryptedData.data[0]).toHaveProperty('data')
-    expect(encryptedData.data[0].data).toHaveProperty('c')
-    expect(encryptedData.data[1]).toHaveProperty('id', 'user2')
-    expect(encryptedData.data[1]).toHaveProperty('data')
-    expect(encryptedData.data[1].data).toBeNull()
-    expect(encryptedData.data[2]).toHaveProperty('id', 'user3')
-    expect(encryptedData.data[2]).toHaveProperty('data')
-    expect(encryptedData.data[2].data).toHaveProperty('c')
-
-    // Now decrypt the data
-    const decryptedData = await protectClient.bulkDecrypt(encryptedData.data)
-
-    if (decryptedData.failure) {
-      throw new Error(`[protect]: ${decryptedData.failure.message}`)
-    }
-
-    // Verify decrypted data
-    expect(decryptedData.data).toHaveLength(3)
-    expect(decryptedData.data[0]).toHaveProperty('id', 'user1')
-    expect(decryptedData.data[0]).toHaveProperty('data', 25)
-    expect(decryptedData.data[1]).toHaveProperty('id', 'user2')
-    expect(decryptedData.data[1]).toHaveProperty('data', null)
-    expect(decryptedData.data[2]).toHaveProperty('id', 'user3')
-    expect(decryptedData.data[2]).toHaveProperty('data', 35)
   }, 30000)
 
   it('should bulk encrypt and decrypt models with number fields', async () => {

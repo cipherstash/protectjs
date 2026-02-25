@@ -29,12 +29,10 @@ type Brand<T, B extends string> = T & { readonly [__brand]: B }
 export type Client = Awaited<ReturnType<typeof newClient>> | undefined
 
 /** A branded type representing encrypted data. Cannot be accidentally used as plaintext. */
-export type EncryptedValue = Brand<CipherStashEncrypted, 'encrypted'> | null
+export type EncryptedValue = Brand<CipherStashEncrypted, 'encrypted'>
 
 /** Structural type representing encrypted data. See also `EncryptedValue` for branded nominal typing. */
-export type Encrypted = CipherStashEncrypted | null
-
-export type EncryptPayload = JsPlaintext | null
+export type Encrypted = CipherStashEncrypted
 
 // ---------------------------------------------------------------------------
 // Client configuration
@@ -120,23 +118,24 @@ export type SearchTerm = {
 /** Encrypted search term result: EQL object or composite literal string */
 export type EncryptedSearchTerm = Encrypted | string
 
-/** Result of encryptQuery (single or batch): EQL, composite literal string, or null */
-export type EncryptedQueryResult = Encrypted | string | null
+/** Result of encryptQuery (single or batch): EQL or composite literal string */
+export type EncryptedQueryResult = Encrypted | string
 
 // ---------------------------------------------------------------------------
 // Model field types (encrypted vs decrypted views)
 // ---------------------------------------------------------------------------
 
 export type EncryptedFields<T> = {
-  [K in keyof T as T[K] extends Encrypted ? K : never]: T[K]
+  [K in keyof T as NonNullable<T[K]> extends Encrypted ? K : never]: T[K]
 }
 
 export type OtherFields<T> = {
-  [K in keyof T as T[K] extends Encrypted ? never : K]: T[K]
+  [K in keyof T as NonNullable<T[K]> extends Encrypted ? never : K]: T[K]
 }
 
 export type DecryptedFields<T> = {
-  [K in keyof T as T[K] extends Encrypted ? K : never]: string
+  [K in keyof T as NonNullable<T[K]> extends Encrypted ? K : never]:
+    null extends T[K] ? string | null : string
 }
 
 /** Model with encrypted fields replaced by plaintext (decrypted) values */
@@ -166,7 +165,7 @@ export type Decrypted<T> = OtherFields<T> & DecryptedFields<T>
 export type EncryptedFromSchema<T, S extends EncryptedTableColumn> = {
   [K in keyof T]: [K] extends [keyof S]
     ? [S[K & keyof S]] extends [EncryptedColumn | EncryptedField]
-      ? Encrypted
+      ? null extends T[K] ? Encrypted | null : Encrypted
       : T[K]
     : T[K]
 }
@@ -177,12 +176,12 @@ export type EncryptedFromSchema<T, S extends EncryptedTableColumn> = {
 
 export type BulkEncryptPayload = Array<{
   id?: string
-  plaintext: JsPlaintext | null
+  plaintext: JsPlaintext
 }>
 
 export type BulkEncryptedData = Array<{ id?: string; data: Encrypted }>
 export type BulkDecryptPayload = Array<{ id?: string; data: Encrypted }>
-export type BulkDecryptedData = Array<DecryptionResult<JsPlaintext | null>>
+export type BulkDecryptedData = Array<DecryptionResult<JsPlaintext>>
 
 type DecryptionSuccess<T> = { error?: never; data: T; id?: string }
 type DecryptionError<T> = { error: T; id?: string; data?: never }
@@ -255,5 +254,5 @@ export type QueryTermBase = {
 export type EncryptQueryOptions = QueryTermBase
 
 export type ScalarQueryTerm = QueryTermBase & {
-  value: JsPlaintext | null
+  value: JsPlaintext
 }

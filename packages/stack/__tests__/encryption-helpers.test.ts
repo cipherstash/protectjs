@@ -170,12 +170,6 @@ describe('encryption helpers', () => {
       const parsed = JSON.parse(JSON.parse(inner))
       expect(parsed).toEqual(encrypted)
     })
-
-    it('throws when obj is null', () => {
-      expect(() => encryptedToCompositeLiteral(null as any)).toThrow(
-        'encryptedToCompositeLiteral: obj cannot be null',
-      )
-    })
   })
 
   // -------------------------------------------------------
@@ -194,12 +188,6 @@ describe('encryption helpers', () => {
       // Parsing it should give us the composite literal
       const compositeLiteral = JSON.parse(escaped)
       expect(compositeLiteral).toMatch(/^\(.*\)$/)
-    })
-
-    it('throws when obj is null', () => {
-      expect(() => encryptedToEscapedCompositeLiteral(null as any)).toThrow(
-        'encryptedToEscapedCompositeLiteral: obj cannot be null',
-      )
     })
   })
 
@@ -229,11 +217,6 @@ describe('encryption helpers', () => {
       }
       const result = encryptedToPgComposite(encrypted)
       expect(result.data).toBe(encrypted) // same reference
-    })
-
-    it('handles null encrypted value', () => {
-      const result = encryptedToPgComposite(null)
-      expect(result).toEqual({ data: null })
     })
   })
 

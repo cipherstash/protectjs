@@ -11,7 +11,6 @@ export type {
   Client,
   EncryptedValue,
   Encrypted,
-  EncryptPayload,
 } from '@/types'
 
 // Client configuration

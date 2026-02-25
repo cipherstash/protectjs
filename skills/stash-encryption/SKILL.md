@@ -220,7 +220,7 @@ if (!decrypted.failure) {
 }
 ```
 
-Null values are preserved: encrypting `null` returns `null`.
+All plaintext values must be non-null. Null handling is managed at the model level by `encryptModel` and `decryptModel`.
 
 ## Model Operations
 
@@ -266,7 +266,7 @@ All bulk methods make a single call to ZeroKMS regardless of record count, while
 const plaintexts = [
   { id: "u1", plaintext: "alice@example.com" },
   { id: "u2", plaintext: "bob@example.com" },
-  { id: "u3", plaintext: null }, // null values preserved
+  { id: "u3", plaintext: "charlie@example.com" },
 ]
 
 const encrypted = await client.bulkEncrypt(plaintexts, {
@@ -384,7 +384,7 @@ const results = await client.encryptQuery(terms)
 // results.data = [EncryptedPayload, EncryptedPayload]
 ```
 
-Null values in the array are skipped and returned as null.
+All values in the array must be non-null.
 
 ## Identity-Aware Encryption (Lock Contexts)
 

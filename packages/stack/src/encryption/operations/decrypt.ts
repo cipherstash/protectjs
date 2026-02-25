@@ -15,7 +15,7 @@ import { EncryptionOperation } from './base-operation'
  * Decrypts an encrypted payload using the provided client.
  * This is the type returned by the {@link EncryptionClient.decrypt | decrypt} method of the {@link EncryptionClient}.
  */
-export class DecryptOperation extends EncryptionOperation<JsPlaintext | null> {
+export class DecryptOperation extends EncryptionOperation<JsPlaintext> {
   private client: Client
   private encryptedData: Encrypted
 
@@ -31,7 +31,7 @@ export class DecryptOperation extends EncryptionOperation<JsPlaintext | null> {
     return new DecryptOperationWithLockContext(this, lockContext)
   }
 
-  public async execute(): Promise<Result<JsPlaintext | null, EncryptionError>> {
+  public async execute(): Promise<Result<JsPlaintext, EncryptionError>> {
     const log = createRequestLogger()
     log.set({
       op: 'decrypt',
@@ -42,10 +42,6 @@ export class DecryptOperation extends EncryptionOperation<JsPlaintext | null> {
       async () => {
         if (!this.client) {
           throw noClientError()
-        }
-
-        if (this.encryptedData === null) {
-          return null
         }
 
         const { metadata } = this.getAuditData()
@@ -81,7 +77,7 @@ export class DecryptOperation extends EncryptionOperation<JsPlaintext | null> {
   }
 }
 
-export class DecryptOperationWithLockContext extends EncryptionOperation<JsPlaintext | null> {
+export class DecryptOperationWithLockContext extends EncryptionOperation<JsPlaintext> {
   private operation: DecryptOperation
   private lockContext: LockContext
 
@@ -95,7 +91,7 @@ export class DecryptOperationWithLockContext extends EncryptionOperation<JsPlain
     }
   }
 
-  public async execute(): Promise<Result<JsPlaintext | null, EncryptionError>> {
+  public async execute(): Promise<Result<JsPlaintext, EncryptionError>> {
     const log = createRequestLogger()
     log.set({
       op: 'decrypt',
@@ -108,10 +104,6 @@ export class DecryptOperationWithLockContext extends EncryptionOperation<JsPlain
 
         if (!client) {
           throw noClientError()
-        }
-
-        if (encryptedData === null) {
-          return null
         }
 
         const { metadata } = this.getAuditData()

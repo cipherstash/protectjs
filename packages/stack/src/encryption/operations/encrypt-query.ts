@@ -23,7 +23,7 @@ import { EncryptionOperation } from './base-operation'
 export class EncryptQueryOperation extends EncryptionOperation<EncryptedQueryResult> {
   constructor(
     private client: Client,
-    private plaintext: JsPlaintext | null,
+    private plaintext: JsPlaintext,
     private opts: EncryptQueryOptions,
   ) {
     super()
@@ -53,11 +53,6 @@ export class EncryptQueryOperation extends EncryptionOperation<EncryptedQueryRes
       lockContext: false,
     })
 
-    if (this.plaintext === null || this.plaintext === undefined) {
-      log.emit()
-      return { data: null }
-    }
-
     const validationError = validateNumericValue(this.plaintext)
     if (validationError?.failure) {
       log.emit()
@@ -84,7 +79,7 @@ export class EncryptQueryOperation extends EncryptionOperation<EncryptedQueryRes
         )
 
         const encrypted = await ffiEncryptQuery(this.client, {
-          plaintext: this.plaintext as JsPlaintext,
+          plaintext: this.plaintext,
           column: this.opts.column.getName(),
           table: this.opts.table.tableName,
           indexType,
@@ -118,7 +113,7 @@ export class EncryptQueryOperation extends EncryptionOperation<EncryptedQueryRes
 export class EncryptQueryOperationWithLockContext extends EncryptionOperation<EncryptedQueryResult> {
   constructor(
     private client: Client,
-    private plaintext: JsPlaintext | null,
+    private plaintext: JsPlaintext,
     private opts: EncryptQueryOptions,
     private lockContext: LockContext,
     auditMetadata?: Record<string, unknown>,
@@ -138,11 +133,6 @@ export class EncryptQueryOperationWithLockContext extends EncryptionOperation<En
       queryType: this.opts.queryType,
       lockContext: true,
     })
-
-    if (this.plaintext === null || this.plaintext === undefined) {
-      log.emit()
-      return { data: null }
-    }
 
     const validationError = validateNumericValue(this.plaintext)
     if (validationError?.failure) {
@@ -178,7 +168,7 @@ export class EncryptQueryOperationWithLockContext extends EncryptionOperation<En
         )
 
         const encrypted = await ffiEncryptQuery(this.client, {
-          plaintext: this.plaintext as JsPlaintext,
+          plaintext: this.plaintext,
           column: this.opts.column.getName(),
           table: this.opts.table.tableName,
           indexType,

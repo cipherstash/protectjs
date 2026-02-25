@@ -15,6 +15,7 @@ import { z } from 'zod'
  * - `"number"`
  * - `"string"`
  * - `"json"`
+ * - `"text"`
  *
  * @remarks
  * This is a Zod enum used at runtime to validate schema definitions.
@@ -23,8 +24,8 @@ import { z } from 'zod'
  * @internal
  */
 export const castAsEnum = z
-  .enum(['bigint', 'boolean', 'date', 'number', 'string', 'json'])
-  .default('string')
+  .enum(['bigint', 'boolean', 'date', 'number', 'string', 'json', 'text'])
+  .default('text')
 
 const tokenFilterSchema = z.object({
   kind: z.literal('downcase'),
@@ -141,7 +142,7 @@ export class EncryptedField {
 
   constructor(valueName: string) {
     this.valueName = valueName
-    this.castAsValue = 'string'
+    this.castAsValue = 'text'
   }
 
   /**
@@ -151,7 +152,7 @@ export class EncryptedField {
    * a different type so the encryption layer knows how to encode the plaintext
    * before encrypting.
    *
-   * @param castAs - The plaintext data type: `'string'`, `'number'`, `'boolean'`, `'date'`, `'bigint'`, or `'json'`.
+   * @param castAs - The plaintext data type: `'string'`, `'number'`, `'boolean'`, `'date'`, `'text'`, `'bigint'`, or `'json'`.
    * @returns This `EncryptedField` instance for method chaining.
    *
    * @example
@@ -168,7 +169,7 @@ export class EncryptedField {
 
   build() {
     return {
-      cast_as: this.castAsValue,
+      cast_as: this.castAsValue === 'string' ? 'text' : this.castAsValue,
       indexes: {},
     }
   }
@@ -337,7 +338,7 @@ export class EncryptedColumn {
 
   build() {
     return {
-      cast_as: this.castAsValue,
+      cast_as: this.castAsValue === 'string' ? 'text' : this.castAsValue,
       indexes: this.indexesValue,
     }
   }
@@ -595,11 +596,28 @@ export function encryptedField(valueName: string) {
   return new EncryptedField(valueName)
 }
 
-// ------------------------
-// Internal functions
-// ------------------------
-
-/** @internal */
+/**
+ * Build an encrypt config from a list of encrypted tables.
+ *
+ * @param ...tables - The list of encrypted tables to build the config from.
+ * @returns An encrypt config object.
+ *
+ * @example
+ * ```typescript
+ * import { buildEncryptConfig } from "@cipherstash/stack/schema"
+ *
+ * const users = encryptedTable("users", {
+ *   email: encryptedColumn("email").equality(),
+ * })
+ *
+ * const orders = encryptedTable("orders", {
+ *   amount: encryptedColumn("amount").dataType("number"),
+ * })
+ *
+ * const config = buildEncryptConfig(users, orders)
+ * console.log(config)
+ * ```
+ */
 export function buildEncryptConfig(
   ...protectTables: Array<EncryptedTable<EncryptedTableColumn>>
 ): EncryptConfig {

@@ -155,7 +155,6 @@ The type system ensures:
 
 - Schema-defined fields are typed as `Encrypted` in the return value
 - Non-schema fields retain their original types
-- Correct handling of optional and nullable fields
 - Preservation of nested object structures
 
 ### Using explicit type parameters

@@ -96,66 +96,8 @@ describe('bulk encryption and decryption', () => {
       expect(encryptedData.data[2].data).toHaveProperty('c')
     }, 30000)
 
-    it('should handle null values in bulk encrypt', async () => {
-      const plaintexts = [
-        { id: 'user1', plaintext: 'alice@example.com' },
-        { id: 'user2', plaintext: null },
-        { id: 'user3', plaintext: 'charlie@example.com' },
-      ]
-
-      const encryptedData = await protectClient.bulkEncrypt(plaintexts, {
-        column: users.email,
-        table: users,
-      })
-
-      if (encryptedData.failure) {
-        throw new Error(`[protect]: ${encryptedData.failure.message}`)
-      }
-
-      // Verify structure
-      expect(encryptedData.data).toHaveLength(3)
-      expect(encryptedData.data[0]).toHaveProperty('id', 'user1')
-      expect(encryptedData.data[0]).toHaveProperty('data')
-      expect(encryptedData.data[0].data).toHaveProperty('c')
-      expect(encryptedData.data[1]).toHaveProperty('id', 'user2')
-      expect(encryptedData.data[1]).toHaveProperty('data')
-      expect(encryptedData.data[1].data).toBeNull()
-      expect(encryptedData.data[2]).toHaveProperty('id', 'user3')
-      expect(encryptedData.data[2]).toHaveProperty('data')
-      expect(encryptedData.data[2].data).toHaveProperty('c')
-    }, 30000)
-
-    it('should handle all null values in bulk encrypt', async () => {
-      const plaintexts = [
-        { id: 'user1', plaintext: null },
-        { id: 'user2', plaintext: null },
-        { id: 'user3', plaintext: null },
-      ]
-
-      const encryptedData = await protectClient.bulkEncrypt(plaintexts, {
-        column: users.email,
-        table: users,
-      })
-
-      if (encryptedData.failure) {
-        throw new Error(`[protect]: ${encryptedData.failure.message}`)
-      }
-
-      // Verify structure
-      expect(encryptedData.data).toHaveLength(3)
-      expect(encryptedData.data[0]).toHaveProperty('id', 'user1')
-      expect(encryptedData.data[0]).toHaveProperty('data')
-      expect(encryptedData.data[0].data).toBeNull()
-      expect(encryptedData.data[1]).toHaveProperty('id', 'user2')
-      expect(encryptedData.data[1]).toHaveProperty('data')
-      expect(encryptedData.data[1].data).toBeNull()
-      expect(encryptedData.data[2]).toHaveProperty('id', 'user3')
-      expect(encryptedData.data[2]).toHaveProperty('data')
-      expect(encryptedData.data[2].data).toBeNull()
-    }, 30000)
-
     it('should handle empty array in bulk encrypt', async () => {
-      const plaintexts: Array<{ id?: string; plaintext: string | null }> = []
+      const plaintexts: Array<{ id?: string; plaintext: string }> = []
 
       const encryptedData = await protectClient.bulkEncrypt(plaintexts, {
         column: users.email,
@@ -245,77 +187,6 @@ describe('bulk encryption and decryption', () => {
       )
     }, 30000)
 
-    it('should handle null values in bulk decrypt', async () => {
-      // First encrypt some data with nulls
-      const plaintexts = [
-        { id: 'user1', plaintext: 'alice@example.com' },
-        { id: 'user2', plaintext: null },
-        { id: 'user3', plaintext: 'charlie@example.com' },
-      ]
-
-      const encryptedData = await protectClient.bulkEncrypt(plaintexts, {
-        column: users.email,
-        table: users,
-      })
-
-      if (encryptedData.failure) {
-        throw new Error(`[protect]: ${encryptedData.failure.message}`)
-      }
-
-      // Now decrypt the data
-      const decryptedData = await protectClient.bulkDecrypt(encryptedData.data)
-
-      if (decryptedData.failure) {
-        throw new Error(`[protect]: ${decryptedData.failure.message}`)
-      }
-
-      // Verify structure
-      expect(decryptedData.data).toHaveLength(3)
-      expect(decryptedData.data[0]).toHaveProperty('id', 'user1')
-      expect(decryptedData.data[0]).toHaveProperty('data', 'alice@example.com')
-      expect(decryptedData.data[1]).toHaveProperty('id', 'user2')
-      expect(decryptedData.data[1]).toHaveProperty('data', null)
-      expect(decryptedData.data[2]).toHaveProperty('id', 'user3')
-      expect(decryptedData.data[2]).toHaveProperty(
-        'data',
-        'charlie@example.com',
-      )
-    }, 30000)
-
-    it('should handle all null values in bulk decrypt', async () => {
-      // First encrypt some data with all nulls
-      const plaintexts = [
-        { id: 'user1', plaintext: null },
-        { id: 'user2', plaintext: null },
-        { id: 'user3', plaintext: null },
-      ]
-
-      const encryptedData = await protectClient.bulkEncrypt(plaintexts, {
-        column: users.email,
-        table: users,
-      })
-
-      if (encryptedData.failure) {
-        throw new Error(`[protect]: ${encryptedData.failure.message}`)
-      }
-
-      // Now decrypt the data
-      const decryptedData = await protectClient.bulkDecrypt(encryptedData.data)
-
-      if (decryptedData.failure) {
-        throw new Error(`[protect]: ${decryptedData.failure.message}`)
-      }
-
-      // Verify structure
-      expect(decryptedData.data).toHaveLength(3)
-      expect(decryptedData.data[0]).toHaveProperty('id', 'user1')
-      expect(decryptedData.data[0]).toHaveProperty('data', null)
-      expect(decryptedData.data[1]).toHaveProperty('id', 'user2')
-      expect(decryptedData.data[1]).toHaveProperty('data', null)
-      expect(decryptedData.data[2]).toHaveProperty('id', 'user3')
-      expect(decryptedData.data[2]).toHaveProperty('data', null)
-    }, 30000)
-
     it('should handle empty array in bulk decrypt', async () => {
       const encryptedPayloads: Array<{ id?: string; data: Encrypted }> = []
 
@@ -397,57 +268,6 @@ describe('bulk encryption and decryption', () => {
         'data',
         'charlie@example.com',
       )
-    }, 30000)
-
-    it('should handle null values with lock context', async () => {
-      const userJwt = process.env.USER_JWT
-
-      if (!userJwt) {
-        console.log('Skipping lock context test - no USER_JWT provided')
-        return
-      }
-
-      const lc = new LockContext()
-      const lockContext = await lc.identify(userJwt)
-
-      if (lockContext.failure) {
-        throw new Error(`[protect]: ${lockContext.failure.message}`)
-      }
-
-      const plaintexts = [
-        { id: 'user1', plaintext: 'alice@example.com' },
-        { id: 'user2', plaintext: null },
-        { id: 'user3', plaintext: 'charlie@example.com' },
-      ]
-
-      // Encrypt with lock context
-      const encryptedData = await protectClient
-        .bulkEncrypt(plaintexts, {
-          column: users.email,
-          table: users,
-        })
-        .withLockContext(lockContext.data)
-
-      if (encryptedData.failure) {
-        throw new Error(`[protect]: ${encryptedData.failure.message}`)
-      }
-
-      // Verify null is preserved
-      expect(encryptedData.data[1]).toHaveProperty('data')
-      expect(encryptedData.data[1].data).toBeNull()
-
-      // Decrypt with lock context
-      const decryptedData = await protectClient
-        .bulkDecrypt(encryptedData.data)
-        .withLockContext(lockContext.data)
-
-      if (decryptedData.failure) {
-        throw new Error(`[protect]: ${decryptedData.failure.message}`)
-      }
-
-      // Verify null is preserved
-      expect(decryptedData.data[1]).toHaveProperty('data')
-      expect(decryptedData.data[1].data).toBeNull()
     }, 30000)
 
     it('should decrypt mixed lock context payloads with specific lock context', async () => {
@@ -533,8 +353,7 @@ describe('bulk encryption and decryption', () => {
       const originalData = [
         { id: 'user1', plaintext: 'alice@example.com' },
         { id: 'user2', plaintext: 'bob@example.com' },
-        { id: 'user3', plaintext: null },
-        { id: 'user4', plaintext: 'dave@example.com' },
+        { id: 'user3', plaintext: 'dave@example.com' },
       ]
 
       // Encrypt
