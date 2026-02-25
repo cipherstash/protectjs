@@ -1,33 +1,58 @@
 import { initLogger, createRequestLogger } from 'evlog'
-import type { LoggerConfig } from 'evlog'
 
-export type LoggingConfig = {
-  enabled?: boolean
-  pretty?: boolean
-  drain?: LoggerConfig['drain']
+/**
+ * Log level for the Stack logger.
+ *
+ * Configured via the `STASH_STACK_LOG` environment variable.
+ *
+ * - `'error'` — Only errors (default when `STASH_STACK_LOG` is not set).
+ * - `'info'`  — Info and errors.
+ * - `'debug'` — Debug, info, and errors.
+ */
+export type LogLevel = 'debug' | 'info' | 'error'
+
+const validLevels: readonly LogLevel[] = ['debug', 'info', 'error'] as const
+
+function levelFromEnv(): LogLevel {
+  const env = process.env.STASH_STACK_LOG
+  if (env && validLevels.includes(env as LogLevel)) return env as LogLevel
+  return 'error'
 }
 
-function samplingFromEnv() {
-  const env = process.env.STASH_LOG_LEVEL
-  if (!env) return undefined
-  const levels = ['debug', 'info', 'warn', 'error'] as const
-  const idx = levels.indexOf(env as (typeof levels)[number])
-  if (idx === -1) return undefined
-  return Object.fromEntries(levels.map((l, i) => [l, i >= idx ? 100 : 0]))
+function samplingRatesForLevel(level: LogLevel): Record<string, number> {
+  // evlog uses sampling rates: 100 = always emit, 0 = never emit
+  switch (level) {
+    case 'debug':
+      return { debug: 100, info: 100, warn: 100, error: 100 }
+    case 'info':
+      return { debug: 0, info: 100, warn: 100, error: 100 }
+    case 'error':
+    default:
+      return { debug: 0, info: 0, warn: 0, error: 100 }
+  }
 }
 
 let initialized = false
 
-export function initStackLogger(config?: LoggingConfig): void {
+/**
+ * Initialize the Stack logger.
+ *
+ * The log level is read from the `STASH_STACK_LOG` environment variable.
+ * When the variable is not set, the default is `'error'` (errors only).
+ *
+ * @internal
+ */
+export function initStackLogger(): void {
   if (initialized) return
   initialized = true
-  const rates = samplingFromEnv()
+
+  const level = levelFromEnv()
+  const rates = samplingRatesForLevel(level)
+
   initLogger({
     env: { service: '@cipherstash/stack' },
-    enabled: config?.enabled ?? !!rates,
-    pretty: config?.pretty,
-    ...(rates && { sampling: { rates } }),
-    ...(config?.drain && { drain: config.drain }),
+    enabled: true,
+    sampling: { rates },
   })
 }
 
@@ -42,7 +67,7 @@ function safeMessage(args: unknown[]): string {
   return typeof args[0] === 'string' ? args[0] : ''
 }
 
-// Legacy logger for simple one-off logs (used by encryption/ffi/index.ts + identity/index.ts)
+// Logger for simple one-off logs used across Stack interfaces.
 export const logger = {
   debug(...args: unknown[]) {
     const log = createRequestLogger()

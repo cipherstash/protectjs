@@ -18,6 +18,7 @@ import { encryptedToPgComposite } from '@/encryption/helpers'
 import { Encryption } from '@/index'
 import { encryptedColumn, encryptedTable } from '@/schema'
 import type { Encrypted } from '@/types'
+import { logger } from '@/utils/logger'
 import type { Result } from '@byteslice/result'
 import { extractWorkspaceIdFromCrn } from '../utils/config/index.js'
 
@@ -46,11 +47,10 @@ export interface SecretsError {
  * Configuration options for initializing the Stash client
  */
 export interface SecretsConfig {
-  workspaceCRN: string
-  clientId: string
-  clientKey: string
   environment: string
-  apiKey: string
+  workspaceCRN?: string
+  clientId?: string
+  clientKey?: string
   accessKey?: string
 }
 
@@ -168,7 +168,7 @@ export interface DecryptedSecretResponse {
  */
 export class Secrets {
   private encryptionClient: EncryptionClient | null = null
-  private config: SecretsConfig
+  private config: Required<SecretsConfig>
   private readonly apiBaseUrl =
     process.env.STASH_API_URL || 'https://dashboard.cipherstash.com/api/secrets'
   private readonly secretsSchema = encryptedTable('secrets', {
@@ -176,7 +176,24 @@ export class Secrets {
   })
 
   constructor(config: SecretsConfig) {
-    this.config = config
+    const workspaceCRN = config.workspaceCRN ?? process.env.CS_WORKSPACE_CRN
+    const clientId = config.clientId ?? process.env.CS_CLIENT_ID
+    const clientKey = config.clientKey ?? process.env.CS_CLIENT_KEY
+    const accessKey = config.accessKey ?? process.env.CS_CLIENT_ACCESS_KEY
+
+    if (!workspaceCRN || !clientId || !clientKey || !accessKey) {
+      throw new Error(
+        'Missing required configuration or environment variables.',
+      )
+    }
+
+    this.config = {
+      environment: config.environment,
+      workspaceCRN,
+      clientId,
+      clientKey,
+      accessKey,
+    }
   }
 
   private initPromise: Promise<void> | null = null
@@ -192,25 +209,27 @@ export class Secrets {
   }
 
   private async _doInit(): Promise<void> {
+    logger.debug('Initializing the Secrets client.')
+
     this.encryptionClient = await Encryption({
       schemas: [this.secretsSchema],
       config: {
         workspaceCrn: this.config.workspaceCRN,
         clientId: this.config.clientId,
         clientKey: this.config.clientKey,
-        accessKey: this.config.apiKey,
-        keyset: {
-          name: this.config.environment,
-        },
+        accessKey: this.config.accessKey,
+        keyset: { name: this.config.environment },
       },
     })
+
+    logger.debug('Successfully initialized the Secrets client.')
   }
 
   /**
    * Get the authorization header for API requests
    */
   private getAuthHeader(): string {
-    return `Bearer ${this.config.apiKey}`
+    return `Bearer ${this.config.accessKey}`
   }
 
   /**
@@ -235,6 +254,8 @@ export class Secrets {
         url = `${url}?${searchParams.toString()}`
       }
 
+      logger.debug(`Secrets API request: ${method} ${path}`)
+
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
         Authorization: this.getAuthHeader(),
@@ -256,6 +277,8 @@ export class Secrets {
           errorMessage = errorText || errorMessage
         }
 
+        logger.error(`Secrets API error on ${method} ${path}: ${errorMessage}`)
+
         return {
           failure: {
             type: 'ApiError',
@@ -264,16 +287,22 @@ export class Secrets {
         }
       }
 
+      logger.debug(`Secrets API request successful: ${method} ${path}`)
+
       const data = await response.json()
       return { data }
     } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'Unknown network error occurred'
+
+      logger.error(`Secrets network error on ${method} ${path}: ${message}`)
+
       return {
         failure: {
           type: 'NetworkError',
-          message:
-            error instanceof Error
-              ? error.message
-              : 'Unknown network error occurred',
+          message,
         },
       }
     }
@@ -293,6 +322,8 @@ export class Secrets {
     name: SecretName,
     value: SecretValue,
   ): Promise<Result<SetSecretResponse, SecretsError>> {
+    logger.debug(`Setting secret: ${name}`)
+
     await this.ensureInitialized()
 
     if (!this.encryptionClient) {
@@ -311,6 +342,9 @@ export class Secrets {
     })
 
     if (encryptResult.failure) {
+      logger.error(
+        `Failed to encrypt secret "${name}": ${encryptResult.failure.message}`,
+      )
       return {
         failure: {
           type: 'EncryptionError',
@@ -343,6 +377,8 @@ export class Secrets {
    * @returns A Result containing the decrypted value or an error
    */
   async get(name: SecretName): Promise<Result<SecretValue, SecretsError>> {
+    logger.debug(`Getting secret: ${name}`)
+
     await this.ensureInitialized()
 
     if (!this.encryptionClient) {
@@ -376,6 +412,9 @@ export class Secrets {
     )
 
     if (decryptResult.failure) {
+      logger.error(
+        `Failed to decrypt secret "${name}": ${decryptResult.failure.message}`,
+      )
       return {
         failure: {
           type: 'DecryptionError',
@@ -385,6 +424,7 @@ export class Secrets {
     }
 
     if (typeof decryptResult.data !== 'string') {
+      logger.error(`Decrypted value for secret "${name}" is not a string.`)
       return {
         failure: {
           type: 'DecryptionError',
@@ -413,6 +453,8 @@ export class Secrets {
   async getMany(
     names: SecretName[],
   ): Promise<Result<Record<SecretName, SecretValue>, SecretsError>> {
+    logger.debug(`Getting ${names.length} secrets.`)
+
     await this.ensureInitialized()
 
     if (!this.encryptionClient) {
@@ -471,6 +513,9 @@ export class Secrets {
       await this.encryptionClient.bulkDecryptModels(dataToDecrypt)
 
     if (decryptResult.failure) {
+      logger.error(
+        `Failed to decrypt secrets: ${decryptResult.failure.message}`,
+      )
       return {
         failure: {
           type: 'DecryptionError',
@@ -502,6 +547,8 @@ export class Secrets {
    * @returns A Result containing the list of secrets or an error
    */
   async list(): Promise<Result<SecretMetadata[], SecretsError>> {
+    logger.debug('Listing secrets.')
+
     // Extract workspaceId from CRN
     const workspaceId = extractWorkspaceIdFromCrn(this.config.workspaceCRN)
 
@@ -534,6 +581,8 @@ export class Secrets {
   async delete(
     name: SecretName,
   ): Promise<Result<DeleteSecretResponse, SecretsError>> {
+    logger.debug(`Deleting secret: ${name}`)
+
     // Extract workspaceId from CRN
     const workspaceId = extractWorkspaceIdFromCrn(this.config.workspaceCRN)
 

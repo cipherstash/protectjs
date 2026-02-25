@@ -60,42 +60,19 @@ If `config` is omitted, the client reads `CS_*` environment variables automatica
 
 ### Logging
 
-Logging is disabled by default. Enable it via environment variable or programmatically:
+Configure the log level with the `STASH_STACK_LOG` environment variable:
 
 ```bash
-STASH_LOG_LEVEL=debug  # debug | info | warn | error (enables logging automatically)
+STASH_STACK_LOG=error  # debug | info | error (default: error)
 ```
 
-#### Programmatic Logging Configuration
+| Value   | What is logged         |
+| ------- | ---------------------- |
+| `error` | Errors only (default)  |
+| `info`  | Info and errors        |
+| `debug` | Debug, info, and errors |
 
-```typescript
-const client = await Encryption({
-  schemas: [users],
-  logging: {
-    enabled: true,     // toggle logging on/off (default: false, auto-enabled by STASH_LOG_LEVEL)
-    pretty: true,      // pretty-print in development (default: auto-detected)
-  },
-})
-```
-
-#### Log Draining
-
-Send structured logs to an external observability platform:
-
-```typescript
-const client = await Encryption({
-  schemas: [users],
-  logging: {
-    drain: (ctx) => {
-      // Forward to Axiom, Datadog, OTLP, etc.
-      fetch("https://your-service.com/logs", {
-        method: "POST",
-        body: JSON.stringify(ctx.event),
-      })
-    },
-  },
-})
-```
+When `STASH_STACK_LOG` is not set, the SDK defaults to `error` (errors only).
 
 The SDK never logs plaintext data.
 

@@ -36,6 +36,12 @@
 	"types": "./dist/index.d.ts",
 	"typesVersions": {
 		"*": {
+			"encryption": [
+				"./dist/encryption/index.d.ts"
+			],
+			"errors": [
+				"./dist/errors/index.d.ts"
+			],
 			"client": [
 				"./dist/client.d.ts"
 			],

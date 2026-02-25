@@ -67,7 +67,7 @@ USER_2_JWT=
 CS_CTS_ENDPOINT=https://ap-southeast-2.aws.auth.viturhosted.net
 
 # Logging (plaintext is never logged by design)
-STASH_LOG_LEVEL=debug|info|warn|error
+STASH_STACK_LOG=debug|info|error  # default: error (errors only)
 ```
 
 If these variables are missing, tests that require live encryption will fail or be skipped; prefer filtering to specific packages and tests while developing.

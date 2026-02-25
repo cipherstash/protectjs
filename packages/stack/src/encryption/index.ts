@@ -34,7 +34,6 @@ import { EncryptOperation } from './operations/encrypt'
 import { EncryptModelOperation } from './operations/encrypt-model'
 import { EncryptQueryOperation } from './operations/encrypt-query'
 import type { EncryptionClientConfig } from '@/types'
-import { initStackLogger } from '@/utils/logger'
 
 export const noClientError = () =>
   new Error(
@@ -594,7 +593,7 @@ export class EncryptionClient {
 
 function isValidUuid(uuid: string): boolean {
   const uuidRegex =
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
   return uuidRegex.test(uuid)
 }
 
@@ -606,7 +605,8 @@ function isValidUuid(uuid: string): boolean {
  * (`CS_WORKSPACE_CRN`, `CS_CLIENT_ID`, `CS_CLIENT_KEY`, `CS_CLIENT_ACCESS_KEY`).
  *
  * @param config - Initialization options. Must include `schemas`; optionally include `config` for
- *   workspace/keys and `logging` for log level and drains.
+ *   workspace/keys. Logging is configured via the `STASH_STACK_LOG` environment variable
+ *   (`debug | info | error`, default: `error`).
  * @returns A Promise that resolves to an initialized {@link EncryptionClient} ready for
  *   {@link EncryptionClient.encrypt}, {@link EncryptionClient.decrypt}, and related operations.
  *
@@ -630,10 +630,6 @@ function isValidUuid(uuid: string): boolean {
 export const Encryption = async (
   config: EncryptionClientConfig,
 ): Promise<EncryptionClient> => {
-  if (config.logging) {
-    initStackLogger(config.logging)
-  }
-
   const { schemas, config: clientConfig } = config
 
   if (!schemas.length) {

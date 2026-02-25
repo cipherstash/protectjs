@@ -1,6 +1,7 @@
 import type { EncryptionClient } from '@/encryption'
 import type { EncryptedTable, EncryptedTableColumn } from '@/schema'
 import type { Decrypted, EncryptedValue } from '@/types'
+import { logger } from '@/utils/logger'
 import { type Result, withResult } from '@byteslice/result'
 import { handleError, toItemWithEqlPayloads } from '../helpers'
 import type { EncryptedDynamoDBError } from '../types'
@@ -31,6 +32,7 @@ export class BulkDecryptModelsOperation<
   public async execute(): Promise<
     Result<Decrypted<T>[], EncryptedDynamoDBError>
   > {
+    logger.debug(`DynamoDB: bulk decrypting ${this.items.length} models.`)
     return await withResult(
       async () => {
         const itemsWithEqlPayloads = this.items.map((item) =>

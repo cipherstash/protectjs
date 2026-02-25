@@ -2,7 +2,7 @@
   <a href="https://cipherstash.com">
     <img alt="CipherStash Logo" loading="lazy" width="128" height="128" decoding="async" data-nimg="1" style="color:transparent" src="https://cipherstash.com/assets/cs-github.png">
   </a>
-  <h1>Data secruity Stack for TypeScript</h1>
+  <h1>Data security Stack for TypeScript</h1>
 
 <a href="https://cipherstash.com"><img alt="Built by CipherStash" src="https://raw.githubusercontent.com/cipherstash/meta/refs/heads/main/csbadge.svg?style=for-the-badge&labelColor=000"></a>
 <a href="https://github.com/cipherstash/protectjs/blob/main/LICENSE.md"><img alt="License" src="https://img.shields.io/npm/l/@cipherstash/protect.svg?style=for-the-badge&labelColor=000000"></a>
@@ -53,11 +53,10 @@ bun add @cipherstash/stack
 > [!IMPORTANT]
 > **You need to opt out of bundling when using `@cipherstash/stack`.**
 > It uses Node.js specific features and requires the native Node.js `require`.
-> You need to opt out of bundling for tools like [Webpack](https://webpack.js.org/configuration/externals/), [esbuild](https://webpack.js.org/configuration/externals/), or [Next.js](https://nextjs.org/docs/app/api-reference/config/next-config-js/serverExternalPackages).
+> You need to opt out of bundling for tools like [Webpack](https://webpack.js.org/configuration/externals/), [tsup](https://tsup.egoist.dev/#excluding-packages), or [Next.js](https://nextjs.org/docs/app/api-reference/config/next-config-js/serverExternalPackages).
 
 ## Prerequisites
 
-- **Node.js** >= 18
 - A [CipherStash account](https://cipherstash.com/signup) — follow the onboarding steps to generate credentials
 - The following environment variables in your `.env` file:
 
