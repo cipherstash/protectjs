@@ -6,7 +6,7 @@
 
 <a href="https://cipherstash.com"><img alt="Built by CipherStash" src="https://raw.githubusercontent.com/cipherstash/meta/refs/heads/main/csbadge.svg?style=for-the-badge&labelColor=000"></a>
 <a href="https://github.com/cipherstash/protectjs/blob/main/LICENSE.md"><img alt="License" src="https://img.shields.io/npm/l/@cipherstash/protect.svg?style=for-the-badge&labelColor=000000"></a>
-<a href="https://cipherstash.com/docs"><img alt="Docs" src="https://img.shields.io/badge/Docs-000000.svg?style=for-the-badge&logo=readthedocs&labelColor=000000"></a>
+<a href="https://cipherstash.com/docs"><img alt="Docs" src="https://img.shields.io/badge/Docs-000000.svg?style=for-the-badge&logo=readthedocs&labelColor=333333"></a>
 <a href="https://discord.gg/5qwXUFb6PB"><img alt="Join the community on Discord" src="https://img.shields.io/badge/Join%20the%20community-blueviolet.svg?style=for-the-badge&logo=Discord&labelColor=000000&logoWidth=20"></a>
 
 </div>
