@@ -112,8 +112,8 @@ When working with nested objects:
 - Optional nested objects are supported
 
 > [!WARNING]
-> TODO: The schema builder does not validate the values you supply to the `encryptedField` or `encryptedColumn` functions.
-> These values are meant to be unique, and cause unexpected behavior if they are not defined correctly.
+> The schema builder does not validate the values you supply to the `encryptedField` or `encryptedColumn` functions.
+> These values are meant to be unique, and may cause unexpected behavior if they are not defined correctly.
 
 ## Data types
 

@@ -556,7 +556,10 @@ For Supabase users, we provide a specific implementation guide. [Read more about
 
 ## Performance optimization
 
-TODO: make docs for creating Postgres Indexes on columns that require searches. At the moment EQL v2 doesn't support creating indexes while also using the out-of-the-box operator and operator families. The solution is to create an index using the EQL functions and then using the EQL functions directly in your SQL statments, which isn't the best experience.
+For optimal query performance on encrypted columns, ensure your PostgreSQL database has the EQL v2 extension installed and that encrypted columns use the `eql_v2_encrypted` type.
+
+> [!NOTE]
+> PostgreSQL index support for encrypted columns is evolving. Check the [EQL repository](https://github.com/cipherstash/encrypt-query-language) for the latest guidance on creating indexes for encrypted columns.
 
 ### Didn't find what you wanted?
 

@@ -6,6 +6,7 @@ The helper wraps your existing DynamoDB workflow — you handle the DynamoDB cli
 ## Table of contents
 
 - [Overview](#overview)
+- [How attribute naming works](#how-attribute-naming-works)
 - [Installation](#installation)
 - [Setting up encryptedDynamoDB](#setting-up-encrypteddynamodb)
 - [Encrypting a model](#encrypting-a-model)
@@ -13,7 +14,13 @@ The helper wraps your existing DynamoDB workflow — you handle the DynamoDB cli
 - [Bulk operations](#bulk-operations)
   - [Bulk encryption](#bulk-encryption)
   - [Bulk decryption](#bulk-decryption)
+- [Querying with encrypted keys](#querying-with-encrypted-keys)
+  - [Encrypted partition key](#encrypted-partition-key)
+  - [Encrypted sort key](#encrypted-sort-key)
+  - [Encrypted attribute in GSI](#encrypted-attribute-in-gsi)
 - [Using nested objects](#using-nested-objects)
+- [Audit logging](#audit-logging)
+- [DynamoDB table design considerations](#dynamodb-table-design-considerations)
 - [Error handling](#error-handling)
 
 ## Overview
@@ -23,6 +30,19 @@ It provides `encryptModel`, `decryptModel`, `bulkEncryptModels`, and `bulkDecryp
 
 Unlike the Supabase and Drizzle integrations, the DynamoDB helper does not wrap a database client.
 You use it to encrypt items before sending them to DynamoDB and decrypt items after retrieving them.
+
+## How attribute naming works
+
+CipherStash encrypts each attribute into two DynamoDB attributes:
+
+| Original Attribute | Stored As | Purpose |
+|---|---|---|
+| `email` | `email__source` | Encrypted ciphertext |
+| `email` | `email__hmac` | HMAC for equality lookups (only if `.equality()` index is set) |
+
+Non-encrypted attributes pass through unchanged. On decryption, the `__source` and `__hmac` attributes are recombined back into the original attribute name with the plaintext value.
+
+Fields without `.equality()` only get `__source` (no HMAC, so they can't be queried).
 
 ## Installation
 
@@ -169,6 +189,80 @@ if (decryptedResult.failure) {
 const decryptedUsers = decryptedResult.data
 ```
 
+## Querying with encrypted keys
+
+DynamoDB queries use key conditions, so you need to encrypt the search value into its HMAC form. Use `encryptionClient.encryptQuery()` to get the HMAC, then use it in your key condition.
+
+### Encrypted partition key
+
+When an encrypted attribute is the partition key (e.g., `email__hmac`):
+
+```typescript
+import { QueryCommand } from "@aws-sdk/lib-dynamodb"
+
+// 1. Encrypt the search value to get the HMAC
+const queryResult = await encryptionClient.encryptQuery([{
+  value: "alice@example.com",
+  column: users.email,
+  table: users,
+  queryType: "equality",
+}])
+
+if (queryResult.failure) {
+  throw new Error(`Query encryption failed: ${queryResult.failure.message}`)
+}
+
+const emailHmac = queryResult.data[0]?.hm
+
+// 2. Use the HMAC in a DynamoDB query
+const result = await docClient.send(new QueryCommand({
+  TableName: "Users",
+  KeyConditionExpression: "email__hmac = :email",
+  ExpressionAttributeValues: {
+    ":email": emailHmac,
+  },
+}))
+
+// 3. Decrypt the results
+const decrypted = await dynamo.bulkDecryptModels(result.Items ?? [], users)
+```
+
+### Encrypted sort key
+
+When an encrypted attribute is the sort key:
+
+```typescript
+const result = await docClient.send(new GetCommand({
+  TableName: "Users",
+  Key: {
+    pk: "org#1",              // partition key (plain)
+    email__hmac: emailHmac,   // sort key (encrypted HMAC)
+  },
+}))
+
+const decrypted = await dynamo.decryptModel(result.Item, users)
+```
+
+### Encrypted attribute in GSI
+
+When querying a Global Secondary Index where the GSI key is an encrypted HMAC:
+
+```typescript
+const result = await docClient.send(new QueryCommand({
+  TableName: "Users",
+  IndexName: "EmailIndex",
+  KeyConditionExpression: "email__hmac = :email",
+  ExpressionAttributeValues: {
+    ":email": emailHmac,
+  },
+  Limit: 1,
+}))
+
+if (result.Items?.length) {
+  const decrypted = await dynamo.decryptModel(result.Items[0], users)
+}
+```
+
 ## Using nested objects
 
 The DynamoDB helper supports nested object encryption using `encryptedField`:
@@ -205,6 +299,44 @@ const encryptedResult = await dynamo.encryptModel(user, users)
 
 > [!NOTE]
 > Nested objects support encryption up to 3 levels deep. Searchable encryption is not supported on nested fields.
+
+## Audit logging
+
+All operations support `.audit()` chaining for audit metadata:
+
+```typescript
+const result = await dynamo
+  .encryptModel(user, users)
+  .audit({
+    metadata: {
+      sub: "user-id-123",
+      action: "user_registration",
+      timestamp: new Date().toISOString(),
+    },
+  })
+```
+
+## DynamoDB table design considerations
+
+### Key schema design
+
+| Pattern | Partition Key | Sort Key | Use Case |
+|---|---|---|---|
+| Plain PK | `pk` (plain) | - | Standard lookup by ID |
+| Encrypted PK | `email__hmac` | - | Lookup by encrypted attribute |
+| Encrypted SK | `pk` (plain) | `email__hmac` | Composite key with encrypted sort |
+| GSI on HMAC | `pk` (plain) | - | Query by encrypted attribute via GSI with `email__hmac` as GSI PK |
+
+### What you CAN query
+
+- Equality on `__hmac` attributes (exact match only)
+- `attribute_exists(email__source)` / `attribute_not_exists(email__source)` in condition expressions
+
+### What you CANNOT query
+
+- Range/comparison on encrypted attributes (no `BETWEEN`, `<`, `>` on `__source`)
+- Substring matching on encrypted attributes (no `begins_with`, `contains` on `__source`)
+- `__source` values are encrypted binary — only equality via `__hmac` is supported
 
 ## Error handling
 

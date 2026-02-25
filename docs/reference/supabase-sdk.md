@@ -174,6 +174,61 @@ const { data, error } = await eSupabase
   ])
 ```
 
+### Range and comparison filters
+
+```typescript
+// Greater than (requires .orderAndRange())
+const { data, error } = await eSupabase
+  .from<UserRow>('users', users)
+  .select('id, email, name')
+  .gt('age', 21)
+
+// Greater than or equal
+const { data, error } = await eSupabase
+  .from<UserRow>('users', users)
+  .select('id, email, name')
+  .gte('age', 18)
+
+// Less than
+const { data, error } = await eSupabase
+  .from<UserRow>('users', users)
+  .select('id, email, name')
+  .lt('age', 65)
+
+// Less than or equal
+const { data, error } = await eSupabase
+  .from<UserRow>('users', users)
+  .select('id, email, name')
+  .lte('age', 100)
+```
+
+### Match (multi-column equality)
+
+```typescript
+const { data, error } = await eSupabase
+  .from<UserRow>('users', users)
+  .select('id, email, name')
+  .match({ email: 'alice@example.com', name: 'Alice' })
+```
+
+### NOT filter
+
+```typescript
+const { data, error } = await eSupabase
+  .from<UserRow>('users', users)
+  .select('id, email, name')
+  .not('email', 'eq', 'alice@example.com')
+```
+
+### Raw filter
+
+```typescript
+const { data, error } = await eSupabase
+  .from<UserRow>('users', users)
+  .select('id, email, name')
+  .filter('email', 'eq', 'alice@example.com')
+```
+
 ### Combining encrypted and non-encrypted filters
 
 Filters on non-encrypted columns pass through to Supabase unchanged:
@@ -283,6 +338,15 @@ if (error) {
   }
 }
 ```
+
+## Filter to index mapping
+
+| Filter Method | Required Index | Query Type |
+|---|---|---|
+| `eq`, `neq`, `in`, `match` | `.equality()` | `'equality'` |
+| `like`, `ilike` | `.freeTextSearch()` | `'freeTextSearch'` |
+| `gt`, `gte`, `lt`, `lte` | `.orderAndRange()` | `'orderAndRange'` |
+| `is` | None | No encryption (NULL/boolean check) |
 
 ## Exposing EQL schema
 

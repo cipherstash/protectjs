@@ -125,7 +125,7 @@ export const orders = encryptedTable("orders", {
 });
 ```
 
-Read more about [defining your schema](./docs/reference/schema.md).
+Read more about [defining your schema](./reference/schema.md).
 
 ## Step 4: Initialize the Encryption client
 

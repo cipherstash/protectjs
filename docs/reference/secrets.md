@@ -168,6 +168,49 @@ if (result.failure) {
 console.log(result.data.message) // Secret deleted successfully
 ```
 
+## CLI usage
+
+The `stash` CLI is bundled with `@cipherstash/stack` and available after install.
+
+### Set a secret
+
+```bash
+npx stash secrets set --name DATABASE_URL --value "postgres://..." --environment production
+npx stash secrets set -n DATABASE_URL -V "postgres://..." -e production
+```
+
+### Get a secret
+
+```bash
+npx stash secrets get --name DATABASE_URL --environment production
+npx stash secrets get -n DATABASE_URL -e production
+```
+
+### List secrets
+
+```bash
+npx stash secrets list --environment production
+npx stash secrets list -e production
+```
+
+### Delete a secret
+
+```bash
+npx stash secrets delete --name DATABASE_URL --environment production
+npx stash secrets delete -n DATABASE_URL -e production --yes  # skip confirmation
+```
+
+### CLI flag reference
+
+| Flag | Alias | Description |
+|---|---|---|
+| `--name` | `-n` | Secret name |
+| `--value` | `-V` | Secret value (set only) |
+| `--environment` | `-e` | Environment name |
+| `--yes` | `-y` | Skip confirmation (delete only) |
+
+The CLI reads credentials from the same `CS_*` environment variables. Use a `.env` file for convenience.
+
 ## Environment isolation
 
 Secrets are isolated by environment.

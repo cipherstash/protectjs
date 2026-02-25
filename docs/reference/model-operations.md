@@ -206,11 +206,14 @@ const result = await client.encryptModel(user, users);
 if (result.failure) {
   // Handle specific error types
   switch (result.failure.type) {
-    case EncryptionErrorTypes.EncryptionError:
+    case "EncryptionError":
       console.error("Encryption failed:", result.failure.message);
       break;
-    case EncryptionErrorTypes.ClientInitError:
+    case "ClientInitError":
       console.error("Client not initialized:", result.failure.message);
+      break;
+    case "LockContextError":
+      console.error("Lock context error:", result.failure.message);
       break;
     default:
       console.error("Unknown error:", result.failure.message);
