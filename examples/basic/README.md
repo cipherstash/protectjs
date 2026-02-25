@@ -1,6 +1,6 @@
-# Basic example of using @cipherstash/protect
+# Basic example of using @cipherstash/stack
 
-This basic example demonstrates how to use the `@cipherstash/protect` package to encrypt arbitrary input.
+This basic example demonstrates how to use the `@cipherstash/stack` package and the **Encryption SDK** to encrypt and decrypt arbitrary input.
 
 ## Installing the basic example
 
@@ -16,7 +16,7 @@ git clone https://github.com/cipherstash/protectjs
 Install dependencies:
 
 ```bash
-# Build Project.js
+# Build the repo (including @cipherstash/stack)
 cd protectjs
 pnpm build
 
@@ -43,7 +43,7 @@ Lastly, install the CipherStash CLI:
 > [!IMPORTANT]
 > Make sure you have [installed the CipherStash CLI](#installation) before following these steps.
 
-Set up all the configuration and credentials required for Protect.js:
+Set up all the configuration and credentials required for the Encryption SDK:
 
 ```bash
 stash setup
@@ -53,8 +53,8 @@ If you have not already signed up for a CipherStash account, this will prompt yo
 
 At the end of `stash setup`, you will have two files in your project:
 
-- `cipherstash.toml` which contains the configuration for Protect.js
-- `cipherstash.secret.toml` which contains the credentials for Protect.js
+- `cipherstash.toml` which contains the configuration for the Encryption SDK
+- `cipherstash.secret.toml` which contains the credentials for the Encryption SDK
 
 > [!WARNING]
 > Do not commit `cipherstash.secret.toml` to git, because it contains sensitive credentials.
@@ -68,8 +68,4 @@ Run the example:
 pnpm start
 ```
 
-The application will log the plaintext to the console that has been encrypted using the CipherStash, decrypted, and logged the original plaintext.
-
-## Next steps
-
-Check out the [Protect.js + Next.js + Clerk example app](../nextjs-clerk) to see how to add end-user identity as an extra control when encrypting data.
+The application will prompt for a name, encrypt it with CipherStash, log the ciphertext, decrypt it, and log the original plaintext. It then runs a short bulk-encryption demo.
