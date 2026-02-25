@@ -1,2 +1,0 @@
-export const PROTECT_CONFIG = 'PROTECT_CONFIG'
-export const PROTECT_CLIENT = 'PROTECT_CLIENT'
