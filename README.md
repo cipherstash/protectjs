@@ -2,17 +2,18 @@
   <a href="https://cipherstash.com">
     <img alt="CipherStash Logo" loading="lazy" width="128" height="128" decoding="async" data-nimg="1" style="color:transparent" src="https://cipherstash.com/assets/cs-github.png">
   </a>
-  <h1>CipherStash Stack</h1>
+  <h1>Data secruity Stack for TypeScript</h1>
 
 <a href="https://cipherstash.com"><img alt="Built by CipherStash" src="https://raw.githubusercontent.com/cipherstash/meta/refs/heads/main/csbadge.svg?style=for-the-badge&labelColor=000"></a>
 <a href="https://github.com/cipherstash/protectjs/blob/main/LICENSE.md"><img alt="License" src="https://img.shields.io/npm/l/@cipherstash/protect.svg?style=for-the-badge&labelColor=000000"></a>
+<a href="https://cipherstash.com/docs"><img alt="Docs" src="https://img.shields.io/badge/Docs-000000.svg?style=for-the-badge&logo=readthedocs&labelColor=000000"></a>
 <a href="https://discord.gg/5qwXUFb6PB"><img alt="Join the community on Discord" src="https://img.shields.io/badge/Join%20the%20community-blueviolet.svg?style=for-the-badge&logo=Discord&labelColor=000000&logoWidth=20"></a>
 
 </div>
 
 Field-level encryption for TypeScript apps with searchable encrypted queries, zero-knowledge key management, and first-class ORM support. Manage secrets with end-to-end encryption, using the CipherStash [Secrets](https://cipherstash.com/docs/secrets) API.
 
-## Quick example
+## Quick Encryption example
 
 ```typescript
 import { Encryption } from "@cipherstash/stack";
@@ -77,38 +78,9 @@ CS_CLIENT_ACCESS_KEY= # API key for CipherStash API
 
 ## Integrations
 
-### Drizzle
-
-Define encrypted columns directly in your Drizzle schema with auto-encrypting query operators:
-
-```typescript
-import { encryptedType, createEncryptionOperators } from "@cipherstash/stack/drizzle";
-const encryptionOps = createEncryptionOperators(encryptionClient);
-```
-
-[Drizzle integration docs →](./docs/reference/drizzle/drizzle.md)
-
-### Supabase
-
-Encrypted queries that look like normal Supabase queries:
-
-```typescript
-import { encryptedSupabase } from "@cipherstash/stack/supabase";
-const eSupabase = encryptedSupabase({ encryptionClient: client, supabaseClient: supabase });
-```
-
-[Supabase integration docs →](./docs/reference/supabase-sdk.md)
-
-### DynamoDB
-
-Transparent encryption for DynamoDB items with equality lookups:
-
-```typescript
-import { encryptedDynamoDB } from "@cipherstash/stack/dynamodb";
-const dynamo = encryptedDynamoDB({ encryptionClient: client });
-```
-
-[DynamoDB integration docs →](./docs/reference/dynamodb.md)
+- [Drizzle integration docs →](./docs/reference/drizzle/drizzle.md)
+- [Supabase integration docs →](./docs/reference/supabase-sdk.md)
+- [DynamoDB integration docs →](./docs/reference/dynamodb.md)
 
 ## Secrets
 
@@ -117,9 +89,13 @@ Zero-trust secrets management with end-to-end encryption — plaintext never lea
 ```typescript
 import { Secrets } from "@cipherstash/stack/secrets";
 
+// 1. Initialize the secrets client
 const secrets = new Secrets({ environment: "production" });
 
+// 2. Set a secret with the SDK or the CLI
 await secrets.set("DATABASE_URL", "postgres://user:pass@host:5432/db");
+
+// 3. Consume the secret in your application
 const { data } = await secrets.get("DATABASE_URL");
 ```
 
@@ -139,7 +115,7 @@ const { data } = await secrets.get("DATABASE_URL");
 
 ## Contributing
 
-Contributions to Protect.js are welcome and highly appreciated. However, before you jump right into it, we would like you to review our [Contribution Guidelines](CONTRIBUTE.md) to make sure you have a smooth experience contributing.
+Contributions are welcome and highly appreciated. However, before you jump right into it, we would like you to review our [Contribution Guidelines](CONTRIBUTE.md) to make sure you have a smooth experience contributing.
 
 ---
 
