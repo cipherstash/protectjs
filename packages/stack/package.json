@@ -153,6 +153,26 @@
 				"default": "./dist/supabase/index.cjs"
 			}
 		},
+		"./encryption": {
+			"import": {
+				"types": "./dist/encryption/index.d.ts",
+				"default": "./dist/encryption/index.js"
+			},
+			"require": {
+				"types": "./dist/encryption/index.d.cts",
+				"default": "./dist/encryption/index.cjs"
+			}
+		},
+		"./errors": {
+			"import": {
+				"types": "./dist/errors/index.d.ts",
+				"default": "./dist/errors/index.js"
+			},
+			"require": {
+				"types": "./dist/errors/index.d.cts",
+				"default": "./dist/errors/index.cjs"
+			}
+		},
 		"./package.json": "./package.json"
 	},
 	"scripts": {

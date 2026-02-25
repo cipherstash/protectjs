@@ -4,6 +4,7 @@ import {
   type EncryptedTable,
   type EncryptedTableColumn,
   encryptConfigSchema,
+  buildEncryptConfig,
 } from '@/schema'
 import type {
   BulkDecryptPayload,
@@ -32,6 +33,8 @@ import { DecryptModelOperation } from './operations/decrypt-model'
 import { EncryptOperation } from './operations/encrypt'
 import { EncryptModelOperation } from './operations/encrypt-model'
 import { EncryptQueryOperation } from './operations/encrypt-query'
+import type { EncryptionClientConfig } from '@/types'
+import { initStackLogger } from '@/utils/logger'
 
 export const noClientError = () =>
   new Error(
@@ -587,4 +590,79 @@ export class EncryptionClient {
       workspaceId: this.workspaceId,
     }
   }
+}
+
+function isValidUuid(uuid: string): boolean {
+  const uuidRegex =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+  return uuidRegex.test(uuid)
+}
+
+/**
+ * Creates and initializes an Encryption client for encrypting and decrypting data with CipherStash.
+ *
+ * Provide at least one schema (from {@link encryptedTable}) so the client knows which tables and
+ * columns to use. Credentials are read from the optional `config` or from the environment
+ * (`CS_WORKSPACE_CRN`, `CS_CLIENT_ID`, `CS_CLIENT_KEY`, `CS_CLIENT_ACCESS_KEY`).
+ *
+ * @param config - Initialization options. Must include `schemas`; optionally include `config` for
+ *   workspace/keys and `logging` for log level and drains.
+ * @returns A Promise that resolves to an initialized {@link EncryptionClient} ready for
+ *   {@link EncryptionClient.encrypt}, {@link EncryptionClient.decrypt}, and related operations.
+ *
+ * @throws Throws if `schemas` is empty, or if a keyset `id` is supplied but is not a valid UUID.
+ *   Also throws if {@link EncryptionClient.init} fails (e.g. invalid credentials or config).
+ *
+ * @example
+ * ```typescript
+ * import { Encryption, encryptedTable, encryptedColumn } from "@cipherstash/stack"
+ *
+ * const users = encryptedTable("users", {
+ *   email: encryptedColumn("email"),
+ * })
+ * const client = await Encryption({ schemas: [users] })
+ * const result = await client.encrypt("alice@example.com", { column: users.email, table: users })
+ * ```
+ *
+ * @see {@link EncryptionClientConfig} for full config options.
+ * @see {@link EncryptionClient} for available methods after initialization.
+ */
+export const Encryption = async (
+  config: EncryptionClientConfig,
+): Promise<EncryptionClient> => {
+  if (config.logging) {
+    initStackLogger(config.logging)
+  }
+
+  const { schemas, config: clientConfig } = config
+
+  if (!schemas.length) {
+    throw new Error(
+      '[encryption]: At least one encryptedTable must be provided to initialize the encryption client',
+    )
+  }
+
+  if (
+    clientConfig?.keyset &&
+    'id' in clientConfig.keyset &&
+    !isValidUuid(clientConfig.keyset.id)
+  ) {
+    throw new Error(
+      '[encryption]: Invalid UUID provided for keyset id. Must be a valid UUID.',
+    )
+  }
+
+  const client = new EncryptionClient(clientConfig?.workspaceCrn)
+  const encryptConfig = buildEncryptConfig(...schemas)
+
+  const result = await client.init({
+    encryptConfig,
+    ...clientConfig,
+  })
+
+  if (result.failure) {
+    throw new Error(`[encryption]: ${result.failure.message}`)
+  }
+
+  return result.data
 }

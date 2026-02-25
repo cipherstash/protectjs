@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { EncryptionErrorTypes, getErrorMessage } from '../src/errors/index.js'
+import { EncryptionErrorTypes, getErrorMessage } from '@/errors'
 
 describe('error helpers', () => {
   // -------------------------------------------------------

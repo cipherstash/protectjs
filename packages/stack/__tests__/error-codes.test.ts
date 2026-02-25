@@ -1,6 +1,7 @@
 import 'dotenv/config'
 import type { EncryptionClient } from '@/encryption'
-import { Encryption, EncryptionErrorTypes } from '@/index'
+import { Encryption } from '@/index'
+import { EncryptionErrorTypes } from '@/errors'
 import { encryptedColumn, encryptedTable } from '@/schema'
 import { ProtectError as FfiProtectError } from '@cipherstash/protect-ffi'
 import { beforeAll, describe, expect, it } from 'vitest'

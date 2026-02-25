@@ -7,7 +7,7 @@ import {
   encryptedColumn,
   encryptedTable,
   encryptedField,
-} from '../src/schema/index.js'
+} from '@/schema'
 
 describe('schema builders', () => {
   // -------------------------------------------------------

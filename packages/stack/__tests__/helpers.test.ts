@@ -5,7 +5,7 @@ import {
   encryptedToPgComposite,
   isEncryptedPayload,
   modelToEncryptedPgComposites,
-} from '../src/encryption/helpers'
+} from '@/encryption/helpers'
 
 describe('helpers', () => {
   describe('encryptedToPgComposite', () => {

@@ -12,6 +12,8 @@ export default defineConfig([
       'src/drizzle/index.ts',
       'src/dynamodb/index.ts',
       'src/supabase/index.ts',
+      'src/encryption/index.ts',
+      'src/errors/index.ts',
     ],
     format: ['cjs', 'esm'],
     sourcemap: true,
