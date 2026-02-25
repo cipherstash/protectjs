@@ -1,5 +1,11 @@
 # @cipherstash/stack
 
+## 0.4.0
+
+### Minor Changes
+
+- 5c3f4e7: Remove null support from encrypt and bulk encrypt operations to improve typescript support and reduce operation complexity.
+
 ## 0.3.0
 
 ### Minor Changes
