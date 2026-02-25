@@ -152,7 +152,7 @@ export class EncryptedField {
    * a different type so the encryption layer knows how to encode the plaintext
    * before encrypting.
    *
-   * @param castAs - The plaintext data type: `'string'`, `'number'`, `'boolean'`, `'date'`, `'bigint'`, or `'json'`.
+   * @param castAs - The plaintext data type: `'string'`, `'number'`, `'boolean'`, `'date'`, `'text'`, `'bigint'`, or `'json'`.
    * @returns This `EncryptedField` instance for method chaining.
    *
    * @example
@@ -163,7 +163,7 @@ export class EncryptedField {
    * ```
    */
   dataType(castAs: CastAs) {
-    this.castAsValue = castAs === 'string' ? 'text' : castAs
+    this.castAsValue = castAs
     return this
   }
 
@@ -212,7 +212,7 @@ export class EncryptedColumn {
    * ```
    */
   dataType(castAs: CastAs) {
-    this.castAsValue = castAs === 'string' ? 'text' : castAs
+    this.castAsValue = castAs
     return this
   }
 
