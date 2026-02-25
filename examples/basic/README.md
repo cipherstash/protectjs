@@ -5,67 +5,43 @@ This basic example demonstrates how to use the `@cipherstash/stack` package and 
 ## Installing the basic example
 
 > [!IMPORTANT]
-> Make sure you have installed Node.js and [pnpm](https://pnpm.io/installation) before following these steps.
+> You need Node.js 22+ and npm (or [pnpm](https://pnpm.io/installation)).
 
-Clone this repo:
-
-```bash
-git clone https://github.com/cipherstash/protectjs
-```
-
-Install dependencies:
+Create a new project or use an existing one, then install the package:
 
 ```bash
-# Build the repo (including @cipherstash/stack)
-cd protectjs
-pnpm build
-
-# Install deps for basic example
-cd examples/basic
-pnpm install
+npm install @cipherstash/stack dotenv
 ```
 
-Lastly, install the CipherStash CLI:
+Or with pnpm:
 
-- On macOS:
+```bash
+pnpm add @cipherstash/stack dotenv
+```
 
-  ```bash
-  brew install cipherstash/tap/stash
-  ```
-
-- On Linux, download the binary for your platform, and put it on your `PATH`:
-    - [Linux ARM64](https://github.com/cipherstash/cli-releases/releases/latest/download/stash-aarch64-unknown-linux-gnu)
-    - [Linux x86_64](https://github.com/cipherstash/cli-releases/releases/latest/download/stash-x86_64-unknown-linux-gnu)
-
+You can also clone this repo and run the example as-is from `examples/basic` (after `pnpm install` in the repo root and in `examples/basic`).
 
 ## Configuring the basic example
 
-> [!IMPORTANT]
-> Make sure you have [installed the CipherStash CLI](#installation) before following these steps.
+Create a [CipherStash account](https://cipherstash.com) and get your workspace credentials from the [CipherStash dashboard](https://app.cipherstash.com). You will need:
 
-Set up all the configuration and credentials required for the Encryption SDK:
+- **Workspace CRN** (Cloud Resource Name)
+- **Client ID**
+- **Client key**
+- **Client access key**
+
+Set these as environment variables (e.g. in a `.env` file in your project root):
 
 ```bash
-stash setup
+CS_WORKSPACE_CRN=crn:...
+CS_CLIENT_ID=...
+CS_CLIENT_KEY=...
+CS_CLIENT_ACCESS_KEY=...
 ```
 
-If you have not already signed up for a CipherStash account, this will prompt you to do so along the way.
-
-At the end of `stash setup`, you will have two files in your project:
-
-- `cipherstash.toml` which contains the configuration for the Encryption SDK
-- `cipherstash.secret.toml` which contains the credentials for the Encryption SDK
-
 > [!WARNING]
-> Do not commit `cipherstash.secret.toml` to git, because it contains sensitive credentials.
-
+> Do not commit `.env` or any file containing these credentials to git.
 
 ## Using the basic example
 
-Run the example:
-
-```
-pnpm start
-```
-
-The application will prompt for a name, encrypt it with CipherStash, log the ciphertext, decrypt it, and log the original plaintext. It then runs a short bulk-encryption demo.
+Run your script (e.g. `node --import tsx index.ts` or `pnpm start` if you use the example’s script). The application will prompt for a name, encrypt it with CipherStash, log the ciphertext, decrypt it, and log the original plaintext, then run a short bulk-encryption demo.
