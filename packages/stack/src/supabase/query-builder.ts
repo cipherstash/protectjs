@@ -408,7 +408,8 @@ export class EncryptedQueryBuilderImpl<
 
       const result = await op
       if (result.failure) {
-        logger.error(`Supabase: failed to encrypt models for table "${this.tableName}": ${result.failure.message}`)
+        logger.error(`Supabase: failed to encrypt models for table "${this.tableName}"`)
+
         throw new EncryptionFailedError(
           `Failed to encrypt models: ${result.failure.message}`,
           result.failure,
@@ -427,7 +428,8 @@ export class EncryptedQueryBuilderImpl<
 
     const result = await op
     if (result.failure) {
-      logger.error(`Supabase: failed to encrypt model for table "${this.tableName}": ${result.failure.message}`)
+      logger.error(`Supabase: failed to encrypt model for table "${this.tableName}"`)
+
       throw new EncryptionFailedError(
         `Failed to encrypt model: ${result.failure.message}`,
         result.failure,
@@ -603,7 +605,8 @@ export class EncryptedQueryBuilderImpl<
 
     const result = await op
     if (result.failure) {
-      logger.error(`Supabase: failed to encrypt query terms for table "${this.tableName}": ${result.failure.message}`)
+      logger.error(`Supabase: failed to encrypt query terms for table "${this.tableName}"`)
+
       throw new EncryptionFailedError(
         `Failed to encrypt query terms: ${result.failure.message}`,
         result.failure,
@@ -938,7 +941,8 @@ export class EncryptedQueryBuilderImpl<
 
       const decrypted = await decryptOp
       if (decrypted.failure) {
-        logger.error(`Supabase: failed to decrypt model for table "${this.tableName}": ${decrypted.failure.message}`)
+        logger.error(`Supabase: failed to decrypt model for table "${this.tableName}"`)
+
         throw new EncryptionFailedError(
           `Failed to decrypt model: ${decrypted.failure.message}`,
           decrypted.failure,
@@ -974,7 +978,8 @@ export class EncryptedQueryBuilderImpl<
 
     const decrypted = await bulkDecryptOp
     if (decrypted.failure) {
-      logger.error(`Supabase: failed to decrypt models for table "${this.tableName}": ${decrypted.failure.message}`)
+      logger.error(`Supabase: failed to decrypt models for table "${this.tableName}"`)
+
       throw new EncryptionFailedError(
         `Failed to decrypt models: ${decrypted.failure.message}`,
         decrypted.failure,

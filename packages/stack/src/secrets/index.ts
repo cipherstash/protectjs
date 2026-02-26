@@ -322,7 +322,7 @@ export class Secrets {
     name: SecretName,
     value: SecretValue,
   ): Promise<Result<SetSecretResponse, SecretsError>> {
-    logger.debug(`Setting secret: ${name}`)
+    logger.debug('Setting secret')
 
     await this.ensureInitialized()
 
@@ -342,9 +342,7 @@ export class Secrets {
     })
 
     if (encryptResult.failure) {
-      logger.error(
-        `Failed to encrypt secret "${name}": ${encryptResult.failure.message}`,
-      )
+      logger.error('Failed to encrypt secret')
       return {
         failure: {
           type: 'EncryptionError',
@@ -377,7 +375,7 @@ export class Secrets {
    * @returns A Result containing the decrypted value or an error
    */
   async get(name: SecretName): Promise<Result<SecretValue, SecretsError>> {
-    logger.debug(`Getting secret: ${name}`)
+    logger.debug('Getting secret')
 
     await this.ensureInitialized()
 
@@ -412,9 +410,7 @@ export class Secrets {
     )
 
     if (decryptResult.failure) {
-      logger.error(
-        `Failed to decrypt secret "${name}": ${decryptResult.failure.message}`,
-      )
+      logger.error('Failed to decrypt secret')
       return {
         failure: {
           type: 'DecryptionError',
@@ -424,7 +420,7 @@ export class Secrets {
     }
 
     if (typeof decryptResult.data !== 'string') {
-      logger.error(`Decrypted value for secret "${name}" is not a string.`)
+      logger.error('Decrypted secret value is not a string')
       return {
         failure: {
           type: 'DecryptionError',
@@ -581,7 +577,7 @@ export class Secrets {
   async delete(
     name: SecretName,
   ): Promise<Result<DeleteSecretResponse, SecretsError>> {
-    logger.debug(`Deleting secret: ${name}`)
+    logger.debug('Deleting secret')
 
     // Extract workspaceId from CRN
     const workspaceId = extractWorkspaceIdFromCrn(this.config.workspaceCRN)
