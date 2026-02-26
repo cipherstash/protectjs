@@ -1,6 +1,6 @@
 import 'dotenv/config'
 import { Encryption } from '@/index'
-import { encryptedColumn, encryptedTable } from '@/schema'
+import { defineContract, encrypted } from '@/contract'
 import { encryptedSupabase } from '@/supabase'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
@@ -18,10 +18,12 @@ const supabase = createClient(
   process.env.SUPABASE_ANON_KEY,
 )
 
-const table = encryptedTable('protect-ci', {
-  encrypted: encryptedColumn('encrypted').freeTextSearch().equality(),
-  age: encryptedColumn('age').dataType('number').equality(),
-  score: encryptedColumn('score').dataType('number').equality(),
+const contract = defineContract({
+  'protect-ci': {
+    encrypted: encrypted({ type: 'string', freeTextSearch: true, equality: true }),
+    age: encrypted({ type: 'number', equality: true }),
+    score: encrypted({ type: 'number', equality: true }),
+  },
 })
 
 // Row type for the protect-ci table
@@ -68,7 +70,7 @@ afterAll(async () => {
 
 describe('supabase (encryptedSupabase wrapper)', () => {
   it('should insert and select encrypted data', async () => {
-    const protectClient = await Encryption({ schemas: [table] })
+    const protectClient = await Encryption({ contract })
     const eSupabase = encryptedSupabase({
       encryptionClient: protectClient,
       supabaseClient: supabase,
@@ -78,7 +80,7 @@ describe('supabase (encryptedSupabase wrapper)', () => {
 
     // Insert — auto-encrypts the `encrypted` column, auto-converts to PG composite
     const { data: insertedData, error: insertError } = await eSupabase
-      .from<ProtectCiRow>('protect-ci', table)
+      .from<ProtectCiRow>('protect-ci', contract['protect-ci'])
       .insert({
         encrypted: plaintext,
         test_run_id: TEST_RUN_ID,
@@ -93,7 +95,7 @@ describe('supabase (encryptedSupabase wrapper)', () => {
 
     // Select — auto-adds ::jsonb cast to `encrypted`, auto-decrypts result
     const { data, error } = await eSupabase
-      .from<ProtectCiRow>('protect-ci', table)
+      .from<ProtectCiRow>('protect-ci', contract['protect-ci'])
       .select('id, encrypted')
       .eq('id', insertedData![0].id)
 
@@ -106,7 +108,7 @@ describe('supabase (encryptedSupabase wrapper)', () => {
   }, 30000)
 
   it('should insert and select encrypted model data', async () => {
-    const protectClient = await Encryption({ schemas: [table] })
+    const protectClient = await Encryption({ contract })
     const eSupabase = encryptedSupabase({
       encryptionClient: protectClient,
       supabaseClient: supabase,
@@ -119,7 +121,7 @@ describe('supabase (encryptedSupabase wrapper)', () => {
 
     // Insert — auto-encrypts `encrypted`, passes `otherField` through
     const { data: insertedData, error: insertError } = await eSupabase
-      .from<ProtectCiRow>('protect-ci', table)
+      .from<ProtectCiRow>('protect-ci', contract['protect-ci'])
       .insert({
         ...model,
         test_run_id: TEST_RUN_ID,
@@ -134,7 +136,7 @@ describe('supabase (encryptedSupabase wrapper)', () => {
 
     // Select — auto-adds ::jsonb to `encrypted`, auto-decrypts
     const { data, error } = await eSupabase
-      .from<ProtectCiRow>('protect-ci', table)
+      .from<ProtectCiRow>('protect-ci', contract['protect-ci'])
       .select('id, encrypted, otherField')
       .eq('id', insertedData![0].id)
 
@@ -150,7 +152,7 @@ describe('supabase (encryptedSupabase wrapper)', () => {
   }, 30000)
 
   it('should insert and select bulk encrypted model data', async () => {
-    const protectClient = await Encryption({ schemas: [table] })
+    const protectClient = await Encryption({ contract })
     const eSupabase = encryptedSupabase({
       encryptionClient: protectClient,
       supabaseClient: supabase,
@@ -169,7 +171,7 @@ describe('supabase (encryptedSupabase wrapper)', () => {
 
     // Bulk insert — auto-encrypts all models
     const { data: insertedData, error: insertError } = await eSupabase
-      .from<ProtectCiRow>('protect-ci', table)
+      .from<ProtectCiRow>('protect-ci', contract['protect-ci'])
       .insert(models.map((m) => ({ ...m, test_run_id: TEST_RUN_ID })))
       .select('id')
 
@@ -181,7 +183,7 @@ describe('supabase (encryptedSupabase wrapper)', () => {
 
     // Select — auto-decrypts all results
     const { data, error } = await eSupabase
-      .from<ProtectCiRow>('protect-ci', table)
+      .from<ProtectCiRow>('protect-ci', contract['protect-ci'])
       .select('id, encrypted, otherField')
       .in(
         'id',
@@ -201,7 +203,7 @@ describe('supabase (encryptedSupabase wrapper)', () => {
   }, 30000)
 
   it('should insert and query encrypted number data with equality', async () => {
-    const protectClient = await Encryption({ schemas: [table] })
+    const protectClient = await Encryption({ contract })
     const eSupabase = encryptedSupabase({
       encryptionClient: protectClient,
       supabaseClient: supabase,
@@ -215,7 +217,7 @@ describe('supabase (encryptedSupabase wrapper)', () => {
 
     // Insert — auto-encrypts `age`
     const { data: insertedData, error: insertError } = await eSupabase
-      .from<ProtectCiRow>('protect-ci', table)
+      .from<ProtectCiRow>('protect-ci', contract['protect-ci'])
       .insert({
         ...model,
         test_run_id: TEST_RUN_ID,
@@ -230,7 +232,7 @@ describe('supabase (encryptedSupabase wrapper)', () => {
 
     // Query by encrypted `age` — auto-encrypts the search term
     const { data, error } = await eSupabase
-      .from<ProtectCiRow>('protect-ci', table)
+      .from<ProtectCiRow>('protect-ci', contract['protect-ci'])
       .select('id, age, otherField')
       .eq('age', testAge)
       .eq('test_run_id', TEST_RUN_ID)

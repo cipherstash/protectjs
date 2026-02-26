@@ -1,9 +1,9 @@
 import 'dotenv/config'
-import { encryptedColumn, encryptedTable } from '@/schema'
+import { defineContract, encrypted } from '@/contract'
 import postgres from 'postgres'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { Encryption } from '../src'
-import { LockContext } from '../src/identity'
+import { Encryption } from '@/index'
+import { LockContext } from '@/identity'
 
 if (!process.env.DATABASE_URL) {
   throw new Error('Missing env.DATABASE_URL')
@@ -12,8 +12,10 @@ if (!process.env.DATABASE_URL) {
 // Disable prepared statements — required for pooled connections (PgBouncer in transaction mode)
 const sql = postgres(process.env.DATABASE_URL, { prepare: false })
 
-const table = encryptedTable('protect-ci-jsonb', {
-  metadata: encryptedColumn('metadata').searchableJson(),
+const contract = defineContract({
+  'protect-ci-jsonb': {
+    metadata: encrypted({ type: 'json', searchableJson: true }),
+  },
 })
 
 const TEST_RUN_ID = `test-run-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
@@ -27,7 +29,7 @@ let protectClient: EncryptionClient
 async function insertRow(plaintext: any) {
   const encrypted = await protectClient.encryptModel(
     { metadata: plaintext },
-    table,
+    contract['protect-ci-jsonb'],
   )
   if (encrypted.failure) throw new Error(encrypted.failure.message)
 
@@ -54,8 +56,7 @@ async function encryptQueryTerm(
     | 'escaped-composite-literal' = 'composite-literal',
 ) {
   const result = await protectClient.encryptQuery(value, {
-    column: table.metadata,
-    table: table,
+    contract: contract['protect-ci-jsonb'].metadata,
     queryType,
     returnType,
   })
@@ -64,7 +65,7 @@ async function encryptQueryTerm(
 }
 
 beforeAll(async () => {
-  protectClient = await Encryption({ schemas: [table] })
+  protectClient = await Encryption({ contract })
 
   await sql`
     CREATE TABLE IF NOT EXISTS "protect-ci-jsonb" (
@@ -115,7 +116,6 @@ describe('searchableJson postgres integration', () => {
       expect(rows).toHaveLength(1)
       await verifyRow(rows[0], plaintext)
     }, 30000)
-
   })
 
   // ─── jsonb_path_query: path-based selector queries ─────────────────
@@ -416,15 +416,13 @@ describe('searchableJson postgres integration', () => {
       const queryResult = await protectClient.encryptQuery([
         {
           value: '$.user.email',
-          column: table.metadata,
-          table: table,
+          contract: contract['protect-ci-jsonb'].metadata,
           queryType: 'steVecSelector',
           returnType: 'composite-literal',
         },
         {
           value: { role: 'editor' },
-          column: table.metadata,
-          table: table,
+          contract: contract['protect-ci-jsonb'].metadata,
           queryType: 'steVecTerm',
           returnType: 'composite-literal',
         },
@@ -654,15 +652,13 @@ describe('searchableJson postgres integration', () => {
       const queryResult = await protectClient.encryptQuery([
         {
           value: '$.user.email',
-          column: table.metadata,
-          table: table,
+          contract: contract['protect-ci-jsonb'].metadata,
           queryType: 'steVecSelector',
           returnType: 'escaped-composite-literal',
         },
         {
           value: { role: 'batch-escaped-role' },
-          column: table.metadata,
-          table: table,
+          contract: contract['protect-ci-jsonb'].metadata,
           queryType: 'steVecTerm',
           returnType: 'escaped-composite-literal',
         },
@@ -721,7 +717,7 @@ describe('searchableJson postgres integration', () => {
       }
 
       const encrypted = await protectClient
-        .encryptModel({ metadata: plaintext }, table)
+        .encryptModel({ metadata: plaintext }, contract['protect-ci-jsonb'])
         .withLockContext(lockContext.data)
       if (encrypted.failure) throw new Error(encrypted.failure.message)
 
@@ -733,8 +729,7 @@ describe('searchableJson postgres integration', () => {
 
       const selectorResult = await protectClient
         .encryptQuery('$.user.email', {
-          column: table.metadata,
-          table: table,
+          contract: contract['protect-ci-jsonb'].metadata,
           queryType: 'steVecSelector',
           returnType: 'composite-literal',
         })
@@ -769,7 +764,7 @@ describe('searchableJson postgres integration', () => {
       const plaintext = { role: 'lc-containment-test', department: 'auth' }
 
       const encrypted = await protectClient
-        .encryptModel({ metadata: plaintext }, table)
+        .encryptModel({ metadata: plaintext }, contract['protect-ci-jsonb'])
         .withLockContext(lockContext.data)
       if (encrypted.failure) throw new Error(encrypted.failure.message)
 
@@ -783,8 +778,7 @@ describe('searchableJson postgres integration', () => {
         .encryptQuery(
           { role: 'lc-containment-test' },
           {
-            column: table.metadata,
-            table: table,
+            contract: contract['protect-ci-jsonb'].metadata,
             queryType: 'steVecTerm',
             returnType: 'composite-literal',
           },
@@ -824,7 +818,7 @@ describe('searchableJson postgres integration', () => {
       }
 
       const encrypted = await protectClient
-        .encryptModel({ metadata: plaintext }, table)
+        .encryptModel({ metadata: plaintext }, contract['protect-ci-jsonb'])
         .withLockContext(lockContext.data)
       if (encrypted.failure) throw new Error(encrypted.failure.message)
 
@@ -838,15 +832,13 @@ describe('searchableJson postgres integration', () => {
         .encryptQuery([
           {
             value: '$.user.email',
-            column: table.metadata,
-            table: table,
+            contract: contract['protect-ci-jsonb'].metadata,
             queryType: 'steVecSelector',
             returnType: 'composite-literal',
           },
           {
             value: { role: 'lc-batch-role' },
-            column: table.metadata,
-            table: table,
+            contract: contract['protect-ci-jsonb'].metadata,
             queryType: 'steVecTerm',
             returnType: 'composite-literal',
           },
@@ -917,20 +909,17 @@ describe('searchableJson postgres integration', () => {
       // Parallel encrypt 3 selector queries
       const [q1, q2, q3] = await Promise.all([
         protectClient.encryptQuery('$.alpha.key', {
-          column: table.metadata,
-          table: table,
+          contract: contract['protect-ci-jsonb'].metadata,
           queryType: 'steVecSelector',
           returnType: 'composite-literal',
         }),
         protectClient.encryptQuery('$.beta.key', {
-          column: table.metadata,
-          table: table,
+          contract: contract['protect-ci-jsonb'].metadata,
           queryType: 'steVecSelector',
           returnType: 'composite-literal',
         }),
         protectClient.encryptQuery('$.gamma.key', {
-          column: table.metadata,
-          table: table,
+          contract: contract['protect-ci-jsonb'].metadata,
           queryType: 'steVecSelector',
           returnType: 'composite-literal',
         }),
@@ -1010,8 +999,7 @@ describe('searchableJson postgres integration', () => {
         protectClient.encryptQuery(
           { role: 'concurrent-contain-1' },
           {
-            column: table.metadata,
-            table: table,
+            contract: contract['protect-ci-jsonb'].metadata,
             queryType: 'steVecTerm',
             returnType: 'composite-literal',
           },
@@ -1019,8 +1007,7 @@ describe('searchableJson postgres integration', () => {
         protectClient.encryptQuery(
           { role: 'concurrent-contain-2' },
           {
-            column: table.metadata,
-            table: table,
+            contract: contract['protect-ci-jsonb'].metadata,
             queryType: 'steVecTerm',
             returnType: 'composite-literal',
           },
@@ -1075,18 +1062,16 @@ describe('searchableJson postgres integration', () => {
       // Parallel: encryptModel + selector encryptQuery + containment encryptQuery
       const [encryptedModel, selectorResult, containmentResult] =
         await Promise.all([
-          protectClient.encryptModel({ metadata: plaintext }, table),
+          protectClient.encryptModel({ metadata: plaintext }, contract['protect-ci-jsonb']),
           protectClient.encryptQuery('$.user.email', {
-            column: table.metadata,
-            table: table,
+            contract: contract['protect-ci-jsonb'].metadata,
             queryType: 'steVecSelector',
             returnType: 'composite-literal',
           }),
           protectClient.encryptQuery(
             { role: 'concurrent-mixed-role' },
             {
-              column: table.metadata,
-              table: table,
+              contract: contract['protect-ci-jsonb'].metadata,
               queryType: 'steVecTerm',
               returnType: 'composite-literal',
             },
@@ -1161,8 +1146,7 @@ describe('searchableJson postgres integration', () => {
 
       // Omit returnType — single-value encryptQuery returns raw Encrypted object
       const queryResult = await protectClient.encryptQuery('$.user.email', {
-        column: table.metadata,
-        table: table,
+        contract: contract['protect-ci-jsonb'].metadata,
         queryType: 'steVecSelector',
       })
       if (queryResult.failure) throw new Error(queryResult.failure.message)
@@ -1190,8 +1174,7 @@ describe('searchableJson postgres integration', () => {
       const queryResult = await protectClient.encryptQuery(
         { role: 'eql-raw-contain' },
         {
-          column: table.metadata,
-          table: table,
+          contract: contract['protect-ci-jsonb'].metadata,
           queryType: 'steVecTerm',
         },
       )

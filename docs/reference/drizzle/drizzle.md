@@ -3,11 +3,12 @@
 
 This page demonstrates how to perform queries on encrypted data using **Drizzle ORM** with **CipherStash Encryption** using the **protect operators pattern**.
 
-**Pattern:** Auto-encrypting operators from `createProtectOperators()` provide clean syntax with automatic encryption.
+**Pattern:** Auto-encrypting operators from `createEncryptionOperators()` provide clean syntax with automatic encryption.
 
 **How it works:**
-- Use `await protect.eq()`, `await protect.gte()`, `await protect.like()` for queries
+- Use `await encryptionOps.eq()`, `await encryptionOps.gte()`, `await encryptionOps.like()` for queries
 - Operators automatically detect encrypted columns and encrypt query values
+- Non-encrypted columns fall back to standard Drizzle operators automatically
 - Results are automatically decrypted by the executor
 
 ## Overview
@@ -380,6 +381,121 @@ All results are automatically **decrypted** by `@cipherstash/stack` before being
 - ✅ **Familiar API** - Use standard Drizzle syntax with `protect`
 - ✅ **Automatic decryption** - No manual decryption needed
 - ✅ **Type safety** - Full TypeScript support
+
+---
+
+## Initialization
+
+To use the protect operators pattern in your own application, set up the encryption client and operators:
+
+```typescript
+import { pgTable, integer, timestamp, varchar } from "drizzle-orm/pg-core"
+import { encryptedType, extractContract, createEncryptionOperators } from "@cipherstash/stack/drizzle"
+import { Encryption } from "@cipherstash/stack"
+
+// 1. Define your Drizzle table with encrypted columns
+const usersTable = pgTable("users", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  email: encryptedType<string>("email", {
+    equality: true,
+    freeTextSearch: true,
+    orderAndRange: true,
+  }),
+  age: encryptedType<number>("age", {
+    dataType: "number",
+    equality: true,
+    orderAndRange: true,
+  }),
+  role: varchar("role", { length: 50 }),
+})
+
+// 2. Extract CipherStash contract from the Drizzle table definition
+const contract = extractContract(usersTable)
+
+// 3. Initialize the encryption client
+const encryptionClient = await Encryption({ contract })
+
+// 4. Create the auto-encrypting operators
+const encryptionOps = createEncryptionOperators(encryptionClient)
+```
+
+### `encryptedType<TData>(name, config?)`
+
+| Config Option | Type | Description |
+|---|---|---|
+| `dataType` | `"string"` \| `"number"` \| `"json"` | Plaintext data type (default: `"string"`) |
+| `equality` | `boolean` \| `TokenFilter[]` | Enable equality index |
+| `freeTextSearch` | `boolean` \| `MatchIndexOpts` | Enable free-text search index |
+| `orderAndRange` | `boolean` | Enable ORE index for sorting and range queries |
+| `searchableJson` | `boolean` | Enable JSONB path queries (requires `dataType: "json"`) |
+
+---
+
+## Complete operator reference
+
+### Encrypted operators (async)
+
+| Operator | Usage | Required Index |
+|---|---|---|
+| `eq(col, value)` | Equality | `.equality()` |
+| `ne(col, value)` | Not equal | `.equality()` |
+| `gt(col, value)` | Greater than | `.orderAndRange()` |
+| `gte(col, value)` | Greater than or equal | `.orderAndRange()` |
+| `lt(col, value)` | Less than | `.orderAndRange()` |
+| `lte(col, value)` | Less than or equal | `.orderAndRange()` |
+| `between(col, min, max)` | Between (inclusive) | `.orderAndRange()` |
+| `notBetween(col, min, max)` | Not between | `.orderAndRange()` |
+| `like(col, pattern)` | LIKE pattern match | `.freeTextSearch()` |
+| `ilike(col, pattern)` | ILIKE case-insensitive | `.freeTextSearch()` |
+| `notIlike(col, pattern)` | NOT ILIKE | `.freeTextSearch()` |
+| `inArray(col, values)` | IN array | `.equality()` |
+| `notInArray(col, values)` | NOT IN array | `.equality()` |
+| `jsonbPathQueryFirst(col, selector)` | Extract first value at JSONB path | `.searchableJson()` |
+| `jsonbGet(col, selector)` | Get value using JSONB `->` operator | `.searchableJson()` |
+| `jsonbPathExists(col, selector)` | Check if JSONB path exists | `.searchableJson()` |
+
+### Sort operators (sync)
+
+| Operator | Usage | Required Index |
+|---|---|---|
+| `asc(col)` | Ascending sort | `.orderAndRange()` |
+| `desc(col)` | Descending sort | `.orderAndRange()` |
+
+### Logical operators (async, batched)
+
+| Operator | Usage | Description |
+|---|---|---|
+| `and(...conditions)` | Combine with AND | Batches encryption into a single ZeroKMS call |
+| `or(...conditions)` | Combine with OR | Batches encryption into a single ZeroKMS call |
+
+### Passthrough operators (sync, no encryption)
+
+These are re-exported from Drizzle and work identically:
+
+`exists`, `notExists`, `isNull`, `isNotNull`, `not`, `arrayContains`, `arrayContained`, `arrayOverlaps`
+
+### Non-encrypted column fallback
+
+All operators automatically detect whether a column is encrypted. If the column is not encrypted (regular Drizzle column), the operator falls back to the standard Drizzle operator:
+
+```typescript
+await encryptionOps.eq(usersTable.email, "alice@example.com") // encrypted
+await encryptionOps.eq(usersTable.role, "admin")              // falls back to drizzle eq()
+```
+
+### Error handling
+
+`createEncryptionOperators` throws `EncryptionOperatorError` for configuration issues:
+
+```typescript
+class EncryptionOperatorError extends Error {
+  context?: {
+    tableName?: string
+    columnName?: string
+    operator?: string
+  }
+}
+```
 
 ---
 

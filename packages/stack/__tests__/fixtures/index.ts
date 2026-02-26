@@ -1,54 +1,36 @@
-import { encryptedColumn, encryptedTable } from '@/schema'
+import { defineContract, encrypted } from '@/contract'
 import { expect, vi } from 'vitest'
 
-// ============ Schema Fixtures ============
+// ============ Contract Fixtures ============
 
 /**
- * Users table with multiple index types for testing
+ * Contract with multiple tables for testing
  */
-export const users = encryptedTable('users', {
-  email: encryptedColumn('email').equality(),
-  bio: encryptedColumn('bio').freeTextSearch(),
-  age: encryptedColumn('age').dataType('number').orderAndRange(),
-})
-
-/**
- * Articles table with only freeTextSearch (for auto-inference test)
- */
-export const articles = encryptedTable('articles', {
-  content: encryptedColumn('content').freeTextSearch(),
-})
-
-/**
- * Products table with only orderAndRange (for auto-inference test)
- */
-export const products = encryptedTable('products', {
-  price: encryptedColumn('price').dataType('number').orderAndRange(),
-})
-
-/**
- * Metadata table with no indexes (for validation error test)
- */
-export const metadata = encryptedTable('metadata', {
-  raw: encryptedColumn('raw'),
-})
-
-/**
- * Documents table with searchable JSON column (for STE Vec queries)
- */
-export const jsonbSchema = encryptedTable('documents', {
-  id: encryptedColumn('id'),
-  metadata: encryptedColumn('metadata').searchableJson(),
-})
-
-/**
- * Schema fixture with mixed column types including JSON.
- */
-export const mixedSchema = encryptedTable('records', {
-  id: encryptedColumn('id'),
-  email: encryptedColumn('email').equality(),
-  name: encryptedColumn('name').freeTextSearch(),
-  metadata: encryptedColumn('metadata').searchableJson(),
+export const contract = defineContract({
+  users: {
+    email: encrypted({ type: 'string', equality: true }),
+    bio: encrypted({ type: 'string', freeTextSearch: true }),
+    age: encrypted({ type: 'number', orderAndRange: true }),
+  },
+  articles: {
+    content: encrypted({ type: 'string', freeTextSearch: true }),
+  },
+  products: {
+    price: encrypted({ type: 'number', orderAndRange: true }),
+  },
+  metadata: {
+    raw: encrypted({ type: 'string' }),
+  },
+  documents: {
+    id: encrypted({ type: 'string' }),
+    metadata: encrypted({ type: 'json', searchableJson: true }),
+  },
+  records: {
+    id: encrypted({ type: 'string' }),
+    email: encrypted({ type: 'string', equality: true }),
+    name: encrypted({ type: 'string', freeTextSearch: true }),
+    metadata: encrypted({ type: 'json', searchableJson: true }),
+  },
 })
 
 // ============ Mock Factories ============

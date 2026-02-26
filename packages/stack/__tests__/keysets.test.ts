@@ -1,16 +1,18 @@
 import 'dotenv/config'
 import { Encryption } from '@/index'
-import { encryptedColumn, encryptedTable } from '@/schema'
+import { defineContract, encrypted } from '@/contract'
 import { describe, expect, it } from 'vitest'
 
-const users = encryptedTable('users', {
-  email: encryptedColumn('email'),
+const contract = defineContract({
+  users: {
+    email: encrypted({ type: 'string' }),
+  },
 })
 
 describe('encryption and decryption with keyset id', () => {
   it('should encrypt and decrypt a payload', async () => {
     const protectClient = await Encryption({
-      schemas: [users],
+      contract,
       config: {
         keyset: {
           id: '4152449b-505a-4186-93b6-d3d87eba7a47',
@@ -21,8 +23,7 @@ describe('encryption and decryption with keyset id', () => {
     const email = 'hello@example.com'
 
     const ciphertext = await protectClient.encrypt(email, {
-      column: users.email,
-      table: users,
+      contract: contract.users.email,
     })
 
     if (ciphertext.failure) {
@@ -45,7 +46,7 @@ describe('encryption and decryption with keyset id', () => {
 describe('encryption and decryption with keyset name', () => {
   it('should encrypt and decrypt a payload', async () => {
     const protectClient = await Encryption({
-      schemas: [users],
+      contract,
       config: {
         keyset: {
           name: 'Test',
@@ -56,8 +57,7 @@ describe('encryption and decryption with keyset name', () => {
     const email = 'hello@example.com'
 
     const ciphertext = await protectClient.encrypt(email, {
-      column: users.email,
-      table: users,
+      contract: contract.users.email,
     })
 
     if (ciphertext.failure) {
@@ -81,7 +81,7 @@ describe('encryption and decryption with invalid keyset id', () => {
   it('should throw an error', async () => {
     await expect(
       Encryption({
-        schemas: [users],
+        contract,
         config: {
           keyset: {
             id: 'invalid-uuid',

@@ -95,8 +95,7 @@ All encrypt and decrypt operations support the `.withLockContext()` chain.
 // Encrypt with lock context
 const encryptResult = await client
   .encrypt('sensitive-value', {
-    column: users.email,
-    table: users,
+    contract: contract.users.email,
   })
   .withLockContext(lockContext)
 
@@ -139,8 +138,7 @@ const bulkDecryptedResult = await client
 ```typescript
 const term = await client
   .encryptQuery('user@example.com', {
-    column: users.email,
-    table: users,
+    contract: contract.users.email,
   })
   .withLockContext(lockContext)
 ```

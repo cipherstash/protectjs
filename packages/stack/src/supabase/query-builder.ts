@@ -7,7 +7,9 @@ import {
 import type { LockContext } from '@/identity'
 import type { EncryptedTable, EncryptedTableColumn } from '@/schema'
 import { EncryptedColumn } from '@/schema'
+import { ContractColumnRef, ContractTableRef } from '@/contract'
 import type { ScalarQueryTerm } from '@/types'
+import { logger } from '@/utils/logger'
 import type { JsPlaintext } from '@cipherstash/protect-ffi'
 import {
   addJsonbCasts,
@@ -341,6 +343,8 @@ export class EncryptedQueryBuilderImpl<
 
   private async execute(): Promise<EncryptedSupabaseResponse<T[]>> {
     try {
+      logger.debug(`Supabase encrypted query on table "${this.tableName}".`)
+
       // 1. Encrypt mutation data
       const encryptedMutation = await this.encryptMutationData()
 
@@ -360,8 +364,11 @@ export class EncryptedQueryBuilderImpl<
       // 5. Decrypt results
       return await this.decryptResults(result)
     } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      logger.error(`Supabase encrypted query failed on table "${this.tableName}": ${message}`)
+
       const error: EncryptedSupabaseError = {
-        message: err instanceof Error ? err.message : String(err),
+        message,
         encryptionError: undefined,
       }
 
@@ -394,7 +401,7 @@ export class EncryptedQueryBuilderImpl<
 
     if (Array.isArray(data)) {
       // Bulk encrypt
-      const baseOp = this.encryptionClient.bulkEncryptModels(data, this.schema)
+      const baseOp = this.encryptionClient.bulkEncryptModels(data, new ContractTableRef(this.schema))
       const op = this.lockContext
         ? baseOp.withLockContext(this.lockContext)
         : baseOp
@@ -402,6 +409,8 @@ export class EncryptedQueryBuilderImpl<
 
       const result = await op
       if (result.failure) {
+        logger.error(`Supabase: failed to encrypt models for table "${this.tableName}"`)
+
         throw new EncryptionFailedError(
           `Failed to encrypt models: ${result.failure.message}`,
           result.failure,
@@ -412,7 +421,7 @@ export class EncryptedQueryBuilderImpl<
     }
 
     // Single model
-    const baseOp = this.encryptionClient.encryptModel(data, this.schema)
+    const baseOp = this.encryptionClient.encryptModel(data, new ContractTableRef(this.schema))
     const op = this.lockContext
       ? baseOp.withLockContext(this.lockContext)
       : baseOp
@@ -420,6 +429,8 @@ export class EncryptedQueryBuilderImpl<
 
     const result = await op
     if (result.failure) {
+      logger.error(`Supabase: failed to encrypt model for table "${this.tableName}"`)
+
       throw new EncryptionFailedError(
         `Failed to encrypt model: ${result.failure.message}`,
         result.failure,
@@ -462,8 +473,7 @@ export class EncryptedQueryBuilderImpl<
         for (let j = 0; j < f.value.length; j++) {
           terms.push({
             value: f.value[j] as JsPlaintext,
-            column,
-            table: this.schema,
+            contract: new ContractColumnRef(column, this.schema),
             queryType: mapFilterOpToQueryType(f.op),
             returnType: 'composite-literal',
           })
@@ -475,8 +485,7 @@ export class EncryptedQueryBuilderImpl<
       } else {
         terms.push({
           value: f.value as JsPlaintext,
-          column,
-          table: this.schema,
+          contract: new ContractColumnRef(column, this.schema),
           queryType: mapFilterOpToQueryType(f.op),
           returnType: 'composite-literal',
         })
@@ -494,8 +503,7 @@ export class EncryptedQueryBuilderImpl<
 
         terms.push({
           value: value as JsPlaintext,
-          column,
-          table: this.schema,
+          contract: new ContractColumnRef(column, this.schema),
           queryType: 'equality',
           returnType: 'composite-literal',
         })
@@ -512,8 +520,7 @@ export class EncryptedQueryBuilderImpl<
 
       terms.push({
         value: nf.value as JsPlaintext,
-        column,
-        table: this.schema,
+        contract: new ContractColumnRef(column, this.schema),
         queryType: mapFilterOpToQueryType(nf.op),
         returnType: 'composite-literal',
       })
@@ -534,8 +541,7 @@ export class EncryptedQueryBuilderImpl<
 
           terms.push({
             value: cond.value as JsPlaintext,
-            column,
-            table: this.schema,
+            contract: new ContractColumnRef(column, this.schema),
             queryType: mapFilterOpToQueryType(cond.op),
             returnType: 'composite-literal',
           })
@@ -551,8 +557,7 @@ export class EncryptedQueryBuilderImpl<
 
           terms.push({
             value: cond.value as JsPlaintext,
-            column,
-            table: this.schema,
+            contract: new ContractColumnRef(column, this.schema),
             queryType: mapFilterOpToQueryType(cond.op),
             returnType: 'composite-literal',
           })
@@ -574,8 +579,7 @@ export class EncryptedQueryBuilderImpl<
 
       terms.push({
         value: rf.value as JsPlaintext,
-        column,
-        table: this.schema,
+        contract: new ContractColumnRef(column, this.schema),
         queryType: 'equality',
         returnType: 'composite-literal',
       })
@@ -595,6 +599,8 @@ export class EncryptedQueryBuilderImpl<
 
     const result = await op
     if (result.failure) {
+      logger.error(`Supabase: failed to encrypt query terms for table "${this.tableName}"`)
+
       throw new EncryptionFailedError(
         `Failed to encrypt query terms: ${result.failure.message}`,
         result.failure,
@@ -929,6 +935,8 @@ export class EncryptedQueryBuilderImpl<
 
       const decrypted = await decryptOp
       if (decrypted.failure) {
+        logger.error(`Supabase: failed to decrypt model for table "${this.tableName}"`)
+
         throw new EncryptionFailedError(
           `Failed to decrypt model: ${decrypted.failure.message}`,
           decrypted.failure,
@@ -964,6 +972,8 @@ export class EncryptedQueryBuilderImpl<
 
     const decrypted = await bulkDecryptOp
     if (decrypted.failure) {
+      logger.error(`Supabase: failed to decrypt models for table "${this.tableName}"`)
+
       throw new EncryptionFailedError(
         `Failed to decrypt models: ${decrypted.failure.message}`,
         decrypted.failure,

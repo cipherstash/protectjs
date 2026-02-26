@@ -115,11 +115,11 @@ const decryptedUsers = decryptedResult.data;
 
 ### Schema-aware return types (recommended)
 
-`encryptModel` and `bulkEncryptModels` return **schema-aware types** when you let TypeScript infer the type parameters from the arguments.
-Fields matching the table schema are typed as `Encrypted`, while other fields retain their original types:
+`encryptModel` and `bulkEncryptModels` return **contract-aware types** when you let TypeScript infer the type parameters from the arguments.
+Fields matching the contract are typed as `Encrypted`, while other fields retain their original types:
 
 ```typescript
-import { encryptedTable, encryptedColumn } from "@cipherstash/stack/schema";
+import { defineContract, encrypted } from "@cipherstash/stack";
 
 type User = {
   id: string;
@@ -128,24 +128,26 @@ type User = {
   createdAt: Date;
 };
 
-const users = encryptedTable("users", {
-  email: encryptedColumn("email").freeTextSearch(),
-  address: encryptedColumn("address"),
+const contract = defineContract({
+  users: {
+    email: encrypted({ type: "string", freeTextSearch: true }),
+    address: encrypted({ type: "string" }),
+  },
 });
 
-// Let TypeScript infer the return type from the schema
-const encryptedResult = await client.encryptModel(user, users);
+// Let TypeScript infer the return type from the contract
+const encryptedResult = await client.encryptModel(user, contract.users);
 
-// encryptedResult.data.email  -> Encrypted (schema field)
-// encryptedResult.data.address -> Encrypted (schema field)
-// encryptedResult.data.id      -> string    (not in schema)
-// encryptedResult.data.createdAt -> Date    (not in schema)
+// encryptedResult.data.email  -> Encrypted (contract field)
+// encryptedResult.data.address -> Encrypted (contract field)
+// encryptedResult.data.id      -> string    (not in contract)
+// encryptedResult.data.createdAt -> Date    (not in contract)
 
 // Decryption works the same way
 const decryptedResult = await client.decryptModel(encryptedResult.data);
 
 // Bulk operations
-const bulkEncryptedResult = await client.bulkEncryptModels(userModels, users);
+const bulkEncryptedResult = await client.bulkEncryptModels(userModels, contract.users);
 const bulkDecryptedResult = await client.bulkDecryptModels(
   bulkEncryptedResult.data
 );
@@ -153,24 +155,24 @@ const bulkDecryptedResult = await client.bulkDecryptModels(
 
 The type system ensures:
 
-- Schema-defined fields are typed as `Encrypted` in the return value
-- Non-schema fields retain their original types
+- Contract-defined fields are typed as `Encrypted` in the return value
+- Non-contract fields retain their original types
 - Preservation of nested object structures
 
 ### Using explicit type parameters
 
-You can still pass an explicit type parameter for backward compatibility. When you do, the schema type parameter defaults to the widened `EncryptedTableColumn`, and the return type degrades gracefully to your provided type (same behavior as before):
+You can still pass an explicit type parameter for backward compatibility. When you do, the contract type parameter defaults to the widened type, and the return type degrades gracefully to your provided type (same behavior as before):
 
 ```typescript
-// Explicit type parameter — return type is User (no schema-aware mapping)
-const result = await client.encryptModel<User>(user, users);
+// Explicit type parameter — return type is User (no contract-aware mapping)
+const result = await client.encryptModel<User>(user, contract.users);
 
-// For full schema-aware types with explicit parameters, provide both:
-const result = await client.encryptModel<User, typeof users>(user, users);
+// For full contract-aware types with explicit parameters, provide both:
+const result = await client.encryptModel<User, typeof contract.users>(user, contract.users);
 ```
 
 > [!TIP]
-> For the best developer experience, omit the type parameter and let TypeScript infer the schema-aware return type from the `table` argument.
+> For the best developer experience, omit the type parameter and let TypeScript infer the contract-aware return type from the `table` argument.
 
 ## Identity-aware model operations
 
@@ -206,11 +208,14 @@ const result = await client.encryptModel(user, users);
 if (result.failure) {
   // Handle specific error types
   switch (result.failure.type) {
-    case EncryptionErrorTypes.EncryptionError:
+    case "EncryptionError":
       console.error("Encryption failed:", result.failure.message);
       break;
-    case EncryptionErrorTypes.ClientInitError:
+    case "ClientInitError":
       console.error("Client not initialized:", result.failure.message);
+      break;
+    case "LockContextError":
+      console.error("Lock context error:", result.failure.message);
       break;
     default:
       console.error("Unknown error:", result.failure.message);

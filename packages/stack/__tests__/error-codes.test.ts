@@ -1,7 +1,8 @@
 import 'dotenv/config'
 import type { EncryptionClient } from '@/encryption'
-import { Encryption, EncryptionErrorTypes } from '@/index'
-import { encryptedColumn, encryptedTable } from '@/schema'
+import { Encryption } from '@/index'
+import { EncryptionErrorTypes } from '@/errors'
+import { defineContract, encrypted } from '@/contract'
 import { ProtectError as FfiProtectError } from '@cipherstash/protect-ffi'
 import { beforeAll, describe, expect, it } from 'vitest'
 
@@ -16,26 +17,37 @@ const FFI_TEST_TIMEOUT = 30_000
 describe('FFI Error Code Preservation', () => {
   let protectClient: EncryptionClient
 
-  // Schema with a valid column for testing
-  const testSchema = encryptedTable('test_table', {
-    email: encryptedColumn('email').equality(),
-    bio: encryptedColumn('bio').freeTextSearch(),
-    age: encryptedColumn('age').dataType('number').orderAndRange(),
-    metadata: encryptedColumn('metadata').searchableJson(),
+  // Contract with valid columns for testing
+  const contract = defineContract({
+    test_table: {
+      email: encrypted({ type: 'string', equality: true }),
+      bio: encrypted({ type: 'string', freeTextSearch: true }),
+      age: encrypted({ type: 'number', orderAndRange: true }),
+      metadata: encrypted({ type: 'json', searchableJson: true }),
+    },
+    no_index_table: {
+      raw: encrypted({ type: 'string' }),
+    },
   })
 
-  // Schema without indexes for testing non-FFI validation
-  const noIndexSchema = encryptedTable('no_index_table', {
-    raw: encryptedColumn('raw'),
+  // Separate contract for triggering UNKNOWN_COLUMN errors
+  // The key must match the model's field name so encryptModel picks it up,
+  // but the column won't exist in the client's schema → UNKNOWN_COLUMN
+  const badContract = defineContract({
+    test_table: {
+      nonexistent: encrypted({ type: 'string' }),
+    },
   })
 
-  // Schema with non-existent column for triggering FFI UNKNOWN_COLUMN error
-  const badModelSchema = encryptedTable('test_table', {
-    nonexistent: encryptedColumn('nonexistent_column'),
+  // Separate contract for fake columns used in error tests
+  const fakeColumnContract = defineContract({
+    test_table: {
+      nonexistent_column: encrypted({ type: 'string', equality: true }),
+    },
   })
 
   beforeAll(async () => {
-    protectClient = await Encryption({ schemas: [testSchema, noIndexSchema] })
+    protectClient = await Encryption({ contract })
   })
 
   describe('FfiProtectError class', () => {
@@ -53,12 +65,8 @@ describe('FFI Error Code Preservation', () => {
     it(
       'returns UNKNOWN_COLUMN code for non-existent column',
       async () => {
-        // Create a fake column that doesn't exist in the schema
-        const fakeColumn = encryptedColumn('nonexistent_column').equality()
-
         const result = await protectClient.encryptQuery('test', {
-          column: fakeColumn,
-          table: testSchema,
+          contract: fakeColumnContract.test_table.nonexistent_column,
           queryType: 'equality',
         })
 
@@ -74,8 +82,7 @@ describe('FFI Error Code Preservation', () => {
       async () => {
         // This error is caught during pre-FFI validation, not by FFI itself
         const result = await protectClient.encryptQuery('test', {
-          column: noIndexSchema.raw,
-          table: noIndexSchema,
+          contract: contract.no_index_table.raw,
         })
 
         expect(result.failure).toBeDefined()
@@ -92,8 +99,7 @@ describe('FFI Error Code Preservation', () => {
       async () => {
         // NaN validation happens before FFI call
         const result = await protectClient.encryptQuery(Number.NaN, {
-          column: testSchema.age,
-          table: testSchema,
+          contract: contract.test_table.age,
           queryType: 'orderAndRange',
         })
 
@@ -110,13 +116,10 @@ describe('FFI Error Code Preservation', () => {
     it(
       'preserves error code in batch operations',
       async () => {
-        const fakeColumn = encryptedColumn('nonexistent_column').equality()
-
         const result = await protectClient.encryptQuery([
           {
             value: 'test',
-            column: fakeColumn,
-            table: testSchema,
+            contract: fakeColumnContract.test_table.nonexistent_column,
             queryType: 'equality',
           },
         ])
@@ -134,8 +137,7 @@ describe('FFI Error Code Preservation', () => {
         const result = await protectClient.encryptQuery([
           {
             value: Number.NaN,
-            column: testSchema.age,
-            table: testSchema,
+            contract: contract.test_table.age,
             queryType: 'orderAndRange',
           },
         ])
@@ -151,11 +153,8 @@ describe('FFI Error Code Preservation', () => {
     it(
       'returns UNKNOWN_COLUMN code for non-existent column in encrypt',
       async () => {
-        const fakeColumn = encryptedColumn('nonexistent_column')
-
         const result = await protectClient.encrypt('test', {
-          column: fakeColumn,
-          table: testSchema,
+          contract: fakeColumnContract.test_table.nonexistent_column,
         })
 
         expect(result.failure).toBeDefined()
@@ -169,8 +168,7 @@ describe('FFI Error Code Preservation', () => {
       'returns undefined code for non-FFI encrypt errors',
       async () => {
         const result = await protectClient.encrypt(Number.NaN, {
-          column: testSchema.age,
-          table: testSchema,
+          contract: contract.test_table.age,
         })
 
         expect(result.failure).toBeDefined()
@@ -208,13 +206,10 @@ describe('FFI Error Code Preservation', () => {
     it(
       'returns UNKNOWN_COLUMN code for non-existent column',
       async () => {
-        const fakeColumn = encryptedColumn('nonexistent_column')
-
         const result = await protectClient.bulkEncrypt(
           [{ plaintext: 'test1' }, { plaintext: 'test2' }],
           {
-            column: fakeColumn,
-            table: testSchema,
+            contract: fakeColumnContract.test_table.nonexistent_column,
           },
         )
 
@@ -231,8 +226,7 @@ describe('FFI Error Code Preservation', () => {
         const result = await protectClient.bulkEncrypt(
           [{ plaintext: Number.NaN }],
           {
-            column: testSchema.age,
-            table: testSchema,
+            contract: contract.test_table.age,
           },
         )
 
@@ -276,7 +270,7 @@ describe('FFI Error Code Preservation', () => {
       async () => {
         const model = { nonexistent: 'test value' }
 
-        const result = await protectClient.encryptModel(model, badModelSchema)
+        const result = await protectClient.encryptModel(model, badContract.test_table)
 
         expect(result.failure).toBeDefined()
         expect(result.failure?.type).toBe(EncryptionErrorTypes.EncryptionError)
@@ -316,7 +310,7 @@ describe('FFI Error Code Preservation', () => {
 
         const result = await protectClient.bulkEncryptModels(
           models,
-          badModelSchema,
+          badContract.test_table,
         )
 
         expect(result.failure).toBeDefined()

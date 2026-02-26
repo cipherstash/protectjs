@@ -58,23 +58,22 @@ const encrypted = await encryptWithKMS('secret@squirrel.example');
 ### CipherStash Encryption: One Simple Call
 
 ```typescript
-import { Encryption } from '@cipherstash/stack';
-import { encryptedTable, encryptedColumn } from '@cipherstash/stack/schema';
+import { Encryption, defineContract, encrypted } from '@cipherstash/stack';
 
-// One-time setup: Define your schema
-const users = encryptedTable('users', {
-  email: encryptedColumn('email'),
+// One-time setup: Define your contract
+const contract = defineContract({
+  users: {
+    email: encrypted({ type: 'string' }),
+  },
 });
 
 // One-time setup: Initialize client
-const client = await Encryption({
-  schemas: [users],
-});
+const client = await Encryption({ contract });
 
 // Encrypt: One line, no manual encoding, no key management
 const encryptResult = await client.encrypt(
   'secret@squirrel.example',
-  { column: users.email, table: users }
+  { contract: contract.users.email }
 );
 
 // Type-safe error handling
@@ -151,24 +150,27 @@ const plaintext = decryptResult.data; // Already a string, typed correctly
 **CipherStash Encryption:** Searchable encryption is built-in and works with PostgreSQL:
 
 ```typescript
-// Just add search capabilities to your schema
-const users = encryptedTable('users', {
-  email: encryptedColumn('email')
-    .freeTextSearch()      // Full-text search
-    .equality()           // WHERE email = ?
-    .orderAndRange(),     // ORDER BY, range queries
+// Just add search capabilities to your contract
+const contract = defineContract({
+  users: {
+    email: encrypted({
+      type: 'string',
+      freeTextSearch: true,   // Full-text search
+      equality: true,         // WHERE email = ?
+      orderAndRange: true,    // ORDER BY, range queries
+    }),
+  },
 });
 
 // Encrypt as usual
 const encryptResult = await client.encrypt(
   'secret@squirrel.example',
-  { column: users.email, table: users }
+  { contract: contract.users.email }
 );
 
 // Create search terms and query directly in PostgreSQL
 const searchTerms = await client.encryptQuery('secret', {
-  column: users.email,
-  table: users,
+  contract: contract.users.email,
 });
 
 // Use with your ORM (Drizzle integration included)
@@ -208,7 +210,7 @@ const lockContext = await lc.identify(userJwt);
 // Encrypt with lock context (chainable API)
 const encryptResult = await client.encrypt(
   'secret@squirrel.example',
-  { column: users.email, table: users }
+  { contract: contract.users.email }
 ).withLockContext(lockContext);
 
 // Decrypt requires the same lock context (enforced by @cipherstash/stack)
@@ -245,8 +247,7 @@ const bulkPlaintexts = [
 ];
 
 const bulkResult = await client.bulkEncrypt(bulkPlaintexts, {
-  column: users.name,
-  table: users,
+  contract: contract.users.name,
 });
 
 // Returns map of id -> encrypted value, optimized for performance
@@ -367,23 +368,22 @@ const decrypted = await decrypt(encrypted);
 ### CipherStash Encryption: Full Implementation
 
 ```typescript
-import { Encryption } from '@cipherstash/stack';
-import { encryptedTable, encryptedColumn } from '@cipherstash/stack/schema';
+import { Encryption, defineContract, encrypted } from '@cipherstash/stack';
 
-// One-time schema definition
-const users = encryptedTable('users', {
-  email: encryptedColumn('email'),
+// One-time contract definition
+const contract = defineContract({
+  users: {
+    email: encrypted({ type: 'string' }),
+  },
 });
 
 // One-time initialization
-const client = await Encryption({
-  schemas: [users],
-});
+const client = await Encryption({ contract });
 
 // Encrypt
 const encryptResult = await client.encrypt(
   'secret@squirrel.example',
-  { column: users.email, table: users }
+  { contract: contract.users.email }
 );
 
 if (encryptResult.failure) {

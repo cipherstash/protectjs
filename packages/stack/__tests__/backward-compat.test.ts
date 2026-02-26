@@ -1,25 +1,26 @@
 import 'dotenv/config'
 import { Encryption } from '@/index'
-import { encryptedColumn, encryptedTable } from '@/schema'
+import { defineContract, encrypted } from '@/contract'
 import { beforeAll, describe, expect, it } from 'vitest'
 
-const users = encryptedTable('users', {
-  email: encryptedColumn('email'),
+const contract = defineContract({
+  users: {
+    email: encrypted({ type: 'string' }),
+  },
 })
 
 describe('k-field backward compatibility', () => {
   let protectClient: Awaited<ReturnType<typeof Encryption>>
 
   beforeAll(async () => {
-    protectClient = await Encryption({ schemas: [users] })
+    protectClient = await Encryption({ contract })
   })
 
   it('should encrypt new data WITHOUT k field (forward compatibility)', async () => {
     const testData = 'test@example.com'
 
     const result = await protectClient.encrypt(testData, {
-      column: users.email,
-      table: users,
+      contract: contract.users.email,
     })
 
     if (result.failure) {
@@ -38,8 +39,7 @@ describe('k-field backward compatibility', () => {
     const testData = 'legacy@example.com'
 
     const encrypted = await protectClient.encrypt(testData, {
-      column: users.email,
-      table: users,
+      contract: contract.users.email,
     })
 
     if (encrypted.failure) {

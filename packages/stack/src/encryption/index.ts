@@ -1,9 +1,13 @@
+import type { ContractColumnRef, ContractTableRef, TableColumns } from '@/contract'
+import { getContractTables } from '@/contract'
 import { type EncryptionError, EncryptionErrorTypes } from '@/errors'
 import {
   type EncryptConfig,
   type EncryptedTable,
   type EncryptedTableColumn,
+  type EncryptedColumn,
   encryptConfigSchema,
+  buildEncryptConfig,
 } from '@/schema'
 import type {
   BulkDecryptPayload,
@@ -11,10 +15,13 @@ import type {
   Client,
   EncryptOptions,
   EncryptQueryOptions,
+  EncryptedFromContract,
   Encrypted,
-  EncryptedFromSchema,
   KeysetIdentifier,
   ScalarQueryTerm,
+  InternalEncryptOptions,
+  InternalEncryptQueryOptions,
+  InternalScalarQueryTerm,
 } from '@/types'
 import { loadWorkSpaceId } from '@/utils/config'
 import { logger } from '@/utils/logger'
@@ -32,11 +39,38 @@ import { DecryptModelOperation } from './operations/decrypt-model'
 import { EncryptOperation } from './operations/encrypt'
 import { EncryptModelOperation } from './operations/encrypt-model'
 import { EncryptQueryOperation } from './operations/encrypt-query'
+import type { EncryptionClientConfig } from '@/types'
 
 export const noClientError = () =>
   new Error(
     'The Encryption client has not been initialized. Please call init() before using the client.',
   )
+
+/** Extract internal column/table from a ContractColumnRef */
+function extractColumnRef(ref: ContractColumnRef): InternalEncryptOptions {
+  return { column: ref._column, table: ref._table }
+}
+
+/** Extract internal query options from contract-based options */
+function extractQueryOptions(opts: EncryptQueryOptions): InternalEncryptQueryOptions {
+  return {
+    column: opts.contract._column as EncryptedColumn,
+    table: opts.contract._table,
+    queryType: opts.queryType,
+    returnType: opts.returnType,
+  }
+}
+
+/** Extract internal scalar query term from contract-based term */
+function extractScalarQueryTerm(term: ScalarQueryTerm): InternalScalarQueryTerm {
+  return {
+    value: term.value,
+    column: term.contract._column as EncryptedColumn,
+    table: term.contract._table,
+    queryType: term.queryType,
+    returnType: term.returnType,
+  }
+}
 
 /** The EncryptionClient is the main entry point for interacting with the CipherStash Encryption library.
  * It provides methods for encrypting and decrypting individual values, as well as models (objects) and bulk operations.
@@ -107,133 +141,45 @@ export class EncryptionClient {
    * Encrypt a value - returns a promise which resolves to an encrypted value.
    *
    * @param plaintext - The plaintext value to be encrypted.
-   * @param opts - Options specifying the column (or nested field) and table for encryption. See {@link EncryptOptions}.
+   * @param opts - Options specifying the contract column reference. See {@link EncryptOptions}.
    * @returns An EncryptOperation that can be awaited or chained with additional methods.
    *
    * @example
-   * The following example demonstrates how to encrypt a value using the Encryption client.
-   * It includes defining an encryption schema with {@link encryptedTable} and {@link encryptedColumn},
-   * initializing the client with {@link Encryption}, and performing the encryption.
-   *
-   * `encrypt` returns an {@link EncryptOperation} which can be awaited to get a {@link Result}
-   * which can either be the encrypted value or an {@link EncryptionError}.
-   *
    * ```typescript
-   * // Define encryption schema
-   * import { Encryption } from "@cipherstash/stack"
-   * import { encryptedTable, encryptedColumn } from "@cipherstash/stack/schema"
-   * const userSchema = encryptedTable("users", {
-   *  email: encryptedColumn("email"),
-   * });
+   * import { Encryption, defineContract } from "@cipherstash/stack"
    *
-   * // Initialize Encryption client
-   * const client = await Encryption({ schemas: [userSchema] })
+   * const contract = defineContract({
+   *   users: {
+   *     email: { type: 'string', equality: true },
+   *   },
+   * })
    *
-   * // Encrypt a value
-   * const encryptedResult = await client.encrypt(
-   *  "person@example.com",
-   *  { column: userSchema.email, table: userSchema }
-   * )
+   * const client = await Encryption({ contract })
    *
-   * // Handle encryption result
-   * if (encryptedResult.failure) {
-   *   throw new Error(`Encryption failed: ${encryptedResult.failure.message}`);
-   * }
-   *
-   * console.log("Encrypted data:", encryptedResult.data);
+   * const result = await client.encrypt("hello@example.com", {
+   *   contract: contract.users.email,
+   * })
    * ```
-   *
-   * @example
-   * When encrypting data, a {@link LockContext} can be provided to tie the encryption to a specific user or session.
-   * This ensures that the same lock context is required for decryption.
-   *
-   * The following example demonstrates how to create a lock context using a user's JWT token
-   * and use it during encryption.
-   *
-   * ```typescript
-   * // Define encryption schema and initialize client as above
-   *
-   * // Create a lock for the user's `sub` claim from their JWT
-   * const lc = new LockContext();
-   * const lockContext = await lc.identify(userJwt);
-   *
-   * if (lockContext.failure) {
-   *   // Handle the failure
-   * }
-   *
-   * // Encrypt a value with the lock context
-   * // Decryption will then require the same lock context
-   * const encryptedResult = await client.encrypt(
-   *  "person@example.com",
-   *  { column: userSchema.email, table: userSchema }
-   * )
-   *  .withLockContext(lockContext)
-   * ```
-   *
-   * @see {@link EncryptOptions}
-   * @see {@link Result}
-   * @see {@link encryptedTable}
-   * @see {@link encryptedColumn}
-   * @see {@link encryptedField}
-   * @see {@link LockContext}
-   * @see {@link EncryptOperation}
    */
   encrypt(plaintext: JsPlaintext, opts: EncryptOptions): EncryptOperation {
-    return new EncryptOperation(this.client, plaintext, opts)
+    const internal = extractColumnRef(opts.contract)
+    return new EncryptOperation(this.client, plaintext, internal)
   }
 
   /**
    * Encrypt a query value - returns a promise which resolves to an encrypted query value.
    *
    * @param plaintext - The plaintext value to be encrypted for querying.
-   * @param opts - Options specifying the column, table, and optional queryType for encryption.
+   * @param opts - Options specifying the contract column reference and optional queryType.
    * @returns An EncryptQueryOperation that can be awaited or chained with additional methods.
    *
    * @example
-   * The following example demonstrates how to encrypt a query value using the Encryption client.
-   *
    * ```typescript
-   * // Define encryption schema
-   * import { Encryption } from "@cipherstash/stack"
-   * import { encryptedTable, encryptedColumn } from "@cipherstash/stack/schema"
-   * const userSchema = encryptedTable("users", {
-   *  email: encryptedColumn("email").equality(),
-   * });
-   *
-   * // Initialize Encryption client
-   * const client = await Encryption({ schemas: [userSchema] })
-   *
-   * // Encrypt a query value
-   * const encryptedResult = await client.encryptQuery(
-   *  "person@example.com",
-   *  { column: userSchema.email, table: userSchema, queryType: 'equality' }
-   * )
-   *
-   * // Handle encryption result
-   * if (encryptedResult.failure) {
-   *   throw new Error(`Encryption failed: ${encryptedResult.failure.message}`);
-   * }
-   *
-   * console.log("Encrypted query:", encryptedResult.data);
+   * const result = await client.encryptQuery("hello@example.com", {
+   *   contract: contract.users.email,
+   *   queryType: 'equality',
+   * })
    * ```
-   *
-   * @example
-   * The queryType can be auto-inferred from the column's configured indexes:
-   *
-   * ```typescript
-   * // When queryType is omitted, it will be inferred from the column's indexes
-   * const encryptedResult = await client.encryptQuery(
-   *  "person@example.com",
-   *  { column: userSchema.email, table: userSchema }
-   * )
-   * ```
-   *
-   * @see {@link EncryptQueryOperation}
-   *
-   * **JSONB columns (searchableJson):**
-   * When `queryType` is omitted on a `searchableJson()` column, the query operation is inferred:
-   * - String plaintext → `steVecSelector` (JSONPath queries like `'$.user.email'`)
-   * - Object/Array plaintext → `steVecTerm` (containment queries like `{ role: 'admin' }`)
    */
   encryptQuery(
     plaintext: JsPlaintext,
@@ -251,14 +197,12 @@ export class EncryptionClient {
     opts?: EncryptQueryOptions,
   ): EncryptQueryOperation | BatchEncryptQueryOperation {
     // Discriminate between ScalarQueryTerm[] and JsPlaintext (which can also be an array)
-    // using a type guard function
     if (isScalarQueryTermArray(plaintextOrTerms)) {
-      return new BatchEncryptQueryOperation(this.client, plaintextOrTerms)
+      const internalTerms = (plaintextOrTerms as readonly ScalarQueryTerm[]).map(extractScalarQueryTerm)
+      return new BatchEncryptQueryOperation(this.client, internalTerms)
     }
 
     // Handle empty arrays: if opts provided, treat as single value; otherwise batch mode
-    // This maintains backward compatibility for encryptQuery([]) while allowing
-    // encryptQuery([], opts) to encrypt an empty array as a single value
     if (
       Array.isArray(plaintextOrTerms) &&
       plaintextOrTerms.length === 0 &&
@@ -266,7 +210,7 @@ export class EncryptionClient {
     ) {
       return new BatchEncryptQueryOperation(
         this.client,
-        [] as readonly ScalarQueryTerm[],
+        [] as readonly InternalScalarQueryTerm[],
       )
     }
 
@@ -274,10 +218,11 @@ export class EncryptionClient {
       throw new Error('EncryptQueryOptions are required')
     }
 
+    const internal = extractQueryOptions(opts)
     return new EncryptQueryOperation(
       this.client,
       plaintextOrTerms as JsPlaintext,
-      opts,
+      internal,
     )
   }
 
@@ -286,124 +231,45 @@ export class EncryptionClient {
    *
    * @param encryptedData - The encrypted data to be decrypted.
    * @returns A DecryptOperation that can be awaited or chained with additional methods.
-   *
-   * @example
-   * The following example demonstrates how to decrypt a value that was previously encrypted using the {@link encrypt} method.
-   * It includes encrypting a value first, then decrypting it, and handling the result.
-   *
-   * ```typescript
-   * const encryptedData = await client.encrypt(
-   *  "person@example.com",
-   *  { column: "email", table: "users" }
-   * )
-   * const decryptResult = await client.decrypt(encryptedData)
-   * if (decryptResult.failure) {
-   *   throw new Error(`Decryption failed: ${decryptResult.failure.message}`);
-   * }
-   * console.log("Decrypted data:", decryptResult.data);
-   * ```
-   *
-   * @example
-   * Provide a lock context when decrypting:
-   * ```typescript
-   *    await client.decrypt(encryptedData)
-   *      .withLockContext(lockContext)
-   * ```
-   *
-   * @see {@link LockContext}
-   * @see {@link DecryptOperation}
    */
   decrypt(encryptedData: Encrypted): DecryptOperation {
     return new DecryptOperation(this.client, encryptedData)
   }
 
   /**
-   * Encrypt a model (object) based on the table schema.
+   * Encrypt a model (object) based on the contract table definition.
    *
-   * Only fields whose keys match columns defined in the table schema are encrypted.
-   * All other fields are passed through unchanged. Returns a thenable operation
-   * that supports `.withLockContext()` for identity-aware encryption.
-   *
-   * The return type is **schema-aware**: fields matching the table schema are
-   * typed as `Encrypted`, while other fields retain their original types. For
-   * best results, let TypeScript infer the type parameters from the arguments
-   * rather than providing an explicit type argument.
+   * Only fields whose keys match columns defined in the contract are encrypted.
+   * All other fields are passed through unchanged.
    *
    * @param input - The model object with plaintext values to encrypt.
-   * @param table - The table schema defining which fields to encrypt.
-   * @returns An `EncryptModelOperation` that can be awaited to get a `Result`
-   *   containing the model with schema-defined fields typed as `Encrypted`,
-   *   or an `EncryptionError`.
+   * @param tableRef - The contract table reference defining which fields to encrypt.
+   * @returns An `EncryptModelOperation` that can be awaited to get a `Result`.
    *
    * @example
    * ```typescript
-   * import { Encryption } from "@cipherstash/stack"
-   * import { encryptedTable, encryptedColumn } from "@cipherstash/stack/schema"
-   *
-   * type User = { id: string; email: string; createdAt: Date }
-   *
-   * const usersSchema = encryptedTable("users", {
-   *   email: encryptedColumn("email").equality(),
-   * })
-   *
-   * const client = await Encryption({ schemas: [usersSchema] })
-   *
-   * // Let TypeScript infer the return type from the schema.
-   * // result.data.email is typed as `Encrypted`, result.data.id stays `string`.
    * const result = await client.encryptModel(
-   *   { id: "user_123", email: "alice@example.com", createdAt: new Date() },
-   *   usersSchema,
+   *   { id: "user_123", email: "alice@example.com" },
+   *   contract.users,
    * )
-   *
-   * if (result.failure) {
-   *   console.error(result.failure.message)
-   * } else {
-   *   console.log(result.data.id)    // string
-   *   console.log(result.data.email) // Encrypted
-   * }
    * ```
    */
   encryptModel<
     T extends Record<string, unknown>,
-    S extends EncryptedTableColumn = EncryptedTableColumn,
+    C extends TableColumns = TableColumns,
   >(
     input: T,
-    table: EncryptedTable<S>,
-  ): EncryptModelOperation<EncryptedFromSchema<T, S>> {
+    tableRef: ContractTableRef<C>,
+  ): EncryptModelOperation<EncryptedFromContract<T, C>> {
     return new EncryptModelOperation(
       this.client,
       input as Record<string, unknown>,
-      table,
+      tableRef._table,
     )
   }
 
   /**
    * Decrypt a model (object) whose fields contain encrypted values.
-   *
-   * Identifies encrypted fields automatically and decrypts them, returning the
-   * model with plaintext values. Returns a thenable operation that supports
-   * `.withLockContext()` for identity-aware decryption.
-   *
-   * @param input - The model object with encrypted field values.
-   * @returns A `DecryptModelOperation<T>` that can be awaited to get a `Result`
-   *   containing the model with decrypted plaintext fields, or an `EncryptionError`.
-   *
-   * @example
-   * ```typescript
-   * // Decrypt a previously encrypted model
-   * const decrypted = await client.decryptModel<User>(encryptedUser)
-   *
-   * if (decrypted.failure) {
-   *   console.error(decrypted.failure.message)
-   * } else {
-   *   console.log(decrypted.data.email) // "alice@example.com"
-   * }
-   *
-   * // With a lock context
-   * const decrypted = await client
-   *   .decryptModel<User>(encryptedUser)
-   *   .withLockContext(lockContext)
-   * ```
    */
   decryptModel<T extends Record<string, unknown>>(
     input: T,
@@ -414,89 +280,25 @@ export class EncryptionClient {
   /**
    * Encrypt multiple models (objects) in a single bulk operation.
    *
-   * Performs a single call to ZeroKMS regardless of the number of models,
-   * while still using a unique key for each encrypted value. Only fields
-   * matching the table schema are encrypted; other fields pass through unchanged.
-   *
-   * The return type is **schema-aware**: fields matching the table schema are
-   * typed as `Encrypted`, while other fields retain their original types. For
-   * best results, let TypeScript infer the type parameters from the arguments.
-   *
    * @param input - An array of model objects with plaintext values to encrypt.
-   * @param table - The table schema defining which fields to encrypt.
-   * @returns A `BulkEncryptModelsOperation` that can be awaited to get a `Result`
-   *   containing an array of models with schema-defined fields typed as `Encrypted`,
-   *   or an `EncryptionError`.
-   *
-   * @example
-   * ```typescript
-   * import { Encryption } from "@cipherstash/stack"
-   * import { encryptedTable, encryptedColumn } from "@cipherstash/stack/schema"
-   *
-   * type User = { id: string; email: string }
-   *
-   * const usersSchema = encryptedTable("users", {
-   *   email: encryptedColumn("email"),
-   * })
-   *
-   * const client = await Encryption({ schemas: [usersSchema] })
-   *
-   * // Let TypeScript infer the return type from the schema.
-   * // Each item's email is typed as `Encrypted`, id stays `string`.
-   * const result = await client.bulkEncryptModels(
-   *   [
-   *     { id: "1", email: "alice@example.com" },
-   *     { id: "2", email: "bob@example.com" },
-   *   ],
-   *   usersSchema,
-   * )
-   *
-   * if (!result.failure) {
-   *   console.log(result.data) // array of models with encrypted email fields
-   * }
-   * ```
+   * @param tableRef - The contract table reference defining which fields to encrypt.
    */
   bulkEncryptModels<
     T extends Record<string, unknown>,
-    S extends EncryptedTableColumn = EncryptedTableColumn,
+    C extends TableColumns = TableColumns,
   >(
     input: Array<T>,
-    table: EncryptedTable<S>,
-  ): BulkEncryptModelsOperation<EncryptedFromSchema<T, S>> {
+    tableRef: ContractTableRef<C>,
+  ): BulkEncryptModelsOperation<EncryptedFromContract<T, C>> {
     return new BulkEncryptModelsOperation(
       this.client,
       input as Array<Record<string, unknown>>,
-      table,
+      tableRef._table,
     )
   }
 
   /**
    * Decrypt multiple models (objects) in a single bulk operation.
-   *
-   * Performs a single call to ZeroKMS regardless of the number of models,
-   * restoring all encrypted fields to their original plaintext values.
-   *
-   * @param input - An array of model objects with encrypted field values.
-   * @returns A `BulkDecryptModelsOperation<T>` that can be awaited to get a `Result`
-   *   containing an array of models with decrypted plaintext fields, or an `EncryptionError`.
-   *
-   * @example
-   * ```typescript
-   * const encryptedUsers = encryptedResult.data // from bulkEncryptModels
-   *
-   * const result = await client.bulkDecryptModels<User>(encryptedUsers)
-   *
-   * if (!result.failure) {
-   *   for (const user of result.data) {
-   *     console.log(user.email) // plaintext email
-   *   }
-   * }
-   *
-   * // With a lock context
-   * const result = await client
-   *   .bulkDecryptModels<User>(encryptedUsers)
-   *   .withLockContext(lockContext)
-   * ```
    */
   bulkDecryptModels<T extends Record<string, unknown>>(
     input: Array<T>,
@@ -507,75 +309,19 @@ export class EncryptionClient {
   /**
    * Encrypt multiple plaintext values in a single bulk operation.
    *
-   * Each value is encrypted with its own unique key via a single call to ZeroKMS.
-   * Values can include optional `id` fields for correlating results back to
-   * your application data.
-   *
    * @param plaintexts - An array of objects with `plaintext` (and optional `id`) fields.
-   * @param opts - Options specifying the target column (or nested {@link encryptedField}) and table. See {@link EncryptOptions}.
-   * @returns A `BulkEncryptOperation` that can be awaited to get a `Result`
-   *   containing an array of `{ id?, data: Encrypted }` objects, or an `EncryptionError`.
-   *
-   * @example
-   * ```typescript
-   * import { Encryption } from "@cipherstash/stack"
-   * import { encryptedTable, encryptedColumn } from "@cipherstash/stack/schema"
-   *
-   * const users = encryptedTable("users", {
-   *   email: encryptedColumn("email"),
-   * })
-   * const client = await Encryption({ schemas: [users] })
-   *
-   * const result = await client.bulkEncrypt(
-   *   [
-   *     { id: "u1", plaintext: "alice@example.com" },
-   *     { id: "u2", plaintext: "bob@example.com" },
-   *   ],
-   *   { column: users.email, table: users },
-   * )
-   *
-   * if (!result.failure) {
-   *   // result.data = [{ id: "u1", data: Encrypted }, { id: "u2", data: Encrypted }, ...]
-   *   console.log(result.data)
-   * }
-   * ```
+   * @param opts - Options specifying the contract column reference. See {@link EncryptOptions}.
    */
   bulkEncrypt(
     plaintexts: BulkEncryptPayload,
     opts: EncryptOptions,
   ): BulkEncryptOperation {
-    return new BulkEncryptOperation(this.client, plaintexts, opts)
+    const internal = extractColumnRef(opts.contract)
+    return new BulkEncryptOperation(this.client, plaintexts, internal)
   }
 
   /**
    * Decrypt multiple encrypted values in a single bulk operation.
-   *
-   * Performs a single call to ZeroKMS to decrypt all values. The result uses
-   * a multi-status pattern: each item in the returned array has either a `data`
-   * field (success) or an `error` field (failure), allowing graceful handling
-   * of partial failures.
-   *
-   * @param encryptedPayloads - An array of objects with `data` (encrypted payload) and optional `id` fields.
-   * @returns A `BulkDecryptOperation` that can be awaited to get a `Result`
-   *   containing an array of `{ id?, data: plaintext }` or `{ id?, error: string }` objects,
-   *   or an `EncryptionError` if the entire operation fails.
-   *
-   * @example
-   * ```typescript
-   * const encrypted = await client.bulkEncrypt(plaintexts, { column: users.email, table: users })
-   *
-   * const result = await client.bulkDecrypt(encrypted.data)
-   *
-   * if (!result.failure) {
-   *   for (const item of result.data) {
-   *     if ("data" in item) {
-   *       console.log(`${item.id}: ${item.data}`)
-   *     } else {
-   *       console.error(`${item.id} failed: ${item.error}`)
-   *     }
-   *   }
-   * }
-   * ```
    */
   bulkDecrypt(encryptedPayloads: BulkDecryptPayload): BulkDecryptOperation {
     return new BulkDecryptOperation(this.client, encryptedPayloads)
@@ -587,4 +333,68 @@ export class EncryptionClient {
       workspaceId: this.workspaceId,
     }
   }
+}
+
+function isValidUuid(uuid: string): boolean {
+  const uuidRegex =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+  return uuidRegex.test(uuid)
+}
+
+/**
+ * Creates and initializes an Encryption client using a contract definition.
+ *
+ * @param config - Initialization options. Must include `contract`; optionally include `config` for
+ *   workspace/keys.
+ * @returns A Promise that resolves to an initialized {@link EncryptionClient}.
+ *
+ * @example
+ * ```typescript
+ * import { Encryption, defineContract } from "@cipherstash/stack"
+ *
+ * const contract = defineContract({
+ *   users: {
+ *     email: { type: 'string', equality: true },
+ *   },
+ * })
+ *
+ * const client = await Encryption({ contract })
+ * ```
+ */
+export const Encryption = async (
+  config: EncryptionClientConfig,
+): Promise<EncryptionClient> => {
+  const { contract, config: clientConfig } = config
+
+  const tables = getContractTables(contract)
+
+  if (!tables.length) {
+    throw new Error(
+      '[encryption]: At least one table must be defined in the contract to initialize the encryption client',
+    )
+  }
+
+  if (
+    clientConfig?.keyset &&
+    'id' in clientConfig.keyset &&
+    !isValidUuid(clientConfig.keyset.id)
+  ) {
+    throw new Error(
+      '[encryption]: Invalid UUID provided for keyset id. Must be a valid UUID.',
+    )
+  }
+
+  const client = new EncryptionClient(clientConfig?.workspaceCrn)
+  const encryptConfig = buildEncryptConfig(...tables)
+
+  const result = await client.init({
+    encryptConfig,
+    ...clientConfig,
+  })
+
+  if (result.failure) {
+    throw new Error(`[encryption]: ${result.failure.message}`)
+  }
+
+  return result.data
 }

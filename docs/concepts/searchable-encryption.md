@@ -86,10 +86,9 @@ const equalitySQL = `
   WHERE email = $1
 `
 
-// 3) Execute the query, passing in the Postgres column name
-//    and the encrypted search term as the second parameter
+// 3) Execute the query, passing the encrypted search term as a parameter
 //    (pgClient is an arbitrary Postgres client)
-const result = await pgClient.query(equalitySQL, [ protectedUser.email.getName(), encryptedParam.data ])
+const result = await pgClient.query(equalitySQL, [encryptedParam.data])
 ```
 
 Using the above approach, `@cipherstash/stack` generates the EQL payloads, which means you never have to drop down to writing complex SQL queries.
@@ -103,7 +102,7 @@ So does this solve the original problem of searching on encrypted data?
   1 | Alice Johnson  | mBbKmsMMkbKBSN...
 ```
 
-The answer is yes! And you can use `@cipherstash/stack` to [decrypt the results in your application](../../README.md#decrypting-data).
+The answer is yes! And you can use `@cipherstash/stack` to decrypt the results in your application using the `decrypt` or `bulkDecryptModels` methods.
 
 ## How fast is CipherStash's searchable encryption?
 

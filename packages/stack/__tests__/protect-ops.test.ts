@@ -1,12 +1,14 @@
 import 'dotenv/config'
 import { LockContext } from '@/identity'
 import { Encryption } from '@/index'
-import { encryptedColumn, encryptedTable } from '@/schema'
+import { defineContract, encrypted } from '@/contract'
 import { beforeAll, describe, expect, it } from 'vitest'
 
-const users = encryptedTable('users', {
-  email: encryptedColumn('email').freeTextSearch().equality().orderAndRange(),
-  address: encryptedColumn('address').freeTextSearch(),
+const contract = defineContract({
+  users: {
+    email: encrypted({ type: 'string', freeTextSearch: true, equality: true, orderAndRange: true }),
+    address: encrypted({ type: 'string', freeTextSearch: true }),
+  },
 })
 
 type User = {
@@ -22,7 +24,7 @@ let protectClient: Awaited<ReturnType<typeof Encryption>>
 
 beforeAll(async () => {
   protectClient = await Encryption({
-    schemas: [users],
+    contract,
   })
 })
 
@@ -41,7 +43,7 @@ describe('encryption and decryption edge cases', () => {
     // Encrypt the model
     const encryptedModel = await protectClient.encryptModel<User>(
       decryptedModel,
-      users,
+      contract.users,
     )
 
     if (encryptedModel.failure) {
@@ -91,7 +93,7 @@ describe('encryption and decryption edge cases', () => {
     // Encrypt the model
     const encryptedModel = await protectClient.encryptModel<User>(
       decryptedModel,
-      users,
+      contract.users,
     )
 
     if (encryptedModel.failure) {
@@ -141,7 +143,7 @@ describe('encryption and decryption edge cases', () => {
     // Encrypt the model
     const encryptedModel = await protectClient.encryptModel<User>(
       decryptedModel,
-      users,
+      contract.users,
     )
 
     if (encryptedModel.failure) {
@@ -203,7 +205,7 @@ describe('bulk encryption', () => {
     // Encrypt the models
     const encryptedModels = await protectClient.bulkEncryptModels<User>(
       decryptedModels,
-      users,
+      contract.users,
     )
 
     if (encryptedModels.failure) {
@@ -259,7 +261,7 @@ describe('bulk encryption', () => {
     // Encrypt empty array of models
     const encryptedModels = await protectClient.bulkEncryptModels<User>(
       [],
-      users,
+      contract.users,
     )
 
     if (encryptedModels.failure) {
@@ -313,7 +315,7 @@ describe('bulk encryption edge cases', () => {
     // Encrypt the models
     const encryptedModels = await protectClient.bulkEncryptModels<User>(
       decryptedModels,
-      users,
+      contract.users,
     )
 
     if (encryptedModels.failure) {
@@ -385,7 +387,7 @@ describe('bulk encryption edge cases', () => {
     // Encrypt the models
     const encryptedModels = await protectClient.bulkEncryptModels<User>(
       decryptedModels,
-      users,
+      contract.users,
     )
 
     if (encryptedModels.failure) {
@@ -452,7 +454,7 @@ describe('bulk encryption edge cases', () => {
     // Encrypt the models
     const encryptedModels = await protectClient.bulkEncryptModels<User>(
       decryptedModels,
-      users,
+      contract.users,
     )
 
     if (encryptedModels.failure) {
@@ -508,7 +510,7 @@ describe('error handling', () => {
     // First encrypt a valid model
     const encryptedModel = await protectClient.encryptModel<User>(
       validModel,
-      users,
+      contract.users,
     )
     if (encryptedModel.failure) {
       throw new Error(`[protect]: ${encryptedModel.failure.message}`)
@@ -539,7 +541,7 @@ describe('error handling', () => {
     }
 
     try {
-      await protectClient.encryptModel<User>(model, users)
+      await protectClient.encryptModel<User>(model, contract.users)
       throw new Error('Expected encryption to fail')
     } catch (error) {
       expect(error).toBeDefined()
@@ -565,7 +567,7 @@ describe('type safety', () => {
     }
 
     // Encrypt the model
-    const encryptedModel = await protectClient.encryptModel<User>(model, users)
+    const encryptedModel = await protectClient.encryptModel<User>(model, contract.users)
 
     if (encryptedModel.failure) {
       throw new Error(`[protect]: ${encryptedModel.failure.message}`)
@@ -600,7 +602,7 @@ describe('performance', () => {
     // Encrypt the models
     const encryptedModels = await protectClient.bulkEncryptModels<User>(
       largeModels,
-      users,
+      contract.users,
     )
 
     if (encryptedModels.failure) {
@@ -640,8 +642,7 @@ describe('encryption and decryption with lock context', () => {
 
     const ciphertext = await protectClient
       .encrypt(email, {
-        column: users.email,
-        table: users,
+        contract: contract.users.email,
       })
       .withLockContext(lockContext.data)
 
@@ -683,7 +684,7 @@ describe('encryption and decryption with lock context', () => {
 
     // Encrypt the model with lock context
     const encryptedModel = await protectClient
-      .encryptModel(decryptedModel, users)
+      .encryptModel(decryptedModel, contract.users)
       .withLockContext(lockContext.data)
 
     if (encryptedModel.failure) {
@@ -728,7 +729,7 @@ describe('encryption and decryption with lock context', () => {
 
     // Encrypt the model with lock context
     const encryptedModel = await protectClient
-      .encryptModel(decryptedModel, users)
+      .encryptModel(decryptedModel, contract.users)
       .withLockContext(lockContext.data)
 
     if (encryptedModel.failure) {
@@ -772,7 +773,7 @@ describe('encryption and decryption with lock context', () => {
 
     // Encrypt the models with lock context
     const encryptedModels = await protectClient
-      .bulkEncryptModels(decryptedModels, users)
+      .bulkEncryptModels(decryptedModels, contract.users)
       .withLockContext(lockContext.data)
 
     if (encryptedModels.failure) {
@@ -807,8 +808,7 @@ describe('special characters', () => {
       'complex@string-with/slashes\\backslashes.and#symbols$%&+!@#$%^&*()_+-=[]{}|;:,.<>?/~`'
 
     const ciphertext = await protectClient.encrypt(plaintext, {
-      column: users.email,
-      table: users,
+      contract: contract.users.email,
     })
 
     if (ciphertext.failure) {

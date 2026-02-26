@@ -1,19 +1,19 @@
 import 'dotenv/config'
 import { LockContext } from '@/identity'
 import { Encryption } from '@/index'
-import { encryptedColumn, encryptedTable, encryptedField } from '@/schema'
+import { defineContract, encrypted } from '@/contract'
 import { beforeAll, describe, expect, it } from 'vitest'
 
-const users = encryptedTable('users', {
-  email: encryptedColumn('email').freeTextSearch().equality().orderAndRange(),
-  address: encryptedColumn('address').freeTextSearch(),
-  json: encryptedColumn('json').dataType('json'),
-  metadata: {
-    profile: encryptedField('metadata.profile').dataType('json'),
-    settings: {
-      preferences: encryptedField('metadata.settings.preferences').dataType(
-        'json',
-      ),
+const contract = defineContract({
+  users: {
+    email: encrypted({ type: 'string', freeTextSearch: true, equality: true, orderAndRange: true }),
+    address: encrypted({ type: 'string', freeTextSearch: true }),
+    json: encrypted({ type: 'json' }),
+    metadata: {
+      profile: encrypted({ type: 'json' }),
+      settings: {
+        preferences: encrypted({ type: 'json' }),
+      },
     },
   },
 })
@@ -37,7 +37,7 @@ let protectClient: Awaited<ReturnType<typeof Encryption>>
 
 beforeAll(async () => {
   protectClient = await Encryption({
-    schemas: [users],
+    contract,
   })
 })
 
@@ -49,8 +49,7 @@ describe('JSON encryption and decryption', () => {
     }
 
     const ciphertext = await protectClient.encrypt(json, {
-      column: users.json,
-      table: users,
+      contract: contract.users.json,
     })
 
     if (ciphertext.failure) {
@@ -101,8 +100,7 @@ describe('JSON encryption and decryption', () => {
     }
 
     const ciphertext = await protectClient.encrypt(json, {
-      column: users.json,
-      table: users,
+      contract: contract.users.json,
     })
 
     if (ciphertext.failure) {
@@ -123,8 +121,7 @@ describe('JSON encryption and decryption', () => {
     const json = {}
 
     const ciphertext = await protectClient.encrypt(json, {
-      column: users.json,
-      table: users,
+      contract: contract.users.json,
     })
 
     if (ciphertext.failure) {
@@ -150,8 +147,7 @@ describe('JSON encryption and decryption', () => {
     }
 
     const ciphertext = await protectClient.encrypt(json, {
-      column: users.json,
-      table: users,
+      contract: contract.users.json,
     })
 
     if (ciphertext.failure) {
@@ -189,7 +185,7 @@ describe('JSON model encryption and decryption', () => {
 
     const encryptedModel = await protectClient.encryptModel<User>(
       decryptedModel,
-      users,
+      contract.users,
     )
 
     if (encryptedModel.failure) {
@@ -229,7 +225,7 @@ describe('JSON model encryption and decryption', () => {
 
     const encryptedModel = await protectClient.encryptModel<User>(
       decryptedModel,
-      users,
+      contract.users,
     )
 
     if (encryptedModel.failure) {
@@ -264,7 +260,7 @@ describe('JSON model encryption and decryption', () => {
 
     const encryptedModel = await protectClient.encryptModel<User>(
       decryptedModel,
-      users,
+      contract.users,
     )
 
     if (encryptedModel.failure) {
@@ -297,8 +293,7 @@ describe('JSON bulk encryption and decryption', () => {
     ]
 
     const encryptedData = await protectClient.bulkEncrypt(jsonPayloads, {
-      column: users.json,
-      table: users,
+      contract: contract.users.json,
     })
 
     if (encryptedData.failure) {
@@ -371,7 +366,7 @@ describe('JSON bulk encryption and decryption', () => {
 
     const encryptedModels = await protectClient.bulkEncryptModels<User>(
       decryptedModels,
-      users,
+      contract.users,
     )
 
     if (encryptedModels.failure) {
@@ -433,8 +428,7 @@ describe('JSON encryption with lock context', () => {
 
     const ciphertext = await protectClient
       .encrypt(json, {
-        column: users.json,
-        table: users,
+        contract: contract.users.json,
       })
       .withLockContext(lockContext.data)
 
@@ -481,7 +475,7 @@ describe('JSON encryption with lock context', () => {
     }
 
     const encryptedModel = await protectClient
-      .encryptModel(decryptedModel, users)
+      .encryptModel(decryptedModel, contract.users)
       .withLockContext(lockContext.data)
 
     if (encryptedModel.failure) {
@@ -525,8 +519,7 @@ describe('JSON encryption with lock context', () => {
 
     const encryptedData = await protectClient
       .bulkEncrypt(jsonPayloads, {
-        column: users.json,
-        table: users,
+        contract: contract.users.json,
       })
       .withLockContext(lockContext.data)
 
@@ -569,7 +562,7 @@ describe('JSON encryption with lock context', () => {
 
 describe('JSON nested object encryption', () => {
   it('should encrypt and decrypt nested JSON objects', async () => {
-    const protectClient = await Encryption({ schemas: [users] })
+    const protectClient = await Encryption({ contract })
 
     const decryptedModel = {
       id: '1',
@@ -594,7 +587,7 @@ describe('JSON nested object encryption', () => {
 
     const encryptedModel = await protectClient.encryptModel<User>(
       decryptedModel,
-      users,
+      contract.users,
     )
 
     if (encryptedModel.failure) {
@@ -623,7 +616,7 @@ describe('JSON nested object encryption', () => {
   }, 30000)
 
   it('should handle null values in nested JSON objects', async () => {
-    const protectClient = await Encryption({ schemas: [users] })
+    const protectClient = await Encryption({ contract })
 
     const decryptedModel = {
       id: '2',
@@ -638,7 +631,7 @@ describe('JSON nested object encryption', () => {
 
     const encryptedModel = await protectClient.encryptModel<User>(
       decryptedModel,
-      users,
+      contract.users,
     )
 
     if (encryptedModel.failure) {
@@ -662,7 +655,7 @@ describe('JSON nested object encryption', () => {
   }, 30000)
 
   it('should handle undefined values in nested JSON objects', async () => {
-    const protectClient = await Encryption({ schemas: [users] })
+    const protectClient = await Encryption({ contract })
 
     const decryptedModel = {
       id: '3',
@@ -677,7 +670,7 @@ describe('JSON nested object encryption', () => {
 
     const encryptedModel = await protectClient.encryptModel<User>(
       decryptedModel,
-      users,
+      contract.users,
     )
 
     if (encryptedModel.failure) {
@@ -722,8 +715,7 @@ describe('JSON edge cases and error handling', () => {
     }
 
     const ciphertext = await protectClient.encrypt(largeJson, {
-      column: users.json,
-      table: users,
+      contract: contract.users.json,
     })
 
     if (ciphertext.failure) {
@@ -746,8 +738,7 @@ describe('JSON edge cases and error handling', () => {
 
     try {
       await protectClient.encrypt(circularObj, {
-        column: users.json,
-        table: users,
+        contract: contract.users.json,
       })
       // This should not reach here as JSON.stringify should fail
       expect(true).toBe(false)
@@ -770,8 +761,7 @@ describe('JSON edge cases and error handling', () => {
     }
 
     const ciphertext = await protectClient.encrypt(json, {
-      column: users.json,
-      table: users,
+      contract: contract.users.json,
     })
 
     if (ciphertext.failure) {
@@ -818,8 +808,7 @@ describe('JSON performance tests', () => {
     }))
 
     const encryptedData = await protectClient.bulkEncrypt(jsonPayloads, {
-      column: users.json,
-      table: users,
+      contract: contract.users.json,
     })
 
     if (encryptedData.failure) {
@@ -871,8 +860,7 @@ describe('JSON advanced scenarios', () => {
     }
 
     const ciphertext = await protectClient.encrypt(json, {
-      column: users.json,
-      table: users,
+      contract: contract.users.json,
     })
 
     if (ciphertext.failure) {
@@ -898,8 +886,7 @@ describe('JSON advanced scenarios', () => {
     }
 
     const ciphertext = await protectClient.encrypt(json, {
-      column: users.json,
-      table: users,
+      contract: contract.users.json,
     })
 
     if (ciphertext.failure) {
@@ -933,8 +920,7 @@ describe('JSON advanced scenarios', () => {
     }
 
     const ciphertext = await protectClient.encrypt(json, {
-      column: users.json,
-      table: users,
+      contract: contract.users.json,
     })
 
     if (ciphertext.failure) {
@@ -968,8 +954,7 @@ describe('JSON advanced scenarios', () => {
     }
 
     const ciphertext = await protectClient.encrypt(json, {
-      column: users.json,
-      table: users,
+      contract: contract.users.json,
     })
 
     if (ciphertext.failure) {
@@ -1004,8 +989,7 @@ describe('JSON advanced scenarios', () => {
     }
 
     const ciphertext = await protectClient.encrypt(json, {
-      column: users.json,
-      table: users,
+      contract: contract.users.json,
     })
 
     if (ciphertext.failure) {
@@ -1037,8 +1021,7 @@ describe('JSON error handling and edge cases', () => {
 
     try {
       await protectClient.encrypt(invalidJson, {
-        column: users.json,
-        table: users,
+        contract: contract.users.json,
       })
       expect(true).toBe(false) // Should not reach here
     } catch (error) {
@@ -1063,8 +1046,7 @@ describe('JSON error handling and edge cases', () => {
     }
 
     const ciphertext = await protectClient.encrypt(json, {
-      column: users.json,
-      table: users,
+      contract: contract.users.json,
     })
 
     if (ciphertext.failure) {
@@ -1092,8 +1074,7 @@ describe('JSON error handling and edge cases', () => {
     }
 
     const ciphertext = await protectClient.encrypt(json, {
-      column: users.json,
-      table: users,
+      contract: contract.users.json,
     })
 
     if (ciphertext.failure) {
@@ -1129,8 +1110,7 @@ describe('JSON error handling and edge cases', () => {
     }
 
     const ciphertext = await protectClient.encrypt(json, {
-      column: users.json,
-      table: users,
+      contract: contract.users.json,
     })
 
     if (ciphertext.failure) {

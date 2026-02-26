@@ -44,24 +44,17 @@ CREATE EXTENSION IF NOT EXISTS eql_v2;
 
 ## Setup
 
-### 1. Define Encrypted Schema
+### 1. Define Encryption Contract
 
 ```typescript
-import { encryptedTable, encryptedColumn } from "@cipherstash/stack/schema"
+import { defineContract, encrypted } from "@cipherstash/stack"
 
-const users = encryptedTable("users", {
-  email: encryptedColumn("email")
-    .equality()         // eq, neq, in
-    .freeTextSearch(),  // like, ilike
-
-  name: encryptedColumn("name")
-    .equality()
-    .freeTextSearch(),
-
-  age: encryptedColumn("age")
-    .dataType("number")
-    .equality()
-    .orderAndRange(),   // gt, gte, lt, lte
+const contract = defineContract({
+  users: {
+    email: encrypted({ type: "string", equality: true, freeTextSearch: true }),   // eq, neq, in, like, ilike
+    name: encrypted({ type: "string", equality: true, freeTextSearch: true }),
+    age: encrypted({ type: "number", equality: true, orderAndRange: true }),      // gt, gte, lt, lte
+  },
 })
 ```
 
@@ -77,7 +70,7 @@ const supabase = createClient(
   process.env.SUPABASE_ANON_KEY!,
 )
 
-const encryptionClient = await Encryption({ schemas: [users] })
+const encryptionClient = await Encryption({ contract })
 
 const eSupabase = encryptedSupabase({
   encryptionClient,
@@ -87,11 +80,11 @@ const eSupabase = encryptedSupabase({
 
 ### 3. Use the Wrapper
 
-All queries go through `eSupabase.from(tableName, schema)`:
+All queries go through `eSupabase.from(tableName, contractTable)`:
 
 ```typescript
 const { data, error } = await eSupabase
-  .from("users", users)
+  .from("users", contract.users)
   .select("id, email, name")
   .eq("email", "alice@example.com")
 ```
@@ -101,7 +94,7 @@ const { data, error } = await eSupabase
 ```typescript
 // Single insert
 const { data, error } = await eSupabase
-  .from("users", users)
+  .from("users", contract.users)
   .insert({
     email: "alice@example.com",  // encrypted automatically
     name: "Alice Smith",         // encrypted automatically
@@ -112,7 +105,7 @@ const { data, error } = await eSupabase
 
 // Bulk insert
 const { data, error } = await eSupabase
-  .from("users", users)
+  .from("users", contract.users)
   .insert([
     { email: "alice@example.com", name: "Alice", age: 30, role: "admin" },
     { email: "bob@example.com", name: "Bob", age: 25, role: "user" },
@@ -124,7 +117,7 @@ const { data, error } = await eSupabase
 
 ```typescript
 const { data, error } = await eSupabase
-  .from("users", users)
+  .from("users", contract.users)
   .update({ name: "Alice Johnson" })  // encrypted automatically
   .eq("id", 1)
   .select("id, name")
@@ -134,7 +127,7 @@ const { data, error } = await eSupabase
 
 ```typescript
 const { data, error } = await eSupabase
-  .from("users", users)
+  .from("users", contract.users)
   .upsert(
     { id: 1, email: "alice@example.com", name: "Alice", role: "admin" },
     { onConflict: "id" },
@@ -147,13 +140,13 @@ const { data, error } = await eSupabase
 ```typescript
 // List query - returns decrypted array
 const { data, error } = await eSupabase
-  .from("users", users)
+  .from("users", contract.users)
   .select("id, email, name, role")
 // data: [{ id: 1, email: "alice@example.com", name: "Alice Smith", role: "admin" }]
 
 // Single result
 const { data, error } = await eSupabase
-  .from("users", users)
+  .from("users", contract.users)
   .select("id, email, name")
   .eq("id", 1)
   .single()
@@ -161,7 +154,7 @@ const { data, error } = await eSupabase
 
 // Maybe single (returns null if no match)
 const { data, error } = await eSupabase
-  .from("users", users)
+  .from("users", contract.users)
   .select("id, email")
   .eq("email", "nobody@example.com")
   .maybeSingle()
@@ -253,7 +246,7 @@ Both forms encrypt values for encrypted columns automatically.
 
 ```typescript
 const { data, error } = await eSupabase
-  .from("users", users)
+  .from("users", contract.users)
   .delete()
   .eq("id", 1)
 ```
@@ -279,7 +272,7 @@ const lc = new LockContext()
 const { data: lockContext } = await lc.identify(userJwt)
 
 const { data, error } = await eSupabase
-  .from("users", users)
+  .from("users", contract.users)
   .insert({ email: "alice@example.com", name: "Alice" })
   .withLockContext(lockContext)
   .select("id")
@@ -289,25 +282,26 @@ const { data, error } = await eSupabase
 
 ```typescript
 import { createClient } from "@supabase/supabase-js"
-import { Encryption } from "@cipherstash/stack"
+import { Encryption, defineContract, encrypted } from "@cipherstash/stack"
 import { encryptedSupabase } from "@cipherstash/stack/supabase"
-import { encryptedTable, encryptedColumn } from "@cipherstash/stack/schema"
 
-// Schema
-const users = encryptedTable("users", {
-  email: encryptedColumn("email").equality().freeTextSearch(),
-  name: encryptedColumn("name").equality().freeTextSearch(),
-  age: encryptedColumn("age").dataType("number").equality().orderAndRange(),
+// Contract
+const contract = defineContract({
+  users: {
+    email: encrypted({ type: "string", equality: true, freeTextSearch: true }),
+    name: encrypted({ type: "string", equality: true, freeTextSearch: true }),
+    age: encrypted({ type: "number", equality: true, orderAndRange: true }),
+  },
 })
 
 // Clients
 const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_ANON_KEY!)
-const encryptionClient = await Encryption({ schemas: [users] })
+const encryptionClient = await Encryption({ contract })
 const eSupabase = encryptedSupabase({ encryptionClient, supabaseClient: supabase })
 
 // Insert
 await eSupabase
-  .from("users", users)
+  .from("users", contract.users)
   .insert([
     { email: "alice@example.com", name: "Alice", age: 30 },
     { email: "bob@example.com", name: "Bob", age: 25 },
@@ -315,7 +309,7 @@ await eSupabase
 
 // Query with multiple filters
 const { data } = await eSupabase
-  .from("users", users)
+  .from("users", contract.users)
   .select("id, email, name, age")
   .gte("age", 18)
   .lte("age", 35)

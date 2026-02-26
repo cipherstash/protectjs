@@ -36,6 +36,12 @@
 	"types": "./dist/index.d.ts",
 	"typesVersions": {
 		"*": {
+			"encryption": [
+				"./dist/encryption/index.d.ts"
+			],
+			"errors": [
+				"./dist/errors/index.d.ts"
+			],
 			"client": [
 				"./dist/client.d.ts"
 			],
@@ -47,6 +53,9 @@
 			],
 			"schema": [
 				"./dist/schema/index.d.ts"
+			],
+			"contract": [
+				"./dist/contract/index.d.ts"
 			],
 			"types": [
 				"./dist/types-public.d.ts"
@@ -113,6 +122,16 @@
 				"default": "./dist/schema/index.cjs"
 			}
 		},
+		"./contract": {
+			"import": {
+				"types": "./dist/contract/index.d.ts",
+				"default": "./dist/contract/index.js"
+			},
+			"require": {
+				"types": "./dist/contract/index.d.cts",
+				"default": "./dist/contract/index.cjs"
+			}
+		},
 		"./types": {
 			"import": {
 				"types": "./dist/types-public.d.ts",
@@ -151,6 +170,26 @@
 			"require": {
 				"types": "./dist/supabase/index.d.cts",
 				"default": "./dist/supabase/index.cjs"
+			}
+		},
+		"./encryption": {
+			"import": {
+				"types": "./dist/encryption/index.d.ts",
+				"default": "./dist/encryption/index.js"
+			},
+			"require": {
+				"types": "./dist/encryption/index.d.cts",
+				"default": "./dist/encryption/index.cjs"
+			}
+		},
+		"./errors": {
+			"import": {
+				"types": "./dist/errors/index.d.ts",
+				"default": "./dist/errors/index.js"
+			},
+			"require": {
+				"types": "./dist/errors/index.d.cts",
+				"default": "./dist/errors/index.cjs"
 			}
 		},
 		"./package.json": "./package.json"

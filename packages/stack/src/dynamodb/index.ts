@@ -1,4 +1,4 @@
-import type { EncryptedTable, EncryptedTableColumn } from '@/schema'
+import type { ContractTableRef } from '@/contract'
 import type { EncryptedValue } from '@/types'
 import { BulkDecryptModelsOperation } from './operations/bulk-decrypt-models'
 import { BulkEncryptModelsOperation } from './operations/bulk-encrypt-models'
@@ -14,7 +14,7 @@ import type {
  *
  * Returns an object with `encryptModel`, `decryptModel`, `bulkEncryptModels`,
  * and `bulkDecryptModels` methods that transparently encrypt/decrypt DynamoDB
- * items according to the provided table schema.
+ * items according to the provided contract table reference.
  *
  * @param config - Configuration containing the `encryptionClient` and optional
  *   logging / error-handling callbacks.
@@ -22,18 +22,19 @@ import type {
  *
  * @example
  * ```typescript
- * import { Encryption } from "@cipherstash/stack"
+ * import { Encryption, defineContract } from "@cipherstash/stack"
  * import { encryptedDynamoDB } from "@cipherstash/stack/dynamodb"
- * import { encryptedTable, encryptedColumn } from "@cipherstash/stack/schema"
  *
- * const users = encryptedTable("users", {
- *   email: encryptedColumn("email").equality(),
+ * const contract = defineContract({
+ *   users: {
+ *     email: { type: 'string', equality: true },
+ *   },
  * })
  *
- * const client = await Encryption({ schemas: [users] })
+ * const client = await Encryption({ contract })
  * const dynamo = encryptedDynamoDB({ encryptionClient: client })
  *
- * const encrypted = await dynamo.encryptModel({ email: "a@b.com" }, users)
+ * const encrypted = await dynamo.encryptModel({ email: "a@b.com" }, contract.users)
  * ```
  */
 export function encryptedDynamoDB(
@@ -44,7 +45,7 @@ export function encryptedDynamoDB(
   return {
     encryptModel<T extends Record<string, unknown>>(
       item: T,
-      table: EncryptedTable<EncryptedTableColumn>,
+      table: ContractTableRef,
     ) {
       return new EncryptModelOperation<T>(
         encryptionClient,
@@ -56,7 +57,7 @@ export function encryptedDynamoDB(
 
     bulkEncryptModels<T extends Record<string, unknown>>(
       items: T[],
-      table: EncryptedTable<EncryptedTableColumn>,
+      table: ContractTableRef,
     ) {
       return new BulkEncryptModelsOperation<T>(
         encryptionClient,
@@ -68,7 +69,7 @@ export function encryptedDynamoDB(
 
     decryptModel<T extends Record<string, unknown>>(
       item: Record<string, EncryptedValue | unknown>,
-      table: EncryptedTable<EncryptedTableColumn>,
+      table: ContractTableRef,
     ) {
       return new DecryptModelOperation<T>(
         encryptionClient,
@@ -80,7 +81,7 @@ export function encryptedDynamoDB(
 
     bulkDecryptModels<T extends Record<string, unknown>>(
       items: Record<string, EncryptedValue | unknown>[],
-      table: EncryptedTable<EncryptedTableColumn>,
+      table: ContractTableRef,
     ) {
       return new BulkDecryptModelsOperation<T>(
         encryptionClient,

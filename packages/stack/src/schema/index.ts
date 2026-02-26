@@ -514,8 +514,19 @@ export type InferEncrypted<T extends EncryptedTable<any>> =
  * @returns A `EncryptedTable<T> & T` that can be used as both a schema definition
  *   and a column accessor.
  *
+ * @deprecated Prefer using {@link defineContract} from `@cipherstash/stack` instead.
+ *
  * @example
  * ```typescript
+ * // Preferred: use defineContract
+ * import { defineContract } from "@cipherstash/stack"
+ * const contract = defineContract({
+ *   users: {
+ *     email: { type: 'string', equality: true },
+ *   },
+ * })
+ *
+ * // Low-level: encryptedTable (internal)
  * import { encryptedTable, encryptedColumn } from "@cipherstash/stack/schema"
  *
  * const users = encryptedTable("users", {
@@ -557,8 +568,19 @@ export function encryptedTable<T extends EncryptedTableColumn>(
  * @param columnName - The name of the database column to encrypt.
  * @returns A new `EncryptedColumn` builder.
  *
+ * @deprecated Prefer using {@link defineContract} from `@cipherstash/stack` instead.
+ *
  * @example
  * ```typescript
+ * // Preferred: use defineContract
+ * import { defineContract } from "@cipherstash/stack"
+ * const contract = defineContract({
+ *   users: {
+ *     email: { type: 'string', equality: true, freeTextSearch: true, orderAndRange: true },
+ *   },
+ * })
+ *
+ * // Low-level: encryptedColumn (internal)
  * import { encryptedTable, encryptedColumn } from "@cipherstash/stack/schema"
  *
  * const users = encryptedTable("users", {
@@ -580,8 +602,20 @@ export function encryptedColumn(columnName: string) {
  * @param valueName - The name of the value field.
  * @returns A new `EncryptedField` builder.
  *
+ * @deprecated Prefer using {@link defineContract} from `@cipherstash/stack` instead.
+ *
  * @example
  * ```typescript
+ * // Preferred: use defineContract
+ * import { defineContract } from "@cipherstash/stack"
+ * const contract = defineContract({
+ *   orders: {
+ *     amount: { type: 'number' },
+ *     currency: { type: 'string' },
+ *   },
+ * })
+ *
+ * // Low-level: encryptedField (internal)
  * import { encryptedTable, encryptedField } from "@cipherstash/stack/schema"
  *
  * const orders = encryptedTable("orders", {

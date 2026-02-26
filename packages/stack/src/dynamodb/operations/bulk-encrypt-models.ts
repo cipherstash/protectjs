@@ -1,5 +1,6 @@
+import type { ContractTableRef } from '@/contract'
 import type { EncryptionClient } from '@/encryption'
-import type { EncryptedTable, EncryptedTableColumn } from '@/schema'
+import { logger } from '@/utils/logger'
 import { type Result, withResult } from '@byteslice/result'
 import { deepClone, handleError, toEncryptedDynamoItem } from '../helpers'
 import type { EncryptedDynamoDBError } from '../types'
@@ -13,33 +14,32 @@ export class BulkEncryptModelsOperation<
 > extends DynamoDBOperation<T[]> {
   private encryptionClient: EncryptionClient
   private items: T[]
-  private table: EncryptedTable<EncryptedTableColumn>
+  private tableRef: ContractTableRef
 
   constructor(
     encryptionClient: EncryptionClient,
     items: T[],
-    table: EncryptedTable<EncryptedTableColumn>,
+    tableRef: ContractTableRef,
     options?: DynamoDBOperationOptions,
   ) {
     super(options)
     this.encryptionClient = encryptionClient
     this.items = items
-    this.table = table
+    this.tableRef = tableRef
   }
 
   public async execute(): Promise<Result<T[], EncryptedDynamoDBError>> {
+    logger.debug(`DynamoDB: bulk encrypting ${this.items.length} models.`)
     return await withResult(
       async () => {
         const encryptResult = await this.encryptionClient
           .bulkEncryptModels(
             this.items.map((item) => deepClone(item)),
-            this.table,
+            this.tableRef,
           )
           .audit(this.getAuditData())
 
         if (encryptResult.failure) {
-          // Create an Error object that preserves the FFI error code
-          // This is necessary because withResult's ensureError wraps non-Error objects
           const error = new Error(encryptResult.failure.message) as Error & {
             code?: string
           }
@@ -48,7 +48,7 @@ export class BulkEncryptModelsOperation<
         }
 
         const data = encryptResult.data.map((item) => deepClone(item))
-        const encryptedAttrs = Object.keys(this.table.build().columns)
+        const encryptedAttrs = Object.keys(this.tableRef._table.build().columns)
 
         return data.map(
           (encrypted) => toEncryptedDynamoItem(encrypted, encryptedAttrs) as T,

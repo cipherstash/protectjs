@@ -1,6 +1,7 @@
+import type { ContractTableRef } from '@/contract'
 import type { EncryptionClient } from '@/encryption'
-import type { EncryptedTable, EncryptedTableColumn } from '@/schema'
 import type { Decrypted, EncryptedValue } from '@/types'
+import { logger } from '@/utils/logger'
 import { type Result, withResult } from '@byteslice/result'
 import { handleError, toItemWithEqlPayloads } from '../helpers'
 import type { EncryptedDynamoDBError } from '../types'
@@ -14,27 +15,28 @@ export class BulkDecryptModelsOperation<
 > extends DynamoDBOperation<Decrypted<T>[]> {
   private encryptionClient: EncryptionClient
   private items: Record<string, EncryptedValue | unknown>[]
-  private table: EncryptedTable<EncryptedTableColumn>
+  private tableRef: ContractTableRef
 
   constructor(
     encryptionClient: EncryptionClient,
     items: Record<string, EncryptedValue | unknown>[],
-    table: EncryptedTable<EncryptedTableColumn>,
+    tableRef: ContractTableRef,
     options?: DynamoDBOperationOptions,
   ) {
     super(options)
     this.encryptionClient = encryptionClient
     this.items = items
-    this.table = table
+    this.tableRef = tableRef
   }
 
   public async execute(): Promise<
     Result<Decrypted<T>[], EncryptedDynamoDBError>
   > {
+    logger.debug(`DynamoDB: bulk decrypting ${this.items.length} models.`)
     return await withResult(
       async () => {
         const itemsWithEqlPayloads = this.items.map((item) =>
-          toItemWithEqlPayloads(item, this.table),
+          toItemWithEqlPayloads(item, this.tableRef._table),
         )
 
         const decryptResult = await this.encryptionClient
@@ -42,8 +44,6 @@ export class BulkDecryptModelsOperation<
           .audit(this.getAuditData())
 
         if (decryptResult.failure) {
-          // Create an Error object that preserves the FFI error code
-          // This is necessary because withResult's ensureError wraps non-Error objects
           const error = new Error(decryptResult.failure.message) as Error & {
             code?: string
           }

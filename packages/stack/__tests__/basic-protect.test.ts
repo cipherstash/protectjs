@@ -1,19 +1,26 @@
 import 'dotenv/config'
-import { Encryption } from '@/index'
-import { encryptedColumn, encryptedTable } from '@/schema'
+import { Encryption, defineContract } from '@/index'
+import { encrypted } from '@/contract'
 import { beforeAll, describe, expect, it } from 'vitest'
 
-const users = encryptedTable('users', {
-  email: encryptedColumn('email').freeTextSearch().equality().orderAndRange(),
-  address: encryptedColumn('address').freeTextSearch(),
-  json: encryptedColumn('json').dataType('json'),
+const contract = defineContract({
+  users: {
+    email: encrypted({
+      type: 'string',
+      equality: true,
+      freeTextSearch: true,
+      orderAndRange: true,
+    }),
+    address: encrypted({ type: 'string', freeTextSearch: true }),
+    json: encrypted({ type: 'json' }),
+  },
 })
 
 let protectClient: Awaited<ReturnType<typeof Encryption>>
 
 beforeAll(async () => {
   protectClient = await Encryption({
-    schemas: [users],
+    contract,
   })
 })
 
@@ -22,8 +29,7 @@ describe('encryption and decryption', () => {
     const email = 'hello@example.com'
 
     const ciphertext = await protectClient.encrypt(email, {
-      column: users.email,
-      table: users,
+      contract: contract.users.email,
     })
 
     if (ciphertext.failure) {

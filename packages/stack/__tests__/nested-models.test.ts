@@ -1,17 +1,19 @@
 import 'dotenv/config'
 import { LockContext } from '@/identity'
 import { Encryption } from '@/index'
-import { encryptedColumn, encryptedTable, encryptedField } from '@/schema'
+import { defineContract, encrypted } from '@/contract'
 import { describe, expect, it, vi } from 'vitest'
 
-const users = encryptedTable('users', {
-  email: encryptedColumn('email').freeTextSearch().equality().orderAndRange(),
-  address: encryptedColumn('address').freeTextSearch(),
-  name: encryptedColumn('name').freeTextSearch(),
-  example: {
-    field: encryptedField('example.field'),
-    nested: {
-      deeper: encryptedField('example.nested.deeper'),
+const contract = defineContract({
+  users: {
+    email: encrypted({ type: 'string', freeTextSearch: true, equality: true, orderAndRange: true }),
+    address: encrypted({ type: 'string', freeTextSearch: true }),
+    name: encrypted({ type: 'string', freeTextSearch: true }),
+    example: {
+      field: encrypted({ type: 'string' }),
+      nested: {
+        deeper: encrypted({ type: 'string' }),
+      },
     },
   },
 })
@@ -46,11 +48,10 @@ type User = {
 
 describe('encrypt models with nested fields', () => {
   it('should encrypt and decrypt a single value from a nested schema', async () => {
-    const protectClient = await Encryption({ schemas: [users] })
+    const protectClient = await Encryption({ contract })
 
     const encryptResponse = await protectClient.encrypt('hello world', {
-      column: users.example.field,
-      table: users,
+      contract: contract.users.example.field,
     })
 
     if (encryptResponse.failure) {
@@ -72,7 +73,7 @@ describe('encrypt models with nested fields', () => {
   })
 
   it('should encrypt and decrypt a model with nested fields', async () => {
-    const protectClient = await Encryption({ schemas: [users] })
+    const protectClient = await Encryption({ contract })
 
     const decryptedModel = {
       id: '1',
@@ -88,7 +89,7 @@ describe('encrypt models with nested fields', () => {
 
     const encryptedModel = await protectClient.encryptModel<User>(
       decryptedModel,
-      users,
+      contract.users,
     )
 
     if (encryptedModel.failure) {
@@ -118,7 +119,7 @@ describe('encrypt models with nested fields', () => {
   }, 30000)
 
   it('should handle null values in nested fields', async () => {
-    const protectClient = await Encryption({ schemas: [users] })
+    const protectClient = await Encryption({ contract })
 
     const decryptedModel = {
       id: '2',
@@ -134,7 +135,7 @@ describe('encrypt models with nested fields', () => {
 
     const encryptedModel = await protectClient.encryptModel<User>(
       decryptedModel,
-      users,
+      contract.users,
     )
 
     if (encryptedModel.failure) {
@@ -159,7 +160,7 @@ describe('encrypt models with nested fields', () => {
   }, 30000)
 
   it('should handle undefined values in nested fields', async () => {
-    const protectClient = await Encryption({ schemas: [users] })
+    const protectClient = await Encryption({ contract })
 
     const decryptedModel = {
       id: '3',
@@ -173,7 +174,7 @@ describe('encrypt models with nested fields', () => {
 
     const encryptedModel = await protectClient.encryptModel<User>(
       decryptedModel,
-      users,
+      contract.users,
     )
 
     if (encryptedModel.failure) {
@@ -197,7 +198,7 @@ describe('encrypt models with nested fields', () => {
   }, 30000)
 
   it('should handle mixed null and undefined values in nested fields', async () => {
-    const protectClient = await Encryption({ schemas: [users] })
+    const protectClient = await Encryption({ contract })
 
     const decryptedModel = {
       id: '4',
@@ -216,7 +217,7 @@ describe('encrypt models with nested fields', () => {
 
     const encryptedModel = await protectClient.encryptModel<User>(
       decryptedModel,
-      users,
+      contract.users,
     )
 
     if (encryptedModel.failure) {
@@ -249,7 +250,7 @@ describe('encrypt models with nested fields', () => {
   }, 30000)
 
   it('should handle deeply nested fields', async () => {
-    const protectClient = await Encryption({ schemas: [users] })
+    const protectClient = await Encryption({ contract })
 
     const decryptedModel = {
       id: '3',
@@ -263,7 +264,7 @@ describe('encrypt models with nested fields', () => {
 
     const encryptedModel = await protectClient.encryptModel<User>(
       decryptedModel,
-      users,
+      contract.users,
     )
 
     if (encryptedModel.failure) {
@@ -289,7 +290,7 @@ describe('encrypt models with nested fields', () => {
   }, 30000)
 
   it('should handle missing optional nested fields', async () => {
-    const protectClient = await Encryption({ schemas: [users] })
+    const protectClient = await Encryption({ contract })
 
     const decryptedModel = {
       id: '5',
@@ -300,7 +301,7 @@ describe('encrypt models with nested fields', () => {
 
     const encryptedModel = await protectClient.encryptModel<User>(
       decryptedModel,
-      users,
+      contract.users,
     )
 
     if (encryptedModel.failure) {
@@ -327,7 +328,7 @@ describe('encrypt models with nested fields', () => {
 
   describe('bulk operations with nested fields', () => {
     it('should handle bulk encryption and decryption of models with nested fields', async () => {
-      const protectClient = await Encryption({ schemas: [users] })
+      const protectClient = await Encryption({ contract })
 
       const decryptedModels: User[] = [
         {
@@ -354,7 +355,7 @@ describe('encrypt models with nested fields', () => {
 
       const encryptedModels = await protectClient.bulkEncryptModels<User>(
         decryptedModels,
-        users,
+        contract.users,
       )
 
       if (encryptedModels.failure) {
@@ -385,7 +386,7 @@ describe('encrypt models with nested fields', () => {
     }, 30000)
 
     it('should handle bulk operations with null and undefined values in nested fields', async () => {
-      const protectClient = await Encryption({ schemas: [users] })
+      const protectClient = await Encryption({ contract })
 
       const decryptedModels: User[] = [
         {
@@ -412,7 +413,7 @@ describe('encrypt models with nested fields', () => {
 
       const encryptedModels = await protectClient.bulkEncryptModels<User>(
         decryptedModels,
-        users,
+        contract.users,
       )
 
       if (encryptedModels.failure) {
@@ -443,7 +444,7 @@ describe('encrypt models with nested fields', () => {
     }, 30000)
 
     it('should handle bulk operations with missing optional nested fields', async () => {
-      const protectClient = await Encryption({ schemas: [users] })
+      const protectClient = await Encryption({ contract })
 
       const decryptedModels: User[] = [
         {
@@ -467,7 +468,7 @@ describe('encrypt models with nested fields', () => {
 
       const encryptedModels = await protectClient.bulkEncryptModels<User>(
         decryptedModels,
-        users,
+        contract.users,
       )
 
       if (encryptedModels.failure) {
@@ -498,13 +499,13 @@ describe('encrypt models with nested fields', () => {
     }, 30000)
 
     it('should handle empty array in bulk operations', async () => {
-      const protectClient = await Encryption({ schemas: [users] })
+      const protectClient = await Encryption({ contract })
 
       const decryptedModels: User[] = []
 
       const encryptedModels = await protectClient.bulkEncryptModels<User>(
         decryptedModels,
-        users,
+        contract.users,
       )
 
       if (encryptedModels.failure) {
@@ -528,7 +529,7 @@ describe('encrypt models with nested fields', () => {
 
 describe('nested fields with a plaintext field', () => {
   it('should handle nested fields with a plaintext field', async () => {
-    const protectClient = await Encryption({ schemas: [users] })
+    const protectClient = await Encryption({ contract })
 
     const decryptedModel = {
       id: '1',
@@ -545,7 +546,7 @@ describe('nested fields with a plaintext field', () => {
 
     const encryptedModel = await protectClient.encryptModel<User>(
       decryptedModel,
-      users,
+      contract.users,
     )
 
     if (encryptedModel.failure) {
@@ -576,7 +577,7 @@ describe('nested fields with a plaintext field', () => {
   })
 
   it('should handle multiple plaintext fields at different nesting levels', async () => {
-    const protectClient = await Encryption({ schemas: [users] })
+    const protectClient = await Encryption({ contract })
 
     const decryptedModel = {
       id: '1',
@@ -598,7 +599,7 @@ describe('nested fields with a plaintext field', () => {
 
     const encryptedModel = await protectClient.encryptModel<User>(
       decryptedModel,
-      users,
+      contract.users,
     )
 
     if (encryptedModel.failure) {
@@ -634,7 +635,7 @@ describe('nested fields with a plaintext field', () => {
   })
 
   it('should handle partial path matches in nested objects', async () => {
-    const protectClient = await Encryption({ schemas: [users] })
+    const protectClient = await Encryption({ contract })
 
     const decryptedModel = {
       id: '1',
@@ -657,7 +658,7 @@ describe('nested fields with a plaintext field', () => {
 
     const encryptedModel = await protectClient.encryptModel<User>(
       decryptedModel,
-      users,
+      contract.users,
     )
 
     if (encryptedModel.failure) {
@@ -690,7 +691,7 @@ describe('nested fields with a plaintext field', () => {
   })
 
   it('should handle mixed encrypted and plaintext fields with similar paths', async () => {
-    const protectClient = await Encryption({ schemas: [users] })
+    const protectClient = await Encryption({ contract })
 
     const decryptedModel = {
       id: '1',
@@ -707,7 +708,7 @@ describe('nested fields with a plaintext field', () => {
 
     const encryptedModel = await protectClient.encryptModel<User>(
       decryptedModel,
-      users,
+      contract.users,
     )
 
     if (encryptedModel.failure) {
@@ -739,7 +740,7 @@ describe('nested fields with a plaintext field', () => {
 
   describe('bulk operations with plaintext fields', () => {
     it('should handle bulk encryption and decryption with plaintext fields', async () => {
-      const protectClient = await Encryption({ schemas: [users] })
+      const protectClient = await Encryption({ contract })
 
       const decryptedModels: User[] = [
         {
@@ -772,7 +773,7 @@ describe('nested fields with a plaintext field', () => {
 
       const encryptedModels = await protectClient.bulkEncryptModels<User>(
         decryptedModels,
-        users,
+        contract.users,
       )
 
       if (encryptedModels.failure) {
@@ -813,7 +814,7 @@ describe('nested fields with a plaintext field', () => {
     })
 
     it('should handle bulk operations with mixed encrypted and non-encrypted fields', async () => {
-      const protectClient = await Encryption({ schemas: [users] })
+      const protectClient = await Encryption({ contract })
 
       const decryptedModels: User[] = [
         {
@@ -844,7 +845,7 @@ describe('nested fields with a plaintext field', () => {
 
       const encryptedModels = await protectClient.bulkEncryptModels<User>(
         decryptedModels,
-        users,
+        contract.users,
       )
 
       if (encryptedModels.failure) {
@@ -887,7 +888,7 @@ describe('nested fields with a plaintext field', () => {
     })
 
     it('should handle bulk operations with deeply nested plaintext fields', async () => {
-      const protectClient = await Encryption({ schemas: [users] })
+      const protectClient = await Encryption({ contract })
 
       const decryptedModels: User[] = [
         {
@@ -920,7 +921,7 @@ describe('nested fields with a plaintext field', () => {
 
       const encryptedModels = await protectClient.bulkEncryptModels<User>(
         decryptedModels,
-        users,
+        contract.users,
       )
 
       if (encryptedModels.failure) {

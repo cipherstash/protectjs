@@ -10,14 +10,14 @@
  * signatures without pulling in the native FFI dependency.
  */
 
-// Schema types and utilities - client-safe
-export { encryptedTable, encryptedColumn, encryptedField } from '@/schema'
+// Contract types and utilities - client-safe
+export { defineContract, encrypted } from '@/contract'
 export type {
-  EncryptedColumn,
-  EncryptedTable,
-  EncryptedTableColumn,
-  EncryptedField,
-  InferPlaintext,
-  InferEncrypted,
-} from '@/schema'
+  ContractColumnRef,
+  ContractTableRef,
+  ColumnConfig,
+  TableColumns,
+  ContractDefinition,
+  ResolvedContract,
+} from '@/contract'
 export type { EncryptionClient } from '@/encryption'

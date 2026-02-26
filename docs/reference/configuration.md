@@ -96,6 +96,8 @@ The following environment variables are supported:
 | `CS_WORKSPACE_CRN`     | The workspace CRN for your CipherStash account.                 | Yes      |                                              |
 | `CS_CLIENT_ACCESS_KEY` | The access key for your CipherStash account.                    | Yes      |                                              |
 | `CS_CONFIG_PATH`       | A temporary path to store the CipherStash client configuration. | No       | `/home/{username}/.cipherstash`              |
+| `CS_CTS_ENDPOINT`      | The CipherStash Token Service endpoint for lock contexts.       | No       | `https://ap-southeast-2.aws.auth.viturhosted.net` |
+| `STASH_STACK_LOG`      | Log level: `debug`, `info`, or `error`.                         | No       | `error`                                      |
 
 ## Configuring the Encryption client directly
 
@@ -103,10 +105,19 @@ You can also configure the Encryption client directly by passing an `EncryptionC
 This is useful if you want to use a secret manager to store your client key and access key rather than relying on environment variables or configuration files.
 
 ```ts
-import { Encryption, type EncryptionClientConfig } from "@cipherstash/stack";
+import { Encryption, defineContract, encrypted, type EncryptionClientConfig } from "@cipherstash/stack";
+
+const contract = defineContract({
+  users: {
+    email: encrypted({ type: "string", equality: true }),
+  },
+  orders: {
+    total: encrypted({ type: "number", orderAndRange: true }),
+  },
+});
 
 const config: EncryptionClientConfig = {
-  schemas: [users, orders],
+  contract,
   config: {
     workspaceCrn: "your-workspace-crn",
     accessKey: "your-access-key",
@@ -125,7 +136,7 @@ A keyset can be identified by name or by UUID:
 
 ```ts
 const client = await Encryption({
-  schemas: [users],
+  contract,
   config: {
     workspaceCrn: "your-workspace-crn",
     accessKey: "your-access-key",
@@ -142,31 +153,21 @@ Each keyset provides an isolated set of encryption keys, so data encrypted under
 
 ### Logging configuration
 
-Logging is disabled by default. You can enable it by setting the `STASH_LOG_LEVEL` environment variable or by configuring it programmatically:
+Configure the log level with the `STASH_STACK_LOG` environment variable:
 
 ```bash
-STASH_LOG_LEVEL=debug  # debug | info | warn | error
+STASH_STACK_LOG=error  # debug | info | error (default: error)
 ```
 
-```ts
-const client = await Encryption({
-  schemas: [users],
-  logging: {
-    enabled: true,
-    pretty: true, // Pretty-print log output (auto-detected in development)
-    drain: (ctx) => {
-      // Forward logs to your logging service
-      myLogger.log(ctx)
-    },
-  },
-});
-```
+| Value   | What is logged         |
+| ------- | ---------------------- |
+| `error` | Errors only (default)  |
+| `info`  | Info and errors        |
+| `debug` | Debug, info, and errors |
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `enabled` | `boolean` | `false` | Toggle logging on or off. Automatically enabled when `STASH_LOG_LEVEL` is set. |
-| `pretty` | `boolean` | Auto-detected | Enable pretty-printed log format. |
-| `drain` | `(ctx) => void` | `undefined` | Callback for forwarding log events to an external platform. |
+When `STASH_STACK_LOG` is not set, the SDK defaults to `error` (errors only).
+
+The SDK never logs plaintext data.
 
 ## Deploying to production
 

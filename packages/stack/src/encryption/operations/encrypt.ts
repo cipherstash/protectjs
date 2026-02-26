@@ -7,7 +7,7 @@ import type {
   EncryptedTableColumn,
   EncryptedField,
 } from '@/schema'
-import type { Client, EncryptOptions, Encrypted } from '@/types'
+import type { Client, InternalEncryptOptions, Encrypted } from '@/types'
 import { createRequestLogger } from '@/utils/logger'
 import { type Result, withResult } from '@byteslice/result'
 import {
@@ -26,7 +26,7 @@ export class EncryptOperation extends EncryptionOperation<Encrypted> {
   constructor(
     client: Client,
     plaintext: JsPlaintext,
-    opts: EncryptOptions,
+    opts: InternalEncryptOptions,
   ) {
     super()
     this.client = client

@@ -2,7 +2,7 @@ import { getErrorCode } from '@/encryption/helpers/error-code'
 import { formatEncryptedResult } from '@/encryption/helpers'
 import { type EncryptionError, EncryptionErrorTypes } from '@/errors'
 import type { Context, LockContext } from '@/identity'
-import type { Client, EncryptedQueryResult, ScalarQueryTerm } from '@/types'
+import type { Client, EncryptedQueryResult, InternalScalarQueryTerm } from '@/types'
 import { createRequestLogger } from '@/utils/logger'
 import { type Result, withResult } from '@byteslice/result'
 import {
@@ -24,7 +24,7 @@ import { EncryptionOperation } from './base-operation'
  * Optionally includes lockContext if provided.
  */
 function buildQueryPayload(
-  term: ScalarQueryTerm,
+  term: InternalScalarQueryTerm,
   lockContext?: Context,
 ): QueryPayload {
   assertValidNumericValue(term.value)
@@ -57,7 +57,7 @@ function buildQueryPayload(
  * Maps encrypted values to formatted results based on term.returnType.
  */
 function assembleResults(
-  terms: readonly ScalarQueryTerm[],
+  terms: readonly InternalScalarQueryTerm[],
   encryptedValues: CipherStashEncrypted[],
 ): EncryptedQueryResult[] {
   return terms.map((term, i) =>
@@ -73,7 +73,7 @@ export class BatchEncryptQueryOperation extends EncryptionOperation<
 > {
   constructor(
     private client: Client,
-    private terms: readonly ScalarQueryTerm[],
+    private terms: readonly InternalScalarQueryTerm[],
   ) {
     super()
   }
@@ -143,7 +143,7 @@ export class BatchEncryptQueryOperationWithLockContext extends EncryptionOperati
 > {
   constructor(
     private client: Client,
-    private terms: readonly ScalarQueryTerm[],
+    private terms: readonly InternalScalarQueryTerm[],
     private lockContext: LockContext,
     auditMetadata?: Record<string, unknown>,
   ) {
