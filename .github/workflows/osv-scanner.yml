@@ -8,7 +8,8 @@ on:
     branches:
       - main
   schedule:
-    - cron: "0 8 * * 1"
+    - cron: "0 8 * * 1-5"
+  workflow_dispatch:
 
 permissions:
   security-events: write
