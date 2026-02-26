@@ -1,13 +1,15 @@
 import 'dotenv/config'
 import { LockContext } from '@/identity'
 import { Encryption } from '@/index'
-import { encryptedColumn, encryptedTable } from '@/schema'
+import { defineContract, encrypted } from '@/contract'
 import { beforeAll, describe, expect, it } from 'vitest'
 
-const users = encryptedTable('users', {
-  auditable: encryptedColumn('auditable'),
-  email: encryptedColumn('email').freeTextSearch().equality().orderAndRange(),
-  address: encryptedColumn('address').freeTextSearch(),
+const contract = defineContract({
+  users: {
+    auditable: encrypted({ type: 'string' }),
+    email: encrypted({ type: 'string', freeTextSearch: true, equality: true, orderAndRange: true }),
+    address: encrypted({ type: 'string', freeTextSearch: true }),
+  },
 })
 
 type User = {
@@ -24,7 +26,7 @@ let protectClient: Awaited<ReturnType<typeof Encryption>>
 
 beforeAll(async () => {
   protectClient = await Encryption({
-    schemas: [users],
+    contract,
   })
 })
 
@@ -34,8 +36,7 @@ describe('encryption and decryption with audit', () => {
 
     const ciphertext = await protectClient
       .encrypt(email, {
-        column: users.auditable,
-        table: users,
+        contract: contract.users.auditable,
       })
       .audit({
         metadata: {
@@ -77,7 +78,7 @@ describe('encryption and decryption with audit', () => {
 
     // Encrypt the model with audit
     const encryptedModel = await protectClient
-      .encryptModel<User>(decryptedModel, users)
+      .encryptModel<User>(decryptedModel, contract.users)
       .audit({
         metadata: {
           sub: 'cj@cjb.io',
@@ -131,7 +132,7 @@ describe('encryption and decryption with audit', () => {
 
     // Encrypt the model with audit
     const encryptedModel = await protectClient
-      .encryptModel<User>(decryptedModel, users)
+      .encryptModel<User>(decryptedModel, contract.users)
       .audit({
         metadata: {
           sub: 'cj@cjb.io',
@@ -198,7 +199,7 @@ describe('bulk encryption with audit', () => {
 
     // Encrypt the models with audit
     const encryptedModels = await protectClient
-      .bulkEncryptModels<User>(decryptedModels, users)
+      .bulkEncryptModels<User>(decryptedModels, contract.users)
       .audit({
         metadata: {
           sub: 'cj@cjb.io',
@@ -278,7 +279,7 @@ describe('bulk encryption with audit', () => {
 
     // Encrypt the models with audit
     const encryptedModels = await protectClient
-      .bulkEncryptModels<User>(decryptedModels, users)
+      .bulkEncryptModels<User>(decryptedModels, contract.users)
       .audit({
         metadata: {
           sub: 'cj@cjb.io',
@@ -321,7 +322,7 @@ describe('bulk encryption with audit', () => {
   it('should return empty array if models is empty with audit', async () => {
     // Encrypt empty array of models with audit
     const encryptedModels = await protectClient
-      .bulkEncryptModels<User>([], users)
+      .bulkEncryptModels<User>([], contract.users)
       .audit({
         metadata: {
           sub: 'cj@cjb.io',
@@ -378,7 +379,7 @@ describe('audit with lock context', () => {
 
     // Encrypt the model with both audit and lock context
     const encryptedModel = await protectClient
-      .encryptModel(decryptedModel, users)
+      .encryptModel(decryptedModel, contract.users)
       .withLockContext(lockContext.data)
       .audit({
         metadata: {
@@ -440,7 +441,7 @@ describe('audit with lock context', () => {
 
     // Encrypt the models with both audit and lock context
     const encryptedModels = await protectClient
-      .bulkEncryptModels(decryptedModels, users)
+      .bulkEncryptModels(decryptedModels, contract.users)
       .withLockContext(lockContext.data)
       .audit({
         metadata: {

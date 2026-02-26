@@ -1,4 +1,4 @@
-import type { EncryptedTable, EncryptedTableColumn } from '@/schema'
+import type { ContractTableRef } from '@/contract'
 import { EncryptedQueryBuilderImpl } from './query-builder'
 import type {
   EncryptedSupabaseConfig,
@@ -16,24 +16,25 @@ import type {
  *
  * @example
  * ```typescript
- * import { Encryption } from '@cipherstash/stack'
+ * import { Encryption, defineContract } from '@cipherstash/stack'
  * import { encryptedSupabase } from '@cipherstash/stack/supabase'
- * import { encryptedTable, encryptedColumn } from '@cipherstash/stack/schema'
  *
- * const users = encryptedTable('users', {
- *   name: encryptedColumn('name').freeTextSearch().equality(),
- *   email: encryptedColumn('email').freeTextSearch().equality(),
+ * const contract = defineContract({
+ *   users: {
+ *     name: { type: 'string', freeTextSearch: true, equality: true },
+ *     email: { type: 'string', freeTextSearch: true, equality: true },
+ *   },
  * })
  *
- * const client = await Encryption({ schemas: [users] })
+ * const client = await Encryption({ contract })
  * const eSupabase = encryptedSupabase({ encryptionClient: client, supabaseClient: supabase })
  *
  * // INSERT - auto-encrypts, auto-converts to PG composite
- * await eSupabase.from('users', users)
+ * await eSupabase.from('users', contract.users)
  *   .insert({ name: 'John', email: 'john@example.com', age: 30 })
  *
  * // SELECT with filter - auto-casts ::jsonb, auto-encrypts search term, auto-decrypts
- * const { data } = await eSupabase.from('users', users)
+ * const { data } = await eSupabase.from('users', contract.users)
  *   .select('id, email, name')
  *   .eq('email', 'john@example.com')
  * ```
@@ -46,11 +47,11 @@ export function encryptedSupabase(
   return {
     from<T extends Record<string, unknown> = Record<string, unknown>>(
       tableName: string,
-      schema: EncryptedTable<EncryptedTableColumn>,
+      tableRef: ContractTableRef,
     ) {
       return new EncryptedQueryBuilderImpl<T>(
         tableName,
-        schema,
+        tableRef._table,
         encryptionClient,
         supabaseClient,
       )

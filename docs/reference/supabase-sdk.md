@@ -26,19 +26,20 @@ The `encryptedSupabase` wrapper makes encrypted queries look nearly identical to
 It automatically handles encryption, decryption, `::jsonb` casts, and search term formatting.
 
 ```typescript
-import { Encryption } from '@cipherstash/stack'
+import { Encryption, defineContract, encrypted } from '@cipherstash/stack'
 import { encryptedSupabase } from '@cipherstash/stack/supabase'
-import { encryptedTable, encryptedColumn } from '@cipherstash/stack/schema'
 import { createClient } from '@supabase/supabase-js'
 
-// 1. Define your encryption schema
-const users = encryptedTable('users', {
-  name: encryptedColumn('name').freeTextSearch().equality(),
-  email: encryptedColumn('email').freeTextSearch().equality(),
+// 1. Define your encryption contract
+const contract = defineContract({
+  users: {
+    name: encrypted({ type: 'string', freeTextSearch: true, equality: true }),
+    email: encrypted({ type: 'string', freeTextSearch: true, equality: true }),
+  },
 })
 
 // 2. Initialize the encryption client
-const client = await Encryption({ schemas: [users] })
+const client = await Encryption({ contract })
 
 // 3. Create the Supabase client
 const supabase = createClient(
@@ -66,7 +67,7 @@ type UserRow = {
 }
 
 const { data } = await eSupabase
-  .from<UserRow>('users', users)
+  .from<UserRow>('users', contract.users)
   .select('id, name, email')
 
 // data is typed as UserRow[] | null
@@ -79,11 +80,11 @@ The generic parameter ensures that column names and filter values are type-check
 ## Inserting data
 
 Insert data exactly like you would with the normal Supabase SDK.
-The wrapper automatically encrypts fields that match your schema and converts them to PG composite types:
+The wrapper automatically encrypts fields that match your contract and converts them to PG composite types:
 
 ```typescript
 const { data, error } = await eSupabase
-  .from<UserRow>('users', users)
+  .from<UserRow>('users', contract.users)
   .insert({
     name: 'John Doe',
     email: 'john.doe@example.com',
@@ -96,7 +97,7 @@ For bulk inserts, pass an array:
 
 ```typescript
 const { data, error } = await eSupabase
-  .from<UserRow>('users', users)
+  .from<UserRow>('users', contract.users)
   .insert([
     { name: 'John Doe', email: 'john@example.com', otherField: 'value 1' },
     { name: 'Jane Smith', email: 'jane@example.com', otherField: 'value 2' },
@@ -110,7 +111,7 @@ Select queries automatically add `::jsonb` casts to encrypted columns and decryp
 
 ```typescript
 const { data, error } = await eSupabase
-  .from<UserRow>('users', users)
+  .from<UserRow>('users', contract.users)
   .select('id, email, name, otherField')
 
 // data is already decrypted — no manual decryption needed
@@ -128,7 +129,7 @@ Filter methods like `.eq()`, `.like()`, and `.in()` automatically encrypt the se
 
 ```typescript
 const { data, error } = await eSupabase
-  .from<UserRow>('users', users)
+  .from<UserRow>('users', contract.users)
   .select('id, email, name')
   .eq('email', 'john.doe@example.com')
 ```
@@ -137,7 +138,7 @@ const { data, error } = await eSupabase
 
 ```typescript
 const { data, error } = await eSupabase
-  .from<UserRow>('users', users)
+  .from<UserRow>('users', contract.users)
   .select('id, email, name')
   .ilike('email', 'example.com')
 ```
@@ -146,7 +147,7 @@ const { data, error } = await eSupabase
 
 ```typescript
 const { data, error } = await eSupabase
-  .from<UserRow>('users', users)
+  .from<UserRow>('users', contract.users)
   .select('id, email, name')
   .in('name', ['John Doe', 'Jane Smith'])
 ```
@@ -157,7 +158,7 @@ You can combine multiple conditions using `.or()` with a string:
 
 ```typescript
 const { data, error } = await eSupabase
-  .from<UserRow>('users', users)
+  .from<UserRow>('users', contract.users)
   .select('id, email, name')
   .or('email.ilike.example.com,name.ilike.john')
 ```
@@ -166,7 +167,7 @@ Or use the structured array form for better readability:
 
 ```typescript
 const { data, error } = await eSupabase
-  .from<UserRow>('users', users)
+  .from<UserRow>('users', contract.users)
   .select('id, email, name')
   .or([
     { column: 'email', op: 'eq', value: 'user@example.com' },
@@ -177,27 +178,27 @@ const { data, error } = await eSupabase
 ### Range and comparison filters
 
 ```typescript
-// Greater than (requires .orderAndRange())
+// Greater than (requires orderAndRange: true)
 const { data, error } = await eSupabase
-  .from<UserRow>('users', users)
+  .from<UserRow>('users', contract.users)
   .select('id, email, name')
   .gt('age', 21)
 
 // Greater than or equal
 const { data, error } = await eSupabase
-  .from<UserRow>('users', users)
+  .from<UserRow>('users', contract.users)
   .select('id, email, name')
   .gte('age', 18)
 
 // Less than
 const { data, error } = await eSupabase
-  .from<UserRow>('users', users)
+  .from<UserRow>('users', contract.users)
   .select('id, email, name')
   .lt('age', 65)
 
 // Less than or equal
 const { data, error } = await eSupabase
-  .from<UserRow>('users', users)
+  .from<UserRow>('users', contract.users)
   .select('id, email, name')
   .lte('age', 100)
 ```
@@ -206,7 +207,7 @@ const { data, error } = await eSupabase
 
 ```typescript
 const { data, error } = await eSupabase
-  .from<UserRow>('users', users)
+  .from<UserRow>('users', contract.users)
   .select('id, email, name')
   .match({ email: 'alice@example.com', name: 'Alice' })
 ```
@@ -215,7 +216,7 @@ const { data, error } = await eSupabase
 
 ```typescript
 const { data, error } = await eSupabase
-  .from<UserRow>('users', users)
+  .from<UserRow>('users', contract.users)
   .select('id, email, name')
   .not('email', 'eq', 'alice@example.com')
 ```
@@ -224,7 +225,7 @@ const { data, error } = await eSupabase
 
 ```typescript
 const { data, error } = await eSupabase
-  .from<UserRow>('users', users)
+  .from<UserRow>('users', contract.users)
   .select('id, email, name')
   .filter('email', 'eq', 'alice@example.com')
 ```
@@ -235,7 +236,7 @@ Filters on non-encrypted columns pass through to Supabase unchanged:
 
 ```typescript
 const { data, error } = await eSupabase
-  .from<UserRow>('users', users)
+  .from<UserRow>('users', contract.users)
   .select('id, email, name')
   .eq('email', 'john@example.com')  // encrypted — auto-encrypts search term
   .eq('otherField', 'some value')   // not encrypted — passed through as-is
@@ -245,7 +246,7 @@ const { data, error } = await eSupabase
 
 ```typescript
 const { data, error } = await eSupabase
-  .from<UserRow>('users', users)
+  .from<UserRow>('users', contract.users)
   .update({ email: 'new@example.com' })
   .eq('id', 1)
   .select('id, email')
@@ -255,7 +256,7 @@ const { data, error } = await eSupabase
 
 ```typescript
 const { data, error } = await eSupabase
-  .from<UserRow>('users', users)
+  .from<UserRow>('users', contract.users)
   .upsert({
     id: 1,
     name: 'John Doe',
@@ -269,7 +270,7 @@ const { data, error } = await eSupabase
 
 ```typescript
 const { error } = await eSupabase
-  .from<UserRow>('users', users)
+  .from<UserRow>('users', contract.users)
   .delete()
   .eq('id', 1)
 ```
@@ -280,7 +281,7 @@ Chain `.select()` after a mutation to return the inserted/updated rows (decrypte
 
 ```typescript
 const { data, error } = await eSupabase
-  .from<UserRow>('users', users)
+  .from<UserRow>('users', contract.users)
   .insert({ name: 'John', email: 'john@example.com', otherField: 'value' })
   .select('id, email')
   .single()
@@ -292,7 +293,7 @@ All Supabase transform methods are supported as pass-throughs:
 
 ```typescript
 const { data, error } = await eSupabase
-  .from<UserRow>('users', users)
+  .from<UserRow>('users', contract.users)
   .select('id, email, name')
   .eq('name', 'John')
   .order('id', { ascending: false })
@@ -311,7 +312,7 @@ const lc = new LockContext()
 const lockContext = await lc.identify(userJwt)
 
 const { data, error } = await eSupabase
-  .from<UserRow>('users', users)
+  .from<UserRow>('users', contract.users)
   .select('id, email, name')
   .eq('email', 'john@example.com')
   .withLockContext(lockContext)
@@ -325,7 +326,7 @@ Encryption errors are surfaced through the same shape with an additional `encryp
 
 ```typescript
 const { data, error } = await eSupabase
-  .from<UserRow>('users', users)
+  .from<UserRow>('users', contract.users)
   .select('id, email')
   .eq('email', 'john@example.com')
 
@@ -343,9 +344,9 @@ if (error) {
 
 | Filter Method | Required Index | Query Type |
 |---|---|---|
-| `eq`, `neq`, `in`, `match` | `.equality()` | `'equality'` |
-| `like`, `ilike` | `.freeTextSearch()` | `'freeTextSearch'` |
-| `gt`, `gte`, `lt`, `lte` | `.orderAndRange()` | `'orderAndRange'` |
+| `eq`, `neq`, `in`, `match` | `equality: true` | `'equality'` |
+| `like`, `ilike` | `freeTextSearch: true` | `'freeTextSearch'` |
+| `gt`, `gte`, `lt`, `lte` | `orderAndRange: true` | `'orderAndRange'` |
 | `is` | None | No encryption (NULL/boolean check) |
 
 ## Exposing EQL schema

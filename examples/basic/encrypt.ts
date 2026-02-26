@@ -1,14 +1,22 @@
 import 'dotenv/config'
-import {
-  Encryption,
-  encryptedTable,
-  encryptedColumn,
-} from '@cipherstash/stack'
+import { defineContract, encrypted, Encryption } from '@cipherstash/stack'
 
-export const users = encryptedTable('users', {
-  name: encryptedColumn('name'),
+const contract = defineContract({
+  users: {
+    name: encrypted({ type: 'string', equality: true, freeTextSearch: true }),
+  },
 })
 
 export const client = await Encryption({
-  schemas: [users],
+  contract,
 })
+
+const eName = await client.encrypt('John', {
+  contract: contract.users.name,
+})
+
+if (eName.failure) {
+  throw new Error(`[encryption]: ${eName.failure.message}`)
+}
+
+console.log(eName.data)

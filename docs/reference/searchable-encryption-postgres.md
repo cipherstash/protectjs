@@ -6,7 +6,7 @@ This reference guide outlines the different query patterns you can use to search
 
 - [Prerequisites](#prerequisites)
 - [What is EQL?](#what-is-eql)
-- [Setting up your schema](#setting-up-your-schema)
+- [Setting up your contract](#setting-up-your-contract)
 - [The `encryptQuery` function](#the-encryptquery-function)
   - [Formatting encrypted query results with `returnType`](#formatting-encrypted-query-results-with-returntype)
 - [Search capabilities](#search-capabilities)
@@ -30,10 +30,10 @@ This reference guide outlines the different query patterns you can use to search
 Before you can use searchable encryption with PostgreSQL, you need to:
 
 1. Install the [EQL custom types and functions](https://github.com/cipherstash/encrypt-query-language?tab=readme-ov-file#installation)
-2. Set up your encryption schema with the appropriate search capabilities
+2. Set up your encryption contract with the appropriate search capabilities
 
 > [!WARNING]
-> The formal EQL repo documentation is heavily focused on the underlying custom function implementation. 
+> The formal EQL repo documentation is heavily focused on the underlying custom function implementation.
 > It also has a bias towards the [CipherStash Proxy](https://github.com/cipherstash/proxy) product, so this guide is the best place to get started when using `@cipherstash/stack`.
 
 ## What is EQL?
@@ -49,24 +49,34 @@ When you install EQL, it adds these capabilities to your PostgreSQL database, al
 > [!IMPORTANT]
 > Any column that is encrypted with EQL must be of type `eql_v2_encrypted` which is included in the EQL extension.
 
-## Setting up your schema
+## Setting up your contract
 
-Define your encryption schema using `encryptedTable` and `encryptedColumn` to specify how each field should be encrypted and searched:
+Define your encryption contract using `defineContract` to specify how each field should be encrypted and searched:
 
 ```typescript
-import { encryptedTable, encryptedColumn } from '@cipherstash/stack/schema'
+import { defineContract, encrypted } from '@cipherstash/stack'
 
-const schema = encryptedTable('users', {
-  email: encryptedColumn('email_encrypted')
-    .equality()        // Enables exact matching
-    .freeTextSearch()  // Enables text search
-    .orderAndRange(),  // Enables sorting and range queries
-  phone: encryptedColumn('phone_encrypted')
-    .equality(),       // Only exact matching
-  age: encryptedColumn('age_encrypted')
-    .orderAndRange(),  // Only sorting and range queries
-  metadata: encryptedColumn('metadata_encrypted')
-    .searchableJson(), // Enables encrypted JSONB queries (recommended for JSON columns)
+const contract = defineContract({
+  users: {
+    email: encrypted({
+      type: 'string',
+      equality: true,        // Enables exact matching
+      freeTextSearch: true,   // Enables text search
+      orderAndRange: true,    // Enables sorting and range queries
+    }),
+    phone: encrypted({
+      type: 'string',
+      equality: true,         // Only exact matching
+    }),
+    age: encrypted({
+      type: 'number',
+      orderAndRange: true,    // Only sorting and range queries
+    }),
+    metadata: encrypted({
+      type: 'json',
+      searchableJson: true,   // Enables encrypted JSONB queries (recommended for JSON columns)
+    }),
+  },
 })
 ```
 
@@ -79,8 +89,7 @@ The `encryptQuery` function is used to create encrypted query terms for use in S
 | Property | Description |
 |----------|-------------|
 | `value` | The value to search for |
-| `column` | The column to search in |
-| `table` | The table to search in |
+| `contract` | The contract column reference (e.g. `contract.users.email`) |
 | `queryType` | _(optional)_ The query type — auto-inferred from the column's indexes when omitted |
 | `returnType` | _(optional)_ The output format — `'eql'` (default), `'composite-literal'`, or `'escaped-composite-literal'` |
 
@@ -90,8 +99,7 @@ Example (single query):
 
 ```typescript
 const term = await client.encryptQuery('user@example.com', {
-  column: schema.email,
-  table: schema,
+  contract: contract.users.email,
 })
 
 if (term.failure) {
@@ -105,8 +113,8 @@ Example (batch query):
 
 ```typescript
 const terms = await client.encryptQuery([
-  { value: 'user@example.com', column: schema.email, table: schema },
-  { value: '18', column: schema.age, table: schema },
+  { value: 'user@example.com', contract: contract.users.email },
+  { value: '18', contract: contract.users.age },
 ])
 
 if (terms.failure) {
@@ -132,8 +140,7 @@ The return type of `encryptQuery` is `EncryptedQueryResult`, which is `Encrypted
 
 ```typescript
 const term = await client.encryptQuery('user@example.com', {
-  column: schema.email,
-  table: schema,
+  contract: contract.users.email,
   queryType: 'equality',
   returnType: 'composite-literal',
 })
@@ -154,15 +161,13 @@ Each term in a batch can have its own `returnType`:
 const terms = await client.encryptQuery([
   {
     value: 'user@example.com',
-    column: schema.email,
-    table: schema,
+    contract: contract.users.email,
     queryType: 'equality',
     returnType: 'composite-literal',     // returns a string
   },
   {
     value: 'alice',
-    column: schema.email,
-    table: schema,
+    contract: contract.users.email,
     queryType: 'freeTextSearch',          // returns an Encrypted object (default)
   },
 ])
@@ -175,14 +180,18 @@ const terms = await client.encryptQuery([
 > [!TIP]
 > **Using Drizzle ORM?** The `@cipherstash/drizzle` package provides higher-level JSONB operators (`jsonbPathQueryFirst`, `jsonbGet`, `jsonbPathExists`) that handle encryption automatically. See the [Drizzle JSONB query examples](./drizzle/drizzle.md#jsonb-queries-with-encrypted-data).
 
-For columns storing JSON data, `.searchableJson()` is the recommended approach. It enables encrypted JSONB queries and automatically infers the correct query operation from the plaintext value type.
+For columns storing JSON data, `searchableJson: true` is the recommended approach. It enables encrypted JSONB queries and automatically infers the correct query operation from the plaintext value type.
 
 Use `encryptQuery` to create encrypted query terms for JSONB columns:
 
 ```typescript
-const documents = encryptedTable('documents', {
-  metadata: encryptedColumn('metadata_encrypted')
-    .searchableJson()  // Enables JSONB path and containment queries
+const contract = defineContract({
+  documents: {
+    metadata: encrypted({
+      type: 'json',
+      searchableJson: true,  // Enables JSONB path and containment queries
+    }),
+  },
 })
 ```
 
@@ -201,20 +210,17 @@ Pass a string to `encryptQuery` to perform a JSONPath selector query. The string
 ```typescript
 // Simple path query
 const pathTerm = await client.encryptQuery('$.user.email', {
-  column: documents.metadata,
-  table: documents,
+  contract: contract.documents.metadata,
 })
 
 // Nested path query
 const nestedTerm = await client.encryptQuery('$.user.profile.role', {
-  column: documents.metadata,
-  table: documents,
+  contract: contract.documents.metadata,
 })
 
 // Array index path query
 const arrayTerm = await client.encryptQuery('$.items[0].name', {
-  column: documents.metadata,
-  table: documents,
+  contract: contract.documents.metadata,
 })
 ```
 
@@ -236,23 +242,20 @@ Pass an object or array to `encryptQuery` to perform a containment query.
 ```typescript
 // Key-value containment
 const roleTerm = await client.encryptQuery({ role: 'admin' }, {
-  column: documents.metadata,
-  table: documents,
+  contract: contract.documents.metadata,
 })
 
 // Nested object containment
 const nestedTerm = await client.encryptQuery(
   { user: { profile: { role: 'admin' } } },
   {
-    column: documents.metadata,
-    table: documents,
+    contract: contract.documents.metadata,
   }
 )
 
 // Array containment
 const tagsTerm = await client.encryptQuery(['admin', 'user'], {
-  column: documents.metadata,
-  table: documents,
+  contract: contract.documents.metadata,
 })
 ```
 
@@ -262,10 +265,10 @@ const tagsTerm = await client.encryptQuery(['admin', 'user'], {
 >
 > ```typescript
 > // Wrong for searchableJson - will fail (works for orderAndRange)
-> await client.encryptQuery(42, { column: documents.metadata, table: documents })
+> await client.encryptQuery(42, { contract: contract.documents.metadata })
 >
 > // Correct - wrap in an object
-> await client.encryptQuery({ value: 42 }, { column: documents.metadata, table: documents })
+> await client.encryptQuery({ value: 42 }, { contract: contract.documents.metadata })
 > ```
 
 <!-- -->
@@ -288,18 +291,15 @@ Use `encryptQuery` with an array to encrypt multiple JSONB query terms in a sing
 const terms = await client.encryptQuery([
   {
     value: '$.user.email',        // string → JSONPath selector
-    column: documents.metadata,
-    table: documents,
+    contract: contract.documents.metadata,
   },
   {
     value: { role: 'admin' },     // object → containment
-    column: documents.metadata,
-    table: documents,
+    contract: contract.documents.metadata,
   },
   {
     value: ['tag1', 'tag2'],      // array → containment
-    column: documents.metadata,
-    table: documents,
+    contract: contract.documents.metadata,
   },
 ])
 
@@ -318,8 +318,7 @@ To use encrypted JSONB query terms in PostgreSQL queries, you can either use the
 
 ```typescript
 const term = await client.encryptQuery('$.user.email', {
-  column: documents.metadata,
-  table: documents,
+  contract: contract.documents.metadata,
 })
 
 if (term.failure) {
@@ -337,8 +336,7 @@ const result = await pgClient.query(
 
 ```typescript
 const term = await client.encryptQuery('$.user.email', {
-  column: documents.metadata,
-  table: documents,
+  contract: contract.documents.metadata,
   returnType: 'composite-literal',
 })
 
@@ -356,14 +354,12 @@ This also works with batch queries — each term can specify its own `returnType
 const terms = await client.encryptQuery([
   {
     value: '$.user.email',
-    column: documents.metadata,
-    table: documents,
+    contract: contract.documents.metadata,
     returnType: 'composite-literal',
   },
   {
     value: { role: 'admin' },
-    column: documents.metadata,
-    table: documents,
+    contract: contract.documents.metadata,
     returnType: 'composite-literal',
   },
 ])
@@ -382,41 +378,37 @@ For advanced use cases, you can specify the query type explicitly instead of rel
 ```typescript
 // Explicit steVecSelector
 const selectorTerm = await client.encryptQuery('$.user.email', {
-  column: documents.metadata,
-  table: documents,
+  contract: contract.documents.metadata,
   queryType: 'steVecSelector',
 })
 
 // Explicit steVecTerm
 const containTerm = await client.encryptQuery({ role: 'admin' }, {
-  column: documents.metadata,
-  table: documents,
+  contract: contract.documents.metadata,
   queryType: 'steVecTerm',
 })
 ```
 
 > [!NOTE]
-> When a column uses `searchableJson()`, string values passed to `encryptQuery` are treated as JSONPath selectors.
+> When a column uses `searchableJson: true`, string values passed to `encryptQuery` are treated as JSONPath selectors.
 > If you need to query for a JSON string value itself, wrap it in an object or array:
 >
 > ```typescript
 > // To find documents where a field contains the string "admin"
 > const term = await client.encryptQuery(['admin'], {
->   column: documents.metadata,
->   table: documents,
+>   contract: contract.documents.metadata,
 >   queryType: 'steVecTerm',  // Explicit for clarity
 > })
 > ```
 
 ### Exact matching
 
-Use `.equality()` when you need to find exact matches:
+Use `equality: true` when you need to find exact matches:
 
 ```typescript
 // Find user with specific email
 const term = await client.encryptQuery('user@example.com', {
-  column: schema.email,
-  table: schema,
+  contract: contract.users.email,
 })
 
 if (term.failure) {
@@ -432,13 +424,12 @@ const result = await pgClient.query(
 
 ### Free text search
 
-Use `.freeTextSearch()` for text-based searches:
+Use `freeTextSearch: true` for text-based searches:
 
 ```typescript
 // Search for users with emails containing "example"
 const term = await client.encryptQuery('example', {
-  column: schema.email,
-  table: schema,
+  contract: contract.users.email,
 })
 
 if (term.failure) {
@@ -454,7 +445,7 @@ const result = await pgClient.query(
 
 ### Sorting and range queries
 
-Use `.orderAndRange()` for sorting and range operations:
+Use `orderAndRange: true` for sorting and range operations:
 
 > [!NOTE]
 > When using ORDER BY with encrypted columns, you need to use the EQL v2 functions if your PostgreSQL database doesn't support EQL Operator families. For databases that support EQL Operator families, you can use ORDER BY directly with encrypted column names.
@@ -472,28 +463,29 @@ const result = await client.query(
 
 ```typescript
 import { Client } from 'pg'
-import { Encryption } from '@cipherstash/stack'
-import { encryptedTable, encryptedColumn } from '@cipherstash/stack/schema'
+import { Encryption, defineContract, encrypted } from '@cipherstash/stack'
 
-const schema = encryptedTable('users', {
-  email: encryptedColumn('email_encrypted')
-    .equality()
-    .freeTextSearch()
-    .orderAndRange()
+const contract = defineContract({
+  users: {
+    email: encrypted({
+      type: 'string',
+      equality: true,
+      freeTextSearch: true,
+      orderAndRange: true,
+    }),
+  },
 })
 
 const pgClient = new Client({
   // your connection details
 })
 
-const client = await Encryption({
-  schemas: [schema]
-})
+const client = await Encryption({ contract })
 
 // Insert encrypted data
 const encryptedData = await client.encryptModel({
   email: 'user@example.com'
-}, schema)
+}, contract.users)
 
 if (encryptedData.failure) {
   // Handle the error
@@ -506,8 +498,7 @@ await pgClient.query(
 
 // Search encrypted data
 const searchTerm = await client.encryptQuery('example.com', {
-  column: schema.email,
-  table: schema,
+  contract: contract.users.email,
 })
 
 if (searchTerm.failure) {
@@ -529,11 +520,11 @@ For Supabase users, we provide a specific implementation guide. [Read more about
 
 ## Best practices
 
-1. **Schema Design**
+1. **Contract Design**
    - Choose the right search capabilities for each field:
-     - Use `.equality()` for exact matches (most efficient)
-     - Use `.freeTextSearch()` for text-based searches (more expensive)
-     - Use `.orderAndRange()` for numerical data and sorting (most expensive)
+     - Use `equality: true` for exact matches (most efficient)
+     - Use `freeTextSearch: true` for text-based searches (more expensive)
+     - Use `orderAndRange: true` for numerical data and sorting (most expensive)
    - Only enable features you need to minimize performance impact
    - Use `eql_v2_encrypted` column type in your database schema for encrypted columns
 

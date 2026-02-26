@@ -3,19 +3,18 @@ import { Encryption } from '@/index'
 import { beforeAll, describe, expect, it } from 'vitest'
 
 type EncryptionClient = Awaited<ReturnType<typeof Encryption>>
-import { expectFailure, jsonbSchema, metadata, unwrapResult } from './fixtures'
+import { contract, expectFailure, unwrapResult } from './fixtures'
 
 describe('encryptQuery with steVecSelector', () => {
   let protectClient: EncryptionClient
 
   beforeAll(async () => {
-    protectClient = await Encryption({ schemas: [jsonbSchema, metadata] })
+    protectClient = await Encryption({ contract })
   })
 
   it('encrypts a JSONPath selector', async () => {
     const result = await protectClient.encryptQuery('$.user.email', {
-      column: jsonbSchema.metadata,
-      table: jsonbSchema,
+      contract: contract.documents.metadata,
       queryType: 'steVecSelector',
     })
 
@@ -28,8 +27,7 @@ describe('encryptQuery with steVecSelector', () => {
 
   it('encrypts nested path selector', async () => {
     const result = await protectClient.encryptQuery('$.user.profile.settings', {
-      column: jsonbSchema.metadata,
-      table: jsonbSchema,
+      contract: contract.documents.metadata,
       queryType: 'steVecSelector',
     })
 
@@ -44,8 +42,7 @@ describe('encryptQuery with steVecSelector', () => {
     const result = await protectClient.encryptQuery(
       { role: 'admin' },
       {
-        column: jsonbSchema.metadata,
-        table: jsonbSchema,
+        contract: contract.documents.metadata,
         queryType: 'steVecSelector',
       },
     )
@@ -58,15 +55,14 @@ describe('encryptQuery with steVecTerm', () => {
   let protectClient: EncryptionClient
 
   beforeAll(async () => {
-    protectClient = await Encryption({ schemas: [jsonbSchema, metadata] })
+    protectClient = await Encryption({ contract })
   })
 
   it('encrypts an object for containment query', async () => {
     const result = await protectClient.encryptQuery(
       { role: 'admin' },
       {
-        column: jsonbSchema.metadata,
-        table: jsonbSchema,
+        contract: contract.documents.metadata,
         queryType: 'steVecTerm',
       },
     )
@@ -82,8 +78,7 @@ describe('encryptQuery with steVecTerm', () => {
     const result = await protectClient.encryptQuery(
       { user: { profile: { role: 'admin' } } },
       {
-        column: jsonbSchema.metadata,
-        table: jsonbSchema,
+        contract: contract.documents.metadata,
         queryType: 'steVecTerm',
       },
     )
@@ -97,8 +92,7 @@ describe('encryptQuery with steVecTerm', () => {
 
   it('encrypts array for containment query', async () => {
     const result = await protectClient.encryptQuery([1, 2, 3], {
-      column: jsonbSchema.metadata,
-      table: jsonbSchema,
+      contract: contract.documents.metadata,
       queryType: 'steVecTerm',
     })
 
@@ -113,8 +107,7 @@ describe('encryptQuery with steVecTerm', () => {
     // steVecTerm requires object or array, not string
     // For path queries like '$.field', use steVecSelector instead
     const result = await protectClient.encryptQuery('search text', {
-      column: jsonbSchema.metadata,
-      table: jsonbSchema,
+      contract: contract.documents.metadata,
       queryType: 'steVecTerm',
     })
 
@@ -126,13 +119,12 @@ describe('encryptQuery STE Vec validation', () => {
   let protectClient: EncryptionClient
 
   beforeAll(async () => {
-    protectClient = await Encryption({ schemas: [jsonbSchema, metadata] })
+    protectClient = await Encryption({ contract })
   })
 
   it('throws when steVecSelector used on non-ste_vec column', async () => {
     const result = await protectClient.encryptQuery('$.user.email', {
-      column: metadata.raw, // raw column has no ste_vec index
-      table: metadata,
+      contract: contract.metadata.raw, // raw column has no ste_vec index
       queryType: 'steVecSelector',
     })
 
@@ -143,8 +135,7 @@ describe('encryptQuery STE Vec validation', () => {
     const result = await protectClient.encryptQuery(
       { field: 'value' },
       {
-        column: metadata.raw, // raw column has no ste_vec index
-        table: metadata,
+        contract: contract.metadata.raw, // raw column has no ste_vec index
         queryType: 'steVecTerm',
       },
     )
@@ -157,21 +148,19 @@ describe('encryptQuery batch with STE Vec', () => {
   let protectClient: EncryptionClient
 
   beforeAll(async () => {
-    protectClient = await Encryption({ schemas: [jsonbSchema, metadata] })
+    protectClient = await Encryption({ contract })
   })
 
   it('handles mixed query types in batch (steVecSelector + steVecTerm)', async () => {
     const result = await protectClient.encryptQuery([
       {
         value: '$.user.email',
-        column: jsonbSchema.metadata,
-        table: jsonbSchema,
+        contract: contract.documents.metadata,
         queryType: 'steVecSelector',
       },
       {
         value: { role: 'admin' },
-        column: jsonbSchema.metadata,
-        table: jsonbSchema,
+        contract: contract.documents.metadata,
         queryType: 'steVecTerm',
       },
     ])
@@ -187,14 +176,12 @@ describe('encryptQuery batch with STE Vec', () => {
     const result = await protectClient.encryptQuery([
       {
         value: '$.user.email',
-        column: jsonbSchema.metadata,
-        table: jsonbSchema,
+        contract: contract.documents.metadata,
         queryType: 'steVecSelector',
       },
       {
         value: '$.settings.theme',
-        column: jsonbSchema.metadata,
-        table: jsonbSchema,
+        contract: contract.documents.metadata,
         queryType: 'steVecSelector',
       },
     ])
@@ -212,13 +199,12 @@ describe('encryptQuery with queryType inference', () => {
   let protectClient: EncryptionClient
 
   beforeAll(async () => {
-    protectClient = await Encryption({ schemas: [jsonbSchema] })
+    protectClient = await Encryption({ contract })
   })
 
   it('infers steVecSelector for string plaintext without queryType', async () => {
     const result = await protectClient.encryptQuery('$.user.email', {
-      column: jsonbSchema.metadata,
-      table: jsonbSchema,
+      contract: contract.documents.metadata,
       // No queryType - should infer steVecSelector from string
     })
 
@@ -233,8 +219,7 @@ describe('encryptQuery with queryType inference', () => {
     const result = await protectClient.encryptQuery(
       { role: 'admin' },
       {
-        column: jsonbSchema.metadata,
-        table: jsonbSchema,
+        contract: contract.documents.metadata,
         // No queryType - should infer steVecTerm from object
       },
     )
@@ -248,8 +233,7 @@ describe('encryptQuery with queryType inference', () => {
 
   it('infers steVecTerm for array plaintext without queryType', async () => {
     const result = await protectClient.encryptQuery(['admin', 'user'], {
-      column: jsonbSchema.metadata,
-      table: jsonbSchema,
+      contract: contract.documents.metadata,
       // No queryType - should infer steVecTerm from array
     })
 
@@ -263,8 +247,7 @@ describe('encryptQuery with queryType inference', () => {
   it('infers steVecTerm for number plaintext but FFI requires wrapping', async () => {
     // Numbers infer steVecTerm but FFI requires wrapping in object/array
     const result = await protectClient.encryptQuery(42, {
-      column: jsonbSchema.metadata,
-      table: jsonbSchema,
+      contract: contract.documents.metadata,
       // No queryType - infers steVecTerm, FFI rejects with helpful message
     })
 
@@ -274,8 +257,7 @@ describe('encryptQuery with queryType inference', () => {
   it('infers steVecTerm for boolean plaintext but FFI requires wrapping', async () => {
     // Booleans infer steVecTerm but FFI requires wrapping in object/array
     const result = await protectClient.encryptQuery(true, {
-      column: jsonbSchema.metadata,
-      table: jsonbSchema,
+      contract: contract.documents.metadata,
       // No queryType - infers steVecTerm, FFI rejects with helpful message
     })
 
@@ -288,8 +270,7 @@ describe('encryptQuery with queryType inference', () => {
     // Using a number (which would infer steVecTerm) with explicit steVecSelector would also fail
     // So we verify with array + steVecTerm (already tested) and trust unit test coverage for precedence
     const result = await protectClient.encryptQuery([42], {
-      column: jsonbSchema.metadata,
-      table: jsonbSchema,
+      contract: contract.documents.metadata,
       queryType: 'steVecTerm', // Explicit - matches inference but proves explicit path works
     })
 
@@ -305,21 +286,19 @@ describe('encryptQuery batch with queryType inference', () => {
   let protectClient: EncryptionClient
 
   beforeAll(async () => {
-    protectClient = await Encryption({ schemas: [jsonbSchema] })
+    protectClient = await Encryption({ contract })
   })
 
   it('infers queryOp for each term independently in batch', async () => {
     const results = await protectClient.encryptQuery([
       {
         value: '$.user.email', // string → steVecSelector
-        column: jsonbSchema.metadata,
-        table: jsonbSchema,
+        contract: contract.documents.metadata,
         // No queryType
       },
       {
         value: { role: 'admin' }, // object → steVecTerm
-        column: jsonbSchema.metadata,
-        table: jsonbSchema,
+        contract: contract.documents.metadata,
         // No queryType
       },
     ])

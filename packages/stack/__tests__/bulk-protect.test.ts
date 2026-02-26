@@ -1,13 +1,20 @@
 import 'dotenv/config'
 import { LockContext } from '@/identity'
 import { Encryption } from '@/index'
-import { encryptedColumn, encryptedTable } from '@/schema'
+import { defineContract, encrypted } from '@/contract'
 import type { Encrypted } from '@/types'
 import { beforeAll, describe, expect, it } from 'vitest'
 
-const users = encryptedTable('users', {
-  email: encryptedColumn('email').freeTextSearch().equality().orderAndRange(),
-  address: encryptedColumn('address').freeTextSearch(),
+const contract = defineContract({
+  users: {
+    email: encrypted({
+      type: 'string',
+      freeTextSearch: true,
+      equality: true,
+      orderAndRange: true,
+    }),
+    address: encrypted({ type: 'string', freeTextSearch: true }),
+  },
 })
 
 type User = {
@@ -23,7 +30,7 @@ let protectClient: Awaited<ReturnType<typeof Encryption>>
 
 beforeAll(async () => {
   protectClient = await Encryption({
-    schemas: [users],
+    contract,
   })
 })
 
@@ -37,8 +44,7 @@ describe('bulk encryption and decryption', () => {
       ]
 
       const encryptedData = await protectClient.bulkEncrypt(plaintexts, {
-        column: users.email,
-        table: users,
+        contract: contract.users.email,
       })
 
       if (encryptedData.failure) {
@@ -75,8 +81,7 @@ describe('bulk encryption and decryption', () => {
       ]
 
       const encryptedData = await protectClient.bulkEncrypt(plaintexts, {
-        column: users.email,
-        table: users,
+        contract: contract.users.email,
       })
 
       if (encryptedData.failure) {
@@ -100,8 +105,7 @@ describe('bulk encryption and decryption', () => {
       const plaintexts: Array<{ id?: string; plaintext: string }> = []
 
       const encryptedData = await protectClient.bulkEncrypt(plaintexts, {
-        column: users.email,
-        table: users,
+        contract: contract.users.email,
       })
 
       if (encryptedData.failure) {
@@ -122,8 +126,7 @@ describe('bulk encryption and decryption', () => {
       ]
 
       const encryptedData = await protectClient.bulkEncrypt(plaintexts, {
-        column: users.email,
-        table: users,
+        contract: contract.users.email,
       })
 
       if (encryptedData.failure) {
@@ -159,8 +162,7 @@ describe('bulk encryption and decryption', () => {
       ]
 
       const encryptedData = await protectClient.bulkEncrypt(plaintexts, {
-        column: users.email,
-        table: users,
+        contract: contract.users.email,
       })
 
       if (encryptedData.failure) {
@@ -227,8 +229,7 @@ describe('bulk encryption and decryption', () => {
       // Encrypt with lock context
       const encryptedData = await protectClient
         .bulkEncrypt(plaintexts, {
-          column: users.email,
-          table: users,
+          contract: contract.users.email,
         })
         .withLockContext(lockContext.data)
 
@@ -297,8 +298,7 @@ describe('bulk encryption and decryption', () => {
       // Encrypt first value with USER_JWT lock context
       const encryptedData1 = await protectClient
         .bulkEncrypt([{ id: 'user1', plaintext: 'alice@example.com' }], {
-          column: users.email,
-          table: users,
+          contract: contract.users.email,
         })
         .withLockContext(lockContext1.data)
 
@@ -309,8 +309,7 @@ describe('bulk encryption and decryption', () => {
       // Encrypt second value with USER_2_JWT lock context
       const encryptedData2 = await protectClient
         .bulkEncrypt([{ id: 'user2', plaintext: 'bob@example.com' }], {
-          column: users.email,
-          table: users,
+          contract: contract.users.email,
         })
         .withLockContext(lockContext2.data)
 
@@ -358,8 +357,7 @@ describe('bulk encryption and decryption', () => {
 
       // Encrypt
       const encryptedData = await protectClient.bulkEncrypt(originalData, {
-        column: users.email,
-        table: users,
+        contract: contract.users.email,
       })
 
       if (encryptedData.failure) {
@@ -390,8 +388,7 @@ describe('bulk encryption and decryption', () => {
 
       // Encrypt
       const encryptedData = await protectClient.bulkEncrypt(originalData, {
-        column: users.email,
-        table: users,
+        contract: contract.users.email,
       })
 
       if (encryptedData.failure) {

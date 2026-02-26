@@ -390,7 +390,7 @@ To use the protect operators pattern in your own application, set up the encrypt
 
 ```typescript
 import { pgTable, integer, timestamp, varchar } from "drizzle-orm/pg-core"
-import { encryptedType, extractEncryptionSchema, createEncryptionOperators } from "@cipherstash/stack/drizzle"
+import { encryptedType, extractContract, createEncryptionOperators } from "@cipherstash/stack/drizzle"
 import { Encryption } from "@cipherstash/stack"
 
 // 1. Define your Drizzle table with encrypted columns
@@ -409,11 +409,11 @@ const usersTable = pgTable("users", {
   role: varchar("role", { length: 50 }),
 })
 
-// 2. Extract CipherStash schema from the Drizzle table definition
-const usersSchema = extractEncryptionSchema(usersTable)
+// 2. Extract CipherStash contract from the Drizzle table definition
+const contract = extractContract(usersTable)
 
 // 3. Initialize the encryption client
-const encryptionClient = await Encryption({ schemas: [usersSchema] })
+const encryptionClient = await Encryption({ contract })
 
 // 4. Create the auto-encrypting operators
 const encryptionOps = createEncryptionOperators(encryptionClient)

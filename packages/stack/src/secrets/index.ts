@@ -16,7 +16,7 @@
 import type { EncryptionClient } from '@/encryption/index.js'
 import { encryptedToPgComposite } from '@/encryption/helpers'
 import { Encryption } from '@/index'
-import { encryptedColumn, encryptedTable } from '@/schema'
+import { defineContract } from '@/contract'
 import type { Encrypted } from '@/types'
 import { logger } from '@/utils/logger'
 import type { Result } from '@byteslice/result'
@@ -171,8 +171,10 @@ export class Secrets {
   private config: Required<SecretsConfig>
   private readonly apiBaseUrl =
     process.env.STASH_API_URL || 'https://dashboard.cipherstash.com/api/secrets'
-  private readonly secretsSchema = encryptedTable('secrets', {
-    value: encryptedColumn('value'),
+  private readonly secretsContract = defineContract({
+    secrets: {
+      value: { type: 'string' },
+    },
   })
 
   constructor(config: SecretsConfig) {
@@ -212,7 +214,7 @@ export class Secrets {
     logger.debug('Initializing the Secrets client.')
 
     this.encryptionClient = await Encryption({
-      schemas: [this.secretsSchema],
+      contract: this.secretsContract,
       config: {
         workspaceCrn: this.config.workspaceCRN,
         clientId: this.config.clientId,
@@ -337,8 +339,7 @@ export class Secrets {
 
     // Encrypt the value locally
     const encryptResult = await this.encryptionClient.encrypt(value, {
-      column: this.secretsSchema.value,
-      table: this.secretsSchema,
+      contract: this.secretsContract.secrets.value,
     })
 
     if (encryptResult.failure) {

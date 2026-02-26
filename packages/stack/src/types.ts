@@ -1,4 +1,11 @@
 import type {
+  ContractColumnRef,
+  ContractTableRef,
+  ColumnConfig,
+  TableColumns,
+  AnyResolvedContract,
+} from '@/contract'
+import type {
   EncryptedColumn,
   EncryptedTable,
   EncryptedTableColumn,
@@ -78,10 +85,8 @@ export type ClientConfig = {
   keyset?: KeysetIdentifier
 }
 
-type AtLeastOneCsTable<T> = [T, ...T[]]
-
 export type EncryptionClientConfig = {
-  schemas: AtLeastOneCsTable<EncryptedTable<EncryptedTableColumn>>
+  contract: AnyResolvedContract
   config?: ClientConfig
 }
 
@@ -90,14 +95,10 @@ export type EncryptionClientConfig = {
 // ---------------------------------------------------------------------------
 
 /**
- * Options for single-value encrypt operations.
- * Use a column from your table schema (from {@link encryptedColumn}) or a nested
- * field (from {@link encryptedField}) as the target for encryption.
+ * Options for single-value encrypt operations using a contract column reference.
  */
 export type EncryptOptions = {
-  /** The column or nested field to encrypt into. From {@link EncryptedColumn} or {@link EncryptedField}. */
-  column: EncryptedColumn | EncryptedField
-  table: EncryptedTable<EncryptedTableColumn>
+  contract: ContractColumnRef
 }
 
 /** Format for encrypted query/search term return values */
@@ -108,8 +109,7 @@ export type EncryptedReturnType =
 
 export type SearchTerm = {
   value: JsPlaintext
-  column: EncryptedColumn
-  table: EncryptedTable<EncryptedTableColumn>
+  contract: ContractColumnRef
   returnType?: EncryptedReturnType
 }
 
@@ -140,29 +140,18 @@ export type DecryptedFields<T> = {
 export type Decrypted<T> = OtherFields<T> & DecryptedFields<T>
 
 /**
- * Maps a plaintext model type to its encrypted form using the table schema.
+ * Maps a plaintext model type to its encrypted form using the contract column definitions.
  *
- * Fields whose keys match columns defined in `S` become `Encrypted`;
- * all other fields retain their original types from `T`.
+ * Fields whose keys match columns defined in `C` (leaf {@link ColumnConfig} nodes)
+ * become `Encrypted`; all other fields retain their original types from `T`.
  *
- * When `S` is the widened `EncryptedTableColumn` (e.g. when a user passes an
- * explicit `<User>` type argument without specifying `S`), the type degrades
- * gracefully to `T` — preserving backward compatibility.
- *
- * @typeParam T - The plaintext model type (e.g. `{ id: string; email: string }`)
- * @typeParam S - The table schema column definition, inferred from the `table` argument
- *
- * @example
- * ```typescript
- * type User = { id: string; email: string }
- * // With a schema that defines `email`:
- * type Encrypted = EncryptedFromSchema<User, { email: EncryptedColumn }>
- * // => { id: string; email: Encrypted }
- * ```
+ * When `C` is the widened `TableColumns` (e.g. when a user passes an explicit
+ * `<User>` type argument without specifying `C`), the type degrades gracefully
+ * to `T` — preserving backward compatibility.
  */
-export type EncryptedFromSchema<T, S extends EncryptedTableColumn> = {
-  [K in keyof T]: [K] extends [keyof S]
-    ? [S[K & keyof S]] extends [EncryptedColumn | EncryptedField]
+export type EncryptedFromContract<T, C extends TableColumns> = {
+  [K in keyof T]: [K] extends [keyof C]
+    ? [C[K & keyof C]] extends [ColumnConfig]
       ? null extends T[K] ? Encrypted | null : Encrypted
       : T[K]
     : T[K]
@@ -242,15 +231,42 @@ export const queryTypeToQueryOp: Partial<Record<QueryTypeName, QueryOpName>> = {
 }
 
 /** @internal */
-export type QueryTermBase = {
+export type EncryptQueryOptions = {
+  contract: ContractColumnRef
+  queryType?: QueryTypeName
+  returnType?: EncryptedReturnType
+}
+
+export type ScalarQueryTerm = {
+  value: JsPlaintext
+  contract: ContractColumnRef
+  queryType?: QueryTypeName
+  returnType?: EncryptedReturnType
+}
+
+// ---------------------------------------------------------------------------
+// Internal types used by operation classes
+// ---------------------------------------------------------------------------
+
+/** @internal Extracted column/table pair from a ContractColumnRef */
+export type InternalEncryptOptions = {
+  column: EncryptedColumn | EncryptedField
+  table: EncryptedTable<EncryptedTableColumn>
+}
+
+/** @internal Extracted query options from contract ref */
+export type InternalEncryptQueryOptions = {
   column: EncryptedColumn
   table: EncryptedTable<EncryptedTableColumn>
   queryType?: QueryTypeName
   returnType?: EncryptedReturnType
 }
 
-export type EncryptQueryOptions = QueryTermBase
-
-export type ScalarQueryTerm = QueryTermBase & {
+/** @internal Extracted scalar query term for batch operations */
+export type InternalScalarQueryTerm = {
   value: JsPlaintext
+  column: EncryptedColumn
+  table: EncryptedTable<EncryptedTableColumn>
+  queryType?: QueryTypeName
+  returnType?: EncryptedReturnType
 }

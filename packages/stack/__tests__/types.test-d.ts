@@ -13,12 +13,19 @@ import type {
   DecryptedFields,
   Encrypted,
   EncryptedFields,
-  EncryptedFromSchema,
+  EncryptedFromContract,
   EncryptedReturnType,
   KeysetIdentifier,
   OtherFields,
   QueryTypeName,
 } from '@/types'
+import { defineContract, encrypted } from '@/contract'
+import type {
+  ContractColumnRef,
+  ContractTableRef,
+  ColumnConfig,
+  TableColumns,
+} from '@/contract'
 import type { EncryptionClient } from '@/encryption'
 
 describe('Type inference', () => {
@@ -115,10 +122,10 @@ describe('Type inference', () => {
     expectTypeOf<Enc>().toMatchTypeOf<{ email: Encrypted }>()
   })
 
-  it('EncryptedFromSchema maps schema fields to Encrypted, leaves others unchanged', () => {
+  it('EncryptedFromContract maps contract fields to Encrypted, leaves others unchanged', () => {
     type User = { id: string; email: string; createdAt: Date }
-    type Schema = { email: EncryptedColumn }
-    type Result = EncryptedFromSchema<User, Schema>
+    type Cols = { email: { type: 'string'; equality: true } }
+    type Result = EncryptedFromContract<User, Cols>
     expectTypeOf<Result>().toEqualTypeOf<{
       id: string
       email: Encrypted
@@ -126,18 +133,18 @@ describe('Type inference', () => {
     }>()
   })
 
-  it('EncryptedFromSchema with widened EncryptedTableColumn degrades to T', () => {
+  it('EncryptedFromContract with widened TableColumns degrades to T', () => {
     type User = { id: string; email: string }
-    type Result = EncryptedFromSchema<User, EncryptedTableColumn>
-    // When S is the wide EncryptedTableColumn, S[K] is the full union, not EncryptedColumn alone.
-    // The conditional [S[K]] extends [EncryptedColumn | EncryptedField] fails, so fields stay as-is.
+    type Result = EncryptedFromContract<User, TableColumns>
+    // When C is the wide TableColumns, C[K] is the full union, not ColumnConfig alone.
+    // The conditional [C[K]] extends [ColumnConfig] fails, so fields stay as-is.
     expectTypeOf<Result>().toEqualTypeOf<{ id: string; email: string }>()
   })
 
-  it('Decrypted reverses EncryptedFromSchema correctly', () => {
+  it('Decrypted reverses EncryptedFromContract correctly', () => {
     type User = { id: string; email: string; createdAt: Date }
-    type Schema = { email: EncryptedColumn }
-    type EncryptedUser = EncryptedFromSchema<User, Schema>
+    type Cols = { email: { type: 'string'; equality: true } }
+    type EncryptedUser = EncryptedFromContract<User, Cols>
     type DecryptedUser = Decrypted<EncryptedUser>
     expectTypeOf<DecryptedUser>().toMatchTypeOf<{
       id: string
@@ -146,24 +153,26 @@ describe('Type inference', () => {
     }>()
   })
 
-  it('encryptModel infers schema-aware return types from table argument', async () => {
-    const users = encryptedTable('users', {
-      name: encryptedColumn('name').equality(),
-      email: encryptedColumn('email').freeTextSearch(),
+  it('encryptModel infers contract-aware return types from table argument', async () => {
+    const contract = defineContract({
+      users: {
+        name: encrypted({ type: 'string', equality: true }),
+        email: encrypted({ type: 'string', freeTextSearch: true }),
+      },
     })
 
     const client = {} as EncryptionClient
 
     const result = await client.encryptModel(
       { name: 'John', email: 'john@example.com', age: 30 },
-      users,
+      contract.users,
     )
 
     if (!result.failure) {
-      // Schema fields should be Encrypted
+      // Contract fields should be Encrypted
       expectTypeOf(result.data.name).toEqualTypeOf<Encrypted>()
       expectTypeOf(result.data.email).toEqualTypeOf<Encrypted>()
-      // Non-schema fields should keep their original type
+      // Non-contract fields should keep their original type
       expectTypeOf(result.data.age).toEqualTypeOf<number>()
     }
   })

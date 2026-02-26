@@ -21,24 +21,25 @@
 **Encryption**
 
 ```typescript
-import { Encryption, encryptedTable, encryptedColumn } from "@cipherstash/stack";
+import { Encryption, defineContract, encrypted } from "@cipherstash/stack"
 
-// 1. Define your schema
-const users = encryptedTable("users", {
-  email: encryptedColumn("email").equality().freeTextSearch(),
-});
+// 1. Define your contract
+const contract = defineContract({
+  users: {
+    email: encrypted({ type: "string", equality: true, freeTextSearch: true }),
+  },
+})
 
 // 2. Initialize the client
-const client = await Encryption({ schemas: [users] });
+const client = await Encryption({ contract })
 
 // 3. Encrypt
 const { data: ciphertext } = await client.encrypt("secret@example.com", {
-  column: users.email,
-  table: users,
-});
+  contract: contract.users.email,
+})
 
 // 4. Decrypt
-const { data: plaintext } = await client.decrypt(ciphertext);
+const { data: plaintext } = await client.decrypt(ciphertext)
 // => "secret@example.com"
 ```
 
@@ -77,7 +78,7 @@ bun add @cipherstash/stack
 ## Features
 
 - **[Searchable encryption](https://docs.cipherstash.com/docs/platform/searchable-encryption)**: query encrypted data with equality, free text search, range, and [JSONB queries](https://docs.cipherstash.com/docs/encryption/searchable-encryption#jsonb-queries-with-searchablejson).
-- **[Type-safe schema](https://docs.cipherstash.com/docs/encryption/schema)**: define encrypted tables and columns with `encryptedTable` / `encryptedColumn`
+- **[Type-safe contracts](https://docs.cipherstash.com/docs/encryption/schema)**: define encrypted tables and columns declaratively with `defineContract`
 - **[Model & bulk operations](https://docs.cipherstash.com/docs/encryption/encrypt-decrypt#model-operations)**: encrypt and decrypt entire objects or batches with `encryptModel` / `bulkEncryptModels`.
 - **[Identity-aware encryption](https://docs.cipherstash.com/docs/encryption/identity)**: bind encryption to user identity with lock contexts for policy-based access control.
 - **[Secrets management](https://docs.cipherstash.com/docs/secrets)**: store and retrieve encrypted secrets via the Secrets SDK and CLI.

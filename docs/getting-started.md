@@ -5,7 +5,7 @@ This getting started guide steps you through:
 1. Installing and configuring CipherStash Encryption in a standalone project
 2. Encrypting, searching, and decrypting data in a PostgreSQL database
 
-> [!IMPORTANT] 
+> [!IMPORTANT]
 > **Prerequisites:** Before you start you need to have this software installed:
 >
 > - [Node.js](https://nodejs.org/)
@@ -17,7 +17,7 @@ This getting started guide steps you through:
 - [Step 0: Basic file structure](#step-0-basic-file-structure)
 - [Step 1: Install @cipherstash/stack](#step-1-install-cipherstashstack)
 - [Step 2: Set up credentials](#step-2-set-up-credentials)
-- [Step 3: Define your schema](#step-3-define-your-schema)
+- [Step 3: Define your contract](#step-3-define-your-contract)
 - [Step 4: Initialize the Encryption client](#step-4-initialize-the-encryption-client)
 - [Step 5: Encrypt data](#step-5-encrypt-data)
 - [Step 6: Decrypt data](#step-6-decrypt-data)
@@ -26,14 +26,14 @@ This getting started guide steps you through:
 ## Step 0: Basic file structure
 
 The following is the basic file structure of the standalone project for this getting started guide.
-In the `src/protect/` directory, we have the table definition in `schema.ts` and the Encryption client in `index.ts`.
+In the `src/protect/` directory, we have the contract definition in `contract.ts` and the Encryption client in `index.ts`.
 
 ```
 📦 <project root>
  ├ 📂 src
  │   ├ 📂 protect
  │   │  ├ 📜 index.ts
- │   │  └ 📜 schema.ts
+ │   │  └ 📜 contract.ts
  │   └ 📜 index.ts
  ├ 📜 .env
  ├ 📜 cipherstash.toml
@@ -65,7 +65,7 @@ yarn add @cipherstash/stack
 pnpm add @cipherstash/stack
 ```
 
-> [!NOTE] 
+> [!NOTE]
 > **You need to opt out of bundling when using `@cipherstash/stack`.**
 >
 > `@cipherstash/stack` uses Node.js specific features and requires the use of the [native Node.js `require`](https://nodejs.org/api/modules.html#requireid).
@@ -91,67 +91,73 @@ CS_CLIENT_ACCESS_KEY= # The API key used for authenticating with the CipherStash
 
 Save these environment variables to a `.env` file in your project.
 
-## Step 3: Define your schema
+## Step 3: Define your contract
 
-CipherStash Encryption uses a schema to define the tables and columns that you want to encrypt and decrypt.
+CipherStash Encryption uses a contract to define the tables and columns that you want to encrypt and decrypt.
 
-To define your tables and columns, add the following to `src/protect/schema.ts`:
+To define your tables and columns, add the following to `src/protect/contract.ts`:
 
 ```ts
-import { encryptedTable, encryptedColumn } from "@cipherstash/stack/schema";
+import { defineContract, encrypted } from "@cipherstash/stack";
 
-export const users = encryptedTable("users", {
-  email: encryptedColumn("email"),
-});
-
-export const orders = encryptedTable("orders", {
-  address: encryptedColumn("address"),
+export const contract = defineContract({
+  users: {
+    email: encrypted({ type: 'string' }),
+  },
+  orders: {
+    address: encrypted({ type: 'string' }),
+  },
 });
 ```
 
 **Searchable encryption:**
 
-If you want to search encrypted data in your PostgreSQL database, you must declare the indexes in schema in `src/protect/schema.ts`:
+If you want to search encrypted data in your PostgreSQL database, you must declare the indexes in the contract in `src/protect/contract.ts`:
 
 ```ts
-import { encryptedTable, encryptedColumn } from "@cipherstash/stack/schema";
+import { defineContract, encrypted } from "@cipherstash/stack";
 
-export const users = encryptedTable("users", {
-  email: encryptedColumn("email").freeTextSearch().equality().orderAndRange(),
-});
-
-export const orders = encryptedTable("orders", {
-  address: encryptedColumn("address"),
+export const contract = defineContract({
+  users: {
+    email: encrypted({
+      type: 'string',
+      freeTextSearch: true,
+      equality: true,
+      orderAndRange: true,
+    }),
+  },
+  orders: {
+    address: encrypted({ type: 'string' }),
+  },
 });
 ```
 
-Read more about [defining your schema](./reference/schema.md).
+Read more about [defining your contract](./reference/schema.md).
 
 ## Step 4: Initialize the Encryption client
 
-To import the `Encryption` function and initialize a client with your defined schema, add the following to `src/protect/index.ts`:
+To import the `Encryption` function and initialize a client with your defined contract, add the following to `src/protect/index.ts`:
 
 ```ts
 import { Encryption } from "@cipherstash/stack";
-import { users, orders } from "./schema";
+import { contract } from "./contract";
 
-export const client = await Encryption({ schemas: [users, orders] });
+export const client = await Encryption({ contract });
 ```
 
 ## Step 5: Encrypt data
 
 The `encrypt` method on the Encryption client is used to encrypt data.
-`encrypt` takes a plaintext string, and an object with the table and column as parameters.
+`encrypt` takes a plaintext string, and an object with the contract column reference as parameters.
 
 Start encrypting data by adding this to `src/index.ts`:
 
 ```typescript
-import { users } from "./protect/schema";
+import { contract } from "./protect/contract";
 import { client } from "./protect";
 
 const encryptResult = await client.encrypt("secret@squirrel.example", {
-  column: users.email,
-  table: users,
+  contract: contract.users.email,
 });
 
 if (encryptResult.failure) {

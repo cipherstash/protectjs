@@ -3,7 +3,7 @@
  *
  * This module exposes only the public types from the internal types module.
  * Internal helpers (`queryTypeToFfi`, `queryTypeToQueryOp`, `FfiIndexTypeName`,
- * `QueryTermBase`) are excluded.
+ * `InternalEncryptOptions`, etc.) are excluded.
  */
 
 // Core types
@@ -35,6 +35,7 @@ export type {
   OtherFields,
   DecryptedFields,
   Decrypted,
+  EncryptedFromContract,
 } from '@/types'
 
 // Bulk operations

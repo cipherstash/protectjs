@@ -195,7 +195,7 @@ export function getEncryptedColumnConfig(
  * Inspects columns created with {@link encryptedType} and builds the equivalent
  * `encryptedTable` / `encryptedColumn` schema automatically.
  */
-export { extractEncryptionSchema } from './schema-extraction.js'
+export { extractEncryptionSchema, extractContract } from './schema-extraction.js'
 
 /**
  * Create Drizzle query operators (`eq`, `lt`, `gt`, etc.) that work with

@@ -1,12 +1,14 @@
 import 'dotenv/config'
 import { LockContext } from '@/identity'
 import { Encryption } from '@/index'
-import { encryptedColumn, encryptedTable } from '@/schema'
+import { defineContract, encrypted } from '@/contract'
 import { beforeAll, describe, expect, it } from 'vitest'
 
-const users = encryptedTable('users', {
-  email: encryptedColumn('email').freeTextSearch().equality().orderAndRange(),
-  address: encryptedColumn('address').freeTextSearch(),
+const contract = defineContract({
+  users: {
+    email: encrypted({ type: 'string', freeTextSearch: true, equality: true, orderAndRange: true }),
+    address: encrypted({ type: 'string', freeTextSearch: true }),
+  },
 })
 
 type User = {
@@ -22,7 +24,7 @@ let protectClient: Awaited<ReturnType<typeof Encryption>>
 
 beforeAll(async () => {
   protectClient = await Encryption({
-    schemas: [users],
+    contract,
   })
 })
 
@@ -46,8 +48,7 @@ describe('encryption and decryption with lock context', () => {
 
     const ciphertext = await protectClient
       .encrypt(email, {
-        column: users.email,
-        table: users,
+        contract: contract.users.email,
       })
       .withLockContext(lockContext.data)
 
@@ -89,7 +90,7 @@ describe('encryption and decryption with lock context', () => {
 
     // Encrypt the model with lock context
     const encryptedModel = await protectClient
-      .encryptModel(decryptedModel, users)
+      .encryptModel(decryptedModel, contract.users)
       .withLockContext(lockContext.data)
 
     if (encryptedModel.failure) {
@@ -134,7 +135,7 @@ describe('encryption and decryption with lock context', () => {
 
     // Encrypt the model with lock context
     const encryptedModel = await protectClient
-      .encryptModel(decryptedModel, users)
+      .encryptModel(decryptedModel, contract.users)
       .withLockContext(lockContext.data)
 
     if (encryptedModel.failure) {
@@ -178,7 +179,7 @@ describe('encryption and decryption with lock context', () => {
 
     // Encrypt the models with lock context
     const encryptedModels = await protectClient
-      .bulkEncryptModels(decryptedModels, users)
+      .bulkEncryptModels(decryptedModels, contract.users)
       .withLockContext(lockContext.data)
 
     if (encryptedModels.failure) {

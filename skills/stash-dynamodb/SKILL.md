@@ -29,34 +29,38 @@ CipherStash encrypts each attribute into two DynamoDB attributes:
 | Original Attribute | Stored As | Purpose |
 |---|---|---|
 | `email` | `email__source` | Encrypted ciphertext |
-| `email` | `email__hmac` | HMAC for equality lookups (only if `.equality()` index is set) |
+| `email` | `email__hmac` | HMAC for equality lookups (only if `equality: true` is set) |
 
 Non-encrypted attributes pass through unchanged. On decryption, the `__source` and `__hmac` attributes are recombined back into the original attribute name with the plaintext value.
 
 ## Setup
 
-### 1. Define Encrypted Schema
+### 1. Define Contract
 
 ```typescript
-import { encryptedTable, encryptedColumn, encryptedField } from "@cipherstash/stack/schema"
+import { defineContract, encrypted } from "@cipherstash/stack"
 
-const users = encryptedTable("users", {
-  email: encryptedColumn("email").equality(),   // searchable via HMAC
-  name: encryptedColumn("name"),                // encrypt-only, no search
-  phone: encryptedColumn("phone"),              // encrypt-only
-  metadata: encryptedColumn("metadata").dataType("json"), // encrypted JSON
+const contract = defineContract({
+  users: {
+    email: encrypted({ type: "string", equality: true }),   // searchable via HMAC
+    name: encrypted({ type: "string" }),                     // encrypt-only, no search
+    phone: encrypted({ type: "string" }),                    // encrypt-only
+    metadata: encrypted({ type: "json" }),                   // encrypted JSON
+  },
 })
 ```
 
-Nested objects are supported with `encryptedField`:
+Nested objects are supported directly in the contract:
 
 ```typescript
-const users = encryptedTable("users", {
-  email: encryptedColumn("email").equality(),
-  profile: {
-    ssn: encryptedField("profile.ssn"),
-    address: {
-      street: encryptedField("profile.address.street"),
+const contract = defineContract({
+  users: {
+    email: encrypted({ type: "string", equality: true }),
+    profile: {
+      ssn: encrypted({ type: "string" }),
+      address: {
+        street: encrypted({ type: "string" }),
+      },
     },
   },
 })
@@ -73,7 +77,7 @@ import { encryptedDynamoDB } from "@cipherstash/stack/dynamodb"
 const dynamoClient = new DynamoDBClient({ region: "us-east-1" })
 const docClient = DynamoDBDocumentClient.from(dynamoClient)
 
-const encryptionClient = await Encryption({ schemas: [users] })
+const encryptionClient = await Encryption({ contract })
 const dynamo = encryptedDynamoDB({ encryptionClient })
 ```
 
@@ -105,10 +109,10 @@ const user = {
   pk: "user#1",
   email: "alice@example.com",  // will be encrypted
   name: "Alice Smith",         // will be encrypted
-  role: "admin",               // not in schema, passes through
+  role: "admin",               // not in contract, passes through
 }
 
-const result = await dynamo.encryptModel(user, users)
+const result = await dynamo.encryptModel(user, contract.users)
 
 if (result.failure) {
   console.error("Encryption failed:", result.failure.message)
@@ -138,7 +142,7 @@ const items = [
   { pk: "user#2", email: "bob@example.com", name: "Bob" },
 ]
 
-const result = await dynamo.bulkEncryptModels(items, users)
+const result = await dynamo.bulkEncryptModels(items, contract.users)
 
 if (!result.failure) {
   await docClient.send(new BatchWriteCommand({
@@ -163,7 +167,7 @@ const getResult = await docClient.send(new GetCommand({
   Key: { pk: "user#1" },
 }))
 
-const result = await dynamo.decryptModel(getResult.Item, users)
+const result = await dynamo.decryptModel(getResult.Item, contract.users)
 
 if (!result.failure) {
   console.log(result.data)
@@ -186,7 +190,7 @@ const batchResult = await docClient.send(new BatchGetCommand({
 
 const result = await dynamo.bulkDecryptModels(
   batchResult.Responses?.Users ?? [],
-  users,
+  contract.users,
 )
 
 if (!result.failure) {
@@ -210,8 +214,7 @@ import { QueryCommand } from "@aws-sdk/lib-dynamodb"
 // 1. Encrypt the search value to get the HMAC
 const queryResult = await encryptionClient.encryptQuery([{
   value: "alice@example.com",
-  column: users.email,
-  table: users,
+  contract: contract.users.email,
   queryType: "equality",
 }])
 
@@ -231,7 +234,7 @@ const result = await docClient.send(new QueryCommand({
 }))
 
 // 3. Decrypt the results
-const decrypted = await dynamo.bulkDecryptModels(result.Items ?? [], users)
+const decrypted = await dynamo.bulkDecryptModels(result.Items ?? [], contract.users)
 ```
 
 ### Encrypted Sort Key
@@ -247,7 +250,7 @@ const result = await docClient.send(new GetCommand({
   },
 }))
 
-const decrypted = await dynamo.decryptModel(result.Item, users)
+const decrypted = await dynamo.decryptModel(result.Item, contract.users)
 ```
 
 ### Encrypted Attribute in GSI
@@ -266,7 +269,7 @@ const result = await docClient.send(new QueryCommand({
 }))
 
 if (result.Items?.length) {
-  const decrypted = await dynamo.decryptModel(result.Items[0], users)
+  const decrypted = await dynamo.decryptModel(result.Items[0], contract.users)
 }
 ```
 
@@ -276,7 +279,7 @@ All operations support `.audit()` chaining for audit metadata:
 
 ```typescript
 const result = await dynamo
-  .encryptModel(user, users)
+  .encryptModel(user, contract.users)
   .audit({
     metadata: {
       sub: "user-id-123",
@@ -295,7 +298,7 @@ For each encrypted field with an equality index, two attributes are stored:
 - `{field}__source` - The encrypted ciphertext (binary/string)
 - `{field}__hmac` - Deterministic HMAC for equality lookups
 
-Fields without `.equality()` only get `__source` (no HMAC, so they can't be queried).
+Fields without `equality: true` only get `__source` (no HMAC, so they can't be queried).
 
 ### Key Schema Design
 
@@ -322,7 +325,7 @@ Fields without `.equality()` only get `__source` (no HMAC, so they can't be quer
 All operations return `Result<T, EncryptedDynamoDBError>` with either `data` or `failure`:
 
 ```typescript
-const result = await dynamo.encryptModel(user, users)
+const result = await dynamo.encryptModel(user, contract.users)
 
 if (result.failure) {
   console.error(result.failure.message)
@@ -352,10 +355,10 @@ const dynamo = encryptedDynamoDB({
 
 | Method | Signature | Returns |
 |---|---|---|
-| `encryptModel` | `(item: T, table)` | `EncryptModelOperation<EncryptedFromSchema<T, S>>` |
-| `bulkEncryptModels` | `(items: T[], table)` | `BulkEncryptModelsOperation<EncryptedFromSchema<T, S>>` |
-| `decryptModel` | `(item, table)` | `DecryptModelOperation<T>` |
-| `bulkDecryptModels` | `(items[], table)` | `BulkDecryptModelsOperation<T>` |
+| `encryptModel` | `(item: T, contractTableRef)` | `EncryptModelOperation<EncryptedFromContract<T, S>>` |
+| `bulkEncryptModels` | `(items: T[], contractTableRef)` | `BulkEncryptModelsOperation<EncryptedFromContract<T, S>>` |
+| `decryptModel` | `(item, contractTableRef)` | `DecryptModelOperation<T>` |
+| `bulkDecryptModels` | `(items[], contractTableRef)` | `BulkDecryptModelsOperation<T>` |
 
 All operations are thenable (awaitable) and support `.audit({ metadata })` chaining.
 
@@ -366,8 +369,7 @@ Use the encryption client directly (not the DynamoDB helper):
 ```typescript
 const result = await encryptionClient.encryptQuery([{
   value: "search-value",
-  column: schema.fieldName,
-  table: schema,
+  contract: contract.tableName.fieldName,
   queryType: "equality",
 }])
 
@@ -379,25 +381,26 @@ const hmac = result.data[0]?.hm  // Use this in DynamoDB key conditions
 ```typescript
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb"
 import { DynamoDBDocumentClient, PutCommand, GetCommand, QueryCommand } from "@aws-sdk/lib-dynamodb"
-import { Encryption } from "@cipherstash/stack"
+import { Encryption, defineContract, encrypted } from "@cipherstash/stack"
 import { encryptedDynamoDB } from "@cipherstash/stack/dynamodb"
-import { encryptedTable, encryptedColumn } from "@cipherstash/stack/schema"
 
-// Schema
-const users = encryptedTable("users", {
-  email: encryptedColumn("email").equality(),
-  name: encryptedColumn("name"),
+// Contract
+const contract = defineContract({
+  users: {
+    email: encrypted({ type: "string", equality: true }),
+    name: encrypted({ type: "string" }),
+  },
 })
 
 // Clients
 const dynamoClient = new DynamoDBClient({ region: "us-east-1" })
 const docClient = DynamoDBDocumentClient.from(dynamoClient)
-const encryptionClient = await Encryption({ schemas: [users] })
+const encryptionClient = await Encryption({ contract })
 const dynamo = encryptedDynamoDB({ encryptionClient })
 
 // Write
 const user = { pk: "user#1", email: "alice@example.com", name: "Alice" }
-const encResult = await dynamo.encryptModel(user, users)
+const encResult = await dynamo.encryptModel(user, contract.users)
 if (!encResult.failure) {
   await docClient.send(new PutCommand({ TableName: "Users", Item: encResult.data }))
 }
@@ -407,7 +410,7 @@ const getResult = await docClient.send(new GetCommand({
   TableName: "Users",
   Key: { pk: "user#1" },
 }))
-const decResult = await dynamo.decryptModel(getResult.Item, users)
+const decResult = await dynamo.decryptModel(getResult.Item, contract.users)
 if (!decResult.failure) {
   console.log(decResult.data.email) // "alice@example.com"
 }
@@ -415,8 +418,7 @@ if (!decResult.failure) {
 // Query by encrypted email (via HMAC)
 const queryEnc = await encryptionClient.encryptQuery([{
   value: "alice@example.com",
-  column: users.email,
-  table: users,
+  contract: contract.users.email,
   queryType: "equality",
 }])
 const hmac = queryEnc.data[0]?.hm
@@ -428,5 +430,5 @@ const queryResult = await docClient.send(new QueryCommand({
   ExpressionAttributeValues: { ":e": hmac },
 }))
 
-const decrypted = await dynamo.bulkDecryptModels(queryResult.Items ?? [], users)
+const decrypted = await dynamo.bulkDecryptModels(queryResult.Items ?? [], contract.users)
 ```

@@ -107,22 +107,20 @@ The generic type parameter `<TData>` sets the TypeScript type for the decrypted 
 
 ## Initialization
 
-### 1. Extract Schema from Drizzle Table
+### 1. Extract Contract from Drizzle Table
 
 ```typescript
-import { extractEncryptionSchema, createEncryptionOperators } from "@cipherstash/stack/drizzle"
+import { extractContract, createEncryptionOperators } from "@cipherstash/stack/drizzle"
 import { Encryption } from "@cipherstash/stack"
 
-// Convert Drizzle table definition to CipherStash schema
-const usersSchema = extractEncryptionSchema(usersTable)
+// Convert Drizzle table definition to CipherStash contract
+const contract = extractContract(usersTable)
 ```
 
 ### 2. Initialize Encryption Client
 
 ```typescript
-const encryptionClient = await Encryption({
-  schemas: [usersSchema],
-})
+const encryptionClient = await Encryption({ contract })
 ```
 
 ### 3. Create Query Operators
@@ -148,7 +146,7 @@ Encrypt models before inserting:
 // Single insert
 const encrypted = await encryptionClient.encryptModel(
   { email: "alice@example.com", age: 30, role: "admin" },
-  usersSchema,
+  contract.users,
 )
 if (!encrypted.failure) {
   await db.insert(usersTable).values(encrypted.data)
@@ -160,7 +158,7 @@ const encrypted = await encryptionClient.bulkEncryptModels(
     { email: "alice@example.com", age: 30, role: "admin" },
     { email: "bob@example.com", age: 25, role: "user" },
   ],
-  usersSchema,
+  contract.users,
 )
 if (!encrypted.failure) {
   await db.insert(usersTable).values(encrypted.data)
@@ -392,7 +390,7 @@ import { eq } from "drizzle-orm"
 import { drizzle } from "drizzle-orm/postgres-js"
 import postgres from "postgres"
 import { pgTable, integer, timestamp, varchar } from "drizzle-orm/pg-core"
-import { encryptedType, extractEncryptionSchema, createEncryptionOperators } from "@cipherstash/stack/drizzle"
+import { encryptedType, extractContract, createEncryptionOperators } from "@cipherstash/stack/drizzle"
 import { Encryption } from "@cipherstash/stack"
 
 // Schema
@@ -405,8 +403,8 @@ const usersTable = pgTable("users", {
 })
 
 // Init
-const usersSchema = extractEncryptionSchema(usersTable)
-const encryptionClient = await Encryption({ schemas: [usersSchema] })
+const contract = extractContract(usersTable)
+const encryptionClient = await Encryption({ contract })
 const encryptionOps = createEncryptionOperators(encryptionClient)
 const db = drizzle({ client: postgres(process.env.DATABASE_URL!) })
 
@@ -415,7 +413,7 @@ app.use(express.json())
 
 // Create user
 app.post("/users", async (req, res) => {
-  const encrypted = await encryptionClient.encryptModel(req.body, usersSchema)
+  const encrypted = await encryptionClient.encryptModel(req.body, contract.users)
   if (encrypted.failure) return res.status(500).json({ error: encrypted.failure.message })
 
   const [user] = await db.insert(usersTable).values(encrypted.data).returning()

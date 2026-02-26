@@ -1,5 +1,5 @@
+import type { ContractTableRef } from '@/contract'
 import type { EncryptionClient } from '@/encryption'
-import type { EncryptedTable, EncryptedTableColumn } from '@/schema'
 import { logger } from '@/utils/logger'
 import { type Result, withResult } from '@byteslice/result'
 import { deepClone, handleError, toEncryptedDynamoItem } from '../helpers'
@@ -14,18 +14,18 @@ export class EncryptModelOperation<
 > extends DynamoDBOperation<T> {
   private encryptionClient: EncryptionClient
   private item: T
-  private table: EncryptedTable<EncryptedTableColumn>
+  private tableRef: ContractTableRef
 
   constructor(
     encryptionClient: EncryptionClient,
     item: T,
-    table: EncryptedTable<EncryptedTableColumn>,
+    tableRef: ContractTableRef,
     options?: DynamoDBOperationOptions,
   ) {
     super(options)
     this.encryptionClient = encryptionClient
     this.item = item
-    this.table = table
+    this.tableRef = tableRef
   }
 
   public async execute(): Promise<Result<T, EncryptedDynamoDBError>> {
@@ -33,12 +33,10 @@ export class EncryptModelOperation<
     return await withResult(
       async () => {
         const encryptResult = await this.encryptionClient
-          .encryptModel(deepClone(this.item), this.table)
+          .encryptModel(deepClone(this.item), this.tableRef)
           .audit(this.getAuditData())
 
         if (encryptResult.failure) {
-          // Create an Error object that preserves the FFI error code
-          // This is necessary because withResult's ensureError wraps non-Error objects
           const error = new Error(encryptResult.failure.message) as Error & {
             code?: string
           }
@@ -47,7 +45,7 @@ export class EncryptModelOperation<
         }
 
         const data = deepClone(encryptResult.data)
-        const encryptedAttrs = Object.keys(this.table.build().columns)
+        const encryptedAttrs = Object.keys(this.tableRef._table.build().columns)
 
         return toEncryptedDynamoItem(data, encryptedAttrs) as T
       },

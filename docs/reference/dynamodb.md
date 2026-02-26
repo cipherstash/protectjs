@@ -1,6 +1,6 @@
 # DynamoDB integration
 
-CipherStash Encryption provides a DynamoDB helper that transparently encrypts and decrypts items according to your encryption schema.
+CipherStash Encryption provides a DynamoDB helper that transparently encrypts and decrypts items according to your encryption contract.
 The helper wraps your existing DynamoDB workflow — you handle the DynamoDB client calls, and the helper handles encryption.
 
 ## Table of contents
@@ -38,11 +38,11 @@ CipherStash encrypts each attribute into two DynamoDB attributes:
 | Original Attribute | Stored As | Purpose |
 |---|---|---|
 | `email` | `email__source` | Encrypted ciphertext |
-| `email` | `email__hmac` | HMAC for equality lookups (only if `.equality()` index is set) |
+| `email` | `email__hmac` | HMAC for equality lookups (only if `equality` index is set) |
 
 Non-encrypted attributes pass through unchanged. On decryption, the `__source` and `__hmac` attributes are recombined back into the original attribute name with the plaintext value.
 
-Fields without `.equality()` only get `__source` (no HMAC, so they can't be queried).
+Fields without `equality` only get `__source` (no HMAC, so they can't be queried).
 
 ## Installation
 
@@ -60,21 +60,22 @@ import { encryptedDynamoDB } from '@cipherstash/stack/dynamodb'
 
 ## Setting up encryptedDynamoDB
 
-Create an encryption schema and initialize the helper:
+Create an encryption contract and initialize the helper:
 
 ```typescript
-import { Encryption } from '@cipherstash/stack'
+import { Encryption, defineContract, encrypted } from '@cipherstash/stack'
 import { encryptedDynamoDB } from '@cipherstash/stack/dynamodb'
-import { encryptedTable, encryptedColumn } from '@cipherstash/stack/schema'
 
-// 1. Define your encryption schema
-const users = encryptedTable('users', {
-  email: encryptedColumn('email').equality(),
-  name: encryptedColumn('name'),
+// 1. Define your encryption contract
+const contract = defineContract({
+  users: {
+    email: encrypted({ type: 'string', equality: true }),
+    name: encrypted({ type: 'string' }),
+  },
 })
 
 // 2. Initialize the encryption client
-const client = await Encryption({ schemas: [users] })
+const client = await Encryption({ contract })
 
 // 3. Create the DynamoDB helper
 const dynamo = encryptedDynamoDB({ encryptionClient: client })
@@ -102,10 +103,10 @@ const user = {
   id: '1',
   email: 'user@example.com',
   name: 'Alice Johnson',
-  role: 'admin', // Not in schema — will remain unchanged
+  role: 'admin', // Not in contract — will remain unchanged
 }
 
-const encryptedResult = await dynamo.encryptModel(user, users)
+const encryptedResult = await dynamo.encryptModel(user, contract.users)
 
 if (encryptedResult.failure) {
   console.error('Encryption failed:', encryptedResult.failure.message)
@@ -122,8 +123,8 @@ await dynamoClient.send(
 )
 ```
 
-Fields defined in the encryption schema (`email`, `name`) are encrypted.
-Fields not in the schema (`id`, `role`) pass through unchanged.
+Fields defined in the encryption contract (`email`, `name`) are encrypted.
+Fields not in the contract (`id`, `role`) pass through unchanged.
 
 ## Decrypting a model
 
@@ -142,7 +143,7 @@ const response = await dynamoClient.send(
 
 const item = unmarshall(response.Item!)
 
-const decryptedResult = await dynamo.decryptModel(item, users)
+const decryptedResult = await dynamo.decryptModel(item, contract.users)
 
 if (decryptedResult.failure) {
   console.error('Decryption failed:', decryptedResult.failure.message)
@@ -164,7 +165,7 @@ const items = [
   { id: '2', email: 'bob@example.com', name: 'Bob' },
 ]
 
-const encryptedResult = await dynamo.bulkEncryptModels(items, users)
+const encryptedResult = await dynamo.bulkEncryptModels(items, contract.users)
 
 if (encryptedResult.failure) {
   console.error('Bulk encryption failed:', encryptedResult.failure.message)
@@ -179,7 +180,7 @@ if (encryptedResult.failure) {
 Use `bulkDecryptModels` for decrypting multiple items:
 
 ```typescript
-const decryptedResult = await dynamo.bulkDecryptModels(encryptedItems, users)
+const decryptedResult = await dynamo.bulkDecryptModels(encryptedItems, contract.users)
 
 if (decryptedResult.failure) {
   console.error('Bulk decryption failed:', decryptedResult.failure.message)
@@ -203,8 +204,7 @@ import { QueryCommand } from "@aws-sdk/lib-dynamodb"
 // 1. Encrypt the search value to get the HMAC
 const queryResult = await encryptionClient.encryptQuery([{
   value: "alice@example.com",
-  column: users.email,
-  table: users,
+  contract: contract.users.email,
   queryType: "equality",
 }])
 
@@ -224,7 +224,7 @@ const result = await docClient.send(new QueryCommand({
 }))
 
 // 3. Decrypt the results
-const decrypted = await dynamo.bulkDecryptModels(result.Items ?? [], users)
+const decrypted = await dynamo.bulkDecryptModels(result.Items ?? [], contract.users)
 ```
 
 ### Encrypted sort key
@@ -240,7 +240,7 @@ const result = await docClient.send(new GetCommand({
   },
 }))
 
-const decrypted = await dynamo.decryptModel(result.Item, users)
+const decrypted = await dynamo.decryptModel(result.Item, contract.users)
 ```
 
 ### Encrypted attribute in GSI
@@ -259,27 +259,31 @@ const result = await docClient.send(new QueryCommand({
 }))
 
 if (result.Items?.length) {
-  const decrypted = await dynamo.decryptModel(result.Items[0], users)
+  const decrypted = await dynamo.decryptModel(result.Items[0], contract.users)
 }
 ```
 
 ## Using nested objects
 
-The DynamoDB helper supports nested object encryption using `encryptedField`:
+The DynamoDB helper supports nested object encryption using nested config objects in the contract:
 
 ```typescript
-import { encryptedTable, encryptedColumn, encryptedField } from '@cipherstash/stack/schema'
+import { Encryption, defineContract, encrypted } from '@cipherstash/stack'
+import { encryptedDynamoDB } from '@cipherstash/stack/dynamodb'
 
-const users = encryptedTable('users', {
-  email: encryptedColumn('email'),
-  profile: {
-    name: encryptedField('profile.name'),
-    address: {
-      street: encryptedField('profile.address.street'),
+const contract = defineContract({
+  users: {
+    email: encrypted({ type: 'string' }),
+    profile: {
+      name: encrypted({ type: 'string' }),
+      address: {
+        street: encrypted({ type: 'string' }),
+      },
     },
   },
 })
 
+const client = await Encryption({ contract })
 const dynamo = encryptedDynamoDB({ encryptionClient: client })
 
 const user = {
@@ -289,12 +293,12 @@ const user = {
     name: 'Alice Johnson',
     address: {
       street: '123 Main St',
-      city: 'Sydney', // Not in schema — unchanged
+      city: 'Sydney', // Not in contract — unchanged
     },
   },
 }
 
-const encryptedResult = await dynamo.encryptModel(user, users)
+const encryptedResult = await dynamo.encryptModel(user, contract.users)
 ```
 
 > [!NOTE]
@@ -306,7 +310,7 @@ All operations support `.audit()` chaining for audit metadata:
 
 ```typescript
 const result = await dynamo
-  .encryptModel(user, users)
+  .encryptModel(user, contract.users)
   .audit({
     metadata: {
       sub: "user-id-123",
@@ -343,7 +347,7 @@ const result = await dynamo
 All DynamoDB helper methods return a `Result` type:
 
 ```typescript
-const result = await dynamo.encryptModel(item, users)
+const result = await dynamo.encryptModel(item, contract.users)
 
 if (result.failure) {
   console.error('Error:', result.failure.type, result.failure.message)

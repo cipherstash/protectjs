@@ -7,6 +7,7 @@ import {
 import type { LockContext } from '@/identity'
 import type { EncryptedTable, EncryptedTableColumn } from '@/schema'
 import { EncryptedColumn } from '@/schema'
+import { ContractColumnRef, ContractTableRef } from '@/contract'
 import type { ScalarQueryTerm } from '@/types'
 import { logger } from '@/utils/logger'
 import type { JsPlaintext } from '@cipherstash/protect-ffi'
@@ -400,7 +401,7 @@ export class EncryptedQueryBuilderImpl<
 
     if (Array.isArray(data)) {
       // Bulk encrypt
-      const baseOp = this.encryptionClient.bulkEncryptModels(data, this.schema)
+      const baseOp = this.encryptionClient.bulkEncryptModels(data, new ContractTableRef(this.schema))
       const op = this.lockContext
         ? baseOp.withLockContext(this.lockContext)
         : baseOp
@@ -420,7 +421,7 @@ export class EncryptedQueryBuilderImpl<
     }
 
     // Single model
-    const baseOp = this.encryptionClient.encryptModel(data, this.schema)
+    const baseOp = this.encryptionClient.encryptModel(data, new ContractTableRef(this.schema))
     const op = this.lockContext
       ? baseOp.withLockContext(this.lockContext)
       : baseOp
@@ -472,8 +473,7 @@ export class EncryptedQueryBuilderImpl<
         for (let j = 0; j < f.value.length; j++) {
           terms.push({
             value: f.value[j] as JsPlaintext,
-            column,
-            table: this.schema,
+            contract: new ContractColumnRef(column, this.schema),
             queryType: mapFilterOpToQueryType(f.op),
             returnType: 'composite-literal',
           })
@@ -485,8 +485,7 @@ export class EncryptedQueryBuilderImpl<
       } else {
         terms.push({
           value: f.value as JsPlaintext,
-          column,
-          table: this.schema,
+          contract: new ContractColumnRef(column, this.schema),
           queryType: mapFilterOpToQueryType(f.op),
           returnType: 'composite-literal',
         })
@@ -504,8 +503,7 @@ export class EncryptedQueryBuilderImpl<
 
         terms.push({
           value: value as JsPlaintext,
-          column,
-          table: this.schema,
+          contract: new ContractColumnRef(column, this.schema),
           queryType: 'equality',
           returnType: 'composite-literal',
         })
@@ -522,8 +520,7 @@ export class EncryptedQueryBuilderImpl<
 
       terms.push({
         value: nf.value as JsPlaintext,
-        column,
-        table: this.schema,
+        contract: new ContractColumnRef(column, this.schema),
         queryType: mapFilterOpToQueryType(nf.op),
         returnType: 'composite-literal',
       })
@@ -544,8 +541,7 @@ export class EncryptedQueryBuilderImpl<
 
           terms.push({
             value: cond.value as JsPlaintext,
-            column,
-            table: this.schema,
+            contract: new ContractColumnRef(column, this.schema),
             queryType: mapFilterOpToQueryType(cond.op),
             returnType: 'composite-literal',
           })
@@ -561,8 +557,7 @@ export class EncryptedQueryBuilderImpl<
 
           terms.push({
             value: cond.value as JsPlaintext,
-            column,
-            table: this.schema,
+            contract: new ContractColumnRef(column, this.schema),
             queryType: mapFilterOpToQueryType(cond.op),
             returnType: 'composite-literal',
           })
@@ -584,8 +579,7 @@ export class EncryptedQueryBuilderImpl<
 
       terms.push({
         value: rf.value as JsPlaintext,
-        column,
-        table: this.schema,
+        contract: new ContractColumnRef(column, this.schema),
         queryType: 'equality',
         returnType: 'composite-literal',
       })

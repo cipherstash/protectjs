@@ -16,7 +16,7 @@ export type EncryptedSupabaseConfig = {
 export interface EncryptedSupabaseInstance {
   from<T extends Record<string, unknown> = Record<string, unknown>>(
     tableName: string,
-    schema: EncryptedTable<EncryptedTableColumn>,
+    tableRef: import('@/contract').ContractTableRef,
   ): EncryptedQueryBuilder<T>
 }
 

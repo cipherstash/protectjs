@@ -4,6 +4,7 @@ import type {
   EncryptedTable,
   EncryptedTableColumn,
 } from '@/schema'
+import { ContractColumnRef } from '@/contract'
 import { type QueryTypeName, queryTypes } from '@/types'
 import {
   type SQL,
@@ -366,8 +367,7 @@ async function encryptValues(
     try {
       const terms = group.values.map((v) => ({
         value: v.value,
-        column: group.column,
-        table: group.table,
+        contract: new ContractColumnRef(group.column, group.table),
         queryType: v.queryType,
       }))
 

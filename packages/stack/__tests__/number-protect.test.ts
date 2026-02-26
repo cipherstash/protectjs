@@ -1,17 +1,19 @@
 import 'dotenv/config'
 import { LockContext } from '@/identity'
 import { Encryption } from '@/index'
-import { encryptedColumn, encryptedTable, encryptedField } from '@/schema'
+import { defineContract, encrypted } from '@/contract'
 import { beforeAll, describe, expect, it, test } from 'vitest'
 
-const users = encryptedTable('users', {
-  email: encryptedColumn('email').freeTextSearch().equality().orderAndRange(),
-  address: encryptedColumn('address').freeTextSearch(),
-  age: encryptedColumn('age').dataType('number').equality().orderAndRange(),
-  score: encryptedColumn('score').dataType('number').equality().orderAndRange(),
-  metadata: {
-    count: encryptedField('metadata.count').dataType('number'),
-    level: encryptedField('metadata.level').dataType('number'),
+const contract = defineContract({
+  users: {
+    email: encrypted({ type: 'string', freeTextSearch: true, equality: true, orderAndRange: true }),
+    address: encrypted({ type: 'string', freeTextSearch: true }),
+    age: encrypted({ type: 'number', equality: true, orderAndRange: true }),
+    score: encrypted({ type: 'number', equality: true, orderAndRange: true }),
+    metadata: {
+      count: encrypted({ type: 'number' }),
+      level: encrypted({ type: 'number' }),
+    },
   },
 })
 
@@ -33,7 +35,7 @@ let protectClient: Awaited<ReturnType<typeof Encryption>>
 
 beforeAll(async () => {
   protectClient = await Encryption({
-    schemas: [users],
+    contract,
   })
 })
 
@@ -55,8 +57,7 @@ describe('Number encryption and decryption', () => {
     'should encrypt and decrypt a number: %d',
     async (age) => {
       const ciphertext = await protectClient.encrypt(age, {
-        column: users.age,
-        table: users,
+        contract: contract.users.age,
       })
 
       if (ciphertext.failure) {
@@ -80,8 +81,7 @@ describe('Number encryption and decryption', () => {
     const score = -0.0
 
     const ciphertext = await protectClient.encrypt(score, {
-      column: users.score,
-      table: users,
+      contract: contract.users.score,
     })
 
     if (ciphertext.failure) {
@@ -103,8 +103,7 @@ describe('Number encryption and decryption', () => {
     const score = Number.NaN
 
     const result = await protectClient.encrypt(score, {
-      column: users.score,
-      table: users,
+      contract: contract.users.score,
     })
 
     expect(result.failure).toBeDefined()
@@ -116,8 +115,7 @@ describe('Number encryption and decryption', () => {
     const score = Number.POSITIVE_INFINITY
 
     const result = await protectClient.encrypt(score, {
-      column: users.score,
-      table: users,
+      contract: contract.users.score,
     })
 
     expect(result.failure).toBeDefined()
@@ -129,8 +127,7 @@ describe('Number encryption and decryption', () => {
     const score = Number.NEGATIVE_INFINITY
 
     const result = await protectClient.encrypt(score, {
-      column: users.score,
-      table: users,
+      contract: contract.users.score,
     })
 
     expect(result.failure).toBeDefined()
@@ -152,7 +149,7 @@ describe('Model encryption and decryption', () => {
 
     const encryptedModel = await protectClient.encryptModel<User>(
       decryptedModel,
-      users,
+      contract.users,
     )
 
     if (encryptedModel.failure) {
@@ -194,7 +191,7 @@ describe('Model encryption and decryption', () => {
 
     const encryptedModel = await protectClient.encryptModel<User>(
       decryptedModel,
-      users,
+      contract.users,
     )
 
     if (encryptedModel.failure) {
@@ -231,7 +228,7 @@ describe('Model encryption and decryption', () => {
 
     const encryptedModel = await protectClient.encryptModel<User>(
       decryptedModel,
-      users,
+      contract.users,
     )
 
     if (encryptedModel.failure) {
@@ -265,8 +262,7 @@ describe('Bulk encryption and decryption', () => {
     ]
 
     const encryptedData = await protectClient.bulkEncrypt(intPayloads, {
-      column: users.age,
-      table: users,
+      contract: contract.users.age,
     })
 
     if (encryptedData.failure) {
@@ -344,7 +340,7 @@ describe('Bulk encryption and decryption', () => {
 
     const encryptedModels = await protectClient.bulkEncryptModels<User>(
       decryptedModels,
-      users,
+      contract.users,
     )
 
     if (encryptedModels.failure) {
@@ -401,8 +397,7 @@ describe('Encryption with lock context', () => {
 
     const ciphertext = await protectClient
       .encrypt(age, {
-        column: users.age,
-        table: users,
+        contract: contract.users.age,
       })
       .withLockContext(lockContext.data)
 
@@ -447,7 +442,7 @@ describe('Encryption with lock context', () => {
     }
 
     const encryptedModel = await protectClient
-      .encryptModel(decryptedModel, users)
+      .encryptModel(decryptedModel, contract.users)
       .withLockContext(lockContext.data)
 
     if (encryptedModel.failure) {
@@ -492,8 +487,7 @@ describe('Encryption with lock context', () => {
 
     const encryptedData = await protectClient
       .bulkEncrypt(intPayloads, {
-        column: users.age,
-        table: users,
+        contract: contract.users.age,
       })
       .withLockContext(lockContext.data)
 
@@ -530,7 +524,7 @@ describe('Encryption with lock context', () => {
 
 describe('Nested object encryption', () => {
   it('should encrypt and decrypt nested number objects', async () => {
-    const protectClient = await Encryption({ schemas: [users] })
+    const protectClient = await Encryption({ contract })
 
     const decryptedModel = {
       id: '1',
@@ -543,7 +537,7 @@ describe('Nested object encryption', () => {
 
     const encryptedModel = await protectClient.encryptModel<User>(
       decryptedModel,
-      users,
+      contract.users,
     )
 
     if (encryptedModel.failure) {
@@ -570,7 +564,7 @@ describe('Nested object encryption', () => {
   }, 30000)
 
   it('should handle null values in nested objects with number fields', async () => {
-    const protectClient = await Encryption({ schemas: [users] })
+    const protectClient = await Encryption({ contract })
 
     const decryptedModel: User = {
       id: '2',
@@ -583,7 +577,7 @@ describe('Nested object encryption', () => {
 
     const encryptedModel = await protectClient.encryptModel<User>(
       decryptedModel,
-      users,
+      contract.users,
     )
 
     if (encryptedModel.failure) {
@@ -607,7 +601,7 @@ describe('Nested object encryption', () => {
   }, 30000)
 
   it('should handle undefined values in nested objects with number fields', async () => {
-    const protectClient = await Encryption({ schemas: [users] })
+    const protectClient = await Encryption({ contract })
 
     const decryptedModel = {
       id: '3',
@@ -620,7 +614,7 @@ describe('Nested object encryption', () => {
 
     const encryptedModel = await protectClient.encryptModel<User>(
       decryptedModel,
-      users,
+      contract.users,
     )
 
     if (encryptedModel.failure) {
@@ -647,8 +641,8 @@ describe('Nested object encryption', () => {
 describe('encryptQuery for numbers', () => {
   it('should create encrypted query for number fields', async () => {
     const result = await protectClient.encryptQuery([
-      { value: 25, column: users.age, table: users, queryType: 'equality' },
-      { value: 100, column: users.score, table: users, queryType: 'equality' },
+      { value: 25, contract: contract.users.age, queryType: 'equality' },
+      { value: 100, contract: contract.users.score, queryType: 'equality' },
     ])
 
     if (result.failure) {
@@ -677,8 +671,7 @@ describe('Performance tests', () => {
     }))
 
     const encryptedData = await protectClient.bulkEncrypt(numPayloads, {
-      column: users.age,
-      table: users,
+      contract: contract.users.age,
     })
 
     if (encryptedData.failure) {
@@ -719,8 +712,7 @@ describe('Advanced scenarios', () => {
 
     for (const value of boundaryValues) {
       const ciphertext = await protectClient.encrypt(value, {
-        column: users.age,
-        table: users,
+        contract: contract.users.age,
       })
 
       if (ciphertext.failure) {
@@ -755,8 +747,7 @@ describe('Invalid or uncoercable values', () => {
     'should fail to encrypt',
     async (input) => {
       const result = await protectClient.encrypt(input, {
-        column: users.age,
-        table: users,
+        contract: contract.users.age,
       })
 
       expect(result.failure).toBeDefined()

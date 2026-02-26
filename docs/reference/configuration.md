@@ -105,10 +105,19 @@ You can also configure the Encryption client directly by passing an `EncryptionC
 This is useful if you want to use a secret manager to store your client key and access key rather than relying on environment variables or configuration files.
 
 ```ts
-import { Encryption, type EncryptionClientConfig } from "@cipherstash/stack";
+import { Encryption, defineContract, encrypted, type EncryptionClientConfig } from "@cipherstash/stack";
+
+const contract = defineContract({
+  users: {
+    email: encrypted({ type: "string", equality: true }),
+  },
+  orders: {
+    total: encrypted({ type: "number", orderAndRange: true }),
+  },
+});
 
 const config: EncryptionClientConfig = {
-  schemas: [users, orders],
+  contract,
   config: {
     workspaceCrn: "your-workspace-crn",
     accessKey: "your-access-key",
@@ -127,7 +136,7 @@ A keyset can be identified by name or by UUID:
 
 ```ts
 const client = await Encryption({
-  schemas: [users],
+  contract,
   config: {
     workspaceCrn: "your-workspace-crn",
     accessKey: "your-access-key",

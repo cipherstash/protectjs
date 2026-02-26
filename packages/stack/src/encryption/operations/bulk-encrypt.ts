@@ -11,7 +11,7 @@ import type {
   BulkEncryptPayload,
   BulkEncryptedData,
   Client,
-  EncryptOptions,
+  InternalEncryptOptions,
 } from '@/types'
 import { createRequestLogger } from '@/utils/logger'
 import { type Result, withResult } from '@byteslice/result'
@@ -44,7 +44,7 @@ export class BulkEncryptOperation extends EncryptionOperation<BulkEncryptedData>
   constructor(
     client: Client,
     plaintexts: BulkEncryptPayload,
-    opts: EncryptOptions,
+    opts: InternalEncryptOptions,
   ) {
     super()
     this.client = client

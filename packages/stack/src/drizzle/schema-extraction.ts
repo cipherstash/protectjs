@@ -1,3 +1,5 @@
+import { type ColumnConfig, defineContract } from '@/contract'
+import type { ResolvedContract, ContractDefinition } from '@/contract'
 import { type EncryptedColumn, encryptedColumn, encryptedTable } from '@/schema'
 import type { PgTable } from 'drizzle-orm/pg-core'
 import { getEncryptedColumnConfig } from './index.js'
@@ -107,4 +109,83 @@ export function extractEncryptionSchema<T extends PgTable<any>>(
   }
 
   return encryptedTable(tableName, columns)
+}
+
+/**
+ * Extract a contract definition from a Drizzle table definition.
+ *
+ * Identifies columns created with `encryptedType` and builds a
+ * `defineContract()` result that can be used with `Encryption({ contract })`.
+ *
+ * @param table - The Drizzle table definition
+ * @returns A resolved contract for use with the encryption client
+ *
+ * @example
+ * ```ts
+ * const drizzleUsersTable = pgTable('users', {
+ *   email: encryptedType('email', { freeTextSearch: true, equality: true }),
+ *   age: encryptedType('age', { dataType: 'number', orderAndRange: true }),
+ * })
+ *
+ * const contract = extractContract(drizzleUsersTable)
+ * const client = await Encryption({ contract })
+ * ```
+ */
+// biome-ignore lint/suspicious/noExplicitAny: Drizzle table types don't expose Symbol properties
+export function extractContract<T extends PgTable<any>>(
+  table: T,
+): ResolvedContract<ContractDefinition> {
+  // biome-ignore lint/suspicious/noExplicitAny: Drizzle tables don't expose Symbol properties in types
+  const tableName = (table as any)[Symbol.for('drizzle:Name')] as
+    | string
+    | undefined
+  if (!tableName) {
+    throw new Error(
+      'Unable to extract table name from Drizzle table. Ensure you are using a table created with pgTable().',
+    )
+  }
+
+  const columns: Record<string, ColumnConfig> = {}
+
+  for (const [columnName, column] of Object.entries(table)) {
+    if (typeof column !== 'object' || column === null) {
+      continue
+    }
+
+    const config = getEncryptedColumnConfig(columnName, column)
+
+    if (config) {
+      const actualColumnName = column.name || config.name
+
+      const colConfig: ColumnConfig = {
+        type: config.dataType ?? 'string',
+      }
+
+      if (config.equality) {
+        colConfig.equality = config.equality
+      }
+
+      if (config.freeTextSearch) {
+        colConfig.freeTextSearch = config.freeTextSearch
+      }
+
+      if (config.orderAndRange) {
+        colConfig.orderAndRange = true
+      }
+
+      if (config.searchableJson) {
+        colConfig.searchableJson = true
+      }
+
+      columns[actualColumnName] = colConfig
+    }
+  }
+
+  if (Object.keys(columns).length === 0) {
+    throw new Error(
+      `No encrypted columns found in table "${tableName}". Use encryptedType() to define encrypted columns.`,
+    )
+  }
+
+  return defineContract({ [tableName]: columns })
 }

@@ -1,6 +1,6 @@
 ---
 name: stash-encryption
-description: Implement field-level encryption with @cipherstash/stack. Covers schema definition, encrypt/decrypt operations, searchable encryption (equality, free-text, range, JSON), bulk operations, model operations, identity-aware encryption with LockContext, multi-tenant keysets, and the full TypeScript type system. Use when adding encryption to a project, defining encrypted schemas, or working with the CipherStash Encryption API.
+description: Implement field-level encryption with @cipherstash/stack. Covers contract definition, encrypt/decrypt operations, searchable encryption (equality, free-text, range, JSON), bulk operations, model operations, identity-aware encryption with LockContext, multi-tenant keysets, and the full TypeScript type system. Use when adding encryption to a project, defining encrypted contracts, or working with the CipherStash Encryption API.
 ---
 
 # CipherStash Stack - Encryption
@@ -10,7 +10,7 @@ Comprehensive guide for implementing field-level encryption with `@cipherstash/s
 ## When to Use This Skill
 
 - Adding field-level encryption to a TypeScript/Node.js project
-- Defining encrypted table schemas
+- Defining encrypted table contracts
 - Encrypting and decrypting individual values or entire models
 - Implementing searchable encryption (equality, free-text, range, JSON queries)
 - Bulk encrypting/decrypting large datasets
@@ -45,7 +45,7 @@ Sign up at [cipherstash.com/signup](https://cipherstash.com/signup) to generate 
 
 ```typescript
 const client = await Encryption({
-  schemas: [users],
+  contract,
   config: {
     workspaceCrn: "crn:ap-southeast-2.aws:your-workspace-id",
     clientId: "your-client-id",
@@ -80,66 +80,82 @@ The SDK never logs plaintext data.
 
 | Import Path | Provides |
 |---|---|
-| `@cipherstash/stack` | `Encryption` function (main entry point) |
-| `@cipherstash/stack/schema` | `encryptedTable`, `encryptedColumn`, `encryptedField`, schema types |
+| `@cipherstash/stack` | `Encryption` function, `defineContract`, `encrypted` helper (main entry point) |
+| `@cipherstash/stack/schema` | `encryptedTable`, `encryptedColumn`, `encryptedField` (internal schema builders, prefer `defineContract` with `encrypted` helper) |
 | `@cipherstash/stack/identity` | `LockContext` class and identity types |
 | `@cipherstash/stack/secrets` | `Secrets` class and secrets types |
 | `@cipherstash/stack/drizzle` | `encryptedType`, `extractEncryptionSchema`, `createEncryptionOperators` for Drizzle ORM |
 | `@cipherstash/stack/supabase` | `encryptedSupabase` wrapper for Supabase |
 | `@cipherstash/stack/dynamodb` | `encryptedDynamoDB` helper for DynamoDB |
-| `@cipherstash/stack/client` | Client-safe exports (schema builders + types only, no native FFI) |
+| `@cipherstash/stack/client` | Client-safe exports (`defineContract`, `encrypted`, contract types - no native FFI) |
 | `@cipherstash/stack/types` | All TypeScript types |
 
-## Schema Definition
+## Contract Definition
 
-Define which tables and columns to encrypt using `encryptedTable` and `encryptedColumn`:
+Define which tables and columns to encrypt using `defineContract` with the `encrypted` helper:
 
 ```typescript
-import { encryptedTable, encryptedColumn } from "@cipherstash/stack/schema"
+import { defineContract, encrypted } from "@cipherstash/stack"
 
-const users = encryptedTable("users", {
-  email: encryptedColumn("email")
-    .equality()         // exact-match queries
-    .freeTextSearch()   // full-text / fuzzy search
-    .orderAndRange(),   // sorting and range queries
+const contract = defineContract({
+  users: {
+    email: encrypted({
+      type: "string",
+      equality: true,         // exact-match queries
+      freeTextSearch: true,   // full-text / fuzzy search
+      orderAndRange: true,    // sorting and range queries
+    }),
 
-  age: encryptedColumn("age")
-    .dataType("number")
-    .equality()
-    .orderAndRange(),
+    age: encrypted({
+      type: "number",
+      equality: true,
+      orderAndRange: true,
+    }),
 
-  address: encryptedColumn("address"), // encrypt-only, no search indexes
-})
+    address: encrypted({
+      type: "string",         // encrypt-only, no search indexes
+    }),
+  },
 
-const documents = encryptedTable("documents", {
-  metadata: encryptedColumn("metadata")
-    .searchableJson(), // encrypted JSONB queries (JSONPath + containment)
+  documents: {
+    metadata: encrypted({
+      type: "json",
+      searchableJson: true, // encrypted JSONB queries (JSONPath + containment)
+    }),
+  },
 })
 ```
 
 ### Index Types
 
-| Method | Purpose | Query Type |
+| Option | Purpose | Query Type |
 |---|---|---|
-| `.equality()` | Exact match lookups | `'equality'` |
-| `.freeTextSearch(opts?)` | Full-text / fuzzy search | `'freeTextSearch'` |
-| `.orderAndRange()` | Sorting, comparison, range queries | `'orderAndRange'` |
-| `.searchableJson()` | Encrypted JSONB path and containment queries (auto-sets `dataType` to `'json'`) | `'searchableJson'` |
-| `.dataType(cast)` | Set plaintext data type | N/A |
+| `equality: true` | Exact match lookups | `'equality'` |
+| `freeTextSearch: true` or `freeTextSearch: { ... }` | Full-text / fuzzy search | `'freeTextSearch'` |
+| `orderAndRange: true` | Sorting, comparison, range queries | `'orderAndRange'` |
+| `searchableJson: true` | Encrypted JSONB path and containment queries (use with `type: 'json'`) | `'searchableJson'` |
+| `type: '...'` | Set plaintext data type | N/A |
 
 **Supported data types:** `'string'` (default), `'number'`, `'boolean'`, `'date'`, `'bigint'`, `'json'`
 
-Methods are chainable - call as many as you need on a single column.
+Set as many index options as you need on a single column.
 
 ### Free-Text Search Options
 
 ```typescript
-encryptedColumn("bio").freeTextSearch({
-  tokenizer: { kind: "ngram", token_length: 3 },  // or { kind: "standard" }
-  token_filters: [{ kind: "downcase" }],
-  k: 6,
-  m: 2048,
-  include_original: false,
+const contract = defineContract({
+  users: {
+    bio: encrypted({
+      type: "string",
+      freeTextSearch: {
+        tokenizer: { kind: "ngram", token_length: 3 },  // or { kind: "standard" }
+        token_filters: [{ kind: "downcase" }],
+        k: 6,
+        m: 2048,
+        include_original: false,
+      },
+    }),
+  },
 })
 ```
 
@@ -148,27 +164,37 @@ encryptedColumn("bio").freeTextSearch({
 ```typescript
 import type { InferPlaintext, InferEncrypted } from "@cipherstash/stack/schema"
 
-type UserPlaintext = InferPlaintext<typeof users>
+// These types work with the internal schema types produced by defineContract
+type UserPlaintext = InferPlaintext<typeof contract.users>
 // { email: string; age: string; address: string }
 
-type UserEncrypted = InferEncrypted<typeof users>
+type UserEncrypted = InferEncrypted<typeof contract.users>
 // { email: Encrypted; age: Encrypted; address: Encrypted }
 ```
 
 ## Client Initialization
 
 ```typescript
-import { Encryption } from "@cipherstash/stack"
+import { Encryption, defineContract, encrypted } from "@cipherstash/stack"
 
-const client = await Encryption({ schemas: [users, documents] })
+const contract = defineContract({
+  users: {
+    email: encrypted({ type: "string", equality: true, freeTextSearch: true }),
+  },
+  documents: {
+    metadata: encrypted({ type: "json", searchableJson: true }),
+  },
+})
+
+const client = await Encryption({ contract })
 ```
 
-The `Encryption()` function returns `Promise<EncryptionClient>` and throws on error (e.g., bad credentials, missing config, invalid keyset UUID). At least one schema is required.
+The `Encryption()` function returns `Promise<EncryptionClient>` and throws on error (e.g., bad credentials, missing config, invalid keyset UUID). A contract is required.
 
 ```typescript
 // Error handling
 try {
-  const client = await Encryption({ schemas: [users] })
+  const client = await Encryption({ contract })
 } catch (error) {
   console.error("Init failed:", error.message)
 }
@@ -179,8 +205,7 @@ try {
 ```typescript
 // Encrypt
 const encrypted = await client.encrypt("hello@example.com", {
-  column: users.email,
-  table: users,
+  contract: contract.users.email,
 })
 
 if (encrypted.failure) {
@@ -201,21 +226,21 @@ All plaintext values must be non-null. Null handling is managed at the model lev
 
 ## Model Operations
 
-Encrypt or decrypt an entire object. Only fields matching your schema are encrypted; other fields pass through unchanged.
+Encrypt or decrypt an entire object. Only fields matching your contract are encrypted; other fields pass through unchanged.
 
-The return type is **schema-aware**: fields matching the table schema are typed as `Encrypted`, while other fields retain their original types. For best results, let TypeScript infer the type parameters from the arguments rather than providing an explicit `<User>`.
+The return type is **schema-aware**: fields matching the table contract are typed as `Encrypted`, while other fields retain their original types. For best results, let TypeScript infer the type parameters from the arguments rather than providing an explicit `<User>`.
 
 ```typescript
 type User = { id: string; email: string; createdAt: Date }
 
 const user = {
   id: "user_123",
-  email: "alice@example.com",  // defined in schema -> encrypted
-  createdAt: new Date(),       // not in schema -> unchanged
+  email: "alice@example.com",  // defined in contract -> encrypted
+  createdAt: new Date(),       // not in contract -> unchanged
 }
 
-// Encrypt model — let TypeScript infer the return type from the schema
-const encResult = await client.encryptModel(user, users)
+// Encrypt model — let TypeScript infer the return type from the contract
+const encResult = await client.encryptModel(user, contract.users)
 if (!encResult.failure) {
   // encResult.data.email is typed as Encrypted
   // encResult.data.id is typed as string
@@ -247,8 +272,7 @@ const plaintexts = [
 ]
 
 const encrypted = await client.bulkEncrypt(plaintexts, {
-  column: users.email,
-  table: users,
+  contract: contract.users.email,
 })
 // encrypted.data = [{ id: "u1", data: EncryptedPayload }, ...]
 
@@ -271,7 +295,7 @@ const userModels = [
   { id: "2", email: "bob@example.com" },
 ]
 
-const encrypted = await client.bulkEncryptModels(userModels, users)
+const encrypted = await client.bulkEncryptModels(userModels, contract.users)
 const decrypted = await client.bulkDecryptModels(encrypted.data)
 ```
 
@@ -284,22 +308,19 @@ Encrypt query terms so you can search encrypted data in PostgreSQL.
 ```typescript
 // Equality query
 const eqQuery = await client.encryptQuery("alice@example.com", {
-  column: users.email,
-  table: users,
+  contract: contract.users.email,
   queryType: "equality",
 })
 
 // Free-text search
 const matchQuery = await client.encryptQuery("alice", {
-  column: users.email,
-  table: users,
+  contract: contract.users.email,
   queryType: "freeTextSearch",
 })
 
 // Order and range
 const rangeQuery = await client.encryptQuery(25, {
-  column: users.age,
-  table: users,
+  contract: contract.users.age,
   queryType: "orderAndRange",
 })
 ```
@@ -319,8 +340,7 @@ By default `encryptQuery` returns an `Encrypted` object (the raw EQL JSON payloa
 ```typescript
 // Get a composite literal string for use with Supabase
 const term = await client.encryptQuery("alice@example.com", {
-  column: users.email,
-  table: users,
+  contract: contract.users.email,
   queryType: "equality",
   returnType: "composite-literal",
 })
@@ -331,19 +351,17 @@ Each term in a batch can have its own `returnType`.
 
 ### Searchable JSON
 
-For columns using `.searchableJson()`, the query type is auto-inferred from the plaintext:
+For columns using `searchableJson: true`, the query type is auto-inferred from the plaintext:
 
 ```typescript
 // String -> JSONPath selector query
 const pathQuery = await client.encryptQuery("$.user.email", {
-  column: documents.metadata,
-  table: documents,
+  contract: contract.documents.metadata,
 })
 
 // Object/Array -> containment query
 const containsQuery = await client.encryptQuery({ role: "admin" }, {
-  column: documents.metadata,
-  table: documents,
+  contract: contract.documents.metadata,
 })
 ```
 
@@ -353,8 +371,8 @@ Encrypt multiple query terms in one ZeroKMS call:
 
 ```typescript
 const terms = [
-  { value: "alice@example.com", column: users.email, table: users, queryType: "equality" as const },
-  { value: "bob", column: users.email, table: users, queryType: "freeTextSearch" as const },
+  { value: "alice@example.com", contract: contract.users.email, queryType: "equality" as const },
+  { value: "bob", contract: contract.users.email, queryType: "freeTextSearch" as const },
 ]
 
 const results = await client.encryptQuery(terms)
@@ -383,7 +401,7 @@ const lockContext = identifyResult.data
 
 // 3. Encrypt with lock context
 const encrypted = await client
-  .encrypt("sensitive data", { column: users.email, table: users })
+  .encrypt("sensitive data", { contract: contract.users.email })
   .withLockContext(lockContext)
 
 // 4. Decrypt with the same lock context
@@ -409,13 +427,13 @@ Isolate encryption keys per tenant:
 ```typescript
 // By name
 const client = await Encryption({
-  schemas: [users],
+  contract,
   config: { keyset: { name: "Company A" } },
 })
 
 // By UUID
 const client = await Encryption({
-  schemas: [users],
+  contract,
   config: { keyset: { id: "123e4567-e89b-12d3-a456-426614174000" } },
 })
 ```
@@ -428,7 +446,7 @@ All operations return thenable objects that support chaining:
 
 ```typescript
 const result = await client
-  .encrypt(plaintext, { column: users.email, table: users })
+  .encrypt(plaintext, { contract: contract.users.email })
   .withLockContext(lockContext)         // optional: identity-aware
   .audit({ metadata: { action: "create" } }) // optional: audit trail
 ```
@@ -438,7 +456,7 @@ const result = await client
 All async methods return a `Result` object - a discriminated union with either `data` (success) or `failure` (error), never both.
 
 ```typescript
-const result = await client.encrypt("hello", { column: users.email, table: users })
+const result = await client.encrypt("hello", { contract: contract.users.email })
 
 if (result.failure) {
   console.error(result.failure.type, result.failure.message)
@@ -463,7 +481,7 @@ if (result.failure) {
 
 - NaN and Infinity are rejected for numeric values
 - `freeTextSearch` index only supports string values
-- At least one `encryptedTable` schema must be provided
+- A contract must be provided to `Encryption()`
 - Keyset UUIDs must be valid format
 
 ## PostgreSQL Storage
@@ -493,11 +511,11 @@ CREATE TABLE users (
 | `@cipherstash/protect` | `@cipherstash/stack` | Import Path |
 |---|---|---|
 | `protect(config)` | `Encryption(config)` | `@cipherstash/stack` |
-| `csTable(name, cols)` | `encryptedTable(name, cols)` | `@cipherstash/stack/schema` |
-| `csColumn(name)` | `encryptedColumn(name)` | `@cipherstash/stack/schema` |
+| `csTable(name, cols)` | `defineContract({ name: { ... } })` | `@cipherstash/stack` |
+| `csColumn(name)` | `encrypted({ type: "string", ... })` helper in `defineContract` | `@cipherstash/stack` |
 | `LockContext` from `/identify` | `LockContext` from `/identity` | `@cipherstash/stack/identity` |
 
-All method signatures on the encryption client remain the same. The `Result` pattern is unchanged.
+All method signatures on the encryption client use `{ contract: contract.table.column }` instead of `{ column, table }`. The `Result` pattern is unchanged.
 
 ## Complete API Reference
 
@@ -505,23 +523,35 @@ All method signatures on the encryption client remain the same. The `Result` pat
 
 | Method | Signature | Returns |
 |---|---|---|
-| `encrypt` | `(plaintext, { column, table })` | `EncryptOperation` |
+| `encrypt` | `(plaintext, { contract: contract.table.column })` | `EncryptOperation` |
 | `decrypt` | `(encryptedData)` | `DecryptOperation` |
-| `encryptQuery` | `(plaintext, { column, table, queryType?, returnType? })` | `EncryptQueryOperation` |
+| `encryptQuery` | `(plaintext, { contract: contract.table.column, queryType?, returnType? })` | `EncryptQueryOperation` |
 | `encryptQuery` | `(terms: readonly ScalarQueryTerm[])` | `BatchEncryptQueryOperation` |
-| `encryptModel` | `(model, table)` | `EncryptModelOperation<EncryptedFromSchema<T, S>>` |
+| `encryptModel` | `(model, contract.table)` | `EncryptModelOperation<EncryptedFromSchema<T, S>>` |
 | `decryptModel` | `(encryptedModel)` | `DecryptModelOperation<T>` |
-| `bulkEncrypt` | `(plaintexts, { column, table })` | `BulkEncryptOperation` |
+| `bulkEncrypt` | `(plaintexts, { contract: contract.table.column })` | `BulkEncryptOperation` |
 | `bulkDecrypt` | `(encryptedPayloads)` | `BulkDecryptOperation` |
-| `bulkEncryptModels` | `(models, table)` | `BulkEncryptModelsOperation<EncryptedFromSchema<T, S>>` |
+| `bulkEncryptModels` | `(models, contract.table)` | `BulkEncryptModelsOperation<EncryptedFromSchema<T, S>>` |
 | `bulkDecryptModels` | `(encryptedModels)` | `BulkDecryptModelsOperation<T>` |
 
 All operations are thenable (awaitable) and support `.withLockContext()` and `.audit()` chaining.
 
-### Schema Builders
+### defineContract
 
 ```typescript
-encryptedTable(tableName: string, columns: Record<string, EncryptedColumn | EncryptedField | nested>)
-encryptedColumn(columnName: string) // chainable: .equality(), .freeTextSearch(), .orderAndRange(), .searchableJson(), .dataType()
-encryptedField(valueName: string)   // for nested encrypted fields (not searchable), chainable: .dataType()
+import { defineContract, encrypted } from "@cipherstash/stack"
+
+const contract = defineContract({
+  tableName: {
+    columnName: encrypted({
+      type: "string",          // 'string' | 'number' | 'boolean' | 'date' | 'bigint' | 'json'
+      equality: true,          // optional: enable exact-match queries
+      freeTextSearch: true,    // optional: enable full-text / fuzzy search (or pass options object)
+      orderAndRange: true,     // optional: enable sorting and range queries
+      searchableJson: true,    // optional: enable JSONB path and containment queries (use with type: 'json')
+    }),
+  },
+})
 ```
+
+Note: The internal schema builders (`encryptedTable`, `encryptedColumn`, `encryptedField` from `@cipherstash/stack/schema`) are still available but `defineContract` with the `encrypted` helper is the preferred API.
