@@ -6,15 +6,15 @@
 
 <a href="https://cipherstash.com"><img alt="Built by CipherStash" src="https://raw.githubusercontent.com/cipherstash/meta/refs/heads/main/csbadge.svg?style=for-the-badge&labelColor=000"></a>
 <a href="https://github.com/cipherstash/protectjs/blob/main/LICENSE.md"><img alt="License" src="https://img.shields.io/npm/l/@cipherstash/protect.svg?style=for-the-badge&labelColor=000000"></a>
-<a href="https://docs.cipherstash.com"><img alt="Docs" src="https://img.shields.io/badge/Docs-333333.svg?style=for-the-badge&logo=readthedocs&labelColor=333"></a>
+<a href="https://cipherstash.com/docs"><img alt="Docs" src="https://img.shields.io/badge/Docs-333333.svg?style=for-the-badge&logo=readthedocs&labelColor=333"></a>
 <a href="https://discord.gg/5qwXUFb6PB"><img alt="Join the community on Discord" src="https://img.shields.io/badge/Join%20the%20community-blueviolet.svg?style=for-the-badge&logo=Discord&labelColor=000000&logoWidth=20"></a>
 
 </div>
 
 ## What is the stack?
 
-- [Encryption](https://docs.cipherstash.com/docs/encryption): Field-level encryption for TypeScript apps with searchable encrypted queries, zero-knowledge key management, and first-class ORM support.
-- [Secrets](https://docs.cipherstash.com/docs/secrets): Zero-trust secrets management with end-to-end encryption. Plaintext never leaves your application.
+- [Encryption](https://cipherstash.com/docs/encryption): Field-level encryption for TypeScript apps with searchable encrypted queries, zero-knowledge key management, and first-class ORM support.
+- [Secrets](https://cipherstash.com/docs/secrets): Zero-trust secrets management with end-to-end encryption. Plaintext never leaves your application.
 
 ## Quick look at the stack in action
 
@@ -32,14 +32,20 @@ const users = encryptedTable("users", {
 const client = await Encryption({ schemas: [users] });
 
 // 3. Encrypt
-const { data: ciphertext } = await client.encrypt("secret@example.com", {
+const encryptResult = await client.encrypt("secret@example.com", {
   column: users.email,
   table: users,
 });
+if (encryptResult.failure) {
+  throw new Error(`Encryption failed: ${encryptResult.failure.message}`);
+}
 
 // 4. Decrypt
-const { data: plaintext } = await client.decrypt(ciphertext);
-// => "secret@example.com"
+const decryptResult = await client.decrypt(encryptResult.data);
+if (decryptResult.failure) {
+  throw new Error(`Decryption failed: ${decryptResult.failure.message}`);
+}
+// decryptResult.data => "secret@example.com"
 ```
 
 **Secrets**
@@ -72,21 +78,21 @@ bun add @cipherstash/stack
 > [!IMPORTANT]
 > **You need to opt out of bundling when using `@cipherstash/stack`.**
 > It uses Node.js specific features and requires the native Node.js `require`.
-> Read more about bundling in the [documentation](https://docs.cipherstash.com/docs/encryption/bundling).
+> Read more about bundling in the [documentation](https://cipherstash.com/docs/encryption/bundling).
 
 ## Features
 
-- **[Searchable encryption](https://docs.cipherstash.com/docs/platform/searchable-encryption)**: query encrypted data with equality, free text search, range, and [JSONB queries](https://docs.cipherstash.com/docs/encryption/searchable-encryption#jsonb-queries-with-searchablejson).
-- **[Type-safe schema](https://docs.cipherstash.com/docs/encryption/schema)**: define encrypted tables and columns with `encryptedTable` / `encryptedColumn`
-- **[Model & bulk operations](https://docs.cipherstash.com/docs/encryption/encrypt-decrypt#model-operations)**: encrypt and decrypt entire objects or batches with `encryptModel` / `bulkEncryptModels`.
-- **[Identity-aware encryption](https://docs.cipherstash.com/docs/encryption/identity)**: bind encryption to user identity with lock contexts for policy-based access control.
-- **[Secrets management](https://docs.cipherstash.com/docs/secrets)**: store and retrieve encrypted secrets via the Secrets SDK and CLI.
+- **[Searchable encryption](https://cipherstash.com/docs/platform/searchable-encryption)**: query encrypted data with equality, free text search, range, and [JSONB queries](https://cipherstash.com/docs/encryption/searchable-encryption#jsonb-queries-with-searchablejson).
+- **[Type-safe schema](https://cipherstash.com/docs/encryption/schema)**: define encrypted tables and columns with `encryptedTable` / `encryptedColumn`
+- **[Model & bulk operations](https://cipherstash.com/docs/encryption/encrypt-decrypt#model-operations)**: encrypt and decrypt entire objects or batches with `encryptModel` / `bulkEncryptModels`.
+- **[Identity-aware encryption](https://cipherstash.com/docs/encryption/identity)**: bind encryption to user identity with lock contexts for policy-based access control.
+- **[Secrets management](https://cipherstash.com/docs/secrets)**: store and retrieve encrypted secrets via the Secrets SDK and CLI.
 
 ## Integrations
 
-- [Encryption + Drizzle](https://docs.cipherstash.com/docs/encryption/drizzle)
-- [Encryption + Supabase](https://docs.cipherstash.com/docs/encryption/supabase)
-- [Encryption + DynamoDB](https://docs.cipherstash.com/docs/encryption/dynamodb)
+- [Encryption + Drizzle](https://cipherstash.com/docs/encryption/drizzle)
+- [Encryption + Supabase](https://cipherstash.com/docs/encryption/supabase)
+- [Encryption + DynamoDB](https://cipherstash.com/docs/encryption/dynamodb)
 
 ## Use cases
 
@@ -96,10 +102,10 @@ bun add @cipherstash/stack
 
 ## Documentation
 
-- [Documentation](https://docs.cipherstash.com)
-- [Encryption getting started guide](https://docs.cipherstash.com/docs/encryption/getting-started)
-- [Secrets getting started guide](https://docs.cipherstash.com/docs/secrets/getting-started)
-- [SDK and API reference](https://docs.cipherstash.com/docs/reference)
+- [Documentation](https://cipherstash.com/docs)
+- [Encryption getting started guide](https://cipherstash.com/docs/encryption/getting-started)
+- [Secrets getting started guide](https://cipherstash.com/docs/secrets/getting-started)
+- [SDK and API reference](https://cipherstash.com/docs/reference)
 
 ## Contributing
 
@@ -110,6 +116,8 @@ Contributions are welcome and highly appreciated. However, before you jump right
 If you believe you have found a security vulnerability, we encourage you to **_responsibly disclose this and NOT open a public issue_**.
 
 Please email [security@cipherstash.com](mailto:security@cipherstash.com) with details about the vulnerability. We will review your report and provide further instructions for submitting your report.
+
+For our full security policy, supported versions, and contributor guidelines, see [SECURITY.md](./SECURITY.md).
 
 ## License
 

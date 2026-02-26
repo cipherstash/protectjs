@@ -554,12 +554,9 @@ For Supabase users, we provide a specific implementation guide. [Read more about
    - Handle encryption errors aggressively
    - Handle decryption errors gracefully
 
-## Performance optimization
+## EQL requirement
 
-For optimal query performance on encrypted columns, ensure your PostgreSQL database has the EQL v2 extension installed and that encrypted columns use the `eql_v2_encrypted` type.
-
-> [!NOTE]
-> PostgreSQL index support for encrypted columns is evolving. Check the [EQL repository](https://github.com/cipherstash/encrypt-query-language) for the latest guidance on creating indexes for encrypted columns.
+Searchable encryption on PostgreSQL requires the [EQL v2 extension](https://github.com/cipherstash/encrypt-query-language) to be installed. Encrypted columns must use the `eql_v2_encrypted` type so that the database can build and query the necessary indexes.
 
 ### Didn't find what you wanted?
 

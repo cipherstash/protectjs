@@ -201,18 +201,20 @@ const bulkDecryptedResult = await client
 All model operations return a `Result` type that includes either a `data` or `failure` property:
 
 ```typescript
+// import { EncryptionErrorTypes } from "@cipherstash/stack"
+
 const result = await client.encryptModel(user, users);
 
 if (result.failure) {
   // Handle specific error types
   switch (result.failure.type) {
-    case "EncryptionError":
+    case EncryptionErrorTypes.EncryptionError:
       console.error("Encryption failed:", result.failure.message);
       break;
-    case "ClientInitError":
+    case EncryptionErrorTypes.ClientInitError:
       console.error("Client not initialized:", result.failure.message);
       break;
-    case "LockContextError":
+    case EncryptionErrorTypes.LockContextError:
       console.error("Lock context error:", result.failure.message);
       break;
     default:

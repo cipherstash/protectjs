@@ -1,6 +1,6 @@
 import * as p from '@clack/prompts'
-import type { InitStep, InitState, InitProvider } from '../types.js'
-import { startDeviceCodeAuth, pollForToken } from '../stubs.js'
+import { pollForToken, startDeviceCodeAuth } from '../stubs.js'
+import type { InitProvider, InitState, InitStep } from '../types.js'
 import { CancelledError } from '../types.js'
 
 export const authenticateStep: InitStep = {
@@ -10,7 +10,8 @@ export const authenticateStep: InitStep = {
     const s = p.spinner()
 
     s.start('Starting authentication...')
-    const { verificationUrl, userCode, deviceCode } = await startDeviceCodeAuth()
+    const { verificationUrl, userCode, deviceCode } =
+      await startDeviceCodeAuth()
     s.stop('Authentication started')
 
     p.note(

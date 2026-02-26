@@ -1,6 +1,6 @@
+import { ProtectOperatorError, encryptedType } from '@cipherstash/drizzle/pg'
 import { pgTable } from 'drizzle-orm/pg-core'
 import { describe, expect, it } from 'vitest'
-import { encryptedType, ProtectOperatorError } from '@cipherstash/drizzle/pg'
 import { setup } from './test-utils'
 
 const docsTable = pgTable('json_docs', {
@@ -97,9 +97,9 @@ describe('JSONB operator error paths', () => {
   it('throws ProtectOperatorError for jsonbGet without searchableJson', () => {
     const { protectOps } = setup()
 
-    expect(() =>
-      protectOps.jsonbGet(docsTable.noJsonConfig, '$.path'),
-    ).toThrow(ProtectOperatorError)
+    expect(() => protectOps.jsonbGet(docsTable.noJsonConfig, '$.path')).toThrow(
+      ProtectOperatorError,
+    )
   })
 
   it('error includes column name and operator context', () => {

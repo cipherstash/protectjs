@@ -426,7 +426,6 @@ describe('encryptQuery', () => {
       expect(data[0]).toMatchObject({ i: { t: 'users', c: 'email' } })
       expect(data[0]).toHaveProperty('hm')
     }, 30000)
-
   })
 
   describe('audit support', () => {
@@ -580,7 +579,6 @@ describe('encryptQuery', () => {
       expect(typeof data[2]).toBe('string')
       expect(data[2]).toMatch(/^"\(.*\)"$/)
     }, 30000)
-
   })
 
   describe('single-value returnType formatting', () => {
@@ -646,7 +644,6 @@ describe('encryptQuery', () => {
       })
       expect(typeof data).toBe('object')
     }, 30000)
-
   })
 
   describe('LockContext support', () => {

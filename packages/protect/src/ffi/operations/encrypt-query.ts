@@ -5,6 +5,7 @@ import {
 } from '@cipherstash/protect-ffi'
 import { type ProtectError, ProtectErrorTypes } from '../..'
 import { logger } from '../../../../utils/logger'
+import { formatEncryptedResult } from '../../helpers'
 import type { LockContext } from '../../identify'
 import type {
   Client,
@@ -19,7 +20,6 @@ import {
 } from '../helpers/validation'
 import { noClientError } from '../index'
 import { ProtectOperation } from './base-operation'
-import { formatEncryptedResult } from '../../helpers'
 
 /**
  * @internal Use {@link ProtectClient.encryptQuery} instead.

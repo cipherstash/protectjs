@@ -177,25 +177,25 @@ const { data, error } = await eSupabase
 ### Range and comparison filters
 
 ```typescript
-// Greater than (requires .orderAndRange())
+// Find all users with age greater than 21 (requires .orderAndRange())
 const { data, error } = await eSupabase
   .from<UserRow>('users', users)
   .select('id, email, name')
   .gt('age', 21)
 
-// Greater than or equal
+// Find all users aged 18 or older
 const { data, error } = await eSupabase
   .from<UserRow>('users', users)
   .select('id, email, name')
   .gte('age', 18)
 
-// Less than
+// Find all users under 65
 const { data, error } = await eSupabase
   .from<UserRow>('users', users)
   .select('id, email, name')
   .lt('age', 65)
 
-// Less than or equal
+// Find all users aged 100 or younger
 const { data, error } = await eSupabase
   .from<UserRow>('users', users)
   .select('id, email, name')

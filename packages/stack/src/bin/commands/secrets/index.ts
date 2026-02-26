@@ -1,7 +1,7 @@
-import { style } from './helpers.js'
 import { deleteSecret } from './delete.js'
 import { getManySecrets } from './get-many.js'
 import { getSecret } from './get.js'
+import { style } from './helpers.js'
 import { listSecrets } from './list.js'
 import { setSecret } from './set.js'
 

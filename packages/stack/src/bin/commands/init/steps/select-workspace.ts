@@ -1,6 +1,6 @@
 import * as p from '@clack/prompts'
-import type { InitStep, InitState, InitProvider } from '../types.js'
-import { fetchWorkspaces, createWorkspace } from '../stubs.js'
+import { createWorkspace, fetchWorkspaces } from '../stubs.js'
+import type { InitProvider, InitState, InitStep } from '../types.js'
 import { CancelledError } from '../types.js'
 
 export const selectWorkspaceStep: InitStep = {

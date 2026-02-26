@@ -1,5 +1,5 @@
-import { getErrorCode } from '@/encryption/helpers/error-code'
 import { formatEncryptedResult } from '@/encryption/helpers'
+import { getErrorCode } from '@/encryption/helpers/error-code'
 import { type EncryptionError, EncryptionErrorTypes } from '@/errors'
 import type { Context, LockContext } from '@/identity'
 import type { Client, EncryptedQueryResult, ScalarQueryTerm } from '@/types'

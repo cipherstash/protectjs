@@ -172,6 +172,17 @@ console.log(result.data.message) // Secret deleted successfully
 
 The `stash` CLI is bundled with `@cipherstash/stack` and available after install.
 
+### CLI flag reference
+
+| Flag | Alias | Description |
+|---|---|---|
+| `--name` | `-n` | Secret name |
+| `--value` | `-V` | Secret value (set only) |
+| `--environment` | `-e` | Environment name |
+| `--yes` | `-y` | Skip confirmation (delete only) |
+
+The CLI reads credentials from the same `CS_*` environment variables. Use a `.env` file for convenience.
+
 ### Set a secret
 
 ```bash
@@ -199,17 +210,6 @@ npx stash secrets list -e production
 npx stash secrets delete --name DATABASE_URL --environment production
 npx stash secrets delete -n DATABASE_URL -e production --yes  # skip confirmation
 ```
-
-### CLI flag reference
-
-| Flag | Alias | Description |
-|---|---|---|
-| `--name` | `-n` | Secret name |
-| `--value` | `-V` | Secret value (set only) |
-| `--environment` | `-e` | Environment name |
-| `--yes` | `-y` | Skip confirmation (delete only) |
-
-The CLI reads credentials from the same `CS_*` environment variables. Use a `.env` file for convenience.
 
 ## Environment isolation
 

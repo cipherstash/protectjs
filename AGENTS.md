@@ -63,9 +63,6 @@ CS_CLIENT_ACCESS_KEY=
 USER_JWT=
 USER_2_JWT=
 
-# Optional – CTS endpoint for lock contexts
-CS_CTS_ENDPOINT=https://ap-southeast-2.aws.auth.viturhosted.net
-
 # Logging (plaintext is never logged by design)
 STASH_STACK_LOG=debug|info|error  # default: error (errors only)
 ```

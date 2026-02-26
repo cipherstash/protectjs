@@ -60,7 +60,7 @@ If `config` is omitted, the client reads `CS_*` environment variables automatica
 
 ### Logging
 
-Configure the log level with the `STASH_STACK_LOG` environment variable:
+Logging is enabled by default at the `error` level. Configure the log level with the `STASH_STACK_LOG` environment variable:
 
 ```bash
 STASH_STACK_LOG=error  # debug | info | error (default: error)

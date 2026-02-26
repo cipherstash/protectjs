@@ -4,11 +4,11 @@ import type { LockContext } from '@/identity'
 import type { Client, Decrypted } from '@/types'
 import { createRequestLogger } from '@/utils/logger'
 import { type Result, withResult } from '@byteslice/result'
-import { noClientError } from '../index'
 import {
   bulkDecryptModels,
   bulkDecryptModelsWithLockContext,
 } from '../helpers/model-helpers'
+import { noClientError } from '../index'
 import { EncryptionOperation } from './base-operation'
 
 export class BulkDecryptModelsOperation<

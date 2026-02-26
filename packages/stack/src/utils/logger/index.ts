@@ -1,4 +1,4 @@
-import { initLogger, createRequestLogger } from 'evlog'
+import { createRequestLogger, initLogger } from 'evlog'
 
 /**
  * Log level for the Stack logger.

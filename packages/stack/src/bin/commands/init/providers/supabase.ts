@@ -5,7 +5,11 @@ export function createSupabaseProvider(): InitProvider {
     name: 'supabase',
     introMessage: 'Setting up CipherStash for your Supabase project...',
     connectionOptions: [
-      { value: 'supabase-js', label: 'Supabase JS Client', hint: 'recommended' },
+      {
+        value: 'supabase-js',
+        label: 'Supabase JS Client',
+        hint: 'recommended',
+      },
       { value: 'drizzle', label: 'Drizzle ORM' },
       { value: 'prisma', label: 'Prisma' },
       { value: 'raw-sql', label: 'Raw SQL / pg' },

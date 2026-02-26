@@ -1,7 +1,7 @@
 import 'dotenv/config'
 import { LockContext } from '@/identity'
 import { Encryption } from '@/index'
-import { encryptedColumn, encryptedTable, encryptedField } from '@/schema'
+import { encryptedColumn, encryptedField, encryptedTable } from '@/schema'
 import { describe, expect, it, vi } from 'vitest'
 
 const users = encryptedTable('users', {

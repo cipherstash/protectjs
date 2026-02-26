@@ -5,11 +5,11 @@ import type { EncryptedTable, EncryptedTableColumn } from '@/schema'
 import type { Client } from '@/types'
 import { createRequestLogger } from '@/utils/logger'
 import { type Result, withResult } from '@byteslice/result'
-import { noClientError } from '../index'
 import {
   bulkEncryptModels,
   bulkEncryptModelsWithLockContext,
 } from '../helpers/model-helpers'
+import { noClientError } from '../index'
 import { EncryptionOperation } from './base-operation'
 
 export class BulkEncryptModelsOperation<

@@ -7,6 +7,7 @@ import {
 import type { Encrypted as CipherStashEncrypted } from '@cipherstash/protect-ffi'
 import { type ProtectError, ProtectErrorTypes } from '../..'
 import { logger } from '../../../../utils/logger'
+import { formatEncryptedResult } from '../../helpers'
 import type { Context, LockContext } from '../../identify'
 import type { Client, EncryptedQueryResult, ScalarQueryTerm } from '../../types'
 import { getErrorCode } from '../helpers/error-code'
@@ -17,7 +18,6 @@ import {
 } from '../helpers/validation'
 import { noClientError } from '../index'
 import { ProtectOperation } from './base-operation'
-import { formatEncryptedResult } from '../../helpers'
 
 /**
  * Separates null/undefined values from non-null terms in the input array.

@@ -1,10 +1,10 @@
 import { getErrorCode } from '@/encryption/helpers/error-code'
+import { noClientError } from '@/encryption/index'
 import { type EncryptionError, EncryptionErrorTypes } from '@/errors'
+import type { Client, EncryptedSearchTerm, SearchTerm } from '@/types'
 import { createRequestLogger } from '@/utils/logger'
 import { type Result, withResult } from '@byteslice/result'
 import { encryptBulk } from '@cipherstash/protect-ffi'
-import type { Client, EncryptedSearchTerm, SearchTerm } from '@/types'
-import { noClientError } from '@/encryption/index'
 import { EncryptionOperation } from './base-operation'
 
 export class SearchTermsOperation extends EncryptionOperation<

@@ -1,17 +1,17 @@
 import 'dotenv/config'
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import {
+  createProtectOperators,
+  encryptedType,
+  extractProtectSchema,
+} from '@cipherstash/drizzle/pg'
 import { protect } from '@cipherstash/protect'
 import * as drizzleOrm from 'drizzle-orm'
 import { integer, pgTable } from 'drizzle-orm/pg-core'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import {
-  createProtectOperators,
-  encryptedType,
-  extractProtectSchema,
-} from '@cipherstash/drizzle/pg'
 import { docSeedData } from './fixtures/doc-seed-data'
 import { type ExecutionContext, executeCodeBlock } from './utils/code-executor'
 import { extractExecutableBlocks } from './utils/markdown-parser'

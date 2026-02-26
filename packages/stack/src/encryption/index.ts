@@ -3,8 +3,8 @@ import {
   type EncryptConfig,
   type EncryptedTable,
   type EncryptedTableColumn,
-  encryptConfigSchema,
   buildEncryptConfig,
+  encryptConfigSchema,
 } from '@/schema'
 import type {
   BulkDecryptPayload,
@@ -17,10 +17,12 @@ import type {
   KeysetIdentifier,
   ScalarQueryTerm,
 } from '@/types'
+import type { EncryptionClientConfig } from '@/types'
 import { loadWorkSpaceId } from '@/utils/config'
 import { logger } from '@/utils/logger'
 import { type Result, withResult } from '@byteslice/result'
 import { type JsPlaintext, newClient } from '@cipherstash/protect-ffi'
+import { validate as uuidValidate } from 'uuid'
 import { toFfiKeysetIdentifier } from './helpers'
 import { isScalarQueryTermArray } from './helpers/type-guards'
 import { BatchEncryptQueryOperation } from './operations/batch-encrypt-query'
@@ -33,7 +35,6 @@ import { DecryptModelOperation } from './operations/decrypt-model'
 import { EncryptOperation } from './operations/encrypt'
 import { EncryptModelOperation } from './operations/encrypt-model'
 import { EncryptQueryOperation } from './operations/encrypt-query'
-import type { EncryptionClientConfig } from '@/types'
 
 export const noClientError = () =>
   new Error(
@@ -591,12 +592,6 @@ export class EncryptionClient {
   }
 }
 
-function isValidUuid(uuid: string): boolean {
-  const uuidRegex =
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
-  return uuidRegex.test(uuid)
-}
-
 /**
  * Creates and initializes an Encryption client for encrypting and decrypting data with CipherStash.
  *
@@ -641,7 +636,7 @@ export const Encryption = async (
   if (
     clientConfig?.keyset &&
     'id' in clientConfig.keyset &&
-    !isValidUuid(clientConfig.keyset.id)
+    !uuidValidate(clientConfig.keyset.id)
   ) {
     throw new Error(
       '[encryption]: Invalid UUID provided for keyset id. Must be a valid UUID.',

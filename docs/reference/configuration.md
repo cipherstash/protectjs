@@ -96,7 +96,6 @@ The following environment variables are supported:
 | `CS_WORKSPACE_CRN`     | The workspace CRN for your CipherStash account.                 | Yes      |                                              |
 | `CS_CLIENT_ACCESS_KEY` | The access key for your CipherStash account.                    | Yes      |                                              |
 | `CS_CONFIG_PATH`       | A temporary path to store the CipherStash client configuration. | No       | `/home/{username}/.cipherstash`              |
-| `CS_CTS_ENDPOINT`      | The CipherStash Token Service endpoint for lock contexts.       | No       | `https://ap-southeast-2.aws.auth.viturhosted.net` |
 | `STASH_STACK_LOG`      | Log level: `debug`, `info`, or `error`.                         | No       | `error`                                      |
 
 ## Configuring the Encryption client directly

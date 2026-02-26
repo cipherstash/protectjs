@@ -3,9 +3,9 @@ import { type EncryptionError, EncryptionErrorTypes } from '@/errors'
 import type { Context, LockContext } from '@/identity'
 import type {
   EncryptedColumn,
+  EncryptedField,
   EncryptedTable,
   EncryptedTableColumn,
-  EncryptedField,
 } from '@/schema'
 import type {
   BulkEncryptPayload,

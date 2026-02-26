@@ -1,15 +1,15 @@
 import * as p from '@clack/prompts'
-import type { InitProvider, InitState } from './types.js'
-import { CancelledError } from './types.js'
+import { createBaseProvider } from './providers/base.js'
+import { createSupabaseProvider } from './providers/supabase.js'
 import { authenticateStep } from './steps/authenticate.js'
-import { selectWorkspaceStep } from './steps/select-workspace.js'
-import { selectRegionStep } from './steps/select-region.js'
-import { selectConnectionStep } from './steps/select-connection.js'
 import { detectDatabaseUrlStep } from './steps/detect-database-url.js'
 import { installEqlStep } from './steps/install-eql.js'
 import { nextStepsStep } from './steps/next-steps.js'
-import { createSupabaseProvider } from './providers/supabase.js'
-import { createBaseProvider } from './providers/base.js'
+import { selectConnectionStep } from './steps/select-connection.js'
+import { selectRegionStep } from './steps/select-region.js'
+import { selectWorkspaceStep } from './steps/select-workspace.js'
+import type { InitProvider, InitState } from './types.js'
+import { CancelledError } from './types.js'
 
 const PROVIDER_MAP: Record<string, () => InitProvider> = {
   supabase: createSupabaseProvider,

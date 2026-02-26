@@ -1,12 +1,12 @@
-import { describe, expectTypeOf, it } from 'vitest'
+import type { EncryptionClient } from '@/encryption'
 import { encryptedColumn, encryptedTable } from '@/schema'
 import type {
-  InferEncrypted,
-  InferPlaintext,
   EncryptedColumn,
+  EncryptedField,
   EncryptedTable,
   EncryptedTableColumn,
-  EncryptedField,
+  InferEncrypted,
+  InferPlaintext,
 } from '@/schema'
 import type {
   Decrypted,
@@ -19,7 +19,7 @@ import type {
   OtherFields,
   QueryTypeName,
 } from '@/types'
-import type { EncryptionClient } from '@/encryption'
+import { describe, expectTypeOf, it } from 'vitest'
 
 describe('Type inference', () => {
   it('encryptedTable returns ProtectTable with column access', () => {
