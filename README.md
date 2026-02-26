@@ -13,8 +13,8 @@
 
 ## What is the stack?
 
-- [Encryption](https://cipherstash.com/docs/encryption): Field-level encryption for TypeScript apps with searchable encrypted queries, zero-knowledge key management, and first-class ORM support.
-- [Secrets](https://cipherstash.com/docs/secrets): Zero-trust secrets management with end-to-end encryption. Plaintext never leaves your application.
+- [Encryption](https://docs.cipherstash.com/docs/encryption): Field-level encryption for TypeScript apps with searchable encrypted queries, zero-knowledge key management, and first-class ORM support.
+- [Secrets](https://docs.cipherstash.com/docs/secrets): Zero-trust secrets management with end-to-end encryption. Plaintext never leaves your application.
 
 ## Quick look at the stack in action
 
@@ -72,21 +72,21 @@ bun add @cipherstash/stack
 > [!IMPORTANT]
 > **You need to opt out of bundling when using `@cipherstash/stack`.**
 > It uses Node.js specific features and requires the native Node.js `require`.
-> Read more about bundling in the [documentation](https://cipherstash.com/docs).
+> Read more about bundling in the [documentation](https://docs.cipherstash.com/docs/encryption/bundling).
 
 ## Features
 
-- **[Searchable encryption](https://cipherstash.com/docs/searchable-encryption)**: query encrypted data with equality, free text search, range, and [JSONB queries](https://cipherstash.com/docs/protect-js)
-- **[Type-safe schema](https://cipherstash.com/docs/schema)**: define encrypted tables and columns with `encryptedTable` / `encryptedColumn`
-- **[Model & bulk operations](https://cipherstash.com/docs/schema)**: encrypt and decrypt entire objects or batches with [`encryptModel` / `bulkEncryptModels`](./docs/reference/model-operations.md)
-- **[Identity-aware encryption](https://cipherstash.com/docs/protect-js)**: bind encryption to user identity with [lock contexts](https://cipherstash.com/docs/protect-js)
-- **[Secrets management](https://cipherstash.com/docs/secrets)**: store and retrieve encrypted secrets via the [`Secrets` API](./docs/reference/secrets.md)
+- **[Searchable encryption](https://docs.cipherstash.com/docs/platform/searchable-encryption)**: query encrypted data with equality, free text search, range, and [JSONB queries](https://docs.cipherstash.com/docs/encryption/searchable-encryption#jsonb-queries-with-searchablejson).
+- **[Type-safe schema](https://docs.cipherstash.com/docs/encryption/schema)**: define encrypted tables and columns with `encryptedTable` / `encryptedColumn`
+- **[Model & bulk operations](https://docs.cipherstash.com/docs/encryption/encrypt-decrypt#model-operations)**: encrypt and decrypt entire objects or batches with `encryptModel` / `bulkEncryptModels`.
+- **[Identity-aware encryption](https://docs.cipherstash.com/docs/encryption/identity)**: bind encryption to user identity with lock contexts for policy-based access control.
+- **[Secrets management](https://docs.cipherstash.com/docs/secrets)**: store and retrieve encrypted secrets via the Secrets SDK and CLI.
 
 ## Integrations
 
-- [Encryption + Drizzle](https://cipherstash.com/docs/drizzle)
-- [Encryption + Supabase](https://cipherstash.com/docs/supabase)
-- [Encryption + DynamoDB](https://cipherstash.com/docs/dynamodb)
+- [Encryption + Drizzle](https://docs.cipherstash.com/docs/encryption/drizzle)
+- [Encryption + Supabase](https://docs.cipherstash.com/docs/encryption/supabase)
+- [Encryption + DynamoDB](https://docs.cipherstash.com/docs/encryption/dynamodb)
 
 ## Use cases
 
@@ -96,10 +96,10 @@ bun add @cipherstash/stack
 
 ## Documentation
 
-- [Documentation](https://cipherstash.com/docs)
-- [Encryption getting started guide](https://cipherstash.com/docs/encryption/getting-started)
-- [Secrets getting started guide](https://cipherstash.com/docs/secrets/getting-started)
-- [SDK and API reference](https://cipherstash.com/docs/reference)
+- [Documentation](https://docs.cipherstash.com)
+- [Encryption getting started guide](https://docs.cipherstash.com/docs/encryption/getting-started)
+- [Secrets getting started guide](https://docs.cipherstash.com/docs/secrets/getting-started)
+- [SDK and API reference](https://docs.cipherstash.com/docs/reference)
 
 ## Contributing
 
