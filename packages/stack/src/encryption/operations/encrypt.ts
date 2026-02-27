@@ -3,9 +3,9 @@ import { type EncryptionError, EncryptionErrorTypes } from '@/errors'
 import type { LockContext } from '@/identity'
 import type {
   EncryptedColumn,
+  EncryptedField,
   EncryptedTable,
   EncryptedTableColumn,
-  EncryptedField,
 } from '@/schema'
 import type { Client, EncryptOptions, Encrypted } from '@/types'
 import { createRequestLogger } from '@/utils/logger'
@@ -23,11 +23,7 @@ export class EncryptOperation extends EncryptionOperation<Encrypted> {
   private column: EncryptedColumn | EncryptedField
   private table: EncryptedTable<EncryptedTableColumn>
 
-  constructor(
-    client: Client,
-    plaintext: JsPlaintext,
-    opts: EncryptOptions,
-  ) {
+  constructor(client: Client, plaintext: JsPlaintext, opts: EncryptOptions) {
     super()
     this.client = client
     this.plaintext = plaintext

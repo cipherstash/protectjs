@@ -1,10 +1,9 @@
 import type {
   EncryptedColumn,
+  EncryptedField,
   EncryptedTable,
   EncryptedTableColumn,
-  EncryptedField,
 } from '@/schema'
-import type { LoggingConfig } from '@/utils/logger'
 import type {
   Encrypted as CipherStashEncrypted,
   JsPlaintext,
@@ -84,7 +83,6 @@ type AtLeastOneCsTable<T> = [T, ...T[]]
 export type EncryptionClientConfig = {
   schemas: AtLeastOneCsTable<EncryptedTable<EncryptedTableColumn>>
   config?: ClientConfig
-  logging?: LoggingConfig
 }
 
 // ---------------------------------------------------------------------------
@@ -134,8 +132,9 @@ export type OtherFields<T> = {
 }
 
 export type DecryptedFields<T> = {
-  [K in keyof T as NonNullable<T[K]> extends Encrypted ? K : never]:
-    null extends T[K] ? string | null : string
+  [K in keyof T as NonNullable<T[K]> extends Encrypted
+    ? K
+    : never]: null extends T[K] ? string | null : string
 }
 
 /** Model with encrypted fields replaced by plaintext (decrypted) values */
@@ -165,7 +164,9 @@ export type Decrypted<T> = OtherFields<T> & DecryptedFields<T>
 export type EncryptedFromSchema<T, S extends EncryptedTableColumn> = {
   [K in keyof T]: [K] extends [keyof S]
     ? [S[K & keyof S]] extends [EncryptedColumn | EncryptedField]
-      ? null extends T[K] ? Encrypted | null : Encrypted
+      ? null extends T[K]
+        ? Encrypted | null
+        : Encrypted
       : T[K]
     : T[K]
 }

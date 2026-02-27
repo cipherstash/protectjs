@@ -2,71 +2,119 @@
   <a href="https://cipherstash.com">
     <img alt="CipherStash Logo" loading="lazy" width="128" height="128" decoding="async" data-nimg="1" style="color:transparent" src="https://cipherstash.com/assets/cs-github.png">
   </a>
-  <h1>Protect.js</h1>
+  <h1>Data security Stack for TypeScript</h1>
 
 <a href="https://cipherstash.com"><img alt="Built by CipherStash" src="https://raw.githubusercontent.com/cipherstash/meta/refs/heads/main/csbadge.svg?style=for-the-badge&labelColor=000"></a>
-<a href="https://www.npmjs.com/package/@cipherstash/protect"><img alt="NPM version" src="https://img.shields.io/npm/v/@cipherstash/protect.svg?style=for-the-badge&labelColor=000000"></a>
-<a href="https://www.npmjs.com/package/@cipherstash/protect"><img alt="npm downloads" src="https://img.shields.io/npm/dm/@cipherstash/protect.svg?style=for-the-badge&labelColor=000000"></a>
 <a href="https://github.com/cipherstash/protectjs/blob/main/LICENSE.md"><img alt="License" src="https://img.shields.io/npm/l/@cipherstash/protect.svg?style=for-the-badge&labelColor=000000"></a>
+<a href="https://cipherstash.com/docs"><img alt="Docs" src="https://img.shields.io/badge/Docs-333333.svg?style=for-the-badge&logo=readthedocs&labelColor=333"></a>
 <a href="https://discord.gg/5qwXUFb6PB"><img alt="Join the community on Discord" src="https://img.shields.io/badge/Join%20the%20community-blueviolet.svg?style=for-the-badge&logo=Discord&labelColor=000000&logoWidth=20"></a>
 
 </div>
 
-## Getting Started
+## What is the stack?
 
-Protect.js lets you encrypt every value with its own key—without sacrificing performance or usability. Encryption happens in your app; ciphertext is stored in your database.
+- [Encryption](https://cipherstash.com/docs/stack/encryption): Field-level encryption for TypeScript apps with searchable encrypted queries, zero-knowledge key management, and first-class ORM support.
+- [Secrets](https://cipherstash.com/docs/stack/secrets): Zero-trust secrets management with end-to-end encryption. Plaintext never leaves your application.
 
-Per‑value unique keys are powered by CipherStash [ZeroKMS](https://cipherstash.com/products/zerokms) bulk key operations, backed by a root key in [AWS KMS](https://docs.aws.amazon.com/kms/latest/developerguide/overview.html).
+## Quick look at the stack in action
 
-Visit the [documentation](#documentation) below to get started with Protect.js and explore related products.
+**Encryption**
 
-## Documentation
+```typescript
+import { Encryption, encryptedTable, encryptedColumn } from "@cipherstash/stack";
 
-Visit the documentation for our products to get started:
+// 1. Define your schema
+const users = encryptedTable("users", {
+  email: encryptedColumn("email").equality().freeTextSearch(),
+});
 
-- **[Protect.js](https://cipherstash.com/docs/protect-js)** - End-to-end field level encryption for JavaScript/TypeScript apps with zero‑knowledge key management
-- **[Stash - Secrets Manager](https://getstash.sh/docs)** - Store and manage secrets like API keys and database credentials with zero-trust encryption
-- **[Protect.js for Drizzle ORM](https://cipherstash.com/docs/drizzle)** - Seamlessly integrate Protect.js with Drizzle ORM and PostgreSQL
+// 2. Initialize the client
+const client = await Encryption({ schemas: [users] });
+
+// 3. Encrypt
+const encryptResult = await client.encrypt("secret@example.com", {
+  column: users.email,
+  table: users,
+});
+if (encryptResult.failure) {
+  // Handle errors your way
+}
+
+// 4. Decrypt
+const decryptResult = await client.decrypt(encryptResult.data);
+if (decryptResult.failure) {
+  // Handle errors your way
+}
+// decryptResult.data => "secret@example.com"
+```
+
+**Secrets**
+
+```typescript
+import { Secrets } from "@cipherstash/stack";
+
+// 1. Initialize the secrets client
+const secrets = new Secrets({ environment: "production" });
+
+// 2. Set a secret with the SDK or the CLI
+await secrets.set("DATABASE_URL", "postgres://user:pass@host:5432/db");
+
+// 3. Consume the secret in your application
+const secret = await secrets.get("DATABASE_URL");
+```
+
+## Install
+
+```bash
+npm install @cipherstash/stack
+# or
+yarn add @cipherstash/stack
+# or
+pnpm add @cipherstash/stack
+# or
+bun add @cipherstash/stack
+```
+
+> [!IMPORTANT]
+> **You need to opt out of bundling when using `@cipherstash/stack`.**
+> It uses Node.js specific features and requires the native Node.js `require`.
+> Read more about bundling in the [documentation](https://cipherstash.com/docs/stack/encryption/bundling).
 
 ## Features
 
-Protect.js protects data using industry-standard AES encryption and [ZeroKMS](https://cipherstash.com/products/zerokms) for bulk encryption and decryption operations and is up to 14x faster than AWS KMS or Hashicorp Vault. This enables every encrypted value, in every column, in every row in your database to have a unique key, without sacrificing performance.
+- **[Searchable encryption](https://cipherstash.com/docs/stack/platform/searchable-encryption)**: query encrypted data with equality, free text search, range, and [JSONB queries](https://cipherstash.com/docs/stack/encryption/searchable-encryption#jsonb-queries-with-searchablejson).
+- **[Type-safe schema](https://cipherstash.com/docs/stack/encryption/schema)**: define encrypted tables and columns with `encryptedTable` / `encryptedColumn`
+- **[Model & bulk operations](https://cipherstash.com/docs/stack/encryption/encrypt-decrypt#model-operations)**: encrypt and decrypt entire objects or batches with `encryptModel` / `bulkEncryptModels`.
+- **[Identity-aware encryption](https://cipherstash.com/docs/stack/encryption/identity)**: bind encryption to user identity with lock contexts for policy-based access control.
+- **[Secrets management](https://cipherstash.com/docs/stack/secrets)**: store and retrieve encrypted secrets via the Secrets SDK and CLI.
 
-**Features:**
+## Integrations
 
-- **Bulk encryption and decryption**: Encrypt and decrypt thousands of records at once, while using a unique key for every value
-- **Identity-aware encryption**: Lock down access to sensitive data by requiring a valid JWT to perform decryption
-- **Searchable encryption**: Search encrypted data in PostgreSQL with equality, range, and text search
-- **TypeScript support**: Strongly typed with TypeScript interfaces and types
-- **Audit trail**: Every decryption event is logged via ZeroKMS Access Intelligence to help you prove compliance
+- [Encryption + Drizzle](https://cipherstash.com/docs/stack/encryption/drizzle)
+- [Encryption + Supabase](https://cipherstash.com/docs/stack/encryption/supabase)
+- [Encryption + DynamoDB](https://cipherstash.com/docs/stack/encryption/dynamodb)
 
-**Use cases:**
+## Use cases
 
-- **Trusted data access**: Ensure only your end-users can access their sensitive data
-- **Meet compliance requirements faster**: Meet stringent 2026 privacy and security requirements
-- **Reduce the blast radius of data breaches**: Limit the impact of exploited vulnerabilities to only the data your end-users can decrypt
+- **Trusted data access**: ensure only your end-users can access their sensitive data using identity-bound encryption
+- **Sensitive config management**: store API keys and database credentials with zero-trust encryption and full audit trails
+- **Reduce breach impact**: limit the blast radius of exploited vulnerabilities to only the data the affected user can decrypt
 
-> [!IMPORTANT]
-> **You need to opt-out of bundling when using Protect.js.** Protect.js uses Node.js specific features and requires the use of the native Node.js `require`. See the [documentation](https://cipherstash.com/docs/protect-js) for bundling configuration guides.
+## Documentation
 
-## Community
-
-The Protect.js community can be found on [Discord](https://discord.gg/5qwXUFb6PB) where you can ask questions, voice ideas, and share your projects with other people.
-
-Do note that our [Code of Conduct](CODE_OF_CONDUCT.md) applies to all Protect.js community channels. Users are **highly encouraged** to read and adhere to it to avoid repercussions.
+- [Documentation](https://cipherstash.com/docs)
+- [Encryption getting started guide](https://cipherstash.com/docs/stack/encryption/getting-started)
+- [Secrets getting started guide](https://cipherstash.com/docs/stack/secrets/getting-started)
+- [SDK and API reference](https://cipherstash.com/docs/stack/reference)
 
 ## Contributing
 
-Contributions to Protect.js are welcome and highly appreciated. However, before you jump right into it, we would like you to review our [Contribution Guidelines](CONTRIBUTE.md) to make sure you have a smooth experience contributing to Protect.js.
-
----
+Contributions are welcome and highly appreciated. However, before you jump right into it, we would like you to review our [Contribution Guidelines](CONTRIBUTE.md) to make sure you have a smooth experience contributing.
 
 ## Security
 
-If you believe you have found a security vulnerability in Protect.js, we encourage you to **_responsibly disclose this and NOT open a public issue_**.
-
-Please email [security@cipherstash.com](mailto:security@cipherstash.com) with details about the vulnerability. We will review your report and provide further instructions for submitting your report.
+For our full security policy, supported versions, and contributor guidelines, see [SECURITY.md](./SECURITY.md).
 
 ## License
 
-Protect.js is [MIT licensed](./LICENSE.md).
+This project is [MIT licensed](./LICENSE.md).

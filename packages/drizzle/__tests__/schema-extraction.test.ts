@@ -1,6 +1,6 @@
+import { encryptedType, extractProtectSchema } from '@cipherstash/drizzle/pg'
 import { integer, pgTable, text } from 'drizzle-orm/pg-core'
 import { describe, expect, it } from 'vitest'
-import { encryptedType, extractProtectSchema } from '@cipherstash/drizzle/pg'
 
 // ============================================================================
 // 3a. Basic extraction

@@ -97,7 +97,7 @@ const usersTable = pgTable("users", {
 
 | Config Option | Type | Description |
 |---|---|---|
-| `dataType` | `"string"` \| `"number"` \| `"json"` | Plaintext data type (default: `"string"`) |
+| `dataType` | `"string"` \| `"number"` \| `"json"` \| `"boolean"` \| `"bigint"` \| `"date"` | Plaintext data type (default: `"string"`) |
 | `equality` | `boolean` \| `TokenFilter[]` | Enable equality index |
 | `freeTextSearch` | `boolean` \| `MatchIndexOpts` | Enable free-text search index |
 | `orderAndRange` | `boolean` | Enable ORE index for sorting and range queries |
@@ -336,29 +336,29 @@ if (!decrypted.failure) {
 
 | Operator | Usage | Required Index |
 |---|---|---|
-| `eq(col, value)` | Equality | `.equality()` |
-| `ne(col, value)` | Not equal | `.equality()` |
-| `gt(col, value)` | Greater than | `.orderAndRange()` |
-| `gte(col, value)` | Greater than or equal | `.orderAndRange()` |
-| `lt(col, value)` | Less than | `.orderAndRange()` |
-| `lte(col, value)` | Less than or equal | `.orderAndRange()` |
-| `between(col, min, max)` | Between (inclusive) | `.orderAndRange()` |
-| `notBetween(col, min, max)` | Not between | `.orderAndRange()` |
-| `like(col, pattern)` | LIKE pattern match | `.freeTextSearch()` |
-| `ilike(col, pattern)` | ILIKE case-insensitive | `.freeTextSearch()` |
-| `notIlike(col, pattern)` | NOT ILIKE | `.freeTextSearch()` |
-| `inArray(col, values)` | IN array | `.equality()` |
-| `notInArray(col, values)` | NOT IN array | `.equality()` |
-| `jsonbPathQueryFirst(col, selector)` | Extract first value at JSONB path | `.searchableJson()` |
-| `jsonbGet(col, selector)` | Get value using JSONB `->` operator | `.searchableJson()` |
-| `jsonbPathExists(col, selector)` | Check if JSONB path exists | `.searchableJson()` |
+| `eq(col, value)` | Equality | `equality: true` or `orderAndRange: true` |
+| `ne(col, value)` | Not equal | `equality: true` or `orderAndRange: true` |
+| `gt(col, value)` | Greater than | `orderAndRange: true` |
+| `gte(col, value)` | Greater than or equal | `orderAndRange: true` |
+| `lt(col, value)` | Less than | `orderAndRange: true` |
+| `lte(col, value)` | Less than or equal | `orderAndRange: true` |
+| `between(col, min, max)` | Between (inclusive) | `orderAndRange: true` |
+| `notBetween(col, min, max)` | Not between | `orderAndRange: true` |
+| `like(col, pattern)` | LIKE pattern match | `freeTextSearch: true` |
+| `ilike(col, pattern)` | ILIKE case-insensitive | `freeTextSearch: true` |
+| `notIlike(col, pattern)` | NOT ILIKE | `freeTextSearch: true` |
+| `inArray(col, values)` | IN array | `equality: true` |
+| `notInArray(col, values)` | NOT IN array | `equality: true` |
+| `jsonbPathQueryFirst(col, selector)` | Extract first value at JSONB path | `searchableJson: true` |
+| `jsonbGet(col, selector)` | Get value using JSONB `->` operator | `searchableJson: true` |
+| `jsonbPathExists(col, selector)` | Check if JSONB path exists | `searchableJson: true` |
 
 ### Sort Operators (sync)
 
 | Operator | Usage | Required Index |
 |---|---|---|
-| `asc(col)` | Ascending sort | `.orderAndRange()` |
-| `desc(col)` | Descending sort | `.orderAndRange()` |
+| `asc(col)` | Ascending sort | `orderAndRange: true` |
+| `desc(col)` | Descending sort | `orderAndRange: true` |
 
 ### Logical Operators (async, batched)
 
@@ -366,6 +366,20 @@ if (!decrypted.failure) {
 |---|---|---|
 | `and(...conditions)` | Combine with AND | Batches encryption |
 | `or(...conditions)` | Combine with OR | Batches encryption |
+
+Both `and()` and `or()` accept `undefined` conditions, which are filtered out. This is useful for conditional query building:
+
+```typescript
+const results = await db
+  .select()
+  .from(usersTable)
+  .where(
+    await encryptionOps.and(
+      maybeCond ? encryptionOps.eq(usersTable.email, value) : undefined,
+      encryptionOps.gte(usersTable.age, 18),
+    ),
+  )
+```
 
 ### Passthrough Operators (sync, no encryption)
 
@@ -392,7 +406,7 @@ import { eq } from "drizzle-orm"
 import { drizzle } from "drizzle-orm/postgres-js"
 import postgres from "postgres"
 import { pgTable, integer, timestamp, varchar } from "drizzle-orm/pg-core"
-import { encryptedType, extractEncryptionSchema, createEncryptionOperators } from "@cipherstash/stack/drizzle"
+import { encryptedType, extractEncryptionSchema, createEncryptionOperators, EncryptionOperatorError, EncryptionConfigError } from "@cipherstash/stack/drizzle"
 import { Encryption } from "@cipherstash/stack"
 
 // Schema
@@ -453,10 +467,23 @@ app.listen(3000)
 
 ## Error Handling
 
-`createEncryptionOperators` throws `EncryptionOperatorError` for configuration issues:
+Individual operators (e.g., `eq()`, `gte()`, `like()`) throw errors when invoked with invalid configuration or missing indexes:
+
+- **`EncryptionOperatorError`** — thrown for operator-level issues (e.g., invalid arguments, unsupported operations).
+- **`EncryptionConfigError`** — thrown for configuration issues (e.g., using `like` on a column without `freeTextSearch: true`).
 
 ```typescript
+import { createEncryptionOperators, EncryptionOperatorError, EncryptionConfigError } from "@cipherstash/stack/drizzle"
+
 class EncryptionOperatorError extends Error {
+  context?: {
+    tableName?: string
+    columnName?: string
+    operator?: string
+  }
+}
+
+class EncryptionConfigError extends Error {
   context?: {
     tableName?: string
     columnName?: string

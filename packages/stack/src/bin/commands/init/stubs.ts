@@ -53,7 +53,9 @@ export async function pollForToken(deviceCode: string): Promise<TokenResponse> {
 /**
  * TODO: GET `/workspaces` with Bearer token
  */
-export async function fetchWorkspaces(accessToken: string): Promise<Workspace[]> {
+export async function fetchWorkspaces(
+  accessToken: string,
+): Promise<Workspace[]> {
   void accessToken
   await delay(300)
   return [
@@ -65,7 +67,10 @@ export async function fetchWorkspaces(accessToken: string): Promise<Workspace[]>
 /**
  * TODO: POST `/workspaces` with `{ name }`
  */
-export async function createWorkspace(accessToken: string, name: string): Promise<Workspace> {
+export async function createWorkspace(
+  accessToken: string,
+  name: string,
+): Promise<Workspace> {
   void accessToken
   await delay(500)
   return { id: `ws_${Date.now()}`, name }

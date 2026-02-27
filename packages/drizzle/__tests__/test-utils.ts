@@ -1,7 +1,7 @@
+import { createProtectOperators } from '@cipherstash/drizzle/pg'
 import type { ProtectClient } from '@cipherstash/protect/client'
 import { PgDialect } from 'drizzle-orm/pg-core'
 import { vi } from 'vitest'
-import { createProtectOperators } from '@cipherstash/drizzle/pg'
 
 export const ENCRYPTED_VALUE = '{"v":"encrypted-value"}'
 

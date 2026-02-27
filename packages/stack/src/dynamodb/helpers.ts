@@ -1,5 +1,6 @@
 import type { EncryptedTable, EncryptedTableColumn } from '@/schema'
 import type { EncryptedValue } from '@/types'
+import { logger } from '@/utils/logger'
 import type { ProtectErrorCode } from '@cipherstash/protect-ffi'
 import { ProtectError as FfiProtectError } from '@cipherstash/protect-ffi'
 import type { EncryptedDynamoDBError } from './types'
@@ -54,6 +55,8 @@ export function handleError(
   const dynamoError = new EncryptedDynamoDBErrorImpl(errorMessage, errorCode, {
     context,
   })
+
+  logger.error(`DynamoDB error in ${context}: ${errorMessage}`)
 
   if (options?.errorHandler) {
     options.errorHandler(dynamoError)

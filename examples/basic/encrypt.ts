@@ -1,9 +1,5 @@
 import 'dotenv/config'
-import {
-  Encryption,
-  encryptedTable,
-  encryptedColumn,
-} from '@cipherstash/stack'
+import { Encryption, encryptedColumn, encryptedTable } from '@cipherstash/stack'
 
 export const users = encryptedTable('users', {
   name: encryptedColumn('name'),

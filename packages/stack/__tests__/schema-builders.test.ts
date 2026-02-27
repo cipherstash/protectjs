@@ -1,13 +1,13 @@
-import { describe, expect, it } from 'vitest'
 import {
   EncryptedColumn,
-  EncryptedTable,
   EncryptedField,
+  EncryptedTable,
   buildEncryptConfig,
   encryptedColumn,
-  encryptedTable,
   encryptedField,
-} from '../src/schema/index.js'
+  encryptedTable,
+} from '@/schema'
+import { describe, expect, it } from 'vitest'
 
 describe('schema builders', () => {
   // -------------------------------------------------------

@@ -417,12 +417,15 @@ describe('searchableJson with returnType formatting', () => {
     }, 30000)
 
     it('returns composite-literal for term', async () => {
-      const result = await protectClient.encryptQuery({ role: 'admin' }, {
-        column: jsonbSchema.metadata,
-        table: jsonbSchema,
-        queryType: 'searchableJson',
-        returnType: 'composite-literal',
-      })
+      const result = await protectClient.encryptQuery(
+        { role: 'admin' },
+        {
+          column: jsonbSchema.metadata,
+          table: jsonbSchema,
+          queryType: 'searchableJson',
+          returnType: 'composite-literal',
+        },
+      )
 
       const data = unwrapResult(result)
       expect(typeof data).toBe('string')
@@ -446,12 +449,15 @@ describe('searchableJson with returnType formatting', () => {
     }, 30000)
 
     it('returns escaped-composite-literal for term', async () => {
-      const result = await protectClient.encryptQuery({ role: 'admin' }, {
-        column: jsonbSchema.metadata,
-        table: jsonbSchema,
-        queryType: 'searchableJson',
-        returnType: 'escaped-composite-literal',
-      })
+      const result = await protectClient.encryptQuery(
+        { role: 'admin' },
+        {
+          column: jsonbSchema.metadata,
+          table: jsonbSchema,
+          queryType: 'searchableJson',
+          returnType: 'escaped-composite-literal',
+        },
+      )
 
       const data = unwrapResult(result)
       expect(typeof data).toBe('string')

@@ -45,9 +45,14 @@ const secrets = new Secrets({
   workspaceCRN: process.env.CS_WORKSPACE_CRN!,
   clientId: process.env.CS_CLIENT_ID!,
   clientKey: process.env.CS_CLIENT_KEY!,
-  apiKey: process.env.CS_CLIENT_ACCESS_KEY!,
+  accessKey: process.env.CS_CLIENT_ACCESS_KEY!,
   environment: "production",
 })
+```
+
+```typescript
+// Minimal form (credentials from environment variables):
+const secrets = new Secrets({ environment: "production" })
 ```
 
 The `environment` parameter isolates secrets - each environment gets its own encryption keyset.
@@ -61,7 +66,7 @@ const result = await secrets.set("DATABASE_URL", "postgres://user:pass@host:5432
 
 if (result.failure) {
   console.error("Failed:", result.failure.message)
-  // result.failure.type: "ApiError" | "NetworkError" | "ClientError" | "EncryptionError"
+  // result.failure.type: "ApiError" | "NetworkError" | "ClientError" | "EncryptionError" | "DecryptionError"
 } else {
   console.log(result.data.message) // success message
 }
@@ -140,6 +145,13 @@ npx stash secrets get --name DATABASE_URL --environment production
 npx stash secrets get -n DATABASE_URL -e production
 ```
 
+### Get Many Secrets
+
+```bash
+npx stash secrets get-many --name DATABASE_URL,API_KEY --environment production
+npx stash secrets get-many -n DATABASE_URL,API_KEY,JWT_SECRET -e production
+```
+
 ### List Secrets
 
 ```bash
@@ -158,7 +170,7 @@ npx stash secrets delete -n DATABASE_URL -e production --yes  # skip confirmatio
 
 | Flag | Alias | Description |
 |---|---|---|
-| `--name` | `-n` | Secret name |
+| `--name` | `-n` | Secret name (comma-separated for get-many) |
 | `--value` | `-V` | Secret value (set only) |
 | `--environment` | `-e` | Environment name |
 | `--yes` | `-y` | Skip confirmation (delete only) |
@@ -171,12 +183,11 @@ The CLI reads credentials from the same `CS_*` environment variables. Use a `.en
 
 ```typescript
 interface SecretsConfig {
-  workspaceCRN: string    // Cloud Resource Name
-  clientId: string        // Client identifier
-  clientKey: string       // Client key material
-  apiKey: string          // API access key (CS_CLIENT_ACCESS_KEY)
-  environment: string     // Environment name
-  accessKey?: string      // Optional additional access key
+  environment: string      // Environment name (required)
+  workspaceCRN?: string    // Cloud Resource Name (defaults to CS_WORKSPACE_CRN env var)
+  clientId?: string        // Client identifier (defaults to CS_CLIENT_ID env var)
+  clientKey?: string       // Client key material (defaults to CS_CLIENT_KEY env var)
+  accessKey?: string       // API access key (defaults to CS_CLIENT_ACCESS_KEY env var)
 }
 ```
 
@@ -203,6 +214,13 @@ type SecretsErrorType =
   | "DecryptionError"  // Decryption operation failed
 ```
 
+```typescript
+interface SecretsError {
+  type: SecretsErrorType
+  message: string
+}
+```
+
 All operations return `Result<T, SecretsError>` with either `data` or `failure`.
 
 ### Secrets Class Methods
@@ -226,7 +244,7 @@ const secrets = new Secrets({
   workspaceCRN: process.env.CS_WORKSPACE_CRN!,
   clientId: process.env.CS_CLIENT_ID!,
   clientKey: process.env.CS_CLIENT_KEY!,
-  apiKey: process.env.CS_CLIENT_ACCESS_KEY!,
+  accessKey: process.env.CS_CLIENT_ACCESS_KEY!,
   environment: process.env.NODE_ENV || "development",
 })
 

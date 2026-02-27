@@ -1,5 +1,6 @@
 import 'dotenv/config'
-import { Encryption, EncryptionErrorTypes } from '@/index'
+import { EncryptionErrorTypes } from '@/errors'
+import { Encryption } from '@/index'
 import { beforeAll, describe, expect, it } from 'vitest'
 
 type EncryptionClient = Awaited<ReturnType<typeof Encryption>>
@@ -112,7 +113,6 @@ describe('encryptQuery with searchableJson queryType', () => {
     })
     expectTerm(data)
   }, 30000)
-
 
   // Edge cases: number/boolean require wrapping (same as steVecTerm)
 
@@ -368,12 +368,15 @@ describe('single-value returnType', () => {
   }, 30000)
 
   it('returns composite-literal for term', async () => {
-    const result = await protectClient.encryptQuery({ role: 'admin' }, {
-      column: jsonbSchema.metadata,
-      table: jsonbSchema,
-      queryType: 'searchableJson',
-      returnType: 'composite-literal',
-    })
+    const result = await protectClient.encryptQuery(
+      { role: 'admin' },
+      {
+        column: jsonbSchema.metadata,
+        table: jsonbSchema,
+        queryType: 'searchableJson',
+        returnType: 'composite-literal',
+      },
+    )
 
     const data = unwrapResult(result)
     expect(typeof data).toBe('string')
@@ -397,12 +400,15 @@ describe('single-value returnType', () => {
   }, 30000)
 
   it('returns escaped-composite-literal for term', async () => {
-    const result = await protectClient.encryptQuery({ role: 'admin' }, {
-      column: jsonbSchema.metadata,
-      table: jsonbSchema,
-      queryType: 'searchableJson',
-      returnType: 'escaped-composite-literal',
-    })
+    const result = await protectClient.encryptQuery(
+      { role: 'admin' },
+      {
+        column: jsonbSchema.metadata,
+        table: jsonbSchema,
+        queryType: 'searchableJson',
+        returnType: 'escaped-composite-literal',
+      },
+    )
 
     const data = unwrapResult(result)
     expect(typeof data).toBe('string')
@@ -908,5 +914,4 @@ describe('searchableJson batch edge cases', () => {
       }
     })
   }, 30000)
-
 })

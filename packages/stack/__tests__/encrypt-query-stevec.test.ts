@@ -205,7 +205,6 @@ describe('encryptQuery batch with STE Vec', () => {
     expect(data[0]).toMatchObject({ i: { t: 'documents', c: 'metadata' } })
     expect(data[1]).toMatchObject({ i: { t: 'documents', c: 'metadata' } })
   }, 30000)
-
 })
 
 describe('encryptQuery with queryType inference', () => {

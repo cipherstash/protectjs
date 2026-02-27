@@ -1,4 +1,9 @@
 import 'dotenv/config'
+import {
+  createProtectOperators,
+  encryptedType,
+  extractProtectSchema,
+} from '@cipherstash/drizzle/pg'
 import { protect } from '@cipherstash/protect'
 import type { SQL } from 'drizzle-orm'
 import { and, eq } from 'drizzle-orm'
@@ -6,11 +11,6 @@ import { integer, pgTable, text, timestamp } from 'drizzle-orm/pg-core'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import {
-  createProtectOperators,
-  encryptedType,
-  extractProtectSchema,
-} from '@cipherstash/drizzle/pg'
 import { userSeedData } from './fixtures/user-seed-data'
 import {
   type EncryptedUserRow,
@@ -361,10 +361,7 @@ describe('Drizzle ORM Integration with Protect.js', () => {
     const rows = await selectEncryptedUsers(
       and(
         eq(drizzleUsersTable.testRunId, TEST_RUN_ID),
-        await protectOps.jsonbPathExists(
-          drizzleUsersTable.profile,
-          '$.name',
-        ),
+        await protectOps.jsonbPathExists(drizzleUsersTable.profile, '$.name'),
       ),
     )
 

@@ -60,42 +60,19 @@ If `config` is omitted, the client reads `CS_*` environment variables automatica
 
 ### Logging
 
-Logging is disabled by default. Enable it via environment variable or programmatically:
+Logging is enabled by default at the `error` level. Configure the log level with the `STASH_STACK_LOG` environment variable:
 
 ```bash
-STASH_LOG_LEVEL=debug  # debug | info | warn | error (enables logging automatically)
+STASH_STACK_LOG=error  # debug | info | error (default: error)
 ```
 
-#### Programmatic Logging Configuration
+| Value   | What is logged         |
+| ------- | ---------------------- |
+| `error` | Errors only (default)  |
+| `info`  | Info and errors        |
+| `debug` | Debug, info, and errors |
 
-```typescript
-const client = await Encryption({
-  schemas: [users],
-  logging: {
-    enabled: true,     // toggle logging on/off (default: false, auto-enabled by STASH_LOG_LEVEL)
-    pretty: true,      // pretty-print in development (default: auto-detected)
-  },
-})
-```
-
-#### Log Draining
-
-Send structured logs to an external observability platform:
-
-```typescript
-const client = await Encryption({
-  schemas: [users],
-  logging: {
-    drain: (ctx) => {
-      // Forward to Axiom, Datadog, OTLP, etc.
-      fetch("https://your-service.com/logs", {
-        method: "POST",
-        body: JSON.stringify(ctx.event),
-      })
-    },
-  },
-})
-```
+When `STASH_STACK_LOG` is not set, the SDK defaults to `error` (errors only).
 
 The SDK never logs plaintext data.
 
@@ -103,14 +80,16 @@ The SDK never logs plaintext data.
 
 | Import Path | Provides |
 |---|---|
-| `@cipherstash/stack` | `Encryption` function (main entry point) |
+| `@cipherstash/stack` | `Encryption` function, `Secrets` class, `encryptedTable`, `encryptedColumn`, `encryptedField` (convenience re-exports) |
 | `@cipherstash/stack/schema` | `encryptedTable`, `encryptedColumn`, `encryptedField`, schema types |
 | `@cipherstash/stack/identity` | `LockContext` class and identity types |
 | `@cipherstash/stack/secrets` | `Secrets` class and secrets types |
 | `@cipherstash/stack/drizzle` | `encryptedType`, `extractEncryptionSchema`, `createEncryptionOperators` for Drizzle ORM |
 | `@cipherstash/stack/supabase` | `encryptedSupabase` wrapper for Supabase |
 | `@cipherstash/stack/dynamodb` | `encryptedDynamoDB` helper for DynamoDB |
-| `@cipherstash/stack/client` | Client-safe exports (schema builders + types only, no native FFI) |
+| `@cipherstash/stack/encryption` | `EncryptionClient` class, `Encryption` function |
+| `@cipherstash/stack/errors` | `EncryptionErrorTypes`, `StackError`, error subtypes, `getErrorMessage` |
+| `@cipherstash/stack/client` | Client-safe exports: schema builders, schema types, `EncryptionClient` type (no native FFI) |
 | `@cipherstash/stack/types` | All TypeScript types |
 
 ## Schema Definition
@@ -144,13 +123,13 @@ const documents = encryptedTable("documents", {
 
 | Method | Purpose | Query Type |
 |---|---|---|
-| `.equality()` | Exact match lookups | `'equality'` |
+| `.equality(tokenFilters?)` | Exact match lookups. Accepts an optional array of token filters (e.g., `[{ kind: 'downcase' }]`) for case-insensitive matching. | `'equality'` |
 | `.freeTextSearch(opts?)` | Full-text / fuzzy search | `'freeTextSearch'` |
 | `.orderAndRange()` | Sorting, comparison, range queries | `'orderAndRange'` |
 | `.searchableJson()` | Encrypted JSONB path and containment queries (auto-sets `dataType` to `'json'`) | `'searchableJson'` |
 | `.dataType(cast)` | Set plaintext data type | N/A |
 
-**Supported data types:** `'string'` (default), `'number'`, `'boolean'`, `'date'`, `'bigint'`, `'json'`
+**Supported data types:** `'string'` (default), `'text'`, `'number'`, `'boolean'`, `'date'`, `'bigint'`, `'json'`
 
 Methods are chainable - call as many as you need on a single column.
 
@@ -162,7 +141,7 @@ encryptedColumn("bio").freeTextSearch({
   token_filters: [{ kind: "downcase" }],
   k: 6,
   m: 2048,
-  include_original: false,
+  include_original: true,
 })
 ```
 
@@ -325,6 +304,20 @@ const rangeQuery = await client.encryptQuery(25, {
   table: users,
   queryType: "orderAndRange",
 })
+
+// JSON path query (steVecSelector)
+const pathQuery = await client.encryptQuery("$.user.email", {
+  column: documents.metadata,
+  table: documents,
+  queryType: "steVecSelector",
+})
+
+// JSON containment query (steVecTerm)
+const containsQuery = await client.encryptQuery({ role: "admin" }, {
+  column: documents.metadata,
+  table: documents,
+  queryType: "steVecTerm",
+})
 ```
 
 If `queryType` is omitted, it's auto-inferred from the column's configured indexes (priority: unique > match > ore > ste_vec).
@@ -396,6 +389,7 @@ import { LockContext } from "@cipherstash/stack/identity"
 // 1. Create a lock context (defaults to the "sub" claim)
 const lc = new LockContext()
 // Or with custom claims: new LockContext({ context: { identityClaim: ["sub", "org_id"] } })
+// Or with a pre-fetched CTS token: new LockContext({ ctsToken: { accessToken: "...", expiry: 123456 } })
 
 // 2. Identify the user with their JWT
 const identifyResult = await lc.identify(userJwt)
@@ -477,10 +471,46 @@ if (result.failure) {
 | Type | When |
 |---|---|
 | `ClientInitError` | Client initialization fails (bad credentials, missing config) |
-| `EncryptionError` | An encrypt operation fails |
+| `EncryptionError` | An encrypt operation fails (has optional `code` field) |
 | `DecryptionError` | A decrypt operation fails |
 | `LockContextError` | Lock context creation or usage fails |
 | `CtsTokenError` | Identity token exchange fails |
+
+`StackError` is a discriminated union of all the error types above, enabling exhaustive `switch` handling. `EncryptionErrorTypes` provides runtime constants for each error type string. Use `getErrorMessage(error: unknown): string` to safely extract a message from any thrown value.
+
+```typescript
+import { EncryptionErrorTypes, type StackError, getErrorMessage } from "@cipherstash/stack/errors"
+
+function handleError(error: StackError) {
+  switch (error.type) {
+    case EncryptionErrorTypes.ClientInitError:
+      console.error("Init failed:", error.message)
+      break
+    case EncryptionErrorTypes.EncryptionError:
+      console.error("Encrypt failed:", error.message, error.code)
+      break
+    case EncryptionErrorTypes.DecryptionError:
+      console.error("Decrypt failed:", error.message)
+      break
+    case EncryptionErrorTypes.LockContextError:
+      console.error("Lock context failed:", error.message)
+      break
+    case EncryptionErrorTypes.CtsTokenError:
+      console.error("CTS token failed:", error.message)
+      break
+    default:
+      // TypeScript ensures exhaustiveness
+      const _exhaustive: never = error
+  }
+}
+
+// Safe error message extraction from unknown errors
+try {
+  await client.encrypt("data", { column: users.email, table: users })
+} catch (e) {
+  console.error(getErrorMessage(e))
+}
+```
 
 ### Validation Rules
 
@@ -533,11 +563,11 @@ All method signatures on the encryption client remain the same. The `Result` pat
 | `encryptQuery` | `(plaintext, { column, table, queryType?, returnType? })` | `EncryptQueryOperation` |
 | `encryptQuery` | `(terms: readonly ScalarQueryTerm[])` | `BatchEncryptQueryOperation` |
 | `encryptModel` | `(model, table)` | `EncryptModelOperation<EncryptedFromSchema<T, S>>` |
-| `decryptModel` | `(encryptedModel)` | `DecryptModelOperation<T>` |
+| `decryptModel` | `(encryptedModel)` | `DecryptModelOperation<T>` — resolves to `Decrypted<T>` |
 | `bulkEncrypt` | `(plaintexts, { column, table })` | `BulkEncryptOperation` |
 | `bulkDecrypt` | `(encryptedPayloads)` | `BulkDecryptOperation` |
 | `bulkEncryptModels` | `(models, table)` | `BulkEncryptModelsOperation<EncryptedFromSchema<T, S>>` |
-| `bulkDecryptModels` | `(encryptedModels)` | `BulkDecryptModelsOperation<T>` |
+| `bulkDecryptModels` | `(encryptedModels)` | `BulkDecryptModelsOperation<T>` — resolves to `Decrypted<T>[]` |
 
 All operations are thenable (awaitable) and support `.withLockContext()` and `.audit()` chaining.
 

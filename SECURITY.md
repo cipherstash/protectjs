@@ -1,13 +1,20 @@
 # Security Policy
 
 CipherStash takes the security of our software, infrastructure, and customers extremely seriously.  
-This document describes the security posture, reporting process, and guidelines for the `protectjs` repository and associated packages.
+This document describes the security posture, reporting process, and guidelines for this repository and associated packages.
 
 ## Supported Packages
 
-This repository contains the JavaScript/TypeScript SDK for CipherStash Protect and related packages.
+This repository contains the JavaScript/TypeScript SDK for CipherStash and related packages.
 
 The below tables list each package along with the currently supported (receiving security updates).
+
+### `@cipherstash/stack`
+
+| Version | Supported          |
+| ------- | ------------------ |
+| 0.4.x   | :white_check_mark: |
+| < 0.4  | :x: |
 
 ### `@cipherstash/protect`
 
@@ -140,4 +147,4 @@ For vulnerability disclosures:
 
 ---
 
-Thank you for helping keep `protectjs` and the wider CipherStash ecosystem secure.
+Thank you for helping keep the CipherStash ecosystem secure.

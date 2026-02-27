@@ -20,10 +20,10 @@ export const EncryptionErrorTypes = {
  * const result = await client.encrypt(value, opts)
  * if (result.failure) {
  *   switch (result.failure.type) {
- *     case 'EncryptionError':
+ *     case EncryptionErrorTypes.EncryptionError:
  *       console.error('Encryption failed:', result.failure.message)
  *       break
- *     case 'LockContextError':
+ *     case EncryptionErrorTypes.LockContextError:
  *       console.error('Lock context issue:', result.failure.message)
  *       break
  *   }

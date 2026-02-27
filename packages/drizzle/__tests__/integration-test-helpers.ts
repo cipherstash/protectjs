@@ -57,7 +57,10 @@ function assertEncryptedPayload(
   ).toEqual(expect.objectContaining({ c: expect.any(String) }))
 }
 
-export function unwrapResult<T>(result: Result<T, ProtectError>, operation: string): T {
+export function unwrapResult<T>(
+  result: Result<T, ProtectError>,
+  operation: string,
+): T {
   if (result.failure) {
     throw new Error(`${operation} failed: ${result.failure.message}`)
   }
@@ -80,7 +83,10 @@ export async function decryptUserRows(
   rows: EncryptedUserRow[],
 ): Promise<DecryptedUser[]> {
   const decrypted = await protectClient.bulkDecryptModels(rows)
-  return unwrapResult(decrypted, 'bulkDecryptModels') as unknown as DecryptedUser[]
+  return unwrapResult(
+    decrypted,
+    'bulkDecryptModels',
+  ) as unknown as DecryptedUser[]
 }
 
 export async function decryptUserRow(

@@ -1,12 +1,12 @@
+import {
+  EncryptionOperatorError,
+  createEncryptionOperators,
+  encryptedType,
+} from '@/drizzle'
 import type { EncryptionClient } from '@/encryption'
 import { pgTable } from 'drizzle-orm/pg-core'
 import { PgDialect } from 'drizzle-orm/pg-core'
 import { describe, expect, it, vi } from 'vitest'
-import {
-  createEncryptionOperators,
-  EncryptionOperatorError,
-  encryptedType,
-} from '@/drizzle'
 
 const ENCRYPTED_VALUE = '{"v":"encrypted-value"}'
 

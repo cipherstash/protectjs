@@ -36,6 +36,12 @@
 	"types": "./dist/index.d.ts",
 	"typesVersions": {
 		"*": {
+			"encryption": [
+				"./dist/encryption/index.d.ts"
+			],
+			"errors": [
+				"./dist/errors/index.d.ts"
+			],
 			"client": [
 				"./dist/client.d.ts"
 			],
@@ -153,6 +159,26 @@
 				"default": "./dist/supabase/index.cjs"
 			}
 		},
+		"./encryption": {
+			"import": {
+				"types": "./dist/encryption/index.d.ts",
+				"default": "./dist/encryption/index.js"
+			},
+			"require": {
+				"types": "./dist/encryption/index.d.cts",
+				"default": "./dist/encryption/index.cjs"
+			}
+		},
+		"./errors": {
+			"import": {
+				"types": "./dist/errors/index.d.ts",
+				"default": "./dist/errors/index.js"
+			},
+			"require": {
+				"types": "./dist/errors/index.d.cts",
+				"default": "./dist/errors/index.cjs"
+			}
+		},
 		"./package.json": "./package.json"
 	},
 	"scripts": {
@@ -165,6 +191,7 @@
 	"devDependencies": {
 		"@clack/prompts": "^0.10.1",
 		"@supabase/supabase-js": "^2.47.10",
+		"@types/uuid": "^11.0.0",
 		"dotenv": "16.4.7",
 		"drizzle-orm": ">=0.33",
 		"execa": "^9.5.2",
@@ -182,6 +209,7 @@
 		"@byteslice/result": "^0.2.0",
 		"@cipherstash/protect-ffi": "0.20.2",
 		"evlog": "^1.9.0",
+		"uuid": "^13.0.0",
 		"zod": "3.24.2"
 	},
 	"peerDependencies": {

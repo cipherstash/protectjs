@@ -1,5 +1,5 @@
 import * as p from '@clack/prompts'
-import type { InitStep, InitState, InitProvider } from '../types.js'
+import type { InitProvider, InitState, InitStep } from '../types.js'
 import { CancelledError } from '../types.js'
 
 function maskUrl(url: string): string {
@@ -23,7 +23,7 @@ export const detectDatabaseUrlStep: InitStep = {
       message: 'How would you like to proceed?',
       options: [
         { value: 'enter', label: 'Enter database URL now' },
-        { value: 'skip', label: 'Skip for now (I\'ll add it later)' },
+        { value: 'skip', label: "Skip for now (I'll add it later)" },
       ],
     })
 
@@ -35,7 +35,8 @@ export const detectDatabaseUrlStep: InitStep = {
         placeholder: 'postgresql://user:password@host:5432/database',
         validate: (val) => {
           if (!val.trim()) return 'Database URL is required'
-          if (!val.startsWith('postgres')) return 'Must be a PostgreSQL connection string'
+          if (!val.startsWith('postgres'))
+            return 'Must be a PostgreSQL connection string'
         },
       })
 

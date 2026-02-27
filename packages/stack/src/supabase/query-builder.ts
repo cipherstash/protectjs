@@ -1,13 +1,14 @@
 import type { EncryptionClient } from '@/encryption'
-import type { AuditConfig } from '@/encryption/operations/base-operation'
 import {
   bulkModelsToEncryptedPgComposites,
   modelToEncryptedPgComposites,
 } from '@/encryption/helpers'
+import type { AuditConfig } from '@/encryption/operations/base-operation'
 import type { LockContext } from '@/identity'
 import type { EncryptedTable, EncryptedTableColumn } from '@/schema'
 import { EncryptedColumn } from '@/schema'
 import type { ScalarQueryTerm } from '@/types'
+import { logger } from '@/utils/logger'
 import type { JsPlaintext } from '@cipherstash/protect-ffi'
 import {
   addJsonbCasts,
@@ -341,6 +342,8 @@ export class EncryptedQueryBuilderImpl<
 
   private async execute(): Promise<EncryptedSupabaseResponse<T[]>> {
     try {
+      logger.debug(`Supabase encrypted query on table "${this.tableName}".`)
+
       // 1. Encrypt mutation data
       const encryptedMutation = await this.encryptMutationData()
 
@@ -360,8 +363,13 @@ export class EncryptedQueryBuilderImpl<
       // 5. Decrypt results
       return await this.decryptResults(result)
     } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      logger.error(
+        `Supabase encrypted query failed on table "${this.tableName}": ${message}`,
+      )
+
       const error: EncryptedSupabaseError = {
-        message: err instanceof Error ? err.message : String(err),
+        message,
         encryptionError: undefined,
       }
 
@@ -402,6 +410,10 @@ export class EncryptedQueryBuilderImpl<
 
       const result = await op
       if (result.failure) {
+        logger.error(
+          `Supabase: failed to encrypt models for table "${this.tableName}"`,
+        )
+
         throw new EncryptionFailedError(
           `Failed to encrypt models: ${result.failure.message}`,
           result.failure,
@@ -420,6 +432,10 @@ export class EncryptedQueryBuilderImpl<
 
     const result = await op
     if (result.failure) {
+      logger.error(
+        `Supabase: failed to encrypt model for table "${this.tableName}"`,
+      )
+
       throw new EncryptionFailedError(
         `Failed to encrypt model: ${result.failure.message}`,
         result.failure,
@@ -595,6 +611,10 @@ export class EncryptedQueryBuilderImpl<
 
     const result = await op
     if (result.failure) {
+      logger.error(
+        `Supabase: failed to encrypt query terms for table "${this.tableName}"`,
+      )
+
       throw new EncryptionFailedError(
         `Failed to encrypt query terms: ${result.failure.message}`,
         result.failure,
@@ -929,6 +949,10 @@ export class EncryptedQueryBuilderImpl<
 
       const decrypted = await decryptOp
       if (decrypted.failure) {
+        logger.error(
+          `Supabase: failed to decrypt model for table "${this.tableName}"`,
+        )
+
         throw new EncryptionFailedError(
           `Failed to decrypt model: ${decrypted.failure.message}`,
           decrypted.failure,
@@ -964,6 +988,10 @@ export class EncryptedQueryBuilderImpl<
 
     const decrypted = await bulkDecryptOp
     if (decrypted.failure) {
+      logger.error(
+        `Supabase: failed to decrypt models for table "${this.tableName}"`,
+      )
+
       throw new EncryptionFailedError(
         `Failed to decrypt models: ${decrypted.failure.message}`,
         decrypted.failure,

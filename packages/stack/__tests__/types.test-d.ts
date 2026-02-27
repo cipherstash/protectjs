@@ -1,13 +1,13 @@
-import { describe, expectTypeOf, it } from 'vitest'
-import { encryptedColumn, encryptedTable } from '../src/schema/index.js'
+import type { EncryptionClient } from '@/encryption'
+import { encryptedColumn, encryptedTable } from '@/schema'
 import type {
-  InferEncrypted,
-  InferPlaintext,
   EncryptedColumn,
+  EncryptedField,
   EncryptedTable,
   EncryptedTableColumn,
-  EncryptedField,
-} from '../src/schema/index.js'
+  InferEncrypted,
+  InferPlaintext,
+} from '@/schema'
 import type {
   Decrypted,
   DecryptedFields,
@@ -18,8 +18,8 @@ import type {
   KeysetIdentifier,
   OtherFields,
   QueryTypeName,
-} from '../src/types.js'
-import type { EncryptionClient } from '../src/encryption/index.js'
+} from '@/types'
+import { describe, expectTypeOf, it } from 'vitest'
 
 describe('Type inference', () => {
   it('encryptedTable returns ProtectTable with column access', () => {

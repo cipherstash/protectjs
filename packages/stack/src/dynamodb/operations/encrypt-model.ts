@@ -1,5 +1,6 @@
 import type { EncryptionClient } from '@/encryption'
 import type { EncryptedTable, EncryptedTableColumn } from '@/schema'
+import { logger } from '@/utils/logger'
 import { type Result, withResult } from '@byteslice/result'
 import { deepClone, handleError, toEncryptedDynamoItem } from '../helpers'
 import type { EncryptedDynamoDBError } from '../types'
@@ -28,6 +29,7 @@ export class EncryptModelOperation<
   }
 
   public async execute(): Promise<Result<T, EncryptedDynamoDBError>> {
+    logger.debug('DynamoDB: encrypting model.')
     return await withResult(
       async () => {
         const encryptResult = await this.encryptionClient

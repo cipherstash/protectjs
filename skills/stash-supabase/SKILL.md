@@ -168,7 +168,9 @@ const { data, error } = await eSupabase
 // data: null
 ```
 
-**Important:** You must list columns explicitly in `select()`. The wrapper automatically adds `::jsonb` casts to encrypted columns so PostgreSQL parses them correctly.
+**Important:** You must list columns explicitly in `select()` — using `select('*')` will throw an error. The wrapper automatically adds `::jsonb` casts to encrypted columns so PostgreSQL parses them correctly.
+
+`select()` also accepts an optional second parameter: `select(columns, { head?: boolean, count?: 'exact' | 'planned' | 'estimated' })`.
 
 ## Query Filters
 
@@ -266,6 +268,10 @@ These are passed through to Supabase directly:
 .order("name", { ascending: true })
 .limit(10)
 .range(0, 9)
+.csv()
+.abortSignal(signal)
+.throwOnError()
+.returns<U>()
 ```
 
 ## Identity-Aware Encryption
@@ -276,13 +282,27 @@ Chain `.withLockContext()` to tie encryption to a specific user's JWT:
 import { LockContext } from "@cipherstash/stack/identity"
 
 const lc = new LockContext()
-const { data: lockContext } = await lc.identify(userJwt)
+const identified = await lc.identify(userJwt)
+if (identified.failure) throw new Error(identified.failure.message)
+const lockContext = identified.data
 
 const { data, error } = await eSupabase
   .from("users", users)
   .insert({ email: "alice@example.com", name: "Alice" })
   .withLockContext(lockContext)
   .select("id")
+```
+
+## Audit Logging
+
+Chain `.audit()` to attach metadata for ZeroKMS audit logging:
+
+```typescript
+const { data, error } = await eSupabase
+  .from("users", users)
+  .select("id, email, name")
+  .eq("email", "alice@example.com")
+  .audit({ metadata: { action: "user-lookup", requestId: "abc-123" } })
 ```
 
 ## Complete Example
@@ -339,6 +359,18 @@ type EncryptedSupabaseResponse<T> = {
 
 Errors can come from Supabase (API errors) or from encryption operations. Check `error.encryptionError` for encryption-specific failures.
 
+The full `EncryptedSupabaseError` type:
+
+```typescript
+type EncryptedSupabaseError = {
+  message: string
+  details?: string       // Supabase error details
+  hint?: string          // Supabase error hint
+  code?: string          // Supabase/PostgreSQL error code
+  encryptionError?: EncryptionError  // CipherStash encryption-specific error
+}
+```
+
 ## Filter to Index Mapping
 
 | Filter Method | Required Index | Query Type |
@@ -347,3 +379,13 @@ Errors can come from Supabase (API errors) or from encryption operations. Check 
 | `like`, `ilike` | `.freeTextSearch()` | `'freeTextSearch'` |
 | `gt`, `gte`, `lt`, `lte` | `.orderAndRange()` | `'orderAndRange'` |
 | `is` | None | No encryption (NULL/boolean check) |
+
+## Exported Types
+
+`@cipherstash/stack/supabase` also exports the following types:
+
+- `EncryptedSupabaseConfig`
+- `EncryptedSupabaseInstance`
+- `EncryptedQueryBuilder`
+- `PendingOrCondition`
+- `SupabaseClientLike`

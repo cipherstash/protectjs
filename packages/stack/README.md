@@ -502,48 +502,21 @@ const client2 = await Encryption({
 
 ### Logging
 
-The SDK uses [evlog](https://github.com/HugoRCD/evlog) for structured logging. Each encryption operation emits a single wide event with context such as the operation type, table, column, lock context status, and duration.
+The SDK uses structured logging across all interfaces (Encryption, Secrets, Supabase, DynamoDB). Each operation emits a single wide event with context such as the operation type, table, column, lock context status, and duration.
 
-#### Environment variable
+Configure the log level with the `STASH_STACK_LOG` environment variable:
 
 ```bash
-STASH_LOG_LEVEL=debug  # debug | info | warn | error (default: info)
+STASH_STACK_LOG=error  # debug | info | error (default: error)
 ```
 
-#### Programmatic configuration
+| Value   | What is logged         |
+| ------- | ---------------------- |
+| `error` | Errors only (default)  |
+| `info`  | Info and errors        |
+| `debug` | Debug, info, and errors |
 
-Pass a `logging` option when initializing the client:
-
-```typescript
-const client = await Encryption({
-  schemas: [users],
-  logging: {
-    enabled: true,     // toggle logging on/off (default: true)
-    pretty: true,      // pretty-print in development (default: auto-detected)
-  },
-})
-```
-
-#### Log draining
-
-Send structured logs to an external observability platform by providing a `drain` callback:
-
-```typescript
-import { Encryption } from "@cipherstash/stack"
-
-const client = await Encryption({
-  schemas: [users],
-  logging: {
-    drain: (ctx) => {
-      // Forward to Axiom, Datadog, OTLP, etc.
-      fetch("https://your-service.com/logs", {
-        method: "POST",
-        body: JSON.stringify(ctx.event),
-      })
-    },
-  },
-})
-```
+When `STASH_STACK_LOG` is not set, the SDK defaults to `error` (errors only).
 
 The SDK never logs plaintext data.
 
