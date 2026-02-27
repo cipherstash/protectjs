@@ -37,7 +37,10 @@ function resolveProvider(flags: Record<string, boolean>): InitProvider {
 export async function initCommand(flags: Record<string, boolean>) {
   const provider = resolveProvider(flags)
 
-  p.intro(`CipherStash Stack Setup`)
+  p.intro('CipherStash Stack Setup')
+  p.log.warn(
+    'This command is a prototype and a sneak peek at what\'s next. It doesn\'t perform any actual setup yet.',
+  )
   p.log.info(provider.introMessage)
 
   let state: InitState = {}
