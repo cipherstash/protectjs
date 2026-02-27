@@ -44,9 +44,11 @@ const users = encryptedTable("users", {
   email: encryptedColumn("email").equality(),   // searchable via HMAC
   name: encryptedColumn("name"),                // encrypt-only, no search
   phone: encryptedColumn("phone"),              // encrypt-only
-  metadata: encryptedColumn("metadata").dataType("json"), // encrypted JSON
+  metadata: encryptedColumn("metadata").dataType("json"), // encrypt-only JSON (use .searchableJson() for queryable JSON)
 })
 ```
+
+> **Note:** `encryptedColumn` also supports `.orderAndRange()`, `.freeTextSearch()`, and `.searchableJson()` index methods, but only `.equality()` produces HMAC values usable for DynamoDB key condition queries.
 
 Nested objects are supported with `encryptedField`:
 
@@ -340,10 +342,10 @@ if (result.failure) {
 import { encryptedDynamoDB } from "@cipherstash/stack/dynamodb"
 
 const dynamo = encryptedDynamoDB({
-  encryptionClient: EncryptionClient,
-  options?: {
-    logger?: { error: (message: string, error: Error) => void }
-    errorHandler?: (error: EncryptedDynamoDBError) => void
+  encryptionClient,  // EncryptionClient instance
+  options: {         // optional
+    logger: { error: (message, error) => void },
+    errorHandler: (error) => void,
   }
 })
 ```
@@ -352,10 +354,10 @@ const dynamo = encryptedDynamoDB({
 
 | Method | Signature | Returns |
 |---|---|---|
-| `encryptModel` | `(item: T, table)` | `EncryptModelOperation<EncryptedFromSchema<T, S>>` |
-| `bulkEncryptModels` | `(items: T[], table)` | `BulkEncryptModelsOperation<EncryptedFromSchema<T, S>>` |
-| `decryptModel` | `(item, table)` | `DecryptModelOperation<T>` |
-| `bulkDecryptModels` | `(items[], table)` | `BulkDecryptModelsOperation<T>` |
+| `encryptModel` | `(item: T, table: EncryptedTable)` | `EncryptModelOperation<T>` |
+| `bulkEncryptModels` | `(items: T[], table: EncryptedTable)` | `BulkEncryptModelsOperation<T>` |
+| `decryptModel` | `(item: Record<string, EncryptedValue \| unknown>, table: EncryptedTable)` | `DecryptModelOperation<T>` (resolves to `Decrypted<T>`) |
+| `bulkDecryptModels` | `(items: Record<string, EncryptedValue \| unknown>[], table: EncryptedTable)` | `BulkDecryptModelsOperation<T>` (resolves to `Decrypted<T>[]`) |
 
 All operations are thenable (awaitable) and support `.audit({ metadata })` chaining.
 
@@ -364,14 +366,21 @@ All operations are thenable (awaitable) and support `.audit({ metadata })` chain
 Use the encryption client directly (not the DynamoDB helper):
 
 ```typescript
-const result = await encryptionClient.encryptQuery([{
+// Single value form (recommended for DynamoDB lookups):
+const result = await encryptionClient.encryptQuery(
+  "search-value",
+  { column: schema.fieldName, table: schema, queryType: "equality" }
+)
+const hmac = result.data?.hm
+
+// Batch array form:
+const batchResult = await encryptionClient.encryptQuery([{
   value: "search-value",
   column: schema.fieldName,
   table: schema,
   queryType: "equality",
 }])
-
-const hmac = result.data[0]?.hm  // Use this in DynamoDB key conditions
+const hmac = batchResult.data[0]?.hm  // Use this in DynamoDB key conditions
 ```
 
 ## Complete Example

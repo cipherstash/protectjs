@@ -37,13 +37,13 @@ const encryptResult = await client.encrypt("secret@example.com", {
   table: users,
 });
 if (encryptResult.failure) {
-  throw new Error(`Encryption failed: ${encryptResult.failure.message}`);
+  // Handle errors your way
 }
 
 // 4. Decrypt
 const decryptResult = await client.decrypt(encryptResult.data);
 if (decryptResult.failure) {
-  throw new Error(`Decryption failed: ${decryptResult.failure.message}`);
+  // Handle errors your way
 }
 // decryptResult.data => "secret@example.com"
 ```
@@ -60,7 +60,7 @@ const secrets = new Secrets({ environment: "production" });
 await secrets.set("DATABASE_URL", "postgres://user:pass@host:5432/db");
 
 // 3. Consume the secret in your application
-const { data } = await secrets.get("DATABASE_URL");
+const secret = await secrets.get("DATABASE_URL");
 ```
 
 ## Install
