@@ -1,5 +1,11 @@
 # @cipherstash/stack
 
+## 0.6.0
+
+### Minor Changes
+
+- 0b9fd7a: Add notes to CLI about init in prototype phase.
+
 ## 0.5.0
 
 ### Minor Changes
