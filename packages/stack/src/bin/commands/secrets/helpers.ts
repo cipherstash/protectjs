@@ -34,14 +34,12 @@ export function getConfig(environment: string): SecretsConfig {
   const workspaceCRN = process.env.CS_WORKSPACE_CRN
   const clientId = process.env.CS_CLIENT_ID
   const clientKey = process.env.CS_CLIENT_KEY
-  const apiKey = process.env.CS_CLIENT_ACCESS_KEY
   const accessKey = process.env.CS_ACCESS_KEY
 
   const missing: string[] = []
   if (!workspaceCRN) missing.push('CS_WORKSPACE_CRN')
   if (!clientId) missing.push('CS_CLIENT_ID')
   if (!clientKey) missing.push('CS_CLIENT_KEY')
-  if (!apiKey) missing.push('CS_CLIENT_ACCESS_KEY')
 
   if (missing.length > 0) {
     console.error(
@@ -58,7 +56,7 @@ export function getConfig(environment: string): SecretsConfig {
     process.exit(1)
   }
 
-  if (!workspaceCRN || !clientId || !clientKey || !apiKey) {
+  if (!workspaceCRN || !clientId || !clientKey || !accessKey) {
     throw new Error('Missing required configuration')
   }
 
@@ -66,7 +64,6 @@ export function getConfig(environment: string): SecretsConfig {
     workspaceCRN,
     clientId,
     clientKey,
-    apiKey,
     accessKey,
     environment,
   }
