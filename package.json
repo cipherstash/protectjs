@@ -62,7 +62,8 @@
       "fast-xml-parser": ">=5.3.4",
       "next": ">=15.5.10",
       "ajv": ">=8.18.0",
-      "esbuild@<=0.24.2": ">=0.25.0"
+      "esbuild@<=0.24.2": ">=0.25.0",
+      "rollup@>=4.0.0 <4.59.0": ">=4.59.0"
     },
     "peerDependencyRules": {
       "ignoreMissing": [
