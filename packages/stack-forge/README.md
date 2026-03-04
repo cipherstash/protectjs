@@ -30,6 +30,8 @@ bun add -D @cipherstash/stack-forge
 
 ## Quick Start
 
+You can install EQL in two ways: **direct install** (connects to the DB and runs the SQL) or **Drizzle migration** (generates a migration file; you run `drizzle-kit migrate` yourself). The steps below use the direct install path.
+
 ### 1. Create a config file
 
 Create `stash.config.ts` in your project root:
@@ -56,6 +58,10 @@ npx stash-forge install
 
 That's it. EQL is now installed in your database.
 
+If your encryption client lives elsewhere, set `client` in `stash.config.ts` (e.g. `client: './lib/encryption.ts'`). That path is used by `stash-forge push`.
+
+**Using Drizzle?** To install EQL via your migration pipeline instead, run `npx stash-forge install --drizzle`, then `npx drizzle-kit migrate`. See [install --drizzle](#install---drizzle) below.
+
 ---
 
 ## Configuration
@@ -68,8 +74,23 @@ import { defineConfig } from '@cipherstash/stack-forge'
 export default defineConfig({
   // Required: PostgreSQL connection string
   databaseUrl: process.env.DATABASE_URL!,
+
+  // Optional: path to your encryption client (default: './src/encryption/index.ts')
+  // Used by `stash-forge push` to load the encryption schema
+  client: './src/encryption/index.ts',
+
+  // Optional: CipherStash workspace and credentials (for future schema sync)
+  workspaceId: process.env.CS_WORKSPACE_ID,
+  clientAccessKey: process.env.CS_CLIENT_ACCESS_KEY,
 })
 ```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `databaseUrl` | Yes | PostgreSQL connection string |
+| `client` | No | Path to encryption client file (default: `'./src/encryption/index.ts'`). Used by `push` to load the encryption schema. |
+| `workspaceId` | No | CipherStash workspace ID |
+| `clientAccessKey` | No | CipherStash client access key |
 
 The CLI automatically loads `.env` files before evaluating the config, so `process.env` references work out of the box.
 
@@ -97,6 +118,9 @@ npx stash-forge install [options]
 | `--force` | Reinstall even if EQL is already installed |
 | `--supabase` | Use Supabase-compatible install (excludes operator families + grants Supabase roles) |
 | `--exclude-operator-family` | Skip operator family creation (for non-superuser database roles) |
+| `--drizzle` | Generate a Drizzle migration instead of direct install |
+| `--name <value>` | Migration name when using `--drizzle` (default: `install-eql`) |
+| `--out <value>` | Drizzle output directory when using `--drizzle` (default: `drizzle`) |
 
 **Standard install:**
 
@@ -120,7 +144,57 @@ The `--supabase` flag:
 npx stash-forge install --dry-run
 ```
 
-### Permission Pre-checks
+#### `install --drizzle`
+
+If you use [Drizzle ORM](https://orm.drizzle.team/) and want EQL installation as part of your migration history, use the `--drizzle` flag. It creates a Drizzle migration file containing the EQL install SQL, then you run your normal Drizzle migrations to apply it.
+
+```bash
+npx stash-forge install --drizzle
+npx drizzle-kit migrate
+```
+
+**How it works:**
+
+1. Runs `drizzle-kit generate --custom --name=<name>` to create an empty migration.
+2. Downloads the EQL install script from the [EQL GitHub releases](https://github.com/cipherstash/encrypt-query-language/releases/latest).
+3. Writes the EQL SQL into the generated migration file.
+
+With a custom migration name or output directory:
+
+```bash
+npx stash-forge install --drizzle --name setup-eql --out ./migrations
+npx drizzle-kit migrate
+```
+
+You need `drizzle-kit` installed in your project (`npm install -D drizzle-kit`). The `--out` directory must match your Drizzle config (e.g. `drizzle.config.ts`).
+
+### `push`
+
+Load your encryption schema from the file specified by `client` in `stash.config.ts` and apply it to the database (or preview with `--dry-run`).
+
+```bash
+npx stash-forge push [options]
+```
+
+| Option | Description |
+|--------|-------------|
+| `--dry-run` | Load and validate the schema, then print it as JSON. No database changes. |
+
+**Push schema to the database:**
+
+```bash
+npx stash-forge push
+```
+
+This connects to Postgres, marks any existing rows in `eql_v2_configuration` as `inactive`, and inserts the current encrypt config as a new row with state `active`. Your runtime encryption (e.g. `@cipherstash/stack`) reads the active configuration from this table.
+
+**Preview your encryption schema without writing to the database:**
+
+```bash
+npx stash-forge push --dry-run
+```
+
+### Permission Pre-checks (install)
 
 Before installing, `stash-forge` verifies that the connected database role has the required permissions:
 
@@ -137,8 +211,7 @@ The following commands are defined but not yet implemented:
 | Command | Description |
 |---------|-------------|
 | `init` | Initialize CipherStash Forge in your project |
-| `push` | Push encryption schema to database |
-| `migrate` | Run pending EQL migrations |
+| `migrate` | Run pending encrypt config migrations |
 | `status` | Show EQL installation status |
 
 ---
@@ -205,11 +278,12 @@ export default defineConfig({
 
 ### `loadStashConfig`
 
-Finds and loads the nearest `stash.config.ts`, validates it with Zod, and returns the typed config:
+Finds and loads the nearest `stash.config.ts`, validates it with Zod, applies defaults (e.g. `client`), and returns the typed config:
 
 ```typescript
 import { loadStashConfig } from '@cipherstash/stack-forge'
 
 const config = await loadStashConfig()
-// config.databaseUrl is guaranteed to be a non-empty string
+// config.databaseUrl — guaranteed to be a non-empty string
+// config.client — path to encryption client (default: './src/encryption/index.ts')
 ```

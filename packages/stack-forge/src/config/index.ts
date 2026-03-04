@@ -1,5 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import type { EncryptionClient } from '@cipherstash/stack/encryption'
+import type { EncryptConfig } from '@cipherstash/stack/schema'
 import { z } from 'zod'
 
 export interface StashConfig {
@@ -9,7 +11,13 @@ export interface StashConfig {
   workspaceId?: string
   /** Optional: CipherStash client access key */
   clientAccessKey?: string
+  /** Path to encryption client file. Defaults to `'./src/encryption/index.ts'`. */
+  client?: string
 }
+
+/** The config shape after Zod validation, with all defaults applied. */
+export type ResolvedStashConfig = Required<Pick<StashConfig, 'client'>> &
+  Omit<StashConfig, 'client'>
 
 /**
  * Define a stash config with type checking.
@@ -21,6 +29,7 @@ export interface StashConfig {
  *
  * export default defineConfig({
  *   databaseUrl: process.env.DATABASE_URL!,
+ *   client: './src/encryption/index.ts',
  * })
  * ```
  */
@@ -30,12 +39,13 @@ export function defineConfig(config: StashConfig): StashConfig {
 
 const CONFIG_FILENAME = 'stash.config.ts'
 
+const DEFAULT_ENCRYPT_CLIENT_PATH = './src/encryption/index.ts'
+
 const stashConfigSchema = z.object({
   databaseUrl: z
     .string({ required_error: 'databaseUrl is required' })
     .min(1, 'databaseUrl must not be empty'),
-  workspaceId: z.string().optional(),
-  clientAccessKey: z.string().optional(),
+  client: z.string().default(DEFAULT_ENCRYPT_CLIENT_PATH),
 })
 
 /**
@@ -73,7 +83,7 @@ function findConfigFile(startDir: string): string | undefined {
  *
  * Exits with code 1 if the config file is not found or fails validation.
  */
-export async function loadStashConfig(): Promise<StashConfig> {
+export async function loadStashConfig(): Promise<ResolvedStashConfig> {
   const configPath = findConfigFile(process.cwd())
 
   if (!configPath) {
@@ -118,4 +128,53 @@ Create a ${CONFIG_FILENAME} file in your project root:
   }
 
   return result.data
+}
+
+/**
+ * Load the encryption schema file referenced by the stash config.
+ *
+ * Resolves the schema path relative to `process.cwd()`, loads the file via
+ * `jiti`, collects all exported `EncryptedTable` instances, and builds the
+ * encrypt config via `buildEncryptConfig`.
+ *
+ * Exits with code 1 if the file cannot be loaded or contains no tables.
+ */
+export async function loadEncryptConfig(
+  encryptClientPath: string,
+): Promise<EncryptConfig | undefined> {
+  const resolvedPath = path.resolve(process.cwd(), encryptClientPath)
+
+  if (!fs.existsSync(resolvedPath)) {
+    console.error(
+      `Error: Encrypt client file not found at ${resolvedPath}\n\nCheck the "encryptClient" path in your ${CONFIG_FILENAME}.`,
+    )
+    process.exit(1)
+  }
+
+  const { createJiti } = await import('jiti')
+  const jiti = createJiti(resolvedPath, {
+    interopDefault: true,
+  })
+
+  let moduleExports: Record<string, unknown>
+  try {
+    moduleExports = (await jiti.import(resolvedPath)) as Record<string, unknown>
+  } catch (error) {
+    console.error(
+      `Error: Failed to load encrypt client file at ${resolvedPath}\n`,
+    )
+    console.error(error)
+    process.exit(1)
+  }
+
+  const encryptClient = Object.values(moduleExports)[0] as EncryptionClient
+
+  if (!encryptClient) {
+    console.error(
+      `Error: No encrypt client found in ${encryptClientPath}\n\nExport at least one encryptedTable() from your schema file.`,
+    )
+    process.exit(1)
+  }
+
+  return encryptClient.getEncryptConfig()
 }

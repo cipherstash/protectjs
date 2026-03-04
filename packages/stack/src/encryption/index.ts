@@ -590,6 +590,15 @@ export class EncryptionClient {
       workspaceId: this.workspaceId,
     }
   }
+
+  /**
+   * Get the encrypt config object.
+   *
+   * @returns The encrypt config object.
+   */
+  getEncryptConfig(): EncryptConfig | undefined {
+    return this.encryptConfig
+  }
 }
 
 /**

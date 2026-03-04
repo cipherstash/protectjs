@@ -1,5 +1,4 @@
 export { initCommand } from './init.js'
 export { installCommand } from './install.js'
-export { migrateCommand } from './migrate.js'
 export { pushCommand } from './push.js'
 export { statusCommand } from './status.js'

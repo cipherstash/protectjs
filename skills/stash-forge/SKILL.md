@@ -38,12 +38,14 @@ export default defineConfig({
 ```typescript
 type StashConfig = {
   databaseUrl: string          // Required: PostgreSQL connection string
+  client?: string              // Optional: path to encryption client (default: './src/encryption/index.ts')
   workspaceId?: string         // Optional: CipherStash workspace ID
   clientAccessKey?: string     // Optional: CipherStash client access key
 }
 ```
 
 - `defineConfig()` provides TypeScript type-checking for the config file.
+- `client` points to the encryption client file used by `stash-forge push` to load the encryption schema.
 - Config is loaded automatically from `stash.config.ts` by walking up from `process.cwd()` (like `tsconfig.json` resolution).
 - `.env` files are loaded automatically via `dotenv` before config evaluation.
 
@@ -73,6 +75,12 @@ npx stash-forge install --supabase
 # Skip operator family (for non-superuser database roles)
 npx stash-forge install --exclude-operator-family
 
+# Generate a Drizzle migration instead of direct install
+npx stash-forge install --drizzle
+
+# Drizzle migration with custom name and output directory
+npx stash-forge install --drizzle --name setup-eql --out ./migrations
+
 # Combine flags
 npx stash-forge install --dry-run --supabase
 ```
@@ -84,12 +92,46 @@ npx stash-forge install --dry-run --supabase
 | `--dry-run` | Print the SQL that would be executed without applying it |
 | `--supabase` | Use Supabase-compatible install (no operator family + grants to Supabase roles) |
 | `--exclude-operator-family` | Skip operator family creation (useful for non-superuser roles) |
+| `--drizzle` | Generate a Drizzle migration instead of direct install |
+| `--name <value>` | Migration name when using `--drizzle` (default: `install-eql`) |
+| `--out <value>` | Drizzle output directory when using `--drizzle` (default: `drizzle`) |
+
+#### `install --drizzle`
+
+When `--drizzle` is passed, instead of connecting to the database directly, `stash-forge`:
+1. Runs `drizzle-kit generate --custom --name=<name>` to scaffold an empty migration
+2. Downloads the EQL install SQL from GitHub releases
+3. Writes the SQL into the generated migration file
+
+You then run `npx drizzle-kit migrate` to apply it. Requires `drizzle-kit` as a dev dependency.
+
+### `push` — Push encryption schema to database
+
+Load your encryption schema from the file specified by `client` in `stash.config.ts` and apply it to the database.
+
+```bash
+# Push schema to the database
+npx stash-forge push
+
+# Preview the schema as JSON without writing to the database
+npx stash-forge push --dry-run
+```
+
+**Flags:**
+| Flag | Description |
+|------|-------------|
+| `--dry-run` | Load and validate the schema, then print it as JSON. No database changes. |
+
+When pushing, stash-forge:
+1. Loads the encryption client from the path in `stash.config.ts`
+2. Builds the encrypt config from the client
+3. Connects to Postgres and marks existing `eql_v2_configuration` rows as `inactive`
+4. Inserts the new config as an `active` row
 
 ### Other commands (planned, not yet implemented)
 
 - `init` — Initialize CipherStash Forge in your project
-- `push` — Push encryption schema to database
-- `migrate` — Run pending EQL migrations
+- `migrate` — Run pending encrypt config migrations
 - `status` — Show EQL installation status
 
 ## Programmatic API
@@ -98,9 +140,13 @@ npx stash-forge install --dry-run --supabase
 
 Identity function that provides type-safe configuration for `stash.config.ts`.
 
-### `loadStashConfig(): Promise<StashConfig>`
+### `loadStashConfig(): Promise<ResolvedStashConfig>`
 
-Finds and loads `stash.config.ts` from the current directory or any parent. Validates with Zod. Exits with code 1 if config is missing or invalid.
+Finds and loads `stash.config.ts` from the current directory or any parent. Validates with Zod. Applies defaults (e.g. `client` defaults to `'./src/encryption/index.ts'`). Exits with code 1 if config is missing or invalid.
+
+### `loadEncryptConfig(clientPath: string): Promise<EncryptConfig | undefined>`
+
+Loads the encryption client file, extracts the encrypt config, and returns it. Used by `push` to build the schema JSON.
 
 ### `EQLInstaller`
 
@@ -175,6 +221,7 @@ if (await installer.isInstalled()) {
 - Node.js >= 22
 - PostgreSQL database with sufficient permissions (see `checkPermissions()`)
 - A `stash.config.ts` file with a valid `databaseUrl`
+- Peer dependency: `@cipherstash/stack` >= 0.6.0
 
 ## Common issues
 

@@ -2,45 +2,63 @@ import { config } from 'dotenv'
 config()
 
 import * as p from '@clack/prompts'
-import { installCommand } from '../commands/index.js'
+import { installCommand, pushCommand } from '../commands/index.js'
 
 const HELP = `
-CipherStash Forge v0.1.0
-
+CipherStash Forge
 Usage: stash-forge <command> [options]
 
 Commands:
   install    Install EQL extensions into your database
   init       Initialize CipherStash Forge in your project
   push       Push encryption schema to database
-  migrate    Run pending EQL migrations
+  migrate    Run pending encrypt config migrations
   status     Show EQL installation status
 
 Options:
   --help, -h       Show help
   --version, -v    Show version
   --force                    (install) Reinstall even if already installed
-  --dry-run                  (install) Show what would happen without making changes
+  --dry-run                  (install, push) Show what would happen without making changes
   --supabase                 (install) Use Supabase-compatible install and grant role permissions
+  --drizzle                  (install) Generate a Drizzle migration instead of direct install
   --exclude-operator-family  (install) Skip operator family creation (for non-superuser roles)
 `.trim()
 
-function parseArgs(argv: string[]) {
+interface ParsedArgs {
+  command: string | undefined
+  flags: Record<string, boolean>
+  values: Record<string, string>
+}
+
+function parseArgs(argv: string[]): ParsedArgs {
   const args = argv.slice(2)
   const command = args[0]
   const flags: Record<string, boolean> = {}
+  const values: Record<string, string> = {}
 
-  for (const arg of args.slice(1)) {
+  const rest = args.slice(1)
+  for (let i = 0; i < rest.length; i++) {
+    const arg = rest[i]
     if (arg.startsWith('--')) {
-      flags[arg.slice(2)] = true
+      const key = arg.slice(2)
+      const nextArg = rest[i + 1]
+
+      // If the next argument exists and is not a flag, treat it as a value
+      if (nextArg !== undefined && !nextArg.startsWith('--')) {
+        values[key] = nextArg
+        i++ // Skip the value argument
+      } else {
+        flags[key] = true
+      }
     }
   }
 
-  return { command, flags }
+  return { command, flags, values }
 }
 
 async function main() {
-  const { command, flags } = parseArgs(process.argv)
+  const { command, flags, values } = parseArgs(process.argv)
 
   if (!command || flags.help || command === '--help' || command === '-h') {
     console.log(HELP)
@@ -59,10 +77,15 @@ async function main() {
         dryRun: flags['dry-run'],
         supabase: flags.supabase,
         excludeOperatorFamily: flags['exclude-operator-family'],
+        drizzle: flags.drizzle,
+        name: values.name,
+        out: values.out,
       })
       break
-    case 'init':
     case 'push':
+      await pushCommand({ dryRun: flags['dry-run'] })
+      break
+    case 'init':
     case 'migrate':
     case 'status':
       p.log.warn(`"stash-forge ${command}" is not yet implemented.`)

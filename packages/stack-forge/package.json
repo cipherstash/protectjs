@@ -46,6 +46,7 @@
 		"zod": "3.24.2"
 	},
 	"devDependencies": {
+		"@cipherstash/stack": "workspace:*",
 		"@types/pg": "^8.11.11",
 		"tsup": "catalog:repo",
 		"tsx": "catalog:repo",
