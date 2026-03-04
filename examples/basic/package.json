@@ -15,6 +15,7 @@
     "dotenv": "^16.4.7"
   },
   "devDependencies": {
+    "@cipherstash/stack-forge": "workspace:*",
     "tsx": "catalog:repo",
     "typescript": "catalog:repo"
   }

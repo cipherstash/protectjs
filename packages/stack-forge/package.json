@@ -1,0 +1,61 @@
+{
+	"name": "@cipherstash/stack-forge",
+	"version": "0.0.0",
+	"description": "CipherStash Stack Forge",
+	"license": "MIT",
+	"author": "CipherStash <hello@cipherstash.com>",
+	"files": [
+		"dist",
+		"README.md",
+		"LICENSE",
+		"CHANGELOG.md"
+	],
+	"type": "module",
+	"bin": {
+		"stash-forge": "./dist/bin/stash-forge.js"
+	},
+	"main": "./dist/index.cjs",
+	"module": "./dist/index.js",
+	"sideEffects": false,
+	"types": "./dist/index.d.ts",
+	"exports": {
+		".": {
+			"import": {
+				"types": "./dist/index.d.ts",
+				"default": "./dist/index.js"
+			},
+			"require": {
+				"types": "./dist/index.d.cts",
+				"default": "./dist/index.cjs"
+			}
+		},
+		"./package.json": "./package.json"
+	},
+	"scripts": {
+		"build": "tsup",
+		"postbuild": "chmod +x ./dist/bin/stash-forge.js",
+		"dev": "tsup --watch",
+		"test": "vitest run",
+		"lint": "biome check ."
+	},
+	"dependencies": {
+		"@clack/prompts": "0.10.1",
+		"dotenv": "16.4.7",
+		"jiti": "2.6.1",
+		"pg": "8.13.1",
+		"zod": "3.24.2"
+	},
+	"devDependencies": {
+		"@types/pg": "^8.11.11",
+		"tsup": "catalog:repo",
+		"tsx": "catalog:repo",
+		"typescript": "catalog:repo",
+		"vitest": "catalog:repo"
+	},
+	"publishConfig": {
+		"access": "public"
+	},
+	"engines": {
+		"node": ">=22"
+	}
+}
