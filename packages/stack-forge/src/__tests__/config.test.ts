@@ -75,6 +75,9 @@ describe('loadStashConfig', () => {
     const { loadStashConfig } = await import('@/config/index.ts')
 
     const config = await loadStashConfig()
-    expect(config).toEqual(validConfig)
+    expect(config).toEqual({
+      ...validConfig,
+      client: './src/encryption/index.ts',
+    })
   })
 })
