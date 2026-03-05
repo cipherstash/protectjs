@@ -1,5 +1,11 @@
 # @cipherstash/stack
 
+## 0.7.0
+
+### Minor Changes
+
+- 1be8f81: Exposed a public method on the Encryption client to expose the build Encryption schema.
+
 ## 0.6.0
 
 ### Minor Changes
