@@ -68,9 +68,15 @@ importers:
         specifier: workspace:*
         version: link:../../packages/stack
       dotenv:
-        specifier: ^16.4.7
+        specifier: ^16.6.1
         version: 16.6.1
+      pg:
+        specifier: ^8.16.3
+        version: 8.16.3
     devDependencies:
+      '@cipherstash/stack-forge':
+        specifier: workspace:*
+        version: link:../../packages/stack-forge
       tsx:
         specifier: catalog:repo
         version: 4.19.3
@@ -293,6 +299,43 @@ importers:
         specifier: catalog:repo
         version: 3.1.3(@types/node@22.19.3)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.19.3)
 
+  packages/stack-forge:
+    dependencies:
+      '@clack/prompts':
+        specifier: 0.10.1
+        version: 0.10.1
+      dotenv:
+        specifier: 16.4.7
+        version: 16.4.7
+      jiti:
+        specifier: 2.6.1
+        version: 2.6.1
+      pg:
+        specifier: ^8.16.3
+        version: 8.16.3
+      zod:
+        specifier: 3.24.2
+        version: 3.24.2
+    devDependencies:
+      '@cipherstash/stack':
+        specifier: workspace:*
+        version: link:../stack
+      '@types/pg':
+        specifier: ^8.11.11
+        version: 8.16.0
+      tsup:
+        specifier: catalog:repo
+        version: 8.4.0(jiti@2.6.1)(postcss@8.5.6)(tsx@4.19.3)(typescript@5.6.3)
+      tsx:
+        specifier: catalog:repo
+        version: 4.19.3
+      typescript:
+        specifier: catalog:repo
+        version: 5.6.3
+      vitest:
+        specifier: catalog:repo
+        version: 3.1.3(@types/node@22.19.3)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.19.3)
+
 packages:
 
   '@apidevtools/json-schema-ref-parser@11.9.3':
@@ -493,6 +536,7 @@ packages:
   '@clerk/clerk-react@5.59.1':
     resolution: {integrity: sha512-qJMRbOy0Y+0ocGxlvIYI2yQkXcLu6DIGttZ/QM8MFMqoL/K9png4rWNN/zci676ZKZZTD3I+HGD0P11MyZk7cA==}
     engines: {node: '>=18.17.0'}
+    deprecated: 'This package is no longer supported. Please use @clerk/react instead. See the upgrade guide for more info: https://clerk.com/docs/guides/development/upgrading/upgrade-guides/core-3'
     peerDependencies:
       react: ^18.0.0 || ^19.0.0 || ^19.0.0-0
       react-dom: ^18.0.0 || ^19.0.0 || ^19.0.0-0
@@ -520,6 +564,7 @@ packages:
   '@clerk/types@4.101.8':
     resolution: {integrity: sha512-hJobP3FvvuMS5EoaQZmupmLDf5bxOv9ZDXiJ2heSoqUWZaQxLFOfzaOXTKNV9oF5yJwvYijh1cW0LxXZP2O9aA==}
     engines: {node: '>=18.17.0'}
+    deprecated: 'This package is no longer supported. Please import types from @clerk/shared/types instead. See the upgrade guide for more info: https://clerk.com/docs/guides/development/upgrading/upgrade-guides/core-3'
 
   '@drizzle-team/brocli@0.10.2':
     resolution: {integrity: sha512-z33Il7l5dKjUgGULTqBsQBQwckHh5AbIuxhdsIxDDiZAzBOrZO6q9ogcWC65kU382AfynTfgNumVcNIjuIua6w==}
@@ -3558,8 +3603,7 @@ snapshots:
 
   isexe@3.1.1: {}
 
-  jiti@2.6.1:
-    optional: true
+  jiti@2.6.1: {}
 
   jose@5.10.0: {}
 

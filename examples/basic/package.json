@@ -12,9 +12,11 @@
   "description": "",
   "dependencies": {
     "@cipherstash/stack": "workspace:*",
-    "dotenv": "^16.4.7"
+    "dotenv": "^16.6.1",
+    "pg": "8.13.1"
   },
   "devDependencies": {
+    "@cipherstash/stack-forge": "workspace:*",
     "tsx": "catalog:repo",
     "typescript": "catalog:repo"
   }
