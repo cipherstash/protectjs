@@ -167,14 +167,28 @@ export async function loadEncryptConfig(
     process.exit(1)
   }
 
-  const encryptClient = Object.values(moduleExports)[0] as EncryptionClient
+  const encryptClient = Object.values(moduleExports).find(
+    (value): value is EncryptionClient =>
+      !!value &&
+      typeof value === 'object' &&
+      'getEncryptConfig' in value &&
+      typeof (value as { getEncryptConfig?: unknown }).getEncryptConfig ===
+        'function',
+  )
 
   if (!encryptClient) {
     console.error(
-      `Error: No encrypt client found in ${encryptClientPath}\n\nExport at least one encryptedTable() from your schema file.`,
+      `Error: No EncryptionClient export found in ${encryptClientPath}.`,
     )
     process.exit(1)
   }
 
-  return encryptClient.getEncryptConfig()
+  const config = encryptClient.getEncryptConfig()
+  if (!config) {
+    console.error(
+      `Error: Encryption client in ${encryptClientPath} has no initialized encrypt config.`,
+    )
+    process.exit(1)
+  }
+  return config
 }
