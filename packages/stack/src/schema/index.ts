@@ -99,6 +99,22 @@ export const encryptConfigSchema = z.object({
  * @see {@link castAsEnum} for possible values.
  */
 export type CastAs = z.infer<typeof castAsEnum>
+
+// Map SDK-friendly cast names to EQL database names
+const castAsToEql: Record<CastAs, string> = {
+  string: 'text',
+  text: 'text',
+  number: 'int',
+  bigint: 'big_int',
+  boolean: 'boolean',
+  date: 'date',
+  json: 'jsonb',
+}
+
+function mapCastAs(castAs: CastAs): string {
+  return castAsToEql[castAs] ?? castAs
+}
+
 export type TokenFilter = z.infer<typeof tokenFilterSchema>
 export type MatchIndexOpts = z.infer<typeof matchIndexOptsSchema>
 export type SteVecIndexOpts = z.infer<typeof steVecIndexOptsSchema>
@@ -169,7 +185,7 @@ export class EncryptedField {
 
   build() {
     return {
-      cast_as: this.castAsValue === 'string' ? 'text' : this.castAsValue,
+      cast_as: mapCastAs(this.castAsValue),
       indexes: {},
     }
   }
@@ -338,7 +354,7 @@ export class EncryptedColumn {
 
   build() {
     return {
-      cast_as: this.castAsValue === 'string' ? 'text' : this.castAsValue,
+      cast_as: mapCastAs(this.castAsValue),
       indexes: this.indexesValue,
     }
   }
