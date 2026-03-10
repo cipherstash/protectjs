@@ -148,15 +148,19 @@ function splitOrString(input: string): string[] {
   const parts: string[] = []
   let current = ''
   let depth = 0
+  let inQuotes = false
 
   for (const char of input) {
-    if (char === '(') {
+    if (char === '"' && depth === 0) {
+      inQuotes = !inQuotes
+      current += char
+    } else if (char === '(' && !inQuotes) {
       depth++
       current += char
-    } else if (char === ')') {
+    } else if (char === ')' && !inQuotes) {
       depth--
       current += char
-    } else if (char === ',' && depth === 0) {
+    } else if (char === ',' && depth === 0 && !inQuotes) {
       parts.push(current)
       current = ''
     } else {
@@ -172,6 +176,11 @@ function splitOrString(input: string): string[] {
 }
 
 function parseOrValue(value: string): unknown {
+  // Handle double-quoted values (PostgREST quoting for reserved characters)
+  if (value.startsWith('"') && value.endsWith('"')) {
+    return value.slice(1, -1)
+  }
+
   // Handle parenthesized lists: (val1,val2,val3)
   if (value.startsWith('(') && value.endsWith(')')) {
     return value
@@ -190,6 +199,12 @@ function parseOrValue(value: string): unknown {
   return value
 }
 
+/**
+ * PostgREST reserved characters that require double-quoting in filter values.
+ * See: https://docs.postgrest.org/en/latest/references/api/tables_views.html
+ */
+const POSTGREST_RESERVED = /[,().]/
+
 function formatOrValue(value: unknown): string {
   if (Array.isArray(value)) {
     return `(${value.join(',')})`
@@ -197,5 +212,15 @@ function formatOrValue(value: unknown): string {
   if (value === null) return 'null'
   if (value === true) return 'true'
   if (value === false) return 'false'
-  return String(value)
+
+  const str = String(value)
+
+  // Wrap in double quotes if the value contains reserved characters.
+  // This is required for encrypted values (JSON with commas, braces, etc.)
+  // and is safe for all string values per PostgREST spec.
+  if (POSTGREST_RESERVED.test(str)) {
+    return `"${str}"`
+  }
+
+  return str
 }

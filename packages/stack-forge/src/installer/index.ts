@@ -1,3 +1,5 @@
+import { existsSync, readFileSync } from 'node:fs'
+import { resolve, dirname, join } from 'node:path'
 import pg from 'pg'
 
 const EQL_INSTALL_URL =
@@ -5,6 +7,42 @@ const EQL_INSTALL_URL =
 const EQL_INSTALL_NO_OPERATOR_FAMILY_URL =
   'https://github.com/cipherstash/encrypt-query-language/releases/latest/download/cipherstash-encrypt-supabase.sql'
 const EQL_SCHEMA_NAME = 'eql_v2'
+
+/**
+ * Get the directory of the current file, supporting both ESM and CJS.
+ */
+function getCurrentDir(): string {
+  // ESM: import.meta.url is available
+  if (typeof import.meta?.url === 'string' && import.meta.url) {
+    return dirname(new URL(import.meta.url).pathname)
+  }
+  // CJS: __dirname is available
+  return __dirname
+}
+
+/**
+ * Resolve the path to a bundled SQL file shipped with the package.
+ *
+ * tsup bundles everything flat:
+ *   - Library: dist/index.js   → SQL at dist/sql/
+ *   - CLI:     dist/bin/stash-forge.js → SQL at dist/sql/
+ *
+ * We walk up from the current file until we find the sql/ directory.
+ */
+function bundledSqlPath(filename: string): string {
+  const thisDir = getCurrentDir()
+
+  // Try sql/ as a sibling first (library path: dist/ -> dist/sql/)
+  const sibling = join(thisDir, 'sql', filename)
+  if (existsSync(sibling)) return sibling
+
+  // Try one level up (CLI path: dist/bin/ -> dist/sql/)
+  const parent = join(thisDir, '..', 'sql', filename)
+  if (existsSync(parent)) return resolve(parent)
+
+  // Fallback: return the sibling path and let the caller handle the error
+  return sibling
+}
 
 export interface PermissionCheckResult {
   ok: boolean
@@ -58,7 +96,9 @@ export class EQLInstaller {
         SELECT has_database_privilege(current_user, current_database(), 'CREATE') AS has_create
       `)
       if (!dbCreateResult.rows[0]?.has_create) {
-        missing.push('CREATE on database (required for CREATE SCHEMA and CREATE EXTENSION)')
+        missing.push(
+          'CREATE on database (required for CREATE SCHEMA and CREATE EXTENSION)',
+        )
       }
 
       // CREATE on the public schema (needed for CREATE TYPE public.eql_v2_encrypted)
@@ -66,7 +106,9 @@ export class EQLInstaller {
         SELECT has_schema_privilege(current_user, 'public', 'CREATE') AS has_create
       `)
       if (!schemaCreateResult.rows[0]?.has_create) {
-        missing.push('CREATE on public schema (required for CREATE TYPE public.eql_v2_encrypted)')
+        missing.push(
+          'CREATE on public schema (required for CREATE TYPE public.eql_v2_encrypted)',
+        )
       }
 
       // Check if pgcrypto is already installed — if not, we need CREATE EXTENSION privilege
@@ -77,17 +119,18 @@ export class EQLInstaller {
         // pgcrypto not installed — need to be able to create extensions
         // This typically requires superuser or the role must be the extension owner
         if (!role?.rolcreatedb) {
-          missing.push('SUPERUSER or extension owner (required for CREATE EXTENSION pgcrypto)')
+          missing.push(
+            'SUPERUSER or extension owner (required for CREATE EXTENSION pgcrypto)',
+          )
         }
       }
 
       return { ok: missing.length === 0, missing }
     } catch (error) {
       const detail = error instanceof Error ? error.message : String(error)
-      throw new Error(
-        `Failed to connect to database: ${detail}`,
-        { cause: error },
-      )
+      throw new Error(`Failed to connect to database: ${detail}`, {
+        cause: error,
+      })
     } finally {
       await client.end()
     }
@@ -110,10 +153,9 @@ export class EQLInstaller {
       return result.rowCount !== null && result.rowCount > 0
     } catch (error) {
       const detail = error instanceof Error ? error.message : String(error)
-      throw new Error(
-        `Failed to connect to database: ${detail}`,
-        { cause: error },
-      )
+      throw new Error(`Failed to connect to database: ${detail}`, {
+        cause: error,
+      })
     } finally {
       await client.end()
     }
@@ -158,10 +200,9 @@ export class EQLInstaller {
       return 'unknown'
     } catch (error) {
       const detail = error instanceof Error ? error.message : String(error)
-      throw new Error(
-        `Failed to connect to database: ${detail}`,
-        { cause: error },
-      )
+      throw new Error(`Failed to connect to database: ${detail}`, {
+        cause: error,
+      })
     } finally {
       await client.end()
     }
@@ -170,9 +211,8 @@ export class EQLInstaller {
   /**
    * Install the CipherStash EQL PostgreSQL extension.
    *
-   * Downloads the SQL install script from GitHub and executes it against the
-   * target database inside a transaction. The script is idempotent and safe to
-   * re-run.
+   * By default, uses the SQL bundled with this package. Pass `latest: true`
+   * to fetch the latest version from GitHub instead.
    *
    * This method is intentionally "silent" — it does not produce any console
    * output. The calling CLI command is responsible for all user-facing output.
@@ -180,10 +220,13 @@ export class EQLInstaller {
   async install(options?: {
     excludeOperatorFamily?: boolean
     supabase?: boolean
+    latest?: boolean
   }): Promise<void> {
-    const { supabase = false } = options ?? {}
+    const { supabase = false, latest = false } = options ?? {}
     const excludeOperatorFamily = options?.excludeOperatorFamily || supabase
-    const sql = await this.downloadInstallScript(excludeOperatorFamily)
+    const sql = latest
+      ? await this.downloadInstallScript(excludeOperatorFamily)
+      : this.loadBundledInstallScript({ excludeOperatorFamily, supabase })
 
     const client = new pg.Client({ connectionString: this.databaseUrl })
 
@@ -191,10 +234,9 @@ export class EQLInstaller {
       await client.connect()
     } catch (error) {
       const detail = error instanceof Error ? error.message : String(error)
-      throw new Error(
-        `Failed to connect to database: ${detail}`,
-        { cause: error },
-      )
+      throw new Error(`Failed to connect to database: ${detail}`, {
+        cause: error,
+      })
     }
 
     try {
@@ -230,12 +272,43 @@ export class EQLInstaller {
     const roles = 'anon, authenticated, service_role'
 
     await client.query(`GRANT USAGE ON SCHEMA ${EQL_SCHEMA_NAME} TO ${roles}`)
-    await client.query(`GRANT ALL ON ALL TABLES IN SCHEMA ${EQL_SCHEMA_NAME} TO ${roles}`)
-    await client.query(`GRANT ALL ON ALL ROUTINES IN SCHEMA ${EQL_SCHEMA_NAME} TO ${roles}`)
-    await client.query(`GRANT ALL ON ALL SEQUENCES IN SCHEMA ${EQL_SCHEMA_NAME} TO ${roles}`)
-    await client.query(`ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA ${EQL_SCHEMA_NAME} GRANT ALL ON TABLES TO ${roles}`)
-    await client.query(`ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA ${EQL_SCHEMA_NAME} GRANT ALL ON ROUTINES TO ${roles}`)
-    await client.query(`ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA ${EQL_SCHEMA_NAME} GRANT ALL ON SEQUENCES TO ${roles}`)
+    await client.query(
+      `GRANT SELECT ON ALL TABLES IN SCHEMA ${EQL_SCHEMA_NAME} TO ${roles}`,
+    )
+    await client.query(
+      `GRANT EXECUTE ON ALL ROUTINES IN SCHEMA ${EQL_SCHEMA_NAME} TO ${roles}`,
+    )
+    await client.query(
+      `GRANT USAGE ON ALL SEQUENCES IN SCHEMA ${EQL_SCHEMA_NAME} TO ${roles}`,
+    )
+    await client.query(
+      `ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA ${EQL_SCHEMA_NAME} GRANT SELECT ON TABLES TO ${roles}`,
+    )
+    await client.query(
+      `ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA ${EQL_SCHEMA_NAME} GRANT EXECUTE ON ROUTINES TO ${roles}`,
+    )
+    await client.query(
+      `ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA ${EQL_SCHEMA_NAME} GRANT USAGE ON SEQUENCES TO ${roles}`,
+    )
+  }
+
+  /**
+   * Load the EQL SQL install script bundled with this package.
+   */
+  private loadBundledInstallScript(options: {
+    excludeOperatorFamily: boolean
+    supabase: boolean
+  }): string {
+    const filename = resolveBundledFilename(options)
+
+    try {
+      return readFileSync(bundledSqlPath(filename), 'utf-8')
+    } catch (error) {
+      throw new Error(
+        `Failed to load bundled EQL install script (${filename}). The package may be corrupted — try reinstalling @cipherstash/stack-forge.`,
+        { cause: error },
+      )
+    }
   }
 
   /**
@@ -266,4 +339,75 @@ export class EQLInstaller {
 
     return response.text()
   }
+}
+
+/**
+ * Determine which bundled SQL file to use based on install options.
+ *
+ * - `supabase: true` → Supabase-specific variant
+ * - `excludeOperatorFamily: true` → no operator family variant
+ * - default → standard install
+ */
+function resolveBundledFilename(options: {
+  excludeOperatorFamily: boolean
+  supabase: boolean
+}): string {
+  if (options.supabase) return 'cipherstash-encrypt-supabase.sql'
+  if (options.excludeOperatorFamily)
+    return 'cipherstash-encrypt-no-operator-family.sql'
+  return 'cipherstash-encrypt.sql'
+}
+
+/**
+ * Load the bundled EQL install SQL. Used by the Drizzle migration path.
+ */
+export function loadBundledEqlSql(
+  options: {
+    excludeOperatorFamily?: boolean
+    supabase?: boolean
+  } = {},
+): string {
+  const filename = resolveBundledFilename({
+    excludeOperatorFamily: options.excludeOperatorFamily ?? false,
+    supabase: options.supabase ?? false,
+  })
+
+  try {
+    return readFileSync(bundledSqlPath(filename), 'utf-8')
+  } catch (error) {
+    throw new Error(
+      `Failed to load bundled EQL install script (${filename}). The package may be corrupted — try reinstalling @cipherstash/stack-forge.`,
+      { cause: error },
+    )
+  }
+}
+
+/**
+ * Download the latest EQL install SQL from GitHub. Used by the Drizzle migration path
+ * when `--latest` is passed.
+ */
+export async function downloadEqlSql(
+  excludeOperatorFamily = false,
+): Promise<string> {
+  const url = excludeOperatorFamily
+    ? EQL_INSTALL_NO_OPERATOR_FAMILY_URL
+    : EQL_INSTALL_URL
+
+  let response: Response
+
+  try {
+    response = await fetch(url)
+  } catch (error) {
+    throw new Error('Failed to download EQL install script from GitHub.', {
+      cause: error,
+    })
+  }
+
+  if (!response.ok) {
+    throw new Error(
+      `Failed to download EQL install script. HTTP ${response.status}: ${response.statusText}`,
+    )
+  }
+
+  return response.text()
 }

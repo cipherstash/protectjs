@@ -7,10 +7,6 @@ import { z } from 'zod'
 export interface StashConfig {
   /** PostgreSQL connection string */
   databaseUrl: string
-  /** Optional: CipherStash workspace ID */
-  workspaceId?: string
-  /** Optional: CipherStash client access key */
-  clientAccessKey?: string
   /** Path to encryption client file. Defaults to `'./src/encryption/index.ts'`. */
   client?: string
 }

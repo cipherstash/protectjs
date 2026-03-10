@@ -2,27 +2,39 @@ import { config } from 'dotenv'
 config()
 
 import * as p from '@clack/prompts'
-import { installCommand, pushCommand } from '../commands/index.js'
+import {
+  initCommand,
+  installCommand,
+  pushCommand,
+  statusCommand,
+  testConnectionCommand,
+  upgradeCommand,
+  validateCommand,
+} from '../commands/index.js'
 
 const HELP = `
 CipherStash Forge
 Usage: stash-forge <command> [options]
 
 Commands:
-  install    Install EQL extensions into your database
-  init       Initialize CipherStash Forge in your project
-  push       Push encryption schema to database
-  migrate    Run pending encrypt config migrations
-  status     Show EQL installation status
+  install          Install EQL extensions into your database
+  upgrade          Upgrade EQL extensions to the latest version
+  init             Initialize CipherStash Forge in your project
+  push             Push encryption schema to database (CipherStash Proxy only)
+  validate         Validate encryption schema for common misconfigurations
+  migrate          Run pending encrypt config migrations
+  status           Show EQL installation status
+  test-connection  Test database connectivity
 
 Options:
   --help, -h       Show help
   --version, -v    Show version
   --force                    (install) Reinstall even if already installed
-  --dry-run                  (install, push) Show what would happen without making changes
-  --supabase                 (install) Use Supabase-compatible install and grant role permissions
+  --dry-run                  (install, push, upgrade) Show what would happen without making changes
+  --supabase                 (install, upgrade, validate) Use Supabase-compatible install and grant role permissions
   --drizzle                  (install) Generate a Drizzle migration instead of direct install
-  --exclude-operator-family  (install) Skip operator family creation (for non-superuser roles)
+  --exclude-operator-family  (install, upgrade, validate) Skip operator family creation (for non-superuser roles)
+  --latest                   (install, upgrade) Fetch the latest EQL from GitHub instead of using the bundled version
 `.trim()
 
 interface ParsedArgs {
@@ -78,16 +90,38 @@ async function main() {
         supabase: flags.supabase,
         excludeOperatorFamily: flags['exclude-operator-family'],
         drizzle: flags.drizzle,
+        latest: flags.latest,
         name: values.name,
         out: values.out,
+      })
+      break
+    case 'upgrade':
+      await upgradeCommand({
+        dryRun: flags['dry-run'],
+        supabase: flags.supabase,
+        excludeOperatorFamily: flags['exclude-operator-family'],
+        latest: flags.latest,
       })
       break
     case 'push':
       await pushCommand({ dryRun: flags['dry-run'] })
       break
-    case 'init':
-    case 'migrate':
+    case 'validate':
+      await validateCommand({
+        supabase: flags.supabase,
+        excludeOperatorFamily: flags['exclude-operator-family'],
+      })
+      break
     case 'status':
+      await statusCommand()
+      break
+    case 'init':
+      await initCommand()
+      break
+    case 'test-connection':
+      await testConnectionCommand()
+      break
+    case 'migrate':
       p.log.warn(`"stash-forge ${command}" is not yet implemented.`)
       break
     default:

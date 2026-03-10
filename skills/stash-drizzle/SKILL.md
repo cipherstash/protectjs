@@ -236,6 +236,8 @@ const results = await db
   .orderBy(encryptionOps.desc(usersTable.age))
 ```
 
+**Note:** Sorting on encrypted columns requires operator family support in the database. On databases without operator families (e.g. Supabase, or when installed with `--exclude-operator-family`), `ORDER BY` on encrypted columns is not currently supported. Sort application-side after decrypting instead. Operator family support for Supabase is being developed with the Supabase and CipherStash teams.
+
 ## JSONB Queries
 
 Query encrypted JSON columns using JSONB operators. These require `searchableJson: true` and `dataType: "json"` in the column's `encryptedType` config.

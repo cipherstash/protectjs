@@ -274,6 +274,18 @@ These are passed through to Supabase directly:
 .returns<U>()
 ```
 
+### Ordering by Encrypted Columns
+
+**`ORDER BY` on encrypted columns is not currently supported** on databases without operator family support (including Supabase).
+
+Without operator families installed in PostgreSQL, the database cannot sort on `eql_v2_encrypted` columns. This affects all clients — the Supabase JS SDK, Drizzle, raw SQL, and any other ORM.
+
+**Workaround:** Sort application-side after decrypting the results.
+
+Operator family support is currently being developed in collaboration with the Supabase and CipherStash teams and will be available in a future release.
+
+`.order()` on non-encrypted columns works normally.
+
 ## Identity-Aware Encryption
 
 Chain `.withLockContext()` to tie encryption to a specific user's JWT:

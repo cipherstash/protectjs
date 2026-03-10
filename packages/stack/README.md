@@ -287,6 +287,14 @@ await supabase.from("users").select().eq("email", term.data)
 
 Each term in a batch can have its own `returnType`.
 
+### Ordering Encrypted Data
+
+**`ORDER BY` on encrypted columns requires operator family support in the database.**
+
+On databases without operator families (e.g. Supabase, or when EQL is installed with `--exclude-operator-family`), sorting on encrypted columns is not currently supported — regardless of the client or ORM used. Sort application-side after decrypting the results as a workaround.
+
+Operator family support for Supabase is being developed in collaboration with the Supabase and CipherStash teams and will be available in a future release.
+
 ### PostgreSQL / Drizzle Integration Pattern
 
 Encrypted data is stored as an [EQL](https://github.com/cipherstash/encrypt-query-language) JSON payload. Install the EQL extension in PostgreSQL to enable searchable queries, then store encrypted data in `eql_v2_encrypted` columns.

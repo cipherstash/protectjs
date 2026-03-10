@@ -519,6 +519,16 @@ try {
 - At least one `encryptedTable` schema must be provided
 - Keyset UUIDs must be valid format
 
+## Ordering Encrypted Data
+
+**`ORDER BY` on encrypted columns requires operator family support in the database.**
+
+On databases without operator families (e.g. Supabase, or when EQL is installed with `--exclude-operator-family`), sorting on encrypted columns is not currently supported — regardless of the client or ORM used. This applies to Drizzle, the Supabase JS SDK, raw SQL, and any other database client.
+
+**Workaround:** Sort application-side after decrypting the results.
+
+Operator family support for Supabase is being developed in collaboration with the Supabase and CipherStash teams and will be available in a future release.
+
 ## PostgreSQL Storage
 
 Encrypted data is stored as EQL (Encrypt Query Language) JSON payloads. Install the EQL extension in PostgreSQL:
