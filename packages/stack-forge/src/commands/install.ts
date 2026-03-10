@@ -3,7 +3,11 @@ import { existsSync, unlinkSync, writeFileSync } from 'node:fs'
 import { readdir } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
 import { loadStashConfig } from '@/config/index.js'
-import { EQLInstaller } from '@/installer/index.js'
+import {
+  EQLInstaller,
+  loadBundledEqlSql,
+  downloadEqlSql,
+} from '@/installer/index.js'
 import * as p from '@clack/prompts'
 
 const DEFAULT_MIGRATION_NAME = 'install-eql'
@@ -15,6 +19,7 @@ export async function installCommand(options: {
   excludeOperatorFamily?: boolean
   supabase?: boolean
   drizzle?: boolean
+  latest?: boolean
   name?: string
   out?: string
 }) {
@@ -31,14 +36,18 @@ export async function installCommand(options: {
       name: options.name,
       out: options.out,
       dryRun: options.dryRun,
+      latest: options.latest,
     })
     return
   }
 
   if (options.dryRun) {
     p.log.info('Dry run — no changes will be made.')
+    const source = options.latest
+      ? 'Would download EQL install script from GitHub'
+      : 'Would use bundled EQL install script'
     p.note(
-      'Would download EQL install script from GitHub\nWould execute the SQL against the database',
+      `${source}\nWould execute the SQL against the database`,
       'Dry Run',
     )
     p.outro('Dry run complete.')
@@ -79,10 +88,12 @@ export async function installCommand(options: {
     }
   }
 
-  s.start('Installing EQL extensions...')
+  const source = options.latest ? 'from GitHub (latest)' : 'bundled'
+  s.start(`Installing EQL extensions (${source})...`)
   await installer.install({
     excludeOperatorFamily: options.excludeOperatorFamily,
     supabase: options.supabase,
+    latest: options.latest,
   })
   s.stop('EQL extensions installed.')
 
@@ -97,19 +108,23 @@ export async function installCommand(options: {
  * Generate a Drizzle migration that installs CipherStash EQL.
  *
  * Uses `drizzle-kit generate --custom` to scaffold an empty migration,
- * downloads the EQL install SQL from GitHub, and writes it into the file.
+ * then loads the EQL install SQL (bundled by default, or from GitHub with
+ * `--latest`) and writes it into the file.
  */
 async function generateDrizzleMigration(
   s: ReturnType<typeof p.spinner>,
-  options: { name?: string; out?: string; dryRun?: boolean },
+  options: { name?: string; out?: string; dryRun?: boolean; latest?: boolean },
 ) {
   const migrationName = options.name ?? DEFAULT_MIGRATION_NAME
   const outDir = resolve(options.out ?? DEFAULT_DRIZZLE_OUT)
 
   if (options.dryRun) {
     p.log.info('Dry run — no changes will be made.')
+    const source = options.latest
+      ? 'Would download EQL install SQL from GitHub'
+      : 'Would use bundled EQL install SQL'
     p.note(
-      `Would run: npx drizzle-kit generate --custom --name=${migrationName}\nWould download EQL install SQL from GitHub\nWould write SQL to migration file in ${outDir}`,
+      `Would run: npx drizzle-kit generate --custom --name=${migrationName}\n${source}\nWould write SQL to migration file in ${outDir}`,
       'Dry Run',
     )
     p.outro('Dry run complete.')
@@ -163,22 +178,37 @@ async function generateDrizzleMigration(
     process.exit(1)
   }
 
-  // Step 3: Download the EQL SQL
-  s.start('Downloading EQL install script...')
-
+  // Step 3: Load the EQL SQL (bundled or from GitHub)
   let eqlSql: string
 
-  try {
-    eqlSql = await downloadEqlSql()
-    s.stop('EQL install script downloaded.')
-  } catch (error) {
-    s.stop('Failed to download EQL install script.')
-    p.log.error(
-      error instanceof Error ? error.message : String(error),
-    )
-    cleanupMigrationFile(generatedMigrationPath)
-    p.outro('Migration aborted.')
-    process.exit(1)
+  if (options.latest) {
+    s.start('Downloading EQL install script from GitHub (latest)...')
+    try {
+      eqlSql = await downloadEqlSql()
+      s.stop('EQL install script downloaded.')
+    } catch (error) {
+      s.stop('Failed to download EQL install script.')
+      p.log.error(
+        error instanceof Error ? error.message : String(error),
+      )
+      cleanupMigrationFile(generatedMigrationPath)
+      p.outro('Migration aborted.')
+      process.exit(1)
+    }
+  } else {
+    s.start('Loading bundled EQL install script...')
+    try {
+      eqlSql = loadBundledEqlSql()
+      s.stop('Bundled EQL install script loaded.')
+    } catch (error) {
+      s.stop('Failed to load bundled EQL install script.')
+      p.log.error(
+        error instanceof Error ? error.message : String(error),
+      )
+      cleanupMigrationFile(generatedMigrationPath)
+      p.outro('Migration aborted.')
+      process.exit(1)
+    }
   }
 
   // Step 4: Write the EQL SQL into the migration file
@@ -234,32 +264,6 @@ async function findGeneratedMigration(
   }
 
   return join(outDir, matchingFiles[matchingFiles.length - 1])
-}
-
-/**
- * Download the EQL install SQL from GitHub releases.
- */
-async function downloadEqlSql(): Promise<string> {
-  const EQL_INSTALL_URL =
-    'https://github.com/cipherstash/encrypt-query-language/releases/latest/download/cipherstash-encrypt.sql'
-
-  let response: Response
-
-  try {
-    response = await fetch(EQL_INSTALL_URL)
-  } catch (error) {
-    throw new Error('Failed to download EQL install script from GitHub.', {
-      cause: error,
-    })
-  }
-
-  if (!response.ok) {
-    throw new Error(
-      `Failed to download EQL install script. HTTP ${response.status}: ${response.statusText}`,
-    )
-  }
-
-  return response.text()
 }
 
 /**

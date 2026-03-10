@@ -111,7 +111,33 @@ describe('EQLInstaller', () => {
   })
 
   describe('install', () => {
-    it('fetches and executes SQL in a transaction', async () => {
+    it('uses bundled SQL and executes in a transaction', async () => {
+      mockConnect.mockResolvedValue(undefined)
+      mockQuery.mockResolvedValue({ rows: [], rowCount: 0 })
+      mockEnd.mockResolvedValue(undefined)
+
+      const fetchSpy = vi.spyOn(globalThis, 'fetch')
+
+      const { EQLInstaller } = await import('@/installer/index.ts')
+      const installer = new EQLInstaller({
+        databaseUrl: 'postgresql://localhost:5432/test',
+      })
+
+      await installer.install()
+
+      // Should NOT call fetch — uses bundled SQL
+      expect(fetchSpy).not.toHaveBeenCalled()
+      expect(mockQuery).toHaveBeenCalledWith('BEGIN')
+      // The second query should be the bundled SQL (a large string)
+      const sqlCall = mockQuery.mock.calls.find(
+        (call: string[]) => typeof call[0] === 'string' && call[0] !== 'BEGIN' && call[0] !== 'COMMIT',
+      )
+      expect(sqlCall).toBeDefined()
+      expect(sqlCall[0]).toContain('eql_v2')
+      expect(mockQuery).toHaveBeenCalledWith('COMMIT')
+    })
+
+    it('fetches from GitHub when latest: true', async () => {
       const installSql = 'CREATE SCHEMA eql_v2;'
 
       mockConnect.mockResolvedValue(undefined)
@@ -127,7 +153,7 @@ describe('EQLInstaller', () => {
         databaseUrl: 'postgresql://localhost:5432/test',
       })
 
-      await installer.install()
+      await installer.install({ latest: true })
 
       expect(fetchSpy).toHaveBeenCalledWith(
         expect.stringContaining('cipherstash-encrypt.sql'),
@@ -138,24 +164,16 @@ describe('EQLInstaller', () => {
     })
 
     it('rolls back on SQL execution failure', async () => {
-      const installSql = 'CREATE SCHEMA eql_v2;'
-
       mockConnect.mockResolvedValue(undefined)
       mockEnd.mockResolvedValue(undefined)
 
-      let queryCallCount = 0
       mockQuery.mockImplementation((sql: string) => {
-        queryCallCount++
-        // BEGIN succeeds, the install SQL fails
-        if (sql === installSql) {
+        // BEGIN succeeds, any SQL containing eql_v2 (the bundled install) fails
+        if (sql !== 'BEGIN' && sql !== 'COMMIT' && sql !== 'ROLLBACK') {
           return Promise.reject(new Error('permission denied'))
         }
         return Promise.resolve({ rows: [], rowCount: 0 })
       })
-
-      vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-        new Response(installSql, { status: 200 }),
-      )
 
       const { EQLInstaller } = await import('@/installer/index.ts')
       const installer = new EQLInstaller({

@@ -1,3 +1,4 @@
+import { cpSync } from 'node:fs'
 import { defineConfig } from 'tsup'
 
 export default defineConfig([
@@ -10,6 +11,17 @@ export default defineConfig([
     target: 'es2022',
     tsconfig: './tsconfig.json',
     external: ['pg'],
+    esbuildOptions(options) {
+      // Suppress import.meta warning in CJS — we guard with typeof checks at runtime
+      options.logOverride = {
+        ...options.logOverride,
+        'empty-import-meta': 'silent',
+      }
+    },
+    onSuccess: async () => {
+      // Copy bundled SQL files into dist so they ship with the package
+      cpSync('src/sql', 'dist/sql', { recursive: true })
+    },
   },
   {
     entry: ['src/bin/stash-forge.ts'],

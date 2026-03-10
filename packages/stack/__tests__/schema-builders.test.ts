@@ -23,12 +23,12 @@ describe('schema builders', () => {
     it('defaults castAs to string', () => {
       const col = encryptedColumn('name')
       const built = col.build()
-      expect(built.cast_as).toBe('text')
+      expect(built.cast_as).toBe('string')
     })
 
     it('.dataType("string") sets castAs to string', () => {
       const col = encryptedColumn('name').dataType('string')
-      expect(col.build().cast_as).toBe('text')
+      expect(col.build().cast_as).toBe('string')
     })
 
     it('.dataType("number") sets castAs to number', () => {
@@ -140,7 +140,7 @@ describe('schema builders', () => {
       const built = col.build()
 
       expect(built).toEqual({
-        cast_as: 'text',
+        cast_as: 'string',
         indexes: {
           unique: { token_filters: [] },
           ore: {},
@@ -152,7 +152,7 @@ describe('schema builders', () => {
       const col = encryptedColumn('raw')
       const built = col.build()
       expect(built).toEqual({
-        cast_as: 'text',
+        cast_as: 'string',
         indexes: {},
       })
     })
@@ -199,7 +199,7 @@ describe('schema builders', () => {
       expect(built.tableName).toBe('users')
       expect(built.columns).toEqual({
         email: {
-          cast_as: 'text',
+          cast_as: 'string',
           indexes: {
             unique: { token_filters: [] },
           },
@@ -253,7 +253,7 @@ describe('schema builders', () => {
         tables: {
           users: {
             email: {
-              cast_as: 'text',
+              cast_as: 'string',
               indexes: {
                 unique: { token_filters: [] },
               },
@@ -317,7 +317,7 @@ describe('schema builders', () => {
     it('defaults castAs to string', () => {
       const value = encryptedField('field')
       const built = value.build()
-      expect(built.cast_as).toBe('text')
+      expect(built.cast_as).toBe('string')
     })
 
     it('.dataType("json").build() produces correct shape', () => {
@@ -362,7 +362,7 @@ describe('schema builders', () => {
       expect(built.columns).toHaveProperty('firstName')
       expect(built.columns).toHaveProperty('lastName')
       expect(built.columns.firstName).toEqual({
-        cast_as: 'text',
+        cast_as: 'string',
         indexes: {},
       })
     })

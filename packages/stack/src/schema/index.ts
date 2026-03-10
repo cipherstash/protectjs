@@ -23,9 +23,55 @@ import { z } from 'zod'
  *
  * @internal
  */
+/**
+ * EQL cast types — the PostgreSQL-aligned types that EQL actually accepts.
+ * These are stored in the `cast_as` field of the EncryptConfig.
+ */
+export const eqlCastAsEnum = z
+  .enum([
+    'text',
+    'int',
+    'small_int',
+    'big_int',
+    'real',
+    'double',
+    'boolean',
+    'date',
+    'jsonb',
+  ])
+  .default('text')
+
+/**
+ * SDK-facing data types — developer-friendly aliases accepted by `dataType()`.
+ */
 export const castAsEnum = z
   .enum(['bigint', 'boolean', 'date', 'number', 'string', 'json', 'text'])
   .default('text')
+
+/**
+ * Map SDK-facing data types to EQL `cast_as` values.
+ *
+ * The SDK accepts developer-friendly types like `'string'` and `'number'`,
+ * but EQL expects PostgreSQL-aligned types like `'text'` and `'double'`.
+ */
+export function toEqlCastAs(value: CastAs): EqlCastAs {
+  switch (value) {
+    case 'string':
+      return 'text'
+    case 'text':
+      return 'text'
+    case 'number':
+      return 'double'
+    case 'bigint':
+      return 'big_int'
+    case 'boolean':
+      return 'boolean'
+    case 'date':
+      return 'date'
+    case 'json':
+      return 'jsonb'
+  }
+}
 
 const tokenFilterSchema = z.object({
   kind: z.literal('downcase'),
@@ -99,6 +145,7 @@ export const encryptConfigSchema = z.object({
  * @see {@link castAsEnum} for possible values.
  */
 export type CastAs = z.infer<typeof castAsEnum>
+export type EqlCastAs = z.infer<typeof eqlCastAsEnum>
 export type TokenFilter = z.infer<typeof tokenFilterSchema>
 export type MatchIndexOpts = z.infer<typeof matchIndexOptsSchema>
 export type SteVecIndexOpts = z.infer<typeof steVecIndexOptsSchema>
@@ -142,7 +189,7 @@ export class EncryptedField {
 
   constructor(valueName: string) {
     this.valueName = valueName
-    this.castAsValue = 'text'
+    this.castAsValue = 'string'
   }
 
   /**
@@ -169,7 +216,7 @@ export class EncryptedField {
 
   build() {
     return {
-      cast_as: this.castAsValue === 'string' ? 'text' : this.castAsValue,
+      cast_as: this.castAsValue,
       indexes: {},
     }
   }
@@ -338,7 +385,7 @@ export class EncryptedColumn {
 
   build() {
     return {
-      cast_as: this.castAsValue === 'string' ? 'text' : this.castAsValue,
+      cast_as: this.castAsValue,
       indexes: this.indexesValue,
     }
   }

@@ -39,13 +39,11 @@ export default defineConfig({
 type StashConfig = {
   databaseUrl: string          // Required: PostgreSQL connection string
   client?: string              // Optional: path to encryption client (default: './src/encryption/index.ts')
-  workspaceId?: string         // Optional: CipherStash workspace ID
-  clientAccessKey?: string     // Optional: CipherStash client access key
 }
 ```
 
 - `defineConfig()` provides TypeScript type-checking for the config file.
-- `client` points to the encryption client file used by `stash-forge push` to load the encryption schema.
+- `client` points to the encryption client file used by `stash-forge push` and `stash-forge validate` to load the encryption schema.
 - Config is loaded automatically from `stash.config.ts` by walking up from `process.cwd()` (like `tsconfig.json` resolution).
 - `.env` files are loaded automatically via `dotenv` before config evaluation.
 
@@ -57,7 +55,36 @@ The primary interface is the `stash-forge` CLI, run via `npx`:
 npx stash-forge <command> [options]
 ```
 
+### `init` — Initialize CipherStash Forge in your project
+
+Interactive wizard that scaffolds your project for CipherStash encryption.
+
+```bash
+npx stash-forge init
+```
+
+The wizard will:
+1. Check if `@cipherstash/stack` is installed and prompt to install it (auto-detects npm/pnpm/yarn/bun)
+2. Ask for your database URL (pre-fills from `DATABASE_URL` env var if set)
+3. Ask which integration you're using (Drizzle ORM, Supabase, or plain PostgreSQL)
+4. Ask where to create the encryption client file (default: `./src/encryption/index.ts`)
+5. If the client file already exists, ask whether to keep it or overwrite it
+6. Let you choose between:
+   - **Build a schema now** — interactive wizard: table name, column names, data types (string/number/boolean/date/json), and search operations (exact match, order and range, free-text search) for each column
+   - **Use a placeholder schema** — generates an example `users` table with `email` and `name` columns
+7. Generate `stash.config.ts` and the encryption client file
+8. Print next steps with a link to the [CipherStash dashboard](https://dashboard.cipherstash.com/sign-in) for credentials
+
+The generated client file uses the correct imports for the chosen integration:
+- **Drizzle:** `encryptedType`, `extractEncryptionSchema` from `@cipherstash/stack/drizzle`
+- **Supabase/PostgreSQL:** `encryptedTable`, `encryptedColumn` from `@cipherstash/stack/schema`
+
 ### `install` — Install EQL extension to the database
+
+Uses bundled SQL by default for offline, deterministic installs. Three SQL variants are bundled:
+- `cipherstash-encrypt.sql` — standard install (default)
+- `cipherstash-encrypt-supabase.sql` — Supabase-specific variant
+- `cipherstash-encrypt-no-operator-family.sql` — no operator family variant
 
 ```bash
 # Standard install
@@ -74,6 +101,9 @@ npx stash-forge install --supabase
 
 # Skip operator family (for non-superuser database roles)
 npx stash-forge install --exclude-operator-family
+
+# Fetch latest from GitHub instead of using bundled SQL
+npx stash-forge install --latest
 
 # Generate a Drizzle migration instead of direct install
 npx stash-forge install --drizzle
@@ -92,6 +122,7 @@ npx stash-forge install --dry-run --supabase
 | `--dry-run` | Print the SQL that would be executed without applying it |
 | `--supabase` | Use Supabase-compatible install (no operator family + grants to Supabase roles) |
 | `--exclude-operator-family` | Skip operator family creation (useful for non-superuser roles) |
+| `--latest` | Fetch latest EQL from GitHub instead of using the bundled version |
 | `--drizzle` | Generate a Drizzle migration instead of direct install |
 | `--name <value>` | Migration name when using `--drizzle` (default: `install-eql`) |
 | `--out <value>` | Drizzle output directory when using `--drizzle` (default: `drizzle`) |
@@ -100,14 +131,79 @@ npx stash-forge install --dry-run --supabase
 
 When `--drizzle` is passed, instead of connecting to the database directly, `stash-forge`:
 1. Runs `drizzle-kit generate --custom --name=<name>` to scaffold an empty migration
-2. Downloads the EQL install SQL from GitHub releases
+2. Loads the bundled EQL install SQL (or downloads from GitHub with `--latest`)
 3. Writes the SQL into the generated migration file
 
 You then run `npx drizzle-kit migrate` to apply it. Requires `drizzle-kit` as a dev dependency.
 
-### `push` — Push encryption schema to database
+### `upgrade` — Upgrade EQL extensions
 
-Load your encryption schema from the file specified by `client` in `stash.config.ts` and apply it to the database.
+Upgrade an existing EQL installation to the version bundled with the package (or latest from GitHub).
+
+```bash
+# Upgrade using bundled SQL
+npx stash-forge upgrade
+
+# Preview what would happen
+npx stash-forge upgrade --dry-run
+
+# Upgrade with Supabase-compatible SQL
+npx stash-forge upgrade --supabase
+
+# Fetch latest from GitHub
+npx stash-forge upgrade --latest
+```
+
+**Flags:**
+| Flag | Description |
+|------|-------------|
+| `--dry-run` | Show what would happen without making changes |
+| `--supabase` | Use Supabase-compatible upgrade |
+| `--exclude-operator-family` | Skip operator family creation |
+| `--latest` | Fetch latest EQL from GitHub instead of bundled |
+
+The EQL install SQL is idempotent and safe to re-run. The command checks the current version, re-runs the install SQL, then reports the new version. If EQL is not installed, it suggests running `stash-forge install` instead.
+
+### `validate` — Validate encryption schema
+
+Validate your encryption schema for common misconfigurations.
+
+```bash
+# Basic validation
+npx stash-forge validate
+
+# Validate with Supabase context
+npx stash-forge validate --supabase
+
+# Validate with operator family exclusion context
+npx stash-forge validate --exclude-operator-family
+```
+
+**Flags:**
+| Flag | Description |
+|------|-------------|
+| `--supabase` | Check for Supabase-specific issues |
+| `--exclude-operator-family` | Check for issues when operator families are excluded |
+
+**Validation rules:**
+| Rule | Severity | Description |
+|------|----------|-------------|
+| `freeTextSearch` on non-string column | Warning | Free-text search only works with string data |
+| `orderAndRange` without operator families | Warning | ORDER BY won't work without operator families |
+| No indexes on encrypted column | Info | Column is encrypted but not searchable |
+| `searchableJson` without `json` data type | Error | searchableJson requires `dataType("json")` |
+
+Validation is also automatically run before `push` — issues are logged as warnings but don't block the push.
+
+The `validateEncryptConfig` function and `reportIssues` helper are exported for programmatic use:
+
+```typescript
+import { validateEncryptConfig, reportIssues } from '@cipherstash/stack-forge'
+```
+
+### `push` — Push encryption schema to database (CipherStash Proxy only)
+
+This command is **only required when using CipherStash Proxy**. If you're using the SDK directly (Drizzle, Supabase, or plain PostgreSQL), this step is not needed — the schema lives in your application code as the source of truth.
 
 ```bash
 # Push schema to the database
@@ -124,15 +220,52 @@ npx stash-forge push --dry-run
 
 When pushing, stash-forge:
 1. Loads the encryption client from the path in `stash.config.ts`
-2. Builds the encrypt config from the client
-3. Connects to Postgres and marks existing `eql_v2_configuration` rows as `inactive`
-4. Inserts the new config as an `active` row
+2. Runs schema validation (warns but doesn't block)
+3. Transforms SDK data types to EQL-compatible `cast_as` values (see table below)
+4. Connects to Postgres and marks existing `eql_v2_configuration` rows as `inactive`
+5. Inserts the new config as an `active` row
 
-### Other commands (planned, not yet implemented)
+**SDK to EQL type mapping:**
 
-- `init` — Initialize CipherStash Forge in your project
+The SDK uses developer-friendly type names (e.g. `'string'`, `'number'`), but EQL expects PostgreSQL-aligned types. The `push` command automatically maps these before writing to the database:
+
+| SDK type (`dataType()`) | EQL `cast_as` |
+|-------------------------|---------------|
+| `string` | `text` |
+| `text` | `text` |
+| `number` | `double` |
+| `bigint` | `big_int` |
+| `boolean` | `boolean` |
+| `date` | `date` |
+| `json` | `jsonb` |
+
+### `status` — Show EQL installation status
+
+```bash
+npx stash-forge status
+```
+
+Reports:
+- Whether EQL is installed and which version
+- Database permission status
+- Whether an active encrypt config exists in `eql_v2_configuration` (only relevant for CipherStash Proxy)
+
+### `test-connection` — Test database connectivity
+
+```bash
+npx stash-forge test-connection
+```
+
+Verifies the database URL in your config is valid and the database is reachable. Reports:
+- Database name
+- Connected user/role
+- PostgreSQL server version
+
+Useful for debugging connection issues before running `install` or other commands.
+
+### Other commands (planned)
+
 - `migrate` — Run pending encrypt config migrations
-- `status` — Show EQL installation status
 
 ## Programmatic API
 
@@ -146,7 +279,23 @@ Finds and loads `stash.config.ts` from the current directory or any parent. Vali
 
 ### `loadEncryptConfig(clientPath: string): Promise<EncryptConfig | undefined>`
 
-Loads the encryption client file, extracts the encrypt config, and returns it. Used by `push` to build the schema JSON.
+Loads the encryption client file, extracts the encrypt config, and returns it. Used by `push` and `validate` to build the schema JSON.
+
+### `loadBundledEqlSql(options?): string`
+
+Load the bundled EQL install SQL as a string:
+
+```typescript
+import { loadBundledEqlSql } from '@cipherstash/stack-forge'
+
+const sql = loadBundledEqlSql()                                // standard
+const sql = loadBundledEqlSql({ supabase: true })              // supabase variant
+const sql = loadBundledEqlSql({ excludeOperatorFamily: true }) // no operator family
+```
+
+### `downloadEqlSql(excludeOperatorFamily?): Promise<string>`
+
+Download the latest EQL install SQL from GitHub releases.
 
 ### `EQLInstaller`
 
@@ -182,12 +331,13 @@ Returns the installed EQL version string, `'unknown'` if schema exists but no ve
 
 #### `installer.install(options?): Promise<void>`
 
-Downloads and executes the EQL install SQL in a transaction.
+Executes the EQL install SQL in a transaction.
 
 ```typescript
 await installer.install({
   excludeOperatorFamily?: boolean  // Skip operator family creation
   supabase?: boolean               // Use Supabase-compatible install + grant roles
+  latest?: boolean                 // Fetch latest from GitHub instead of bundled
 })
 ```
 
@@ -233,3 +383,11 @@ The database role needs `CREATE` privileges on the database and public schema, o
 
 ### Supabase environments
 Always use `--supabase` (or `supabase: true` programmatically) when targeting Supabase. This uses a compatible install script and grants permissions to `anon`, `authenticated`, and `service_role` roles.
+
+### Operator families and ORDER BY
+
+When EQL is installed with `--supabase` or `--exclude-operator-family`, PostgreSQL operator families are not created. This means `ORDER BY` on encrypted columns is **not currently supported** — regardless of the client or ORM used (Drizzle, Supabase JS SDK, raw SQL, etc.).
+
+Sort application-side after decrypting the results as a workaround.
+
+Operator family support for Supabase is being developed with the Supabase and CipherStash teams and will be available in a future release. This limitation applies to any database environment where operator families are not installed.
