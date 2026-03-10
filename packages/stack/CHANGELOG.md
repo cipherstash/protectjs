@@ -1,5 +1,11 @@
 # @cipherstash/stack
 
+## 0.8.0
+
+### Minor Changes
+
+- 3414761: Fixed Supabase or wrapper to escape EQL payloads correctly.
+
 ## 0.7.0
 
 ### Minor Changes
