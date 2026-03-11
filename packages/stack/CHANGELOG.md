@@ -1,5 +1,11 @@
 # @cipherstash/stack
 
+## 0.9.0
+
+### Minor Changes
+
+- 2b907a1: Improve CLI user experience for developer onboarding.
+
 ## 0.8.0
 
 ### Minor Changes

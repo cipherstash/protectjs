@@ -1,6 +1,6 @@
 {
 	"name": "@cipherstash/stack-forge",
-	"version": "0.2.0",
+	"version": "0.3.0",
 	"description": "CipherStash Stack Forge",
 	"license": "MIT",
 	"author": "CipherStash <hello@cipherstash.com>",
