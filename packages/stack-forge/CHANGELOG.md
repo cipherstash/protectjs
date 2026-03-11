@@ -1,5 +1,11 @@
 # @cipherstash/stack-forge
 
+## 0.3.0
+
+### Minor Changes
+
+- 6f27ec3: Improve CLI user experience for developer onboarding.
+
 ## 0.2.0
 
 ### Minor Changes

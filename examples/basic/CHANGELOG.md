@@ -1,5 +1,16 @@
 # @cipherstash/basic-example
 
+## 1.2.0
+
+### Minor Changes
+
+- 2b907a1: Improve CLI user experience for developer onboarding.
+
+### Patch Changes
+
+- Updated dependencies [2b907a1]
+  - @cipherstash/stack@0.9.0
+
 ## 1.1.22
 
 ### Patch Changes
