@@ -3,9 +3,9 @@ config()
 
 import * as p from '@clack/prompts'
 import {
-  initCommand,
   installCommand,
   pushCommand,
+  setupCommand,
   statusCommand,
   testConnectionCommand,
   upgradeCommand,
@@ -19,7 +19,7 @@ Usage: stash-forge <command> [options]
 Commands:
   install          Install EQL extensions into your database
   upgrade          Upgrade EQL extensions to the latest version
-  init             Initialize CipherStash Forge in your project
+  setup            Configure database and install EQL extensions
   push             Push encryption schema to database (CipherStash Proxy only)
   validate         Validate encryption schema for common misconfigurations
   migrate          Run pending encrypt config migrations
@@ -29,12 +29,12 @@ Commands:
 Options:
   --help, -h       Show help
   --version, -v    Show version
-  --force                    (install) Reinstall even if already installed
-  --dry-run                  (install, push, upgrade) Show what would happen without making changes
-  --supabase                 (install, upgrade, validate) Use Supabase-compatible install and grant role permissions
-  --drizzle                  (install) Generate a Drizzle migration instead of direct install
-  --exclude-operator-family  (install, upgrade, validate) Skip operator family creation (for non-superuser roles)
-  --latest                   (install, upgrade) Fetch the latest EQL from GitHub instead of using the bundled version
+  --force                    (setup, install) Reinstall even if already installed
+  --dry-run                  (setup, install, push, upgrade) Show what would happen without making changes
+  --supabase                 (setup, install, upgrade, validate) Use Supabase-compatible install and grant role permissions
+  --drizzle                  (setup, install) Generate a Drizzle migration instead of direct install
+  --exclude-operator-family  (setup, install, upgrade, validate) Skip operator family creation (for non-superuser roles)
+  --latest                   (setup, install, upgrade) Fetch the latest EQL from GitHub instead of using the bundled version
 `.trim()
 
 interface ParsedArgs {
@@ -115,8 +115,17 @@ async function main() {
     case 'status':
       await statusCommand()
       break
-    case 'init':
-      await initCommand()
+    case 'setup':
+      await setupCommand({
+        force: flags.force,
+        dryRun: flags['dry-run'],
+        supabase: flags.supabase,
+        excludeOperatorFamily: flags['exclude-operator-family'],
+        drizzle: flags.drizzle,
+        latest: flags.latest,
+        name: values.name,
+        out: values.out,
+      })
       break
     case 'test-connection':
       await testConnectionCommand()

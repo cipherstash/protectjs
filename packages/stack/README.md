@@ -85,7 +85,7 @@ if (decrypted.failure) {
 - **Bulk operations** - Encrypt or decrypt thousands of values in a single ZeroKMS call (`bulkEncrypt`, `bulkDecrypt`, `bulkEncryptModels`, `bulkDecryptModels`).
 - **Identity-aware encryption** - Tie encryption to a user's JWT via `LockContext`, so only that user can decrypt.
 - **Secrets management** - Store, retrieve, list, and delete encrypted secrets with the `Secrets` class.
-- **CLI (`stash`)** - Manage secrets from the terminal without writing code.
+- **CLI (`stash`)** - Initialize projects, manage secrets, and set up encryption from the terminal.
 - **TypeScript-first** - Strongly typed schemas, results, and model operations with full generics support.
 
 ## Schema Definition
@@ -430,14 +430,36 @@ await secrets.delete("DATABASE_URL")
 
 The `stash` CLI is bundled with the package and available after install.
 
+### `stash init`
+
+Initialize CipherStash for your project with an interactive wizard.
+
+```bash
+npx stash init
+npx stash init --supabase
+```
+
+The wizard will:
+1. Choose your database connection method (Drizzle ORM, Supabase JS, Prisma, or Raw SQL)
+2. Build an encryption schema interactively or use a placeholder, then generate the encryption client file
+3. Install `@cipherstash/stack-forge` as a dev dependency for database tooling
+
+After `stash init`, create a CipherStash account at [dashboard.cipherstash.com/sign-up](https://dashboard.cipherstash.com/sign-up) to get your credentials, then run `npx stash-forge setup` to configure your database connection.
+
+| Flag | Description |
+|------|-------------|
+| `--supabase` | Use Supabase-specific setup flow |
+
+### `stash secrets`
+
+Manage encrypted secrets from the terminal.
+
 ```bash
 npx stash secrets set  -name DATABASE_URL -value "postgres://..." -environment production
 npx stash secrets get  -name DATABASE_URL -environment production
 npx stash secrets list -environment production
 npx stash secrets delete -name DATABASE_URL -environment production
 ```
-
-### Commands
 
 | Command | Flags | Aliases | Description |
 |-----|----|-----|-------|

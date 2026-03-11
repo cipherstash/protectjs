@@ -1,5 +1,10 @@
 import * as p from '@clack/prompts'
-import type { InitProvider, InitState, InitStep } from '../types.js'
+import type {
+  ConnectionMethod,
+  InitProvider,
+  InitState,
+  InitStep,
+} from '../types.js'
 import { CancelledError } from '../types.js'
 
 export const selectConnectionStep: InitStep = {
@@ -13,6 +18,6 @@ export const selectConnectionStep: InitStep = {
 
     if (p.isCancel(method)) throw new CancelledError()
 
-    return { ...state, connectionMethod: method as string }
+    return { ...state, connectionMethod: method as ConnectionMethod }
   },
 }
