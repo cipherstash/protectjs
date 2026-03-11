@@ -1,4 +1,9 @@
-# @cipherstash/stack-forge
+---
+name: stash-forge
+description: Configure and use `@cipherstash/stack-forge` for EQL database setup, encryption schema management, Supabase and Drizzle integrations. Use when adding encryption to a project, defining encrypted schemas, or setting up CipherStash EQL in a database.
+---
+
+# CipherStash Stack - Stash Forge
 
 Configure and use `@cipherstash/stack-forge` for EQL database setup, encryption schema management, and Supabase integration.
 
