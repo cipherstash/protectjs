@@ -30,24 +30,26 @@ bun add -D @cipherstash/stack-forge
 
 ## Quick Start
 
-The fastest way to get started is with the interactive `init` command:
+First, initialize your project with the `stash` CLI (from `@cipherstash/stack`):
 
 ```bash
-npx stash-forge init
+npx stash init
+```
+
+This generates your encryption schema and installs `@cipherstash/stack-forge` as a dev dependency.
+
+Then set up your database and install EQL:
+
+```bash
+npx stash-forge setup
 ```
 
 This will:
-1. Check if `@cipherstash/stack` is installed and offer to install it
+1. Auto-detect your encryption client file (or ask for the path)
 2. Ask for your database URL
-3. Ask which integration you're using (Drizzle, Supabase, or plain PostgreSQL)
-4. Let you build an encryption schema interactively or use a placeholder
-5. Generate `stash.config.ts` and your encryption client file
-
-Then install EQL in your database:
-
-```bash
-npx stash-forge install
-```
+3. Generate `stash.config.ts`
+4. Ask which Postgres provider you're using (Supabase, Neon, AWS RDS, etc.) to determine the right install flags
+5. Install EQL extensions in your database
 
 That's it. EQL is now installed and your encryption schema is ready.
 
@@ -64,6 +66,7 @@ import { defineConfig } from '@cipherstash/stack-forge'
 
 export default defineConfig({
   databaseUrl: process.env.DATABASE_URL!,
+  client: './src/encryption/index.ts',
 })
 ```
 
@@ -117,25 +120,34 @@ The config file is resolved by walking up from the current working directory, si
 stash-forge <command> [options]
 ```
 
-### `init`
+### `setup`
 
-Initialize CipherStash Forge in your project with an interactive wizard.
+Configure your database and install EQL extensions. Run this after `stash init` has set up your encryption schema.
 
 ```bash
-npx stash-forge init
+npx stash-forge setup [options]
 ```
 
 The wizard will:
-- Check if `@cipherstash/stack` is installed and prompt to install it (detects your package manager automatically)
+- Auto-detect your encryption client file by scanning common locations (`./src/encryption/index.ts`, etc.), then confirm with you or ask for the path if not found
 - Ask for your database URL (pre-fills from `DATABASE_URL` env var)
-- Ask which integration you're using (Drizzle ORM, Supabase, or plain PostgreSQL)
-- Ask where to create the encryption client file
-- If the client file already exists, ask whether to keep it or overwrite
-- Let you choose between building a schema interactively or using a placeholder:
-  - **Build a schema:** asks for table name, column names, data types, and search operations for each column
-  - **Placeholder:** generates an example `users` table with `email` and `name` columns
-- Generate `stash.config.ts` and the encryption client file
-- Print next steps with links to the [CipherStash dashboard](https://dashboard.cipherstash.com/sign-in) for credentials
+- Generate `stash.config.ts` with the database URL and client path
+- Ask which Postgres provider you're using to determine the right install flags:
+  - **Supabase** — uses `--supabase` (no operator families + Supabase role grants)
+  - **Neon, Vercel Postgres, PlanetScale, Prisma Postgres** — uses `--exclude-operator-family`
+  - **AWS RDS, Other / Self-hosted** — standard install
+- Install EQL extensions in your database
+
+If `--supabase` is passed as a flag, the provider selection is skipped.
+
+| Option | Description |
+|--------|-------------|
+| `--force` | Overwrite existing `stash.config.ts` and reinstall EQL |
+| `--dry-run` | Show what would happen without making changes |
+| `--supabase` | Skip provider selection and use Supabase-compatible install |
+| `--drizzle` | Generate a Drizzle migration instead of direct install |
+| `--exclude-operator-family` | Skip operator family creation |
+| `--latest` | Fetch the latest EQL from GitHub instead of using the bundled version |
 
 ### `install`
 
