@@ -24,6 +24,23 @@ export function detectPackageManager(): 'npm' | 'pnpm' | 'yarn' | 'bun' {
   return 'npm'
 }
 
+/** Returns the install command for adding a production dependency with the given package manager. */
+export function prodInstallCommand(
+  pm: ReturnType<typeof detectPackageManager>,
+  packageName: string,
+): string {
+  switch (pm) {
+    case 'bun':
+      return `bun add ${packageName}`
+    case 'pnpm':
+      return `pnpm add ${packageName}`
+    case 'yarn':
+      return `yarn add ${packageName}`
+    case 'npm':
+      return `npm install ${packageName}`
+  }
+}
+
 /** Returns the install command for adding a dev dependency with the given package manager. */
 export function devInstallCommand(
   pm: ReturnType<typeof detectPackageManager>,

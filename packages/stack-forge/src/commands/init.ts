@@ -110,30 +110,21 @@ export async function setupCommand(options: SetupOptions = {}) {
     process.exit(0)
   }
 
-  // 3. Collect database URL
-  const databaseUrl = await p.text({
-    message: 'What is your database URL?',
-    placeholder: 'postgresql://user:password@localhost:5432/mydb',
-    defaultValue: process.env.DATABASE_URL,
-    initialValue: process.env.DATABASE_URL,
-    validate(value) {
-      if (!value || value.trim().length === 0) {
-        return 'Database URL is required.'
-      }
-    },
-  })
-
-  if (p.isCancel(databaseUrl)) {
-    p.cancel('Setup cancelled.')
-    process.exit(0)
-  }
-
-  // 4. Generate stash.config.ts
+  // 3. Generate stash.config.ts
   const configContent = generateConfig(clientPath)
   writeFileSync(configPath, configContent, 'utf-8')
   p.log.success(`Created ${CONFIG_FILENAME}`)
 
-  // 5. Install EQL extensions
+  // 4. Install EQL extensions (only if DATABASE_URL is available)
+  if (!process.env.DATABASE_URL) {
+    p.note(
+      'Set DATABASE_URL in your environment, then run:\n  npx stash-forge install',
+      'DATABASE_URL not set',
+    )
+    p.outro('CipherStash Forge setup complete!')
+    return
+  }
+
   const shouldInstall = await p.confirm({
     message: 'Install EQL extensions in your database now?',
     initialValue: true,
