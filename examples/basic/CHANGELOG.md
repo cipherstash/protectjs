@@ -1,5 +1,12 @@
 # @cipherstash/basic-example
 
+## 1.2.1
+
+### Patch Changes
+
+- Updated dependencies [5245cd7]
+  - @cipherstash/stack@0.10.0
+
 ## 1.2.0
 
 ### Minor Changes

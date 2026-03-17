@@ -1,5 +1,11 @@
 # @cipherstash/stack
 
+## 0.10.0
+
+### Minor Changes
+
+- 5245cd7: Improved CLI setup and initialization commands.
+
 ## 0.9.0
 
 ### Minor Changes
