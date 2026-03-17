@@ -21,6 +21,7 @@ export interface InitState {
   connectionMethod?: ConnectionMethod
   clientFilePath?: string
   schemaGenerated?: boolean
+  stackInstalled?: boolean
   forgeInstalled?: boolean
 }
 
