@@ -1,5 +1,11 @@
 # @cipherstash/stack-forge
 
+## 0.4.0
+
+### Minor Changes
+
+- 5245cd7: Improved CLI setup and initialization commands.
+
 ## 0.3.0
 
 ### Minor Changes
