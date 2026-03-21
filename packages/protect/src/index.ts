@@ -79,7 +79,7 @@ export const protect = async (
     keyset: config.keyset,
   }
 
-  const client = new ProtectClient(clientConfig.workspaceCrn)
+  const client = new ProtectClient()
   const encryptConfig = buildEncryptConfig(...schemas)
 
   const result = await client.init({

@@ -1,10 +1,18 @@
 import 'dotenv/config'
 import { csColumn, csTable } from '@cipherstash/schema'
-import { describe, expect, it } from 'vitest'
+import { ensureKeyset } from '@cipherstash/protect-ffi'
+import { beforeAll, describe, expect, it } from 'vitest'
 import { protect } from '../src'
 
 const users = csTable('users', {
   email: csColumn('email'),
+})
+
+let testKeysetId: string
+
+beforeAll(async () => {
+  const keyset = await ensureKeyset({ name: 'Test' })
+  testKeysetId = keyset.id
 })
 
 describe('encryption and decryption with keyset id', () => {
@@ -12,7 +20,7 @@ describe('encryption and decryption with keyset id', () => {
     const protectClient = await protect({
       schemas: [users],
       keyset: {
-        id: '4152449b-505a-4186-93b6-d3d87eba7a47',
+        id: testKeysetId,
       },
     })
 

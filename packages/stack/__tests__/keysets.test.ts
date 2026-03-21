@@ -1,10 +1,18 @@
 import 'dotenv/config'
 import { Encryption } from '@/index'
 import { encryptedColumn, encryptedTable } from '@/schema'
-import { describe, expect, it } from 'vitest'
+import { ensureKeyset } from '@cipherstash/protect-ffi'
+import { beforeAll, describe, expect, it } from 'vitest'
 
 const users = encryptedTable('users', {
   email: encryptedColumn('email'),
+})
+
+let testKeysetId: string
+
+beforeAll(async () => {
+  const keyset = await ensureKeyset({ name: 'Test' })
+  testKeysetId = keyset.id
 })
 
 describe('encryption and decryption with keyset id', () => {
@@ -13,7 +21,7 @@ describe('encryption and decryption with keyset id', () => {
       schemas: [users],
       config: {
         keyset: {
-          id: '4152449b-505a-4186-93b6-d3d87eba7a47',
+          id: testKeysetId,
         },
       },
     })

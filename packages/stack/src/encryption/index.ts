@@ -18,7 +18,6 @@ import type {
   ScalarQueryTerm,
 } from '@/types'
 import type { EncryptionClientConfig } from '@/types'
-import { loadWorkSpaceId } from '@/utils/config'
 import { logger } from '@/utils/logger'
 import { type Result, withResult } from '@byteslice/result'
 import { type JsPlaintext, newClient } from '@cipherstash/protect-ffi'
@@ -49,12 +48,8 @@ export const noClientError = () =>
 export class EncryptionClient {
   private client: Client
   private encryptConfig: EncryptConfig | undefined
-  private workspaceId: string | undefined
 
-  constructor(workspaceCrn?: string) {
-    const workspaceId = loadWorkSpaceId(workspaceCrn)
-    this.workspaceId = workspaceId
-  }
+  constructor() {}
 
   /**
    * Initializes the EncryptionClient with the provided configuration.
@@ -584,13 +579,6 @@ export class EncryptionClient {
     return new BulkDecryptOperation(this.client, encryptedPayloads)
   }
 
-  /** e.g., debugging or environment info */
-  clientInfo() {
-    return {
-      workspaceId: this.workspaceId,
-    }
-  }
-
   /**
    * Get the encrypt config object.
    *
@@ -652,7 +640,7 @@ export const Encryption = async (
     )
   }
 
-  const client = new EncryptionClient(clientConfig?.workspaceCrn)
+  const client = new EncryptionClient()
   const encryptConfig = buildEncryptConfig(...schemas)
 
   const result = await client.init({
