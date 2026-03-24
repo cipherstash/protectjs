@@ -85,13 +85,15 @@ async function main(): Promise<void> {
     const eqlSql = await response.text()
 
     const drizzlePath = resolve(process.cwd(), args.drizzleDir)
-    if (!existsSync(drizzlePath)) {
+
+    let files: string[]
+    try {
+      files = await readdir(drizzlePath)
+    } catch {
       throw new Error(
         `Drizzle directory not found: ${drizzlePath}\nMake sure to run this command from your project root.`,
       )
     }
-
-    const files = await readdir(drizzlePath)
     const migrationFile = files
       .filter(
         (file) => file.endsWith('.sql') && file.includes(args.migrationName),

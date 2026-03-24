@@ -49,8 +49,6 @@ export class EncryptionClient {
   private client: Client
   private encryptConfig: EncryptConfig | undefined
 
-  constructor() {}
-
   /**
    * Initializes the EncryptionClient with the provided configuration.
    * @internal

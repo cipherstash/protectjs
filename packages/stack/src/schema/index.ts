@@ -104,8 +104,19 @@ const matchIndexOptsSchema = z.object({
   include_original: z.boolean().default(false).optional(),
 })
 
+const arrayIndexModeSchema = z.union([
+  z.literal('all'),
+  z.literal('none'),
+  z.object({
+    item: z.boolean().optional(),
+    wildcard: z.boolean().optional(),
+    position: z.boolean().optional(),
+  }),
+])
+
 const steVecIndexOptsSchema = z.object({
   prefix: z.string(),
+  array_index_mode: arrayIndexModeSchema.optional(),
 })
 
 const indexesSchema = z
@@ -379,7 +390,7 @@ export class EncryptedColumn {
    */
   searchableJson() {
     this.castAsValue = 'json'
-    this.indexesValue.ste_vec = { prefix: 'enabled' }
+    this.indexesValue.ste_vec = { prefix: 'enabled', array_index_mode: 'all' }
     return this
   }
 
@@ -461,6 +472,7 @@ export class EncryptedTable<T extends EncryptedTableColumn> {
             indexes: {
               ...builtColumn.indexes,
               ste_vec: {
+                ...builtColumn.indexes.ste_vec,
                 prefix: `${this.tableName}/${colName}`,
               },
             },

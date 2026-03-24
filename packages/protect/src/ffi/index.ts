@@ -47,8 +47,6 @@ export const noClientError = () =>
 export class ProtectClient {
   private client: Client
   private encryptConfig: EncryptConfig | undefined
-  constructor() {}
-
 
   /**
    * Initializes the ProtectClient with the provided configuration.
