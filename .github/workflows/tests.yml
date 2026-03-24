@@ -10,8 +10,11 @@ on:
 
 jobs:
   run-tests:
-    name: Run Tests
+    name: Run Tests (Node ${{ matrix.node-version }})
     runs-on: blacksmith-4vcpu-ubuntu-2404
+    strategy:
+      matrix:
+        node-version: [22, 24]
 
     steps:
       - name: Checkout Repo
@@ -25,7 +28,7 @@ jobs:
       - name: Install Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: ${{ matrix.node-version }}
           cache: 'pnpm'
 
       - name: Install dependencies
