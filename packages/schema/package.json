@@ -27,7 +27,6 @@
 	},
 	"files": [
 		"dist",
-		"cipherstash-encrypt-2-1-8.sql",
 		"README.md"
 	],
 	"scripts": {

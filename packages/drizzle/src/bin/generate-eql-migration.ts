@@ -1,10 +1,10 @@
 import { execSync } from 'node:child_process'
-import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs'
+import { existsSync, unlinkSync, writeFileSync } from 'node:fs'
 import { readdir } from 'node:fs/promises'
-import { dirname, join, resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { join, resolve } from 'node:path'
 
-const __dirname = dirname(fileURLToPath(import.meta.url))
+const EQL_INSTALL_URL =
+  'https://github.com/cipherstash/encrypt-query-language/releases/latest/download/cipherstash-encrypt.sql'
 
 type CliArgs = {
   migrationName: string
@@ -77,24 +77,23 @@ async function main(): Promise<void> {
   }
 
   try {
-    const schemaPackagePath = resolve(__dirname, '../../schema')
-    const sqlFileName = 'cipherstash-encrypt-2-1-8.sql'
-    const sqlSourcePath = join(schemaPackagePath, sqlFileName)
-
-    if (!existsSync(sqlSourcePath)) {
-      throw new Error(`Could not find EQL SQL file at: ${sqlSourcePath}`)
+    console.log(`📥 Downloading latest EQL from GitHub...`)
+    const response = await fetch(EQL_INSTALL_URL)
+    if (!response.ok) {
+      throw new Error(`Failed to download EQL: ${response.status} ${response.statusText}`)
     }
-
-    const eqlSql = readFileSync(sqlSourcePath, 'utf-8')
+    const eqlSql = await response.text()
 
     const drizzlePath = resolve(process.cwd(), args.drizzleDir)
-    if (!existsSync(drizzlePath)) {
+
+    let files: string[]
+    try {
+      files = await readdir(drizzlePath)
+    } catch {
       throw new Error(
         `Drizzle directory not found: ${drizzlePath}\nMake sure to run this command from your project root.`,
       )
     }
-
-    const files = await readdir(drizzlePath)
     const migrationFile = files
       .filter(
         (file) => file.endsWith('.sql') && file.includes(args.migrationName),

@@ -7,7 +7,6 @@ import {
   encryptConfigSchema,
 } from '@cipherstash/schema'
 import { type ProtectError, ProtectErrorTypes } from '..'
-import { loadWorkSpaceId } from '../../../utils/config'
 import { logger } from '../../../utils/logger'
 import { toFfiKeysetIdentifier } from '../helpers'
 import type {
@@ -48,12 +47,6 @@ export const noClientError = () =>
 export class ProtectClient {
   private client: Client
   private encryptConfig: EncryptConfig | undefined
-  private workspaceId: string | undefined
-
-  constructor(workspaceCrn?: string) {
-    const workspaceId = loadWorkSpaceId(workspaceCrn)
-    this.workspaceId = workspaceId
-  }
 
   /**
    * Initializes the ProtectClient with the provided configuration.
@@ -82,6 +75,8 @@ export class ProtectClient {
           },
         )
 
+        // newClient handles env var fallback internally via withEnvCredentials,
+        // so we pass config values through without manual fallback here.
         this.client = await newClient({
           encryptConfig: validated,
           clientOpts: {
@@ -431,10 +426,4 @@ export class ProtectClient {
     return new SearchTermsOperation(this.client, terms)
   }
 
-  /** e.g., debugging or environment info */
-  clientInfo() {
-    return {
-      workspaceId: this.workspaceId,
-    }
-  }
 }

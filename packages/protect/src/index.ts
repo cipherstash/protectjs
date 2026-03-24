@@ -27,10 +27,41 @@ type AtLeastOneCsTable<T> = [T, ...T[]]
 
 export type ProtectClientConfig = {
   schemas: AtLeastOneCsTable<ProtectTable<ProtectTableColumn>>
+
+  /**
+   * The CipherStash workspace CRN (Cloud Resource Name).
+   * Format: `crn:<region>.aws:<workspace-id>`.
+   * Can also be set via the `CS_WORKSPACE_CRN` environment variable.
+   */
   workspaceCrn?: string
+
+  /**
+   * The API access key used for authenticating with the CipherStash API.
+   * Can also be set via the `CS_CLIENT_ACCESS_KEY` environment variable.
+   * Obtain this from the CipherStash dashboard after creating a workspace.
+   */
   accessKey?: string
+
+  /**
+   * The client identifier used to authenticate with CipherStash services.
+   * Can also be set via the `CS_CLIENT_ID` environment variable.
+   * Generated during workspace onboarding in the CipherStash dashboard.
+   */
   clientId?: string
+
+  /**
+   * The client key material used in combination with ZeroKMS for encryption operations.
+   * Can also be set via the `CS_CLIENT_KEY` environment variable.
+   * Generated during workspace onboarding in the CipherStash dashboard.
+   */
   clientKey?: string
+
+  /**
+   * An optional keyset identifier for multi-tenant encryption.
+   * Each keyset provides cryptographic isolation, giving each tenant its own keyspace.
+   * Specify by name (`{ name: "tenant-a" }`) or UUID (`{ id: "..." }`).
+   * Keysets are created and managed in the CipherStash dashboard.
+   */
   keyset?: KeysetIdentifier
 }
 
@@ -79,7 +110,7 @@ export const protect = async (
     keyset: config.keyset,
   }
 
-  const client = new ProtectClient(clientConfig.workspaceCrn)
+  const client = new ProtectClient()
   const encryptConfig = buildEncryptConfig(...schemas)
 
   const result = await client.init({

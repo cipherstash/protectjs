@@ -114,7 +114,7 @@ describe('schema builders', () => {
       const built = col.build()
       expect(built.cast_as).toBe('json')
       expect(built.indexes).toHaveProperty('ste_vec')
-      expect(built.indexes.ste_vec).toEqual({ prefix: 'enabled' })
+      expect(built.indexes.ste_vec).toEqual({ prefix: 'enabled', array_index_mode: 'all' })
     })
 
     it('chaining multiple indexes: .equality().freeTextSearch().orderAndRange()', () => {
@@ -222,6 +222,7 @@ describe('schema builders', () => {
       expect(built.columns.metadata.cast_as).toBe('json')
       expect(built.columns.metadata.indexes.ste_vec).toEqual({
         prefix: 'documents/metadata',
+        array_index_mode: 'all',
       })
     })
 
@@ -296,6 +297,7 @@ describe('schema builders', () => {
 
       expect(config.tables.documents.metadata.indexes.ste_vec).toEqual({
         prefix: 'documents/metadata',
+        array_index_mode: 'all',
       })
     })
   })

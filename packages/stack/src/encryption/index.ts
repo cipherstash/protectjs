@@ -18,7 +18,6 @@ import type {
   ScalarQueryTerm,
 } from '@/types'
 import type { EncryptionClientConfig } from '@/types'
-import { loadWorkSpaceId } from '@/utils/config'
 import { logger } from '@/utils/logger'
 import { type Result, withResult } from '@byteslice/result'
 import { type JsPlaintext, newClient } from '@cipherstash/protect-ffi'
@@ -49,12 +48,6 @@ export const noClientError = () =>
 export class EncryptionClient {
   private client: Client
   private encryptConfig: EncryptConfig | undefined
-  private workspaceId: string | undefined
-
-  constructor(workspaceCrn?: string) {
-    const workspaceId = loadWorkSpaceId(workspaceCrn)
-    this.workspaceId = workspaceId
-  }
 
   /**
    * Initializes the EncryptionClient with the provided configuration.
@@ -83,13 +76,15 @@ export class EncryptionClient {
           },
         )
 
+        // newClient handles env var fallback internally via withEnvCredentials,
+        // so we pass config values through without manual fallback here.
         this.client = await newClient({
           encryptConfig: validated,
           clientOpts: {
-            workspaceCrn: config.workspaceCrn ?? process.env.CS_WORKSPACE_CRN,
-            accessKey: config.accessKey ?? process.env.CS_CLIENT_ACCESS_KEY,
-            clientId: config.clientId ?? process.env.CS_CLIENT_ID,
-            clientKey: config.clientKey ?? process.env.CS_CLIENT_KEY,
+            workspaceCrn: config.workspaceCrn,
+            accessKey: config.accessKey,
+            clientId: config.clientId,
+            clientKey: config.clientKey,
             keyset: toFfiKeysetIdentifier(config.keyset),
           },
         })
@@ -584,13 +579,6 @@ export class EncryptionClient {
     return new BulkDecryptOperation(this.client, encryptedPayloads)
   }
 
-  /** e.g., debugging or environment info */
-  clientInfo() {
-    return {
-      workspaceId: this.workspaceId,
-    }
-  }
-
   /**
    * Get the encrypt config object.
    *
@@ -652,7 +640,7 @@ export const Encryption = async (
     )
   }
 
-  const client = new EncryptionClient(clientConfig?.workspaceCrn)
+  const client = new EncryptionClient()
   const encryptConfig = buildEncryptConfig(...schemas)
 
   const result = await client.init({

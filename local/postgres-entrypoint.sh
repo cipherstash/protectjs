@@ -15,7 +15,7 @@ done
 echo "PostgreSQL is ready. Running CipherStash SQL initialization..."
 
 # Run the SQL file
-psql -U cipherstash -d cipherstash -f /tmp/cipherstash-encrypt-2-1-8.sql
+psql -U cipherstash -d cipherstash -f /tmp/cipherstash-encrypt.sql
 psql -U cipherstash -d cipherstash -f /tmp/create-ci-table.sql
 
 echo "CipherStash SQL initialization completed."
