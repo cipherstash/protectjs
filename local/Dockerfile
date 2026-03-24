@@ -1,8 +1,12 @@
 FROM postgres:latest
 
+RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates && rm -rf /var/lib/apt/lists/*
+
+# Download latest EQL install script
+RUN curl -sLo /tmp/cipherstash-encrypt.sql https://github.com/cipherstash/encrypt-query-language/releases/latest/download/cipherstash-encrypt.sql
+
 # Copy the custom entrypoint script and SQL files
 COPY postgres-entrypoint.sh /usr/local/bin/postgres-entrypoint.sh
-COPY cipherstash-encrypt-2-2-1.sql /tmp/cipherstash-encrypt-2-2-1.sql
 COPY create-ci-table.sql /tmp/create-ci-table.sql
 
 # Make the entrypoint script executable
