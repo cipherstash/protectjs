@@ -77,6 +77,8 @@ export class ProtectClient {
           },
         )
 
+        // newClient handles env var fallback internally via withEnvCredentials,
+        // so we pass config values through without manual fallback here.
         this.client = await newClient({
           encryptConfig: validated,
           clientOpts: {

@@ -78,13 +78,15 @@ export class EncryptionClient {
           },
         )
 
+        // newClient handles env var fallback internally via withEnvCredentials,
+        // so we pass config values through without manual fallback here.
         this.client = await newClient({
           encryptConfig: validated,
           clientOpts: {
-            workspaceCrn: config.workspaceCrn ?? process.env.CS_WORKSPACE_CRN,
-            accessKey: config.accessKey ?? process.env.CS_CLIENT_ACCESS_KEY,
-            clientId: config.clientId ?? process.env.CS_CLIENT_ID,
-            clientKey: config.clientKey ?? process.env.CS_CLIENT_KEY,
+            workspaceCrn: config.workspaceCrn,
+            accessKey: config.accessKey,
+            clientId: config.clientId,
+            clientKey: config.clientKey,
             keyset: toFfiKeysetIdentifier(config.keyset),
           },
         })

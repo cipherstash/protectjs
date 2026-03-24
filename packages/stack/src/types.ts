@@ -44,7 +44,6 @@ export type ClientConfig = {
    * The CipherStash workspace CRN (Cloud Resource Name).
    * Format: `crn:<region>.aws:<workspace-id>`.
    * Can also be set via the `CS_WORKSPACE_CRN` environment variable.
-   * If omitted, the SDK reads from the environment or TOML config files.
    */
   workspaceCrn?: string
 
