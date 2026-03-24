@@ -84,3 +84,88 @@ jobs:
       # Run TurboRepo tests
       - name: Run tests
         run: pnpm run test
+
+  run-tests-bun:
+    name: Run Tests (Bun)
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    continue-on-error: true
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+
+      - uses: oven-sh/setup-bun@v2
+
+      - uses: pnpm/action-setup@v4
+        name: Install pnpm
+        with:
+          run_install: false
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Create .env file in ./packages/protect/
+        run: |
+          touch ./packages/protect/.env
+          echo "CS_WORKSPACE_CRN=${{ secrets.CS_WORKSPACE_CRN }}" >> ./packages/protect/.env
+          echo "CS_CLIENT_ID=${{ secrets.CS_CLIENT_ID }}" >> ./packages/protect/.env
+          echo "CS_CLIENT_KEY=${{ secrets.CS_CLIENT_KEY }}" >> ./packages/protect/.env
+          echo "CS_CLIENT_ACCESS_KEY=${{ secrets.CS_CLIENT_ACCESS_KEY }}" >> ./packages/protect/.env
+          echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> ./packages/protect/.env
+          echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> ./packages/protect/.env
+          echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> ./packages/protect/.env
+          echo "CS_ZEROKMS_HOST=https://ap-southeast-2.aws.zerokms.cipherstashmanaged.net" >> ./packages/protect/.env
+          echo "CS_CTS_HOST=https://ap-southeast-2.aws.cts.cipherstashmanaged.net" >> ./packages/protect/.env
+
+      - name: Create .env file in ./packages/stack/
+        run: |
+          touch ./packages/stack/.env
+          echo "CS_WORKSPACE_CRN=${{ secrets.CS_WORKSPACE_CRN }}" >> ./packages/stack/.env
+          echo "CS_CLIENT_ID=${{ secrets.CS_CLIENT_ID }}" >> ./packages/stack/.env
+          echo "CS_CLIENT_KEY=${{ secrets.CS_CLIENT_KEY }}" >> ./packages/stack/.env
+          echo "CS_CLIENT_ACCESS_KEY=${{ secrets.CS_CLIENT_ACCESS_KEY }}" >> ./packages/stack/.env
+          echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> ./packages/stack/.env
+          echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> ./packages/stack/.env
+          echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> ./packages/stack/.env
+          echo "CS_ZEROKMS_HOST=https://ap-southeast-2.aws.zerokms.cipherstashmanaged.net" >> ./packages/stack/.env
+          echo "CS_CTS_HOST=https://ap-southeast-2.aws.cts.cipherstashmanaged.net" >> ./packages/stack/.env
+
+      - name: Create .env file in ./packages/protect-dynamodb/
+        run: |
+          touch ./packages/protect-dynamodb/.env
+          echo "CS_WORKSPACE_CRN=${{ secrets.CS_WORKSPACE_CRN }}" >> ./packages/protect-dynamodb/.env
+          echo "CS_CLIENT_ID=${{ secrets.CS_CLIENT_ID }}" >> ./packages/protect-dynamodb/.env
+          echo "CS_CLIENT_KEY=${{ secrets.CS_CLIENT_KEY }}" >> ./packages/protect-dynamodb/.env
+          echo "CS_CLIENT_ACCESS_KEY=${{ secrets.CS_CLIENT_ACCESS_KEY }}" >> ./packages/protect-dynamodb/.env
+          echo "CS_ZEROKMS_HOST=https://ap-southeast-2.aws.zerokms.cipherstashmanaged.net" >> ./packages/protect-dynamodb/.env
+          echo "CS_CTS_HOST=https://ap-southeast-2.aws.cts.cipherstashmanaged.net" >> ./packages/protect-dynamodb/.env
+
+      - name: Create .env file in ./packages/drizzle/
+        run: |
+          touch ./packages/drizzle/.env
+          echo "CS_WORKSPACE_CRN=${{ secrets.CS_WORKSPACE_CRN }}" >> ./packages/drizzle/.env
+          echo "CS_CLIENT_ID=${{ secrets.CS_CLIENT_ID }}" >> ./packages/drizzle/.env
+          echo "CS_CLIENT_KEY=${{ secrets.CS_CLIENT_KEY }}" >> ./packages/drizzle/.env
+          echo "CS_CLIENT_ACCESS_KEY=${{ secrets.CS_CLIENT_ACCESS_KEY }}" >> ./packages/drizzle/.env
+          echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> ./packages/drizzle/.env
+          echo "CS_ZEROKMS_HOST=https://ap-southeast-2.aws.zerokms.cipherstashmanaged.net" >> ./packages/drizzle/.env
+          echo "CS_CTS_HOST=https://ap-southeast-2.aws.cts.cipherstashmanaged.net" >> ./packages/drizzle/.env
+
+      # Build with Node (turbo/tsup need Node), then run tests with Bun
+      - name: Build packages
+        run: pnpm turbo build --filter './packages/*'
+
+      - name: Run tests with Bun
+        run: |
+          for dir in packages/schema packages/protect packages/stack packages/protect-dynamodb packages/drizzle packages/stack-forge; do
+            if [ -f "$dir/vitest.config.ts" ] || [ -f "$dir/package.json" ]; then
+              echo "--- Testing $dir ---"
+              (cd "$dir" && bunx --bun vitest run) || true
+            fi
+          done
