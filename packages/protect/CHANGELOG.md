@@ -1,8 +1,8 @@
 # @cipherstash/protect
 
-## 10.6.0
+## 11.0.0
 
-### Minor Changes
+### Major Changes
 
 - b0e56b8: Upgrade protect-ffi to 0.21.0 and enable array_index_mode for searchable JSON
 
