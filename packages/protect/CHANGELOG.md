@@ -1,5 +1,22 @@
 # @cipherstash/protect
 
+## 11.0.0
+
+### Major Changes
+
+- b0e56b8: Upgrade protect-ffi to 0.21.0 and enable array_index_mode for searchable JSON
+
+  - Upgrade `@cipherstash/protect-ffi` to 0.21.0 across all packages
+  - Enable `array_index_mode: 'all'` on STE vec indexes so JSON array operations
+    (jsonb_array_elements, jsonb_array_length, array containment) work correctly
+  - Delegate credential resolution entirely to protect-ffi's `withEnvCredentials`
+  - Download latest EQL at build/runtime instead of bundling hardcoded SQL files
+
+### Patch Changes
+
+- Updated dependencies [b0e56b8]
+  - @cipherstash/schema@2.2.0
+
 ## 10.5.0
 
 ### Minor Changes
