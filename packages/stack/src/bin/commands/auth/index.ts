@@ -1,5 +1,4 @@
-import { login } from './login.js'
-import { bindDevice } from './login.js'
+import { bindDevice, login, selectRegion } from './login.js'
 
 const HELP = `
 Usage: stash auth <command>
@@ -20,9 +19,11 @@ export async function authCommand(args: string[]) {
   }
 
   switch (subcommand) {
-    case 'login':
-      await login()
+    case 'login': {
+      const region = await selectRegion()
+      await login(region)
       await bindDevice()
+    }
       break
     default:
       console.error(`Unknown auth command: ${subcommand}\n`)

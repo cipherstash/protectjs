@@ -2,10 +2,35 @@ import * as p from '@clack/prompts'
 import auth from '@cipherstash/auth'
 const { beginDeviceCodeFlow, bindClientDevice } = auth
 
-export async function login() {
+// TODO: pull from the CTS API
+export const regions = [
+  { value: 'ap-southeast-2.aws', label: 'Asia Pacific (Sydney)' },
+  { value: 'eu-central-1.aws', label: 'Europe (Frankfurt)' },
+  { value: 'eu-west-1.aws', label: 'Europe (Ireland)' },
+  { value: 'us-east-1.aws', label: 'US East (N. Virginia)' },
+  { value: 'us-east-2.aws', label: 'US East (Ohio)' },
+  { value: 'us-west-1.aws', label: 'US West (N. California)' },
+  { value: 'us-west-2.aws', label: 'US West (Oregon)' },
+]
+
+export async function selectRegion(): Promise<string> {
+  const region = await p.select({
+    message: 'Select a region',
+    options: regions,
+  })
+
+  if (p.isCancel(region)) {
+    p.cancel('Cancelled.')
+    process.exit(0)
+  }
+
+  return region
+}
+
+export async function login(region: string) {
   const s = p.spinner()
 
-  const pending = await beginDeviceCodeFlow('ap-southeast-2.aws', 'cli')
+  const pending = await beginDeviceCodeFlow(region, 'cli')
 
   p.log.info(`Your code is: ${pending.userCode}`)
   p.log.info(`Visit: ${pending.verificationUriComplete}`)
