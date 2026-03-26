@@ -1,5 +1,11 @@
 # @cipherstash/stack
 
+## 0.12.0
+
+### Minor Changes
+
+- 15764a8: Implement stack auth into stash cli flow.
+
 ## 0.11.0
 
 ### Minor Changes
