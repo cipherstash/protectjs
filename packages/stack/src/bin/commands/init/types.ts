@@ -18,6 +18,7 @@ export interface SchemaDef {
 }
 
 export interface InitState {
+  authenticated?: boolean
   connectionMethod?: ConnectionMethod
   clientFilePath?: string
   schemaGenerated?: boolean
