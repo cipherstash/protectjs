@@ -1,6 +1,7 @@
 import * as p from '@clack/prompts'
 import { createBaseProvider } from './providers/base.js'
 import { createSupabaseProvider } from './providers/supabase.js'
+import { authenticateStep } from './steps/authenticate.js'
 import { buildSchemaStep } from './steps/build-schema.js'
 import { installForgeStep } from './steps/install-forge.js'
 import { nextStepsStep } from './steps/next-steps.js'
@@ -13,6 +14,7 @@ const PROVIDER_MAP: Record<string, () => InitProvider> = {
 }
 
 const STEPS = [
+  authenticateStep,
   selectConnectionStep,
   buildSchemaStep,
   installForgeStep,

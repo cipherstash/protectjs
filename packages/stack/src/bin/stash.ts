@@ -4,6 +4,7 @@ config()
 import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { authCommand } from './commands/auth/index.js'
 import { initCommand } from './commands/init/index.js'
 import { secretsCommand } from './commands/secrets/index.js'
 
@@ -19,6 +20,7 @@ Usage: stash <command> [options]
 
 Commands:
   init       Initialize CipherStash for your project
+  auth       Authenticate with CipherStash
   secrets    Manage encrypted secrets
 
 Options:
@@ -31,6 +33,7 @@ Init Flags:
 Examples:
   stash init
   stash init --supabase
+  stash auth login
   stash secrets set -n DATABASE_URL -V "postgres://..." -e production
   stash secrets get -n DATABASE_URL -e production
   stash secrets get-many -n DATABASE_URL,API_KEY -e production
@@ -73,6 +76,9 @@ async function main() {
   switch (command) {
     case 'init':
       await initCommand(booleanFlags)
+      break
+    case 'auth':
+      await authCommand(rest)
       break
     case 'secrets':
       await secretsCommand(rest)

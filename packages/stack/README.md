@@ -44,19 +44,29 @@ pnpm add @cipherstash/stack
 
 ## Quick Start
 
+### 1. Initialize and authenticate your project
+
+```bash
+npx stash init
+```
+
+The wizard will authenticate you, walk you through choosing a database connection method, build an encryption schema, and install the required dependencies.
+
+### 2. Encrypt and decrypt
+
 ```typescript
 import { Encryption } from "@cipherstash/stack"
 import { encryptedTable, encryptedColumn } from "@cipherstash/stack/schema"
 
-// 1. Define a schema
+// Define a schema
 const users = encryptedTable("users", {
   email: encryptedColumn("email").equality().freeTextSearch(),
 })
 
-// 2. Create a client (reads CS_* env vars automatically)
+// Create a client
 const client = await Encryption({ schemas: [users] })
 
-// 3. Encrypt a value
+// Encrypt a value
 const encrypted = await client.encrypt("hello@example.com", {
   column: users.email,
   table: users,
@@ -68,7 +78,7 @@ if (encrypted.failure) {
   console.log("Encrypted payload:", encrypted.data)
 }
 
-// 4. Decrypt the value
+// Decrypt the value
 const decrypted = await client.decrypt(encrypted.data)
 
 if (decrypted.failure) {
@@ -430,6 +440,16 @@ await secrets.delete("DATABASE_URL")
 
 The `stash` CLI is bundled with the package and available after install.
 
+### `stash auth`
+
+Authenticate with CipherStash.
+
+```bash
+npx stash auth login
+```
+
+This runs the device code flow: it opens your browser, you confirm the code, and a token is saved to `~/.cipherstash/auth.json`. No environment variables or credentials files are needed for local development.
+
 ### `stash init`
 
 Initialize CipherStash for your project with an interactive wizard.
@@ -440,11 +460,13 @@ npx stash init --supabase
 ```
 
 The wizard will:
-1. Choose your database connection method (Drizzle ORM, Supabase JS, Prisma, or Raw SQL)
-2. Build an encryption schema interactively or use a placeholder, then generate the encryption client file
-3. Install `@cipherstash/stack-forge` as a dev dependency for database tooling
+1. Authenticate with CipherStash (device code flow)
+2. Bind your device to the default Keyset
+3. Choose your database connection method (Drizzle ORM, Supabase JS, Prisma, or Raw SQL)
+4. Build an encryption schema interactively or use a placeholder, then generate the encryption client file
+5. Install `@cipherstash/stack-forge` as a dev dependency for database tooling
 
-After `stash init`, create a CipherStash account at [dashboard.cipherstash.com/sign-up](https://dashboard.cipherstash.com/sign-up) to get your credentials, then run `npx stash-forge setup` to configure your database connection.
+After `stash init`, run `npx stash-forge setup` to configure your database.
 
 | Flag | Description |
 |------|-------------|
@@ -468,11 +490,15 @@ npx stash secrets delete -name DATABASE_URL -environment production
 | `stash secrets list` | `-environment` | `-e` | List all secret names in an environment |
 | `stash secrets delete` | `-name`, `-environment`, `-yes` | `-n`, `-e`, `-y` | Delete a secret (prompts for confirmation unless `-yes`) |
 
-The CLI reads credentials from the same `CS_*` environment variables described in [Configuration](#configuration).
-
 ## Configuration
 
-### Environment Variables
+### Local Development
+
+No environment variables or credentials are needed for local development. Run `npx @cipherstash/stack auth login` to authenticate via the device code flow, and the SDK and CLI will use the token saved to `~/.cipherstash/auth.json`.
+
+### Going to Production
+
+For production, CI/CD, and deployed environments, you'll need to set up machine credentials via environment variables:
 
 | Variable | Description |
 |-----|-------|
@@ -481,13 +507,7 @@ The CLI reads credentials from the same `CS_*` environment variables described i
 | `CS_CLIENT_KEY` | Client key material used with ZeroKMS for encryption |
 | `CS_CLIENT_ACCESS_KEY` | API key for authenticating with the CipherStash API |
 
-Store these in a `.env` file or set them in your hosting platform.
-
-Sign up at [cipherstash.com/signup](https://cipherstash.com/signup) and follow the onboarding to generate credentials.
-
-### TOML Config
-
-You can also configure credentials via `cipherstash.toml` and `cipherstash.secret.toml` files in your project root. See the [CipherStash docs](https://cipherstash.com/docs) for format details.
+See the [Going to Production](https://cipherstash.com/docs/stack/going-to-production) guide for full details on creating machine clients, setting up access keys, and configuring CI/CD pipelines.
 
 ### Programmatic Config
 

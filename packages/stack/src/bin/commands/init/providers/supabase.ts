@@ -15,10 +15,7 @@ export function createSupabaseProvider(): InitProvider {
       { value: 'raw-sql', label: 'Raw SQL / pg' },
     ],
     getNextSteps(state: InitState): string[] {
-      const steps = [
-        'Create a CipherStash account and get your credentials:\n   https://dashboard.cipherstash.com/sign-up\n   Then set: CS_WORKSPACE_CRN, CS_CLIENT_ID, CS_CLIENT_KEY, CS_CLIENT_ACCESS_KEY',
-        'Set up your database: npx stash-forge setup',
-      ]
+      const steps = ['Set up your database: npx stash-forge setup']
 
       if (state.clientFilePath) {
         steps.push(`Edit your encryption schema: ${state.clientFilePath}`)
