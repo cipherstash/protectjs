@@ -49,6 +49,7 @@
     "overrides": {
       "@cipherstash/protect-ffi": "0.21.0",
       "@babel/runtime": "7.26.10",
+      "brace-expansion@^5": ">=5.0.5",
       "body-parser": "2.2.1",
       "vite": "catalog:security",
       "pg": "^8.16.3",
