@@ -1,4 +1,4 @@
-import { defineConfig } from '@cipherstash/stack-forge'
+import { defineConfig } from '@cipherstash/cli'
 
 export default defineConfig({
   databaseUrl: process.env.DATABASE_URL!,

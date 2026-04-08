@@ -464,9 +464,9 @@ The wizard will:
 2. Bind your device to the default Keyset
 3. Choose your database connection method (Drizzle ORM, Supabase JS, Prisma, or Raw SQL)
 4. Build an encryption schema interactively or use a placeholder, then generate the encryption client file
-5. Install `@cipherstash/stack-forge` as a dev dependency for database tooling
+5. Install `@cipherstash/cli` as a dev dependency for database tooling
 
-After `stash init`, run `npx stash-forge setup` to configure your database.
+After `stash init`, run `npx stash db setup` to configure your database.
 
 | Flag | Description |
 |------|-------------|

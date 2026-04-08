@@ -27,9 +27,6 @@
 		"CHANGELOG.md"
 	],
 	"type": "module",
-	"bin": {
-		"stash": "./dist/bin/stash.js"
-	},
 	"main": "./dist/index.cjs",
 	"module": "./dist/index.js",
 	"sideEffects": false,
@@ -183,7 +180,6 @@
 	},
 	"scripts": {
 		"build": "tsup",
-		"postbuild": "chmod +x ./dist/bin/stash.js",
 		"dev": "tsup --watch",
 		"test": "vitest run",
 		"release": "tsup"
@@ -207,7 +203,7 @@
 	},
 	"dependencies": {
 		"@byteslice/result": "0.2.0",
-		"@cipherstash/auth": "0.34.2",
+		"@cipherstash/auth": "catalog:repo",
 		"@cipherstash/protect-ffi": "0.21.0",
 		"evlog": "1.9.0",
 		"uuid": "13.0.0",
