@@ -305,9 +305,6 @@ importers:
       '@byteslice/result':
         specifier: 0.2.0
         version: 0.2.0
-      '@cipherstash/auth':
-        specifier: catalog:repo
-        version: 0.35.0
       '@cipherstash/protect-ffi':
         specifier: 0.21.0
         version: 0.21.0
