@@ -1,5 +1,11 @@
 # @cipherstash/cli
 
+## 0.1.0
+
+### Minor Changes
+
+- 068f820: Release the consolidated CipherStash CLI npm package.
+
 > Renamed from `@cipherstash/stack-forge`. The standalone `@cipherstash/wizard` package was absorbed into this CLI as `npx @cipherstash/cli wizard`. The single binary is now invoked via `npx @cipherstash/cli` (replaces `stash-forge` and `cipherstash-wizard`).
 
 ## 0.4.0
