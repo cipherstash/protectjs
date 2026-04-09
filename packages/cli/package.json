@@ -50,6 +50,14 @@
 		"posthog-node": "^5.28.9",
 		"zod": "^4.3.6"
 	},
+	"peerDependencies": {
+		"@cipherstash/stack": ">=0.6.0"
+	},
+	"peerDependenciesMeta": {
+		"@cipherstash/stack": {
+			"optional": true
+		}
+	},
 	"devDependencies": {
 		"@cipherstash/stack": "workspace:*",
 		"@types/pg": "^8.11.11",
