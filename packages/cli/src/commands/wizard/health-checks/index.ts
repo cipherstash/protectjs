@@ -54,6 +54,7 @@ export async function checkReadiness(): Promise<ReadinessResult> {
   const baseUrl = GATEWAY_URL.replace(/\/+$/, '')
   const checks = await Promise.all([
     checkEndpoint('gateway', `${baseUrl}/health`),
+    checkEndpoint('npm', 'https://registry.npmjs.org/'),
   ])
 
   const hasBlockingUnavailable = checks.some(

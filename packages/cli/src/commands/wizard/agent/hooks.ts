@@ -13,7 +13,7 @@ interface ScanResult {
 
 // --- Pre-execution rules ---
 
-export const DANGEROUS_BASH_OPERATORS = [';', '`', '$(', '|', '&&', '||', '>', '>>', '<']
+export const DANGEROUS_BASH_OPERATORS = [';', '`', '$', '(', ')', '|', '&&', '||', '>', '>>', '<']
 
 const BLOCKED_BASH_PATTERNS = [
   { pattern: /rm\s+-rf/i, rule: 'destructive_rm', reason: 'Recursive force delete blocked' },
