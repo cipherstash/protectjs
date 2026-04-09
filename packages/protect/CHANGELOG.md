@@ -1,5 +1,11 @@
 # @cipherstash/protect
 
+## 11.1.0
+
+### Minor Changes
+
+- 068f820: Release the consolidated CipherStash CLI npm package.
+
 ## 11.0.0
 
 ### Major Changes

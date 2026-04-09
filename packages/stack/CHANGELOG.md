@@ -1,5 +1,11 @@
 # @cipherstash/stack
 
+## 0.13.0
+
+### Minor Changes
+
+- 068f820: Release the consolidated CipherStash CLI npm package.
+
 ## 0.12.0
 
 ### Minor Changes
