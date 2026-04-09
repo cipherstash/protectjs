@@ -401,7 +401,7 @@ export async function initializeAgent(
         if (message.type === 'result') {
           turnCount++
 
-          const isSuccess = (message.subtype === 'success' || message.subtype === 'error_max_turns') && !message.is_error
+          const isSuccess = message.subtype === 'success' && !message.is_error
           if (isSuccess) {
             const turnText = currentTurnText.join('\n').trim()
 

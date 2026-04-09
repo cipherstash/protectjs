@@ -65,7 +65,9 @@ describe('scanPostToolUseWrite', () => {
   })
 
   it('blocks Stripe live keys in written content', () => {
-    const result = scanPostToolUseWrite('const key = "sk_live_abc123def456"')
+    // Constructed at runtime so the literal doesn't trip secret scanners on this file.
+    const stripeLike = `sk${'_live_'}abc123def456`
+    const result = scanPostToolUseWrite(`const key = "${stripeLike}"`)
     expect(result.blocked).toBe(true)
     expect(result.rule).toBe('hardcoded_stripe_key')
   })

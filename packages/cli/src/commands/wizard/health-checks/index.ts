@@ -8,19 +8,17 @@ async function checkEndpoint(
   name: string,
   url: string,
 ): Promise<HealthCheckResult> {
-  try {
-    const controller = new AbortController()
-    const timeout = setTimeout(
-      () => controller.abort(),
-      HEALTH_CHECK_TIMEOUT_MS,
-    )
+  const controller = new AbortController()
+  const timeout = setTimeout(
+    () => controller.abort(),
+    HEALTH_CHECK_TIMEOUT_MS,
+  )
 
+  try {
     const response = await fetch(url, {
       method: 'GET',
       signal: controller.signal,
     })
-
-    clearTimeout(timeout)
 
     if (response.ok) {
       return { service: name, status: 'up' }
@@ -37,6 +35,8 @@ async function checkEndpoint(
       status: 'down',
       message: error instanceof Error ? error.message : 'Unknown error',
     }
+  } finally {
+    clearTimeout(timeout)
   }
 }
 
@@ -56,11 +56,11 @@ export async function checkReadiness(): Promise<ReadinessResult> {
     checkEndpoint('gateway', `${baseUrl}/health`),
   ])
 
-  const hasBlockingDown = checks.some(
-    (c) => BLOCKING_SERVICES.includes(c.service) && c.status === 'down',
+  const hasBlockingUnavailable = checks.some(
+    (c) => BLOCKING_SERVICES.includes(c.service) && c.status !== 'up',
   )
 
-  if (hasBlockingDown) return 'not_ready'
+  if (hasBlockingUnavailable) return 'not_ready'
 
   const hasAnyDegraded = checks.some((c) => c.status !== 'up')
   if (hasAnyDegraded) return 'ready_with_warnings'

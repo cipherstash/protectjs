@@ -19,7 +19,7 @@ export function checkPrerequisites(cwd: string): PrerequisiteResult {
   const authPath = resolve(homedir(), '.cipherstash', 'auth.json')
   if (!existsSync(authPath)) {
     missing.push(
-      'Not authenticated with CipherStash. Run: npx stash auth login',
+      'Not authenticated with CipherStash. Run: npx @cipherstash/cli auth login',
     )
   }
 

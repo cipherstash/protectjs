@@ -18,10 +18,26 @@
     "url": "git+https://github.com/cipherstash/protectjs.git"
   },
   "license": "MIT",
-  "workspaces": [
-    "examples/*",
-    "packages/*"
-  ],
+  "workspaces": {
+    "packages": [
+      "packages/*",
+      "examples/*"
+    ],
+    "catalogs": {
+      "repo": {
+        "@cipherstash/auth": "0.35.0",
+        "tsup": "8.4.0",
+        "tsx": "4.19.3",
+        "typescript": "5.6.3",
+        "vitest": "3.1.3"
+      },
+      "security": {
+        "@clerk/nextjs": "6.31.2",
+        "next": "15.5.10",
+        "vite": "6.4.1"
+      }
+    }
+  },
   "scripts": {
     "build": "turbo build --filter './packages/*'",
     "build:js": "turbo build --filter './packages/protect' --filter './packages/nextjs'",
@@ -46,29 +62,6 @@
     "node": ">=22"
   },
   "pnpm": {
-    "overrides": {
-      "@cipherstash/protect-ffi": "0.21.0",
-      "@babel/runtime": "7.26.10",
-      "brace-expansion@^5": ">=5.0.5",
-      "body-parser": "2.2.1",
-      "vite": "catalog:security",
-      "pg": "^8.16.3",
-      "postgres": "^3.4.7",
-      "js-yaml": "3.14.2",
-      "test-exclude": "^7.0.1",
-      "glob": ">=11.1.0",
-      "qs": ">=6.14.1",
-      "lodash": ">=4.17.23",
-      "minimatch": ">=10.2.3",
-      "@isaacs/brace-expansion": ">=5.0.1",
-      "fast-xml-parser": ">=5.3.4",
-      "next": ">=15.5.10",
-      "ajv": ">=8.18.0",
-      "esbuild@<=0.24.2": ">=0.25.0",
-      "picomatch@^4": ">=4.0.4",
-      "picomatch@^2": ">=2.3.2",
-      "rollup@>=4.0.0 <4.59.0": ">=4.59.0"
-    },
     "peerDependencyRules": {
       "ignoreMissing": [
         "@types/pg",
@@ -80,5 +73,27 @@
       }
     },
     "dedupe-peer-dependents": true
+  },
+  "overrides": {
+    "@babel/runtime": "7.26.10",
+    "brace-expansion@^5": ">=5.0.5",
+    "body-parser": "2.2.1",
+    "vite": "catalog:security",
+    "pg": "^8.16.3",
+    "postgres": "^3.4.7",
+    "js-yaml": "3.14.2",
+    "test-exclude": "^7.0.1",
+    "glob": ">=11.1.0",
+    "qs": ">=6.14.1",
+    "lodash": ">=4.17.23",
+    "minimatch": ">=10.2.3",
+    "@isaacs/brace-expansion": ">=5.0.1",
+    "fast-xml-parser": ">=5.3.4",
+    "next": ">=15.5.10",
+    "ajv": ">=8.18.0",
+    "esbuild@<=0.24.2": ">=0.25.0",
+    "picomatch@^4": ">=4.0.4",
+    "picomatch@^2": ">=2.3.2",
+    "rollup@>=4.0.0 <4.59.0": ">=4.59.0"
   }
 }
