@@ -1,6 +1,7 @@
 import 'dotenv/config'
 import readline from 'node:readline'
 import { client, users } from './encrypt'
+import { getAllContacts, createContact } from './src/queries/contacts'
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -67,6 +68,31 @@ async function main() {
   }
 
   console.log('Bulk encrypted data:', bulkEncryptResult.data)
+
+  // Demonstrate Supabase integration with CipherStash encryption
+  console.log('\n--- Supabase Integration Demo ---')
+
+  try {
+    // Example: Create a new contact (would insert into encrypted Supabase table)
+    console.log('Creating encrypted contact...')
+    const newContact = {
+      name: 'John Doe',
+      email: 'john@example.com',
+      role: 'Developer'  // This field will be encrypted using CipherStash
+    }
+
+    // Note: This would fail in this basic example since we don't have actual Supabase setup
+    // but shows the pattern for encrypted Supabase usage
+    console.log('Contact data to encrypt:', newContact)
+
+    // Example: Fetch contacts (would decrypt results from Supabase)
+    console.log('Fetching encrypted contacts...')
+    // const contacts = await getAllContacts()
+    // console.log('Decrypted contacts:', contacts.data)
+
+  } catch (error) {
+    console.log('Supabase demo skipped (no actual Supabase connection in this basic example)')
+  }
 
   rl.close()
 }
