@@ -1,6 +1,6 @@
 {
 	"name": "@cipherstash/cli",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"description": "CipherStash CLI — the one stash command for auth, init, encryption schema, database setup, secrets, and the AI wizard.",
 	"license": "MIT",
 	"author": "CipherStash <hello@cipherstash.com>",

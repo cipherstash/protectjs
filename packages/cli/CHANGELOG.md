@@ -1,5 +1,11 @@
 # @cipherstash/cli
 
+## 0.2.0
+
+### Minor Changes
+
+- 4d0dfc5: Fixed peer dependency by lazy loading commands requiring @cipherstash/stack.
+
 ## 0.1.0
 
 ### Minor Changes
