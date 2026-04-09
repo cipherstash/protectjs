@@ -5,19 +5,40 @@ import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import * as p from '@clack/prompts'
+// Commands that depend on @cipherstash/stack are lazy-loaded in the switch below.
 import {
   authCommand,
-  builderCommand,
   initCommand,
   installCommand,
-  pushCommand,
-  secretsCommand,
   setupCommand,
   statusCommand,
   testConnectionCommand,
   upgradeCommand,
-  validateCommand,
 } from '../commands/index.js'
+
+function isModuleNotFound(err: unknown): boolean {
+  return (
+    err instanceof Error &&
+    'code' in err &&
+    (err as { code: string }).code === 'ERR_MODULE_NOT_FOUND'
+  )
+}
+
+async function requireStack<T>(importFn: () => Promise<T>): Promise<T> {
+  try {
+    return await importFn()
+  } catch (err: unknown) {
+    if (isModuleNotFound(err)) {
+      p.log.error(
+        '@cipherstash/stack is required for this command.\n' +
+        '  Install it with: npm install @cipherstash/stack\n' +
+        '  Or run: npx @cipherstash/cli init',
+      )
+      process.exit(1) as never
+    }
+    throw err
+  }
+}
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const pkg = JSON.parse(
@@ -148,15 +169,19 @@ async function runDbCommand(
         out: values.out,
       })
       break
-    case 'push':
+    case 'push': {
+      const { pushCommand } = await requireStack(() => import('../commands/db/push.js'))
       await pushCommand({ dryRun: flags['dry-run'] })
       break
-    case 'validate':
+    }
+    case 'validate': {
+      const { validateCommand } = await requireStack(() => import('../commands/db/validate.js'))
       await validateCommand({
         supabase: flags.supabase,
         excludeOperatorFamily: flags['exclude-operator-family'],
       })
       break
+    }
     case 'status':
       await statusCommand()
       break
@@ -179,9 +204,11 @@ async function runSchemaCommand(
   flags: Record<string, boolean>,
 ) {
   switch (sub) {
-    case 'build':
+    case 'build': {
+      const { builderCommand } = await requireStack(() => import('../commands/schema/build.js'))
       await builderCommand({ supabase: flags.supabase })
       break
+    }
     default:
       p.log.error(`Unknown schema subcommand: ${sub ?? '(none)'}`)
       console.log()
@@ -215,6 +242,7 @@ async function main() {
       break
     }
     case 'secrets': {
+      const { secretsCommand } = await requireStack(() => import('../commands/secrets/index.js'))
       const secretsArgs = subcommand
         ? [subcommand, ...commandArgs]
         : commandArgs
