@@ -375,14 +375,14 @@ export async function builderCommand(options: { supabase?: boolean } = {}) {
         '',
         'Run it with:',
         '',
-        '  stash wizard',
+        '  npx @cipherstash/cli wizard',
         '',
         'It works with Drizzle, Supabase, Prisma, and raw SQL projects.',
         'No Anthropic API key needed — it uses your CipherStash account.',
       ].join('\n'),
       'CipherStash Wizard',
     )
-    p.outro('Run `stash wizard` to get started!')
+    p.outro('Run `npx @cipherstash/cli wizard` to get started!')
     return
   }
 

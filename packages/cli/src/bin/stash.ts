@@ -27,7 +27,7 @@ const pkg = JSON.parse(
 const HELP = `
 CipherStash CLI v${pkg.version}
 
-Usage: stash <command> [options]
+Usage: npx @cipherstash/cli <command> [options]
 
 Commands:
   init                 Initialize CipherStash for your project
@@ -63,14 +63,14 @@ DB Flags:
   --latest                   (setup, install, upgrade) Fetch the latest EQL from GitHub
 
 Examples:
-  stash init
-  stash init --supabase
-  stash auth login
-  stash wizard
-  stash db setup
-  stash db push
-  stash schema build
-  stash secrets set -n DATABASE_URL -V "postgres://..." -e production
+  npx @cipherstash/cli init
+  npx @cipherstash/cli init --supabase
+  npx @cipherstash/cli auth login
+  npx @cipherstash/cli wizard
+  npx @cipherstash/cli db setup
+  npx @cipherstash/cli db push
+  npx @cipherstash/cli schema build
+  npx @cipherstash/cli secrets set -n DATABASE_URL -V "postgres://..." -e production
 `.trim()
 
 interface ParsedArgs {
@@ -164,7 +164,7 @@ async function runDbCommand(
       await testConnectionCommand()
       break
     case 'migrate':
-      p.log.warn('"stash db migrate" is not yet implemented.')
+      p.log.warn('"npx @cipherstash/cli db migrate" is not yet implemented.')
       break
     default:
       p.log.error(`Unknown db subcommand: ${sub ?? '(none)'}`)

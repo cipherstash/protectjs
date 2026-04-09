@@ -3,7 +3,7 @@ import * as p from '@clack/prompts'
 import pg from 'pg'
 
 export async function testConnectionCommand() {
-  p.intro('stash db test-connection')
+  p.intro('npx @cipherstash/cli db test-connection')
 
   const s = p.spinner()
 

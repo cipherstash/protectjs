@@ -129,41 +129,41 @@ if (result.failure) {
 
 ## CLI Usage
 
-The `stash` CLI is bundled with `@cipherstash/stack` and available after install.
+The CLI is available via `npx @cipherstash/cli` after install.
 
 ### Set a Secret
 
 ```bash
-npx stash secrets set --name DATABASE_URL --value "postgres://..." --environment production
-npx stash secrets set -n DATABASE_URL -V "postgres://..." -e production
+npx @cipherstash/cli secrets set --name DATABASE_URL --value "postgres://..." --environment production
+npx @cipherstash/cli secrets set -n DATABASE_URL -V "postgres://..." -e production
 ```
 
 ### Get a Secret
 
 ```bash
-npx stash secrets get --name DATABASE_URL --environment production
-npx stash secrets get -n DATABASE_URL -e production
+npx @cipherstash/cli secrets get --name DATABASE_URL --environment production
+npx @cipherstash/cli secrets get -n DATABASE_URL -e production
 ```
 
 ### Get Many Secrets
 
 ```bash
-npx stash secrets get-many --name DATABASE_URL,API_KEY --environment production
-npx stash secrets get-many -n DATABASE_URL,API_KEY,JWT_SECRET -e production
+npx @cipherstash/cli secrets get-many --name DATABASE_URL,API_KEY --environment production
+npx @cipherstash/cli secrets get-many -n DATABASE_URL,API_KEY,JWT_SECRET -e production
 ```
 
 ### List Secrets
 
 ```bash
-npx stash secrets list --environment production
-npx stash secrets list -e production
+npx @cipherstash/cli secrets list --environment production
+npx @cipherstash/cli secrets list -e production
 ```
 
 ### Delete a Secret
 
 ```bash
-npx stash secrets delete --name DATABASE_URL --environment production
-npx stash secrets delete -n DATABASE_URL -e production --yes  # skip confirmation
+npx @cipherstash/cli secrets delete --name DATABASE_URL --environment production
+npx @cipherstash/cli secrets delete -n DATABASE_URL -e production --yes  # skip confirmation
 ```
 
 ### CLI Flag Reference

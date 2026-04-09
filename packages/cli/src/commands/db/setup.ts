@@ -90,14 +90,14 @@ export default defineConfig({
 }
 
 export async function setupCommand(options: SetupOptions = {}) {
-  p.intro('stash db setup')
+  p.intro('npx @cipherstash/cli db setup')
 
   // 1. Check if stash.config.ts already exists
   const configPath = resolve(process.cwd(), CONFIG_FILENAME)
   if (existsSync(configPath) && !options.force) {
     p.log.warn(`${CONFIG_FILENAME} already exists. Skipping setup.`)
     p.log.info(
-      `Use --force to overwrite, or delete ${CONFIG_FILENAME} and re-run "stash db setup".`,
+      `Use --force to overwrite, or delete ${CONFIG_FILENAME} and re-run "npx @cipherstash/cli db setup".`,
     )
     p.outro('Nothing to do.')
     return
@@ -118,7 +118,7 @@ export async function setupCommand(options: SetupOptions = {}) {
   // 4. Install EQL extensions (only if DATABASE_URL is available)
   if (!process.env.DATABASE_URL) {
     p.note(
-      'Set DATABASE_URL in your environment, then run:\n  stash db install',
+      'Set DATABASE_URL in your environment, then run:\n  npx @cipherstash/cli db install',
       'DATABASE_URL not set',
     )
     p.outro('CipherStash Forge setup complete!')
@@ -137,7 +137,7 @@ export async function setupCommand(options: SetupOptions = {}) {
 
   if (!shouldInstall) {
     p.note(
-      'You can install EQL later:\n  stash db install',
+      'You can install EQL later:\n  npx @cipherstash/cli db install',
       'Skipped Installation',
     )
     p.outro('CipherStash Forge setup complete!')

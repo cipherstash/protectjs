@@ -1,7 +1,7 @@
 import { bindDevice, login, selectRegion } from './login.js'
 
 const HELP = `
-Usage: stash auth <command> [options]
+Usage: npx @cipherstash/cli auth <command> [options]
 
 Commands:
   login     Authenticate with CipherStash
@@ -11,8 +11,8 @@ Options:
   --drizzle     Track Drizzle as the referrer
 
 Examples:
-  stash auth login
-  stash auth login --supabase
+  npx @cipherstash/cli auth login
+  npx @cipherstash/cli auth login --supabase
 `.trim()
 
 function referrerFromFlags(flags: Record<string, boolean>): string | undefined {

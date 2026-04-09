@@ -4,7 +4,7 @@ import * as p from '@clack/prompts'
 import pg from 'pg'
 
 export async function statusCommand() {
-  p.intro('stash db status')
+  p.intro('npx @cipherstash/cli db status')
 
   const s = p.spinner()
 
@@ -41,7 +41,7 @@ export async function statusCommand() {
     p.log.success(`EQL installed: yes (version: ${version ?? 'unknown'})`)
   } else {
     s.stop('EQL is not installed.')
-    p.log.warn('EQL is not installed. Run `stash db install` to install it.')
+    p.log.warn('EQL is not installed. Run `npx @cipherstash/cli db install` to install it.')
     p.outro('Status check complete.')
     return
   }
@@ -100,7 +100,7 @@ export async function statusCommand() {
     const message = error instanceof Error ? error.message : String(error)
     if (message.includes('does not exist')) {
       p.log.info(
-        'Active encrypt config: table not found (run `stash db push` to create it)',
+        'Active encrypt config: table not found (run `npx @cipherstash/cli db push` to create it)',
       )
     } else {
       p.log.error(`Failed to check encrypt configuration: ${message}`)

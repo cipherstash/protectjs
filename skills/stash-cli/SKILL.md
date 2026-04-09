@@ -1,11 +1,11 @@
 ---
 name: stash-cli
-description: Configure and use the `@cipherstash/cli` package (the `stash` binary) for EQL database setup, encryption schema management, Supabase integration, and the AI-powered `stash wizard`. Replaces the legacy `@cipherstash/stack-forge` skill.
+description: Configure and use the `@cipherstash/cli` package for EQL database setup, encryption schema management, Supabase integration, and the AI-powered wizard (`npx @cipherstash/cli wizard`). Replaces the legacy `@cipherstash/stack-forge` skill.
 ---
 
 # CipherStash CLI
 
-Configure and use `@cipherstash/cli` for EQL database setup, encryption schema management, and Supabase integration. (Previously published as `@cipherstash/stack-forge`; the `stash-forge` and `cipherstash-wizard` binaries are now consolidated under a single `stash` binary.)
+Configure and use `@cipherstash/cli` for EQL database setup, encryption schema management, and Supabase integration. (Previously published as `@cipherstash/stack-forge`; the `stash-forge` and `cipherstash-wizard` binaries are now consolidated under `npx @cipherstash/cli`.)
 
 ## Trigger
 
@@ -49,27 +49,27 @@ type StashConfig = {
 ```
 
 - `defineConfig()` provides TypeScript type-checking for the config file.
-- `client` points to the encryption client file used by `stash db push` and `stash db validate` to load the encryption schema.
+- `client` points to the encryption client file used by `npx @cipherstash/cli db push` and `npx @cipherstash/cli db validate` to load the encryption schema.
 - Config is loaded automatically from `stash.config.ts` by walking up from `process.cwd()` (like `tsconfig.json` resolution).
 - `.env` files are loaded automatically via `dotenv` before config evaluation.
 
 ## CLI Usage
 
-The primary interface is the `stash` CLI, run via `npx`:
+The primary interface is the `@cipherstash/cli` package, run via `npx`:
 
 ```bash
-npx stash db <command> [options]
+npx @cipherstash/cli db <command> [options]
 ```
 
 ### `setup` — Configure database and install EQL extensions
 
-Interactive wizard that configures your database connection and installs EQL. Run this after `stash init` has set up your encryption schema.
+Interactive wizard that configures your database connection and installs EQL. Run this after `npx @cipherstash/cli init` has set up your encryption schema.
 
 ```bash
-npx stash db setup
-npx stash db setup --supabase
-npx stash db setup --force
-npx stash db setup --drizzle
+npx @cipherstash/cli db setup
+npx @cipherstash/cli db setup --supabase
+npx @cipherstash/cli db setup --force
+npx @cipherstash/cli db setup --drizzle
 ```
 
 The wizard will:
@@ -104,31 +104,31 @@ Uses bundled SQL by default for offline, deterministic installs. Three SQL varia
 
 ```bash
 # Standard install
-npx stash db install
+npx @cipherstash/cli db install
 
 # Reinstall even if already installed
-npx stash db install --force
+npx @cipherstash/cli db install --force
 
 # Preview SQL without applying
-npx stash db install --dry-run
+npx @cipherstash/cli db install --dry-run
 
 # Supabase-compatible install (grants anon, authenticated, service_role)
-npx stash db install --supabase
+npx @cipherstash/cli db install --supabase
 
 # Skip operator family (for non-superuser database roles)
-npx stash db install --exclude-operator-family
+npx @cipherstash/cli db install --exclude-operator-family
 
 # Fetch latest from GitHub instead of using bundled SQL
-npx stash db install --latest
+npx @cipherstash/cli db install --latest
 
 # Generate a Drizzle migration instead of direct install
-npx stash db install --drizzle
+npx @cipherstash/cli db install --drizzle
 
 # Drizzle migration with custom name and output directory
-npx stash db install --drizzle --name setup-eql --out ./migrations
+npx @cipherstash/cli db install --drizzle --name setup-eql --out ./migrations
 
 # Combine flags
-npx stash db install --dry-run --supabase
+npx @cipherstash/cli db install --dry-run --supabase
 ```
 
 **Flags:**
@@ -157,10 +157,10 @@ You then run `npx drizzle-kit migrate` to apply it. Requires `drizzle-kit` as a 
 Upgrade an existing EQL installation to the version bundled with the package (or latest from GitHub).
 
 ```bash
-npx stash db upgrade
-npx stash db upgrade --dry-run
-npx stash db upgrade --supabase
-npx stash db upgrade --latest
+npx @cipherstash/cli db upgrade
+npx @cipherstash/cli db upgrade --dry-run
+npx @cipherstash/cli db upgrade --supabase
+npx @cipherstash/cli db upgrade --latest
 ```
 
 **Flags:**
@@ -171,16 +171,16 @@ npx stash db upgrade --latest
 | `--exclude-operator-family` | Skip operator family creation |
 | `--latest` | Fetch latest EQL from GitHub instead of bundled |
 
-The EQL install SQL is idempotent and safe to re-run. The command checks the current version, re-runs the install SQL, then reports the new version. If EQL is not installed, it suggests running `stash db install` instead.
+The EQL install SQL is idempotent and safe to re-run. The command checks the current version, re-runs the install SQL, then reports the new version. If EQL is not installed, it suggests running `npx @cipherstash/cli db install` instead.
 
 ### `validate` — Validate encryption schema
 
 Validate your encryption schema for common misconfigurations.
 
 ```bash
-npx stash db validate
-npx stash db validate --supabase
-npx stash db validate --exclude-operator-family
+npx @cipherstash/cli db validate
+npx @cipherstash/cli db validate --supabase
+npx @cipherstash/cli db validate --exclude-operator-family
 ```
 
 **Flags:**
@@ -210,8 +210,8 @@ import { validateEncryptConfig, reportIssues } from '@cipherstash/cli'
 This command is **only required when using CipherStash Proxy**. If you're using the SDK directly (Drizzle, Supabase, or plain PostgreSQL), this step is not needed — the schema lives in your application code as the source of truth.
 
 ```bash
-npx stash db push
-npx stash db push --dry-run
+npx @cipherstash/cli db push
+npx @cipherstash/cli db push --dry-run
 ```
 
 **Flags:**
@@ -241,7 +241,7 @@ When pushing, the CLI:
 ### `status` — Show EQL installation status
 
 ```bash
-npx stash db status
+npx @cipherstash/cli db status
 ```
 
 Reports:
@@ -252,7 +252,7 @@ Reports:
 ### `test-connection` — Test database connectivity
 
 ```bash
-npx stash db test-connection
+npx @cipherstash/cli db test-connection
 ```
 
 Verifies the database URL in your config is valid and the database is reachable. Reports:

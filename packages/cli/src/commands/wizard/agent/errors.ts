@@ -30,7 +30,7 @@ export function classifyError(
   if (errorCode === 'authentication_failed') {
     return formatWizardError(
       'Authentication failed.',
-      'Your CipherStash token may be expired or invalid. Run: stash auth login',
+      'Your CipherStash token may be expired or invalid. Run: npx @cipherstash/cli auth login',
     )
   }
   if (errorCode === 'rate_limit') {
@@ -94,7 +94,7 @@ export function classifyHttpError(status: number, apiMessage: string): string {
   if (status === 401) {
     return formatWizardError(
       'Authentication failed (HTTP 401).',
-      'Your CipherStash token may be expired. Run: stash auth login',
+      'Your CipherStash token may be expired. Run: npx @cipherstash/cli auth login',
     )
   }
   if (status === 429) {

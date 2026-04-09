@@ -11,13 +11,13 @@ export function createBaseProvider(): InitProvider {
       { value: 'raw-sql', label: 'Raw SQL / pg' },
     ],
     getNextSteps(state: InitState): string[] {
-      const steps = ['Set up your database: stash db setup']
+      const steps = ['Set up your database: npx @cipherstash/cli db setup']
 
       const manualEdit = state.clientFilePath
         ? `edit ${state.clientFilePath} directly`
         : 'edit your encryption schema directly'
       steps.push(
-        `Customize your schema: stash wizard (AI-guided, automated) — or ${manualEdit}`,
+        `Customize your schema: npx @cipherstash/cli wizard (AI-guided, automated) — or ${manualEdit}`,
       )
 
       steps.push('Read the docs: https://cipherstash.com/docs')

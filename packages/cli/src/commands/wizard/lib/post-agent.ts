@@ -32,12 +32,12 @@ export async function runPostAgentSteps(opts: PostAgentOptions): Promise<void> {
     cwd,
   )
 
-  // Step 2: Run stash db setup if needed
+  // Step 2: Run npx @cipherstash/cli db setup if needed
   if (!gathered.hasStashConfig) {
     await runStep(
-      'Running stash db setup...',
-      'stash db setup complete',
-      'npx stash db setup',
+      'Running npx @cipherstash/cli db setup...',
+      'npx @cipherstash/cli db setup complete',
+      'npx @cipherstash/cli db setup',
       cwd,
     )
   }
@@ -46,7 +46,7 @@ export async function runPostAgentSteps(opts: PostAgentOptions): Promise<void> {
   await runStep(
     'Pushing encryption config to database...',
     'Encryption config pushed',
-    'npx stash db push',
+    'npx @cipherstash/cli db push',
     cwd,
   )
 

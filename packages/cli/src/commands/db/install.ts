@@ -23,7 +23,7 @@ export async function installCommand(options: {
   name?: string
   out?: string
 }) {
-  p.intro('stash db install')
+  p.intro('npx @cipherstash/cli db install')
 
   const s = p.spinner()
 

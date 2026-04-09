@@ -1,6 +1,6 @@
 # @cipherstash/cli
 
-> Renamed from `@cipherstash/stack-forge`. The standalone `@cipherstash/wizard` package was absorbed into this CLI as `stash wizard`. The single binary is now `stash` (replaces `stash-forge` and `cipherstash-wizard`).
+> Renamed from `@cipherstash/stack-forge`. The standalone `@cipherstash/wizard` package was absorbed into this CLI as `npx @cipherstash/cli wizard`. The single binary is now invoked via `npx @cipherstash/cli` (replaces `stash-forge` and `cipherstash-wizard`).
 
 ## 0.4.0
 

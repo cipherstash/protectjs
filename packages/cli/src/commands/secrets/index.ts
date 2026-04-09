@@ -48,7 +48,7 @@ function requireFlag(
 }
 
 const HELP = `
-${style.title('Usage:')} stash secrets <command> [options]
+${style.title('Usage:')} npx @cipherstash/cli secrets <command> [options]
 
 ${style.title('Commands:')}
   set       Store an encrypted secret
@@ -64,11 +64,11 @@ ${style.title('Options:')}
   -y, --yes           Skip confirmation (delete only)
 
 ${style.title('Examples:')}
-  stash secrets set -n DATABASE_URL -V "postgres://..." -e production
-  stash secrets get -n DATABASE_URL -e production
-  stash secrets get-many -n DATABASE_URL,API_KEY -e production
-  stash secrets list -e production
-  stash secrets delete -n DATABASE_URL -e production -y
+  npx @cipherstash/cli secrets set -n DATABASE_URL -V "postgres://..." -e production
+  npx @cipherstash/cli secrets get -n DATABASE_URL -e production
+  npx @cipherstash/cli secrets get-many -n DATABASE_URL,API_KEY -e production
+  npx @cipherstash/cli secrets list -e production
+  npx @cipherstash/cli secrets delete -n DATABASE_URL -e production -y
 `.trim()
 
 export async function secretsCommand(args: string[]) {

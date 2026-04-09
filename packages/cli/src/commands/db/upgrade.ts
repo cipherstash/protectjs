@@ -8,7 +8,7 @@ export async function upgradeCommand(options: {
   excludeOperatorFamily?: boolean
   latest?: boolean
 }) {
-  p.intro('stash db upgrade')
+  p.intro('npx @cipherstash/cli db upgrade')
 
   const s = p.spinner()
 
@@ -26,7 +26,7 @@ export async function upgradeCommand(options: {
   if (!installed) {
     s.stop('EQL is not installed.')
     p.log.warn(
-      'EQL is not currently installed. Run "stash db install" first.',
+      'EQL is not currently installed. Run "npx @cipherstash/cli db install" first.',
     )
     p.outro('Upgrade aborted.')
     process.exit(1)

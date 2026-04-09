@@ -66,6 +66,7 @@ const ALLOWED_BASH_COMMANDS = [
   // Build & validation
   'npx drizzle-kit',
   'npx tsc',
+  'npx @cipherstash/cli db',
   'stash db',
 ]
 
