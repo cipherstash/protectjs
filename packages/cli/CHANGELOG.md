@@ -1,5 +1,11 @@
 # @cipherstash/cli
 
+## 0.3.0
+
+### Minor Changes
+
+- 0d21e9b: Fix invalid client error.
+
 ## 0.2.0
 
 ### Minor Changes
