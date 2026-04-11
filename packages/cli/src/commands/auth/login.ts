@@ -27,13 +27,12 @@ export async function selectRegion(): Promise<string> {
   return region
 }
 
-export async function login(region: string, referrer: string | undefined) {
+export async function login(region: string, _referrer: string | undefined) {
   const s = p.spinner()
 
-  const pending = await beginDeviceCodeFlow(
-    region,
-    `cli-${referrer ?? 'cipherstash'}`,
-  )
+  // Must be 'cli' — it's the only OAuth client_id registered with CTS.
+  // Passing anything else (e.g. `cli-supabase`) causes INVALID_CLIENT.
+  const pending = await beginDeviceCodeFlow(region, 'cli')
 
   p.log.info(`Your code is: ${pending.userCode}`)
   p.log.info(`Visit: ${pending.verificationUriComplete}`)
