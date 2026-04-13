@@ -507,7 +507,7 @@ For production, CI/CD, and deployed environments, you'll need to set up machine 
 | `CS_CLIENT_KEY` | Client key material used with ZeroKMS for encryption |
 | `CS_CLIENT_ACCESS_KEY` | API key for authenticating with the CipherStash API |
 
-See the [Going to Production](https://cipherstash.com/docs/stack/going-to-production) guide for full details on creating machine clients, setting up access keys, and configuring CI/CD pipelines.
+See the [Going to Production](https://cipherstash.com/docs/stack/deploy/going-to-production) guide for full details on creating machine clients, setting up access keys, and configuring CI/CD pipelines.
 
 ### Programmatic Config
 

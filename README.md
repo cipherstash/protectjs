@@ -2,10 +2,10 @@
   <a href="https://cipherstash.com">
     <img alt="CipherStash Logo" loading="lazy" width="128" height="128" decoding="async" data-nimg="1" style="color:transparent" src="https://cipherstash.com/assets/cs-github.png">
   </a>
-  <h1>Data security Stack for TypeScript</h1>
+  <h1>CipherStash Stack for TypeScript</h1>
 
 <a href="https://cipherstash.com"><img alt="Built by CipherStash" src="https://raw.githubusercontent.com/cipherstash/meta/refs/heads/main/csbadge.svg?style=for-the-badge&labelColor=000"></a>
-<a href="https://github.com/cipherstash/protectjs/blob/main/LICENSE.md"><img alt="License" src="https://img.shields.io/npm/l/@cipherstash/protect.svg?style=for-the-badge&labelColor=000000"></a>
+<a href="https://github.com/cipherstash/stack/blob/main/LICENSE.md"><img alt="License" src="https://img.shields.io/npm/l/@cipherstash/stack.svg?style=for-the-badge&labelColor=000000"></a>
 <a href="https://cipherstash.com/docs"><img alt="Docs" src="https://img.shields.io/badge/Docs-333333.svg?style=for-the-badge&logo=readthedocs&labelColor=333"></a>
 <a href="https://discord.gg/5qwXUFb6PB"><img alt="Join the community on Discord" src="https://img.shields.io/badge/Join%20the%20community-blueviolet.svg?style=for-the-badge&logo=Discord&labelColor=000000&logoWidth=20"></a>
 
@@ -13,8 +13,8 @@
 
 ## What is the stack?
 
-- [Encryption](https://cipherstash.com/docs/stack/encryption): Field-level encryption for TypeScript apps with searchable encrypted queries, zero-knowledge key management, and first-class ORM support.
-- [Secrets](https://cipherstash.com/docs/stack/secrets): Zero-trust secrets management with end-to-end encryption. Plaintext never leaves your application.
+- [Encryption](https://cipherstash.com/docs/stack/cipherstash/encryption): Field-level encryption for TypeScript apps with searchable encrypted queries, zero-knowledge key management, and first-class ORM support.
+- [Secrets](https://cipherstash.com/docs/stack/cipherstash/secrets): Zero-trust secrets management with end-to-end encryption. Plaintext never leaves your application.
 
 ## Quick look at the stack in action
 
@@ -78,21 +78,21 @@ bun add @cipherstash/stack
 > [!IMPORTANT]
 > **You need to opt out of bundling when using `@cipherstash/stack`.**
 > It uses Node.js specific features and requires the native Node.js `require`.
-> Read more about bundling in the [documentation](https://cipherstash.com/docs/stack/encryption/bundling).
+> Read more about bundling in the [documentation](https://cipherstash.com/docs/stack/deploy/bundling).
 
 ## Features
 
-- **[Searchable encryption](https://cipherstash.com/docs/stack/platform/searchable-encryption)**: query encrypted data with equality, free text search, range, and [JSONB queries](https://cipherstash.com/docs/stack/encryption/searchable-encryption#jsonb-queries-with-searchablejson).
-- **[Type-safe schema](https://cipherstash.com/docs/stack/encryption/schema)**: define encrypted tables and columns with `encryptedTable` / `encryptedColumn`
-- **[Model & bulk operations](https://cipherstash.com/docs/stack/encryption/encrypt-decrypt#model-operations)**: encrypt and decrypt entire objects or batches with `encryptModel` / `bulkEncryptModels`.
-- **[Identity-aware encryption](https://cipherstash.com/docs/stack/encryption/identity)**: bind encryption to user identity with lock contexts for policy-based access control.
-- **[Secrets management](https://cipherstash.com/docs/stack/secrets)**: store and retrieve encrypted secrets via the Secrets SDK and CLI.
+- **[Searchable encryption](https://cipherstash.com/docs/stack/cipherstash/encryption/searchable-encryption)**: query encrypted data with equality, free text search, range, and [JSONB queries](https://cipherstash.com/docs/stack/cipherstash/encryption/searchable-encryption#jsonb-queries-with-searchablejson).
+- **[Type-safe schema](https://cipherstash.com/docs/stack/cipherstash/encryption/schema)**: define encrypted tables and columns with `encryptedTable` / `encryptedColumn`
+- **[Model & bulk operations](https://cipherstash.com/docs/stack/cipherstash/encryption/encrypt-decrypt#model-operations)**: encrypt and decrypt entire objects or batches with `encryptModel` / `bulkEncryptModels`.
+- **[Identity-aware encryption](https://cipherstash.com/docs/stack/cipherstash/encryption/identity)**: bind encryption to user identity with lock contexts for policy-based access control.
+- **[Secrets management](https://cipherstash.com/docs/stack/cipherstash/secrets)**: store and retrieve encrypted secrets via the Secrets SDK and CLI.
 
 ## Integrations
 
-- [Encryption + Drizzle](https://cipherstash.com/docs/stack/encryption/drizzle)
-- [Encryption + Supabase](https://cipherstash.com/docs/stack/encryption/supabase)
-- [Encryption + DynamoDB](https://cipherstash.com/docs/stack/encryption/dynamodb)
+- [Encryption + Drizzle](https://cipherstash.com/docs/stack/cipherstash/encryption/drizzle)
+- [Encryption + Supabase](https://cipherstash.com/docs/stack/cipherstash/encryption/supabase)
+- [Encryption + DynamoDB](https://cipherstash.com/docs/stack/cipherstash/encryption/dynamodb)
 
 ## Use cases
 
@@ -103,8 +103,8 @@ bun add @cipherstash/stack
 ## Documentation
 
 - [Documentation](https://cipherstash.com/docs)
-- [Encryption getting started guide](https://cipherstash.com/docs/stack/encryption/getting-started)
-- [Secrets getting started guide](https://cipherstash.com/docs/stack/secrets/getting-started)
+- [Encryption getting started guide](https://cipherstash.com/docs/stack/quickstart)
+- [Secrets getting started guide](https://cipherstash.com/docs/stack/cipherstash/secrets/getting-started)
 - [SDK and API reference](https://cipherstash.com/docs/stack/reference)
 
 ## Contributing

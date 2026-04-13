@@ -25,7 +25,8 @@ export function createSupabaseProvider(): InitProvider {
       )
 
       steps.push(
-        'Supabase guide: https://cipherstash.com/docs/stack/encryption/supabase',
+        'Supabase guide: https://cipherstash.com/docs/stack/cipherstash/supabase',
+        'Dashboard: https://dashboard.cipherstash.com/workspaces',
         'Need help? #supabase in Discord or support@cipherstash.com',
       )
 

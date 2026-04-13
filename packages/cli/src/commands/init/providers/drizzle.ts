@@ -21,7 +21,8 @@ export function createDrizzleProvider(): InitProvider {
       )
 
       steps.push(
-        'Drizzle guide: https://cipherstash.com/docs/stack/encryption/drizzle',
+        'Drizzle guide: https://cipherstash.com/docs/stack/cipherstash/encryption/drizzle',
+        'Dashboard: https://dashboard.cipherstash.com/workspaces',
         'Need help? Discord or support@cipherstash.com',
       )
 
