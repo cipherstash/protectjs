@@ -1,5 +1,11 @@
 # @cipherstash/cli
 
+## 0.4.0
+
+### Minor Changes
+
+- 1e0d4c1: Support CipherStash rebrand with new docs links.
+
 ## 0.3.0
 
 ### Minor Changes
