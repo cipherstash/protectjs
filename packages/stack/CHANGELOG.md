@@ -1,5 +1,11 @@
 # @cipherstash/stack
 
+## 0.14.0
+
+### Minor Changes
+
+- 1e0d4c1: Support CipherStash rebrand with new docs links.
+
 ## 0.13.0
 
 ### Minor Changes
