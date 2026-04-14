@@ -20,7 +20,8 @@ export function createBaseProvider(): InitProvider {
         `Customize your schema: npx @cipherstash/cli wizard (AI-guided, automated) — or ${manualEdit}`,
       )
 
-      steps.push('Read the docs: https://cipherstash.com/docs')
+      steps.push('Quickstart: https://cipherstash.com/docs/stack/quickstart')
+      steps.push('Dashboard: https://dashboard.cipherstash.com/workspaces')
 
       return steps
     },

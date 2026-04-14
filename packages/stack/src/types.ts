@@ -200,9 +200,9 @@ export type DecryptionResult<T> = DecryptionSuccess<T> | DecryptionError<T>
 /**
  * User-facing query type names for encrypting query values.
  *
- * - `'equality'`: Exact match. [Exact Queries](https://cipherstash.com/docs/platform/searchable-encryption/supported-queries/exact)
- * - `'freeTextSearch'`: Text search. [Match Queries](https://cipherstash.com/docs/platform/searchable-encryption/supported-queries/match)
- * - `'orderAndRange'`: Comparison and range. [Range Queries](https://cipherstash.com/docs/platform/searchable-encryption/supported-queries/range)
+ * - `'equality'`: Exact match. [Exact Queries](https://cipherstash.com/docs/stack/cipherstash/encryption/searchable-encryption)
+ * - `'freeTextSearch'`: Text search. [Match Queries](https://cipherstash.com/docs/stack/cipherstash/encryption/searchable-encryption)
+ * - `'orderAndRange'`: Comparison and range. [Range Queries](https://cipherstash.com/docs/stack/cipherstash/encryption/searchable-encryption)
  * - `'steVecSelector'`: JSONPath selector (e.g. `'$.user.email'`)
  * - `'steVecTerm'`: Containment (e.g. `{ role: 'admin' }`)
  * - `'searchableJson'`: Auto-infers selector or term from plaintext type (recommended)
