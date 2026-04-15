@@ -14,7 +14,6 @@
 ## What is the stack?
 
 - [Encryption](https://cipherstash.com/docs/stack/cipherstash/encryption): Field-level encryption for TypeScript apps with searchable encrypted queries, zero-knowledge key management, and first-class ORM support.
-- [Secrets](https://cipherstash.com/docs/stack/cipherstash/secrets): Zero-trust secrets management with end-to-end encryption. Plaintext never leaves your application.
 
 ## Quick look at the stack in action
 
@@ -48,21 +47,6 @@ if (decryptResult.failure) {
 // decryptResult.data => "secret@example.com"
 ```
 
-**Secrets**
-
-```typescript
-import { Secrets } from "@cipherstash/stack";
-
-// 1. Initialize the secrets client
-const secrets = new Secrets({ environment: "production" });
-
-// 2. Set a secret with the SDK or the CLI
-await secrets.set("DATABASE_URL", "postgres://user:pass@host:5432/db");
-
-// 3. Consume the secret in your application
-const secret = await secrets.get("DATABASE_URL");
-```
-
 ## Install
 
 ```bash
@@ -86,7 +70,6 @@ bun add @cipherstash/stack
 - **[Type-safe schema](https://cipherstash.com/docs/stack/cipherstash/encryption/schema)**: define encrypted tables and columns with `encryptedTable` / `encryptedColumn`
 - **[Model & bulk operations](https://cipherstash.com/docs/stack/cipherstash/encryption/encrypt-decrypt#model-operations)**: encrypt and decrypt entire objects or batches with `encryptModel` / `bulkEncryptModels`.
 - **[Identity-aware encryption](https://cipherstash.com/docs/stack/cipherstash/encryption/identity)**: bind encryption to user identity with lock contexts for policy-based access control.
-- **[Secrets management](https://cipherstash.com/docs/stack/cipherstash/secrets)**: store and retrieve encrypted secrets via the Secrets SDK and CLI.
 
 ## Integrations
 
@@ -97,14 +80,12 @@ bun add @cipherstash/stack
 ## Use cases
 
 - **Trusted data access**: ensure only your end-users can access their sensitive data using identity-bound encryption
-- **Sensitive config management**: store API keys and database credentials with zero-trust encryption and full audit trails
 - **Reduce breach impact**: limit the blast radius of exploited vulnerabilities to only the data the affected user can decrypt
 
 ## Documentation
 
 - [Documentation](https://cipherstash.com/docs)
-- [Encryption getting started guide](https://cipherstash.com/docs/stack/quickstart)
-- [Secrets getting started guide](https://cipherstash.com/docs/stack/cipherstash/secrets/getting-started)
+- [Quickstart](https://cipherstash.com/docs/stack/quickstart)
 - [SDK and API reference](https://cipherstash.com/docs/stack/reference)
 
 ## Contributing

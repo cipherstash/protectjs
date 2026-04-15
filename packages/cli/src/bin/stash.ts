@@ -53,7 +53,6 @@ Usage: npx @cipherstash/cli <command> [options]
 Commands:
   init                 Initialize CipherStash for your project
   auth <subcommand>    Authenticate with CipherStash
-  secrets <subcommand> Manage encrypted secrets
   wizard               AI-powered encryption setup (reads your codebase)
 
   db install           Install EQL extensions into your database
@@ -91,7 +90,6 @@ Examples:
   npx @cipherstash/cli db setup
   npx @cipherstash/cli db push
   npx @cipherstash/cli schema build
-  npx @cipherstash/cli secrets set -n DATABASE_URL -V "postgres://..." -e production
 `.trim()
 
 interface ParsedArgs {
@@ -239,14 +237,6 @@ async function main() {
     case 'auth': {
       const authArgs = subcommand ? [subcommand, ...commandArgs] : commandArgs
       await authCommand(authArgs, flags)
-      break
-    }
-    case 'secrets': {
-      const { secretsCommand } = await requireStack(() => import('../commands/secrets/index.js'))
-      const secretsArgs = subcommand
-        ? [subcommand, ...commandArgs]
-        : commandArgs
-      await secretsCommand(secretsArgs)
       break
     }
     case 'wizard': {
