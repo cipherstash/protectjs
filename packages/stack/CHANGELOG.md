@@ -1,5 +1,11 @@
 # @cipherstash/stack
 
+## 0.15.0
+
+### Minor Changes
+
+- 1929c8f: Mark secrets as a coming soon feature and remove existing SDK integration.
+
 ## 0.14.0
 
 ### Minor Changes
