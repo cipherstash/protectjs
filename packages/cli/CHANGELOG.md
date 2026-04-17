@@ -1,5 +1,11 @@
 # @cipherstash/cli
 
+## 0.6.0
+
+### Minor Changes
+
+- 9944a25: Update cipherstash auth to 0.36.0
+
 ## 0.5.0
 
 ### Minor Changes
