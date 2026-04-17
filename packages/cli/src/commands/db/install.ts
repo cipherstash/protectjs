@@ -5,25 +5,42 @@ import { join, resolve } from 'node:path'
 import { loadStashConfig } from '@/config/index.js'
 import {
   EQLInstaller,
-  loadBundledEqlSql,
   downloadEqlSql,
+  loadBundledEqlSql,
 } from '@/installer/index.js'
 import * as p from '@clack/prompts'
+import { ensureStashConfig } from './config-scaffold.js'
+import { detectDrizzle, detectSupabase } from './detect.js'
+import { rewriteEncryptedAlterColumns } from './rewrite-migrations.js'
 
 const DEFAULT_MIGRATION_NAME = 'install-eql'
 const DEFAULT_DRIZZLE_OUT = 'drizzle'
 
-export async function installCommand(options: {
+export interface InstallOptions {
   force?: boolean
   dryRun?: boolean
+  /**
+   * `undefined` means "auto-detect" (via {@link detectSupabase}). An explicit
+   * `true`/`false` from the user is preserved and skips detection.
+   */
   excludeOperatorFamily?: boolean
   supabase?: boolean
   drizzle?: boolean
   latest?: boolean
   name?: string
   out?: string
-}) {
+}
+
+export async function installCommand(options: InstallOptions) {
   p.intro('npx @cipherstash/cli db install')
+
+  // Scaffold stash.config.ts if missing. `db install` is the single command
+  // that gets a project from zero to installed EQL — no separate setup step
+  // (CIP-2986).
+  const configReady = await ensureStashConfig()
+  if (!configReady) {
+    process.exit(0)
+  }
 
   const s = p.spinner()
 
@@ -31,12 +48,18 @@ export async function installCommand(options: {
   const config = await loadStashConfig()
   s.stop('Configuration loaded.')
 
-  if (options.drizzle) {
+  // Auto-detect provider hints when the user didn't explicitly pass flags.
+  // CIP-2985.
+  const resolved = resolveProviderOptions(options, config.databaseUrl)
+
+  if (resolved.drizzle) {
     await generateDrizzleMigration(s, {
       name: options.name,
       out: options.out,
       dryRun: options.dryRun,
       latest: options.latest,
+      supabase: resolved.supabase,
+      excludeOperatorFamily: resolved.excludeOperatorFamily,
     })
     return
   }
@@ -46,10 +69,7 @@ export async function installCommand(options: {
     const source = options.latest
       ? 'Would download EQL install script from GitHub'
       : 'Would use bundled EQL install script'
-    p.note(
-      `${source}\nWould execute the SQL against the database`,
-      'Dry Run',
-    )
+    p.note(`${source}\nWould execute the SQL against the database`, 'Dry Run')
     p.outro('Dry run complete.')
     return
   }
@@ -61,7 +81,22 @@ export async function installCommand(options: {
   s.start('Checking database permissions...')
   const permissions = await installer.checkPermissions()
 
-  if (!permissions.ok) {
+  // CIP-2989: if the role is not a superuser and neither --supabase nor
+  // --exclude-operator-family was passed, auto-fall back to the
+  // no-operator-family (OPE) install variant. This is the same thing an
+  // experienced user would do manually; doing it automatically avoids the
+  // "what flag do I need?" failure mode on Supabase/Neon/RDS.
+  let excludeOperatorFamily = resolved.excludeOperatorFamily
+  if (
+    !permissions.isSuperuser &&
+    !resolved.supabase &&
+    options.excludeOperatorFamily === undefined
+  ) {
+    excludeOperatorFamily = true
+    s.stop(
+      'Role lacks superuser — falling back to the no-operator-family (OPE) install.',
+    )
+  } else if (!permissions.ok) {
     s.stop('Insufficient database permissions.')
     p.log.error('The connected database role is missing required permissions:')
     for (const missing of permissions.missing) {
@@ -73,8 +108,9 @@ export async function installCommand(options: {
     )
     p.outro('Installation aborted.')
     process.exit(1)
+  } else {
+    s.stop('Database permissions verified.')
   }
-  s.stop('Database permissions verified.')
 
   if (!options.force) {
     s.start('Checking if EQL is already installed...')
@@ -91,17 +127,78 @@ export async function installCommand(options: {
   const source = options.latest ? 'from GitHub (latest)' : 'bundled'
   s.start(`Installing EQL extensions (${source})...`)
   await installer.install({
-    excludeOperatorFamily: options.excludeOperatorFamily,
-    supabase: options.supabase,
+    excludeOperatorFamily,
+    supabase: resolved.supabase,
     latest: options.latest,
   })
   s.stop('EQL extensions installed.')
 
-  if (options.supabase) {
+  if (resolved.supabase) {
     p.log.success('Supabase role permissions granted.')
   }
 
+  printNextSteps()
   p.outro('Done!')
+}
+
+/**
+ * Merge explicit CLI flags with auto-detected hints.
+ *
+ * Rules:
+ * - `--supabase` explicitly passed wins.
+ * - `--supabase` not passed → if the database URL looks like Supabase, enable it.
+ * - `--drizzle` explicitly passed wins.
+ * - `--drizzle` not passed → if drizzle-orm/drizzle-kit/drizzle.config.* exists, enable it.
+ * - `--exclude-operator-family` explicitly passed wins.
+ */
+function resolveProviderOptions(
+  options: InstallOptions,
+  databaseUrl: string,
+): {
+  supabase: boolean
+  drizzle: boolean
+  excludeOperatorFamily: boolean
+} {
+  const supabase =
+    options.supabase === undefined
+      ? detectSupabase(databaseUrl)
+      : options.supabase
+  if (options.supabase === undefined && supabase) {
+    p.log.info(
+      'Detected Supabase database from DATABASE_URL — enabling --supabase.',
+    )
+  }
+
+  const drizzle =
+    options.drizzle === undefined
+      ? detectDrizzle(process.cwd())
+      : options.drizzle
+  if (options.drizzle === undefined && drizzle) {
+    p.log.info('Detected Drizzle in this project — enabling --drizzle.')
+  }
+
+  const excludeOperatorFamily = options.excludeOperatorFamily ?? false
+
+  return { supabase, drizzle, excludeOperatorFamily }
+}
+
+function printNextSteps(): void {
+  p.note(
+    [
+      'Next steps:',
+      '',
+      '  1. Wire up encrypt/decrypt with the wizard:',
+      '       npx @cipherstash/cli wizard',
+      '',
+      '  2. Or use the client directly from @cipherstash/stack:',
+      "       import { Encryption } from '@cipherstash/stack'",
+      '       const client = await Encryption({ /* ... */ })',
+      '       await client.encryptModel(record, table).run()',
+      '',
+      '  3. Docs: https://cipherstash.com/docs',
+    ].join('\n'),
+    'What next',
+  )
 }
 
 /**
@@ -113,7 +210,14 @@ export async function installCommand(options: {
  */
 async function generateDrizzleMigration(
   s: ReturnType<typeof p.spinner>,
-  options: { name?: string; out?: string; dryRun?: boolean; latest?: boolean },
+  options: {
+    name?: string
+    out?: string
+    dryRun?: boolean
+    latest?: boolean
+    supabase?: boolean
+    excludeOperatorFamily?: boolean
+  },
 ) {
   const migrationName = options.name ?? DEFAULT_MIGRATION_NAME
   const outDir = resolve(options.out ?? DEFAULT_DRIZZLE_OUT)
@@ -171,26 +275,28 @@ async function generateDrizzleMigration(
     s.stop(`Found migration: ${generatedMigrationPath}`)
   } catch (error) {
     s.stop('Failed to locate migration file.')
-    p.log.error(
-      error instanceof Error ? error.message : String(error),
-    )
+    p.log.error(error instanceof Error ? error.message : String(error))
     p.outro('Migration aborted.')
     process.exit(1)
   }
 
-  // Step 3: Load the EQL SQL (bundled or from GitHub)
+  // Step 3: Load the EQL SQL (bundled or from GitHub). Thread supabase /
+  // excludeOperatorFamily through so the user's flag reaches the SQL
+  // selection — previously this path ignored both (CIP-2988).
   let eqlSql: string
+  const sqlOptions = {
+    supabase: options.supabase ?? false,
+    excludeOperatorFamily: options.excludeOperatorFamily ?? false,
+  }
 
   if (options.latest) {
     s.start('Downloading EQL install script from GitHub (latest)...')
     try {
-      eqlSql = await downloadEqlSql()
+      eqlSql = await downloadEqlSql(sqlOptions)
       s.stop('EQL install script downloaded.')
     } catch (error) {
       s.stop('Failed to download EQL install script.')
-      p.log.error(
-        error instanceof Error ? error.message : String(error),
-      )
+      p.log.error(error instanceof Error ? error.message : String(error))
       cleanupMigrationFile(generatedMigrationPath)
       p.outro('Migration aborted.')
       process.exit(1)
@@ -198,13 +304,11 @@ async function generateDrizzleMigration(
   } else {
     s.start('Loading bundled EQL install script...')
     try {
-      eqlSql = loadBundledEqlSql()
+      eqlSql = loadBundledEqlSql(sqlOptions)
       s.stop('Bundled EQL install script loaded.')
     } catch (error) {
       s.stop('Failed to load bundled EQL install script.')
-      p.log.error(
-        error instanceof Error ? error.message : String(error),
-      )
+      p.log.error(error instanceof Error ? error.message : String(error))
       cleanupMigrationFile(generatedMigrationPath)
       p.outro('Migration aborted.')
       process.exit(1)
@@ -219,12 +323,31 @@ async function generateDrizzleMigration(
     s.stop('EQL SQL written to migration file.')
   } catch (error) {
     s.stop('Failed to write migration file.')
-    p.log.error(
-      error instanceof Error ? error.message : String(error),
-    )
+    p.log.error(error instanceof Error ? error.message : String(error))
     cleanupMigrationFile(generatedMigrationPath)
     p.outro('Migration aborted.')
     process.exit(1)
+  }
+
+  // Step 5: Sweep for sibling migrations that drizzle-kit may have emitted
+  // with `ALTER COLUMN ... SET DATA TYPE eql_v2_encrypted`. These fail in
+  // Postgres because there's no implicit cast from text/numeric to the
+  // encrypted type. Rewrite them into the ADD/UPDATE/DROP/RENAME sequence
+  // that works on both empty and populated tables. CIP-2991 + CIP-2994.
+  try {
+    const rewritten = await rewriteEncryptedAlterColumns(outDir, {
+      skip: generatedMigrationPath,
+    })
+    if (rewritten.length > 0) {
+      p.log.info(
+        `Rewrote ${rewritten.length} migration file(s) to use safe ADD+migrate+DROP for encrypted columns:`,
+      )
+      for (const file of rewritten) p.log.step(`  - ${file}`)
+    }
+  } catch (error) {
+    p.log.warn(
+      `Could not rewrite ALTER COLUMN migrations: ${error instanceof Error ? error.message : String(error)}`,
+    )
   }
 
   p.log.success(`Migration created: ${generatedMigrationPath}`)
@@ -232,6 +355,7 @@ async function generateDrizzleMigration(
     'Run your Drizzle migrations to install EQL:\n\n  npx drizzle-kit migrate',
     'Next Steps',
   )
+  printNextSteps()
   p.outro('Done!')
 }
 
@@ -252,9 +376,7 @@ async function findGeneratedMigration(
   const entries = await readdir(outDir)
 
   const matchingFiles = entries
-    .filter(
-      (entry) => entry.endsWith('.sql') && entry.includes(migrationName),
-    )
+    .filter((entry) => entry.endsWith('.sql') && entry.includes(migrationName))
     .sort()
 
   if (matchingFiles.length === 0) {

@@ -12,8 +12,8 @@ The single CLI for CipherStash. It handles authentication, project initializatio
 ```bash
 npm install -D @cipherstash/cli
 npx @cipherstash/cli auth login    # authenticate with CipherStash
-npx @cipherstash/cli init          # scaffold encryption schema and stash.config.ts
-npx @cipherstash/cli db setup      # connect to your database and install EQL
+npx @cipherstash/cli init          # scaffold encryption schema and install dependencies
+npx @cipherstash/cli db install    # scaffold stash.config.ts (if missing) and install EQL
 npx @cipherstash/cli wizard        # AI agent wires encryption into your codebase
 ```
 
@@ -21,7 +21,7 @@ What each step does:
 
 - `auth login` — opens a browser-based device code flow and saves a token to `~/.cipherstash/auth.json`.
 - `init` — generates your encryption client file and installs `@cipherstash/cli` as a dev dependency. Pass `--supabase` or `--drizzle` for provider-specific setup.
-- `db setup` — detects your encryption client, prompts for a database URL, writes `stash.config.ts`, and installs EQL extensions.
+- `db install` — detects your encryption client, writes `stash.config.ts` if it's missing, and installs EQL extensions in a single step.
 - `wizard` — reads your codebase with an AI agent (uses the CipherStash-hosted LLM gateway, no Anthropic API key required) and modifies your schema files in place.
 
 ---
@@ -30,13 +30,13 @@ What each step does:
 
 ```
 npx @cipherstash/cli init
-    └── npx @cipherstash/cli db setup
+    └── npx @cipherstash/cli db install
             └── npx @cipherstash/cli wizard        ← fast path: AI edits your files
                     OR
                 Edit schema files by hand  ← escape hatch
 ```
 
-`npx @cipherstash/cli wizard` is the recommended path after `db setup`. It detects your framework (Drizzle, Supabase, Prisma, raw SQL), introspects your database, and integrates encryption directly into your existing schema definitions. If you prefer to write the schema by hand, skip the wizard and edit your encryption client file directly.
+`npx @cipherstash/cli wizard` is the recommended path after `db install`. It detects your framework (Drizzle, Supabase, Prisma, raw SQL), introspects your database, and integrates encryption directly into your existing schema definitions. If you prefer to write the schema by hand, skip the wizard and edit your encryption client file directly.
 
 ---
 
@@ -60,7 +60,7 @@ export default defineConfig({
 
 The CLI loads `.env` files automatically before reading the config, so `process.env` references work without extra setup. The config file is resolved by walking up from the current working directory.
 
-Commands that consume `stash.config.ts`: `db install`, `db upgrade`, `db setup`, `db push`, `db validate`, `db status`, `db test-connection`, `schema build`.
+Commands that consume `stash.config.ts`: `db install`, `db upgrade`, `db push`, `db validate`, `db status`, `db test-connection`, `schema build`. `db install` will scaffold `stash.config.ts` for you if it's missing.
 
 ---
 
@@ -79,7 +79,7 @@ npx @cipherstash/cli init [--supabase] [--drizzle]
 | `--supabase` | Use the Supabase-specific setup flow |
 | `--drizzle` | Use the Drizzle-specific setup flow |
 
-After `init` completes, the Next Steps output tells you to run `npx @cipherstash/cli db setup`, then either `npx @cipherstash/cli wizard` or edit the schema manually.
+After `init` completes, the Next Steps output tells you to run `npx @cipherstash/cli db install`, then either `npx @cipherstash/cli wizard` or edit the schema manually.
 
 ---
 
@@ -105,7 +105,7 @@ npx @cipherstash/cli wizard
 
 Prerequisites:
 - Authenticated (`npx @cipherstash/cli auth login` completed).
-- `stash.config.ts` present (run `npx @cipherstash/cli db setup` first).
+- `stash.config.ts` present (run `npx @cipherstash/cli db install` first; it will scaffold the config if missing).
 
 Supported integrations: Drizzle ORM, Supabase JS Client, Prisma (experimental), raw SQL / other.
 
@@ -150,37 +150,11 @@ npx @cipherstash/cli secrets delete -n DATABASE_URL -e production -y
 
 ---
 
-### `npx @cipherstash/cli db setup`
-
-Configure your database and install EQL extensions. Run this after `npx @cipherstash/cli init`.
-
-```bash
-npx @cipherstash/cli db setup [options]
-```
-
-The interactive wizard:
-1. Auto-detects your encryption client file (or asks for the path).
-2. Prompts for a database URL (pre-fills from `DATABASE_URL`).
-3. Writes `stash.config.ts`.
-4. Asks which PostgreSQL provider you use to pick the right install flags.
-5. Installs EQL extensions.
-
-| Flag | Description |
-|------|-------------|
-| `--force` | Overwrite existing `stash.config.ts` and reinstall EQL |
-| `--dry-run` | Show what would happen without making changes |
-| `--supabase` | Skip provider selection and use Supabase-compatible install |
-| `--drizzle` | Generate a Drizzle migration instead of direct install |
-| `--exclude-operator-family` | Skip operator family creation |
-| `--latest` | Fetch the latest EQL from GitHub instead of the bundled version |
-| `--name <value>` | Migration name (Drizzle mode, default: `install-eql`) |
-| `--out <value>` | Drizzle output directory (default: `drizzle`) |
-
----
-
 ### `npx @cipherstash/cli db install`
 
-Install CipherStash EQL extensions into your database. Uses bundled SQL by default for offline, deterministic installs.
+Configure your database and install CipherStash EQL extensions in a single command. Run this after `npx @cipherstash/cli init`.
+
+When `stash.config.ts` is missing, the command auto-detects your encryption client file (or asks for the path) and writes the config before installing. Supabase and Drizzle are detected from your `DATABASE_URL` and project files, so the matching flags default on. Install uses bundled SQL for offline, deterministic runs.
 
 ```bash
 npx @cipherstash/cli db install [options]
@@ -320,7 +294,7 @@ Reads `databaseUrl` from `stash.config.ts`.
 
 ## Drizzle migration mode
 
-Use `--drizzle` with `npx @cipherstash/cli db install` (or `npx @cipherstash/cli db setup`) to add EQL installation to your Drizzle migration history instead of applying it directly.
+Use `--drizzle` with `npx @cipherstash/cli db install` to add EQL installation to your Drizzle migration history instead of applying it directly. `--drizzle` is auto-detected when your project has `drizzle-orm`, `drizzle-kit`, or a `drizzle.config.*` file, so you usually don't need to pass it explicitly.
 
 ```bash
 npx @cipherstash/cli db install --drizzle

@@ -11,7 +11,7 @@ export function createBaseProvider(): InitProvider {
       { value: 'raw-sql', label: 'Raw SQL / pg' },
     ],
     getNextSteps(state: InitState): string[] {
-      const steps = ['Set up your database: npx @cipherstash/cli db setup']
+      const steps = ['Set up your database: npx @cipherstash/cli db install']
 
       const manualEdit = state.clientFilePath
         ? `edit ${state.clientFilePath} directly`

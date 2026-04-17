@@ -1,6 +1,14 @@
-import * as p from '@clack/prompts'
 import auth from '@cipherstash/auth'
+import * as p from '@clack/prompts'
 const { beginDeviceCodeFlow, bindClientDevice } = auth
+
+// TODO(CIP-2996): @cipherstash/auth@0.35.0 (latest on npm as of 2026-04-17)
+// writes the device-code token to a profile dir that later auth reads do not
+// find, so subsequent CLI invocations fail to resolve credentials. The fix is
+// upstream — bump this catalog pin once a newer @cipherstash/auth that
+// aligns the write + read paths ships. Do not paper over it in the CLI:
+// divergent profile-dir logic across tools is exactly what caused the
+// regression in the first place.
 
 // TODO: pull from the CTS API
 export const regions = [
