@@ -15,7 +15,7 @@ export function createSupabaseProvider(): InitProvider {
       { value: 'raw-sql', label: 'Raw SQL / pg' },
     ],
     getNextSteps(state: InitState): string[] {
-      const steps = ['Set up your database: npx @cipherstash/cli db setup --supabase']
+      const steps = ['Set up your database: npx @cipherstash/cli db install --supabase']
 
       const manualEdit = state.clientFilePath
         ? `edit ${state.clientFilePath} directly`

@@ -1,5 +1,9 @@
 import * as p from '@clack/prompts'
+import { fetchIntegrationPrompt } from './agent/fetch-prompt.js'
+import { initializeAgent } from './agent/interface.js'
+import { checkReadiness } from './health-checks/index.js'
 import {
+  shutdownAnalytics,
   trackAgentStarted,
   trackFrameworkDetected,
   trackFrameworkSelected,
@@ -8,21 +12,20 @@ import {
   trackWizardCompleted,
   trackWizardError,
   trackWizardStarted,
-  shutdownAnalytics,
 } from './lib/analytics.js'
+import { WizardChangelog } from './lib/changelog.js'
 import { INTEGRATIONS } from './lib/constants.js'
 import {
   detectIntegration,
   detectPackageManager,
   detectTypeScript,
 } from './lib/detect.js'
-import { checkPrerequisites } from './lib/prerequisites.js'
 import { gatherContext } from './lib/gather.js'
-import type { Integration, WizardSession } from './lib/types.js'
-import { checkReadiness } from './health-checks/index.js'
-import { fetchIntegrationPrompt } from './agent/fetch-prompt.js'
-import { initializeAgent } from './agent/interface.js'
+import { maybeInstallSkills } from './lib/install-skills.js'
 import { runPostAgentSteps } from './lib/post-agent.js'
+import { checkPrerequisites } from './lib/prerequisites.js'
+import type { Integration, WizardSession } from './lib/types.js'
+import { renderCallSiteReport, scanCallSites } from './lib/wire-call-sites.js'
 
 interface RunOptions {
   cwd: string
@@ -34,6 +37,11 @@ export async function run(options: RunOptions) {
   p.intro('CipherStash Wizard')
 
   const startTime = Date.now()
+  const changelog = new WizardChangelog(options.cwd)
+  changelog.phase(
+    'Session start',
+    `cwd: \`${options.cwd}\`\ncli version: \`${options.cliVersion}\``,
+  )
 
   // Phase 1: Prerequisites
   const prereqs = checkPrerequisites(options.cwd)
@@ -102,7 +110,14 @@ export async function run(options: RunOptions) {
     selectedIntegration = await selectIntegration()
   }
 
-  trackFrameworkSelected(selectedIntegration, selectedIntegration === detectedIntegration)
+  trackFrameworkSelected(
+    selectedIntegration,
+    selectedIntegration === detectedIntegration,
+  )
+  changelog.phase(
+    'Integration selected',
+    `\`${selectedIntegration}\` (detected: ${detectedIntegration ?? 'none'})`,
+  )
 
   // Phase 5: Gather context — DB introspection, column selection, schema files
   // All done via CLI prompts BEFORE the agent starts. No AI tokens spent on discovery.
@@ -110,6 +125,14 @@ export async function run(options: RunOptions) {
     options.cwd,
     selectedIntegration,
     packageManager,
+  )
+
+  const encryptedTables = Array.from(
+    new Set(gathered.selectedColumns.map((c) => c.tableName)),
+  )
+  changelog.phase(
+    'Columns selected',
+    `${gathered.selectedColumns.length} column(s) across ${encryptedTables.length} table(s): ${encryptedTables.map((t) => `\`${t}\``).join(', ')}`,
   )
 
   // Phase 6: Build session
@@ -149,25 +172,74 @@ export async function run(options: RunOptions) {
     const result = await agent.run(fetched.prompt)
 
     if (result.success) {
+      changelog.phase(
+        'Agent completed',
+        'Encryption client and schema wiring generated successfully.',
+      )
+
       // Phase 8: Run deterministic post-agent steps (install, push, migrate)
       await runPostAgentSteps({
         cwd: options.cwd,
         integration: selectedIntegration,
         gathered,
       })
+      changelog.phase(
+        'Post-agent steps complete',
+        'Package install, `db install`, `db push`, and migrations finished.',
+      )
+
+      // Phase 9: Report call sites that still need encryptModel/decryptModel
+      // wiring. Report-only — we don't mutate these files (CIP-2995).
+      try {
+        const matches = await scanCallSites(
+          options.cwd,
+          encryptedTables,
+          selectedIntegration,
+        )
+        const report = renderCallSiteReport(matches)
+        p.note(report, 'Server action & page call sites')
+        changelog.phase('Call-site scan', report)
+      } catch (err) {
+        p.log.warn(
+          `Could not scan for call sites: ${err instanceof Error ? err.message : String(err)}`,
+        )
+      }
+
+      // Phase 10: Offer to install Claude skills into .claude/skills (CIP-2992).
+      const installedSkills = await maybeInstallSkills(
+        options.cwd,
+        selectedIntegration,
+      )
+      if (installedSkills.length > 0) {
+        changelog.action(
+          `Installed ${installedSkills.length} Claude skill(s).`,
+          installedSkills.map((name) => `.claude/skills/${name}`),
+        )
+      }
 
       trackWizardCompleted(selectedIntegration, Date.now() - startTime)
-      p.outro('Encryption is set up! Your data is now protected by CipherStash.')
+      const logPath = await changelog.flush()
+      if (logPath) {
+        p.log.info(`Wizard log written to ${logPath}`)
+      }
+      p.outro(
+        'Encryption is set up! Your data is now protected by CipherStash.',
+      )
     } else {
       trackWizardError(result.error ?? 'unknown', selectedIntegration)
+      changelog.note(`Agent failed: ${result.error ?? 'unknown error'}`)
+      await changelog.flush()
       p.log.error(result.error ?? 'Agent failed without a specific error.')
       p.outro('Wizard could not complete. See above for details.')
       await shutdownAnalytics()
       process.exit(1)
     }
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Agent execution failed.'
+    const message =
+      error instanceof Error ? error.message : 'Agent execution failed.'
     trackWizardError(message, selectedIntegration)
+    changelog.note(`Wizard threw: ${message}`)
+    await changelog.flush()
     p.log.error(message)
     await shutdownAnalytics()
     process.exit(1)

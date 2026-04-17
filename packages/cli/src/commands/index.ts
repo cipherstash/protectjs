@@ -1,7 +1,7 @@
-export { setupCommand } from './db/setup.js'
 export { installCommand } from './db/install.js'
 export { statusCommand } from './db/status.js'
 export { testConnectionCommand } from './db/test-connection.js'
 export { upgradeCommand } from './db/upgrade.js'
 export { authCommand } from './auth/index.js'
 export { initCommand } from './init/index.js'
+export { envCommand } from './env/index.js'

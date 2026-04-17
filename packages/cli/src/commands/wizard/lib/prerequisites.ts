@@ -26,7 +26,7 @@ export function checkPrerequisites(cwd: string): PrerequisiteResult {
   // Check stash.config.ts
   if (!findStashConfig(cwd)) {
     missing.push(
-      'No stash.config.ts found. Run: npx @cipherstash/cli db setup',
+      'No stash.config.ts found. Run: npx @cipherstash/cli db install',
     )
   }
 

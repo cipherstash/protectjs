@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs'
-import { resolve, dirname, join } from 'node:path'
+import { dirname, join, resolve } from 'node:path'
 import pg from 'pg'
 
 const EQL_INSTALL_URL =
@@ -47,6 +47,14 @@ function bundledSqlPath(filename: string): string {
 export interface PermissionCheckResult {
   ok: boolean
   missing: string[]
+  /**
+   * Whether the connected role is a Postgres superuser. Managed Postgres
+   * providers (Supabase, Neon, RDS, etc.) do not grant superuser, which means
+   * `CREATE OPERATOR FAMILY` / `CREATE OPERATOR CLASS` in the EQL install
+   * script will fail. Callers use this to auto-fall back to the
+   * no-operator-family install variant (OPE index only) instead of aborting.
+   */
+  isSuperuser: boolean
 }
 
 export class EQLInstaller {
@@ -86,7 +94,7 @@ export class EQLInstaller {
       const isSuperuser = role?.rolsuper === true
 
       if (isSuperuser) {
-        return { ok: true, missing: [] }
+        return { ok: true, missing: [], isSuperuser: true }
       }
 
       // Not a superuser — check individual permissions
@@ -125,7 +133,7 @@ export class EQLInstaller {
         }
       }
 
-      return { ok: missing.length === 0, missing }
+      return { ok: missing.length === 0, missing, isSuperuser: false }
     } catch (error) {
       const detail = error instanceof Error ? error.message : String(error)
       throw new Error(`Failed to connect to database: ${detail}`, {
@@ -385,11 +393,27 @@ export function loadBundledEqlSql(
 /**
  * Download the latest EQL install SQL from GitHub. Used by the Drizzle migration path
  * when `--latest` is passed.
+ *
+ * Supabase uses the same GitHub asset as the no-operator-family variant —
+ * treating either flag as "no operator families" keeps the intent explicit
+ * even though the underlying URL is the same.
  */
 export async function downloadEqlSql(
-  excludeOperatorFamily = false,
+  options:
+    | { excludeOperatorFamily?: boolean; supabase?: boolean }
+    | boolean = false,
 ): Promise<string> {
-  const url = excludeOperatorFamily
+  const normalized =
+    typeof options === 'boolean'
+      ? { excludeOperatorFamily: options, supabase: false }
+      : {
+          excludeOperatorFamily: options.excludeOperatorFamily ?? false,
+          supabase: options.supabase ?? false,
+        }
+
+  const useNoOperatorFamilyUrl =
+    normalized.excludeOperatorFamily || normalized.supabase
+  const url = useNoOperatorFamilyUrl
     ? EQL_INSTALL_NO_OPERATOR_FAMILY_URL
     : EQL_INSTALL_URL
 

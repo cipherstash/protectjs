@@ -18,7 +18,10 @@ const FORGE_PACKAGE = '@cipherstash/cli'
  */
 async function installIfNeeded(
   packageName: string,
-  buildCommand: (pm: ReturnType<typeof detectPackageManager>, pkg: string) => string,
+  buildCommand: (
+    pm: ReturnType<typeof detectPackageManager>,
+    pkg: string,
+  ) => string,
   depLabel: string,
 ): Promise<boolean> {
   if (isPackageInstalled(packageName)) {
@@ -44,16 +47,19 @@ async function installIfNeeded(
     return false
   }
 
-  const s = p.spinner()
-  s.start(`Installing ${packageName}...`)
+  // Stream npm/pnpm/yarn output directly so the user sees progress. Package
+  // installs can take tens of seconds and a silent spinner makes the CLI look
+  // hung. We log a "starting" line here and a success/failure line after,
+  // letting the package manager own the terminal in between.
+  p.log.step(`Running: ${cmd}`)
 
   try {
-    execSync(cmd, { cwd: process.cwd(), stdio: 'pipe' })
-    s.stop(`${packageName} installed successfully`)
+    execSync(cmd, { cwd: process.cwd(), stdio: 'inherit' })
+    p.log.success(`${packageName} installed successfully`)
     return true
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
-    s.stop(`${packageName} installation failed`)
+    p.log.error(`${packageName} installation failed`)
     p.log.error(message)
     p.note(`You can install it manually:\n  ${cmd}`, 'Manual Installation')
     return false
@@ -65,10 +71,18 @@ export const installForgeStep: InitStep = {
   name: 'Install stack dependencies',
   async run(state: InitState, _provider: InitProvider): Promise<InitState> {
     // Install @cipherstash/stack as a production dependency
-    const stackInstalled = await installIfNeeded(STACK_PACKAGE, prodInstallCommand, 'production')
+    const stackInstalled = await installIfNeeded(
+      STACK_PACKAGE,
+      prodInstallCommand,
+      'production',
+    )
 
     // Install @cipherstash/cli as a dev dependency
-    const forgeInstalled = await installIfNeeded(FORGE_PACKAGE, devInstallCommand, 'dev')
+    const forgeInstalled = await installIfNeeded(
+      FORGE_PACKAGE,
+      devInstallCommand,
+      'dev',
+    )
 
     return { ...state, forgeInstalled, stackInstalled }
   },

@@ -3,6 +3,14 @@ import { customType } from 'drizzle-orm/pg-core'
 
 export type { CastAs, MatchIndexOpts, TokenFilter }
 
+// The encrypted column type is created by the EQL install script in the
+// `public` schema (see packages/cli/src/installer/index.ts). Emitting the
+// fully-qualified, quoted identifier here means drizzle-kit writes
+// `"public"."eql_v2_encrypted"` into generated migrations instead of
+// `"undefined"."eql_v2_encrypted"`, which was the symptom that drizzle-kit
+// couldn't resolve against the database.
+const EQL_ENCRYPTED_DATA_TYPE = '"public"."eql_v2_encrypted"'
+
 /**
  * Configuration for encrypted column indexes and data types
  */
@@ -93,7 +101,7 @@ export const encryptedType = <TData>(
   // Create the Drizzle custom type
   const customColumnType = customType<{ data: TData; driverData: string }>({
     dataType() {
-      return 'eql_v2_encrypted'
+      return EQL_ENCRYPTED_DATA_TYPE
     },
     toDriver(value: TData): string {
       const jsonStr = JSON.stringify(value)
@@ -165,14 +173,20 @@ export function getEncryptedColumnConfig(
     // biome-ignore lint/suspicious/noExplicitAny: Drizzle column types don't expose all properties
     const columnAny = column as any
 
-    // Check if it's an encrypted column by checking sqlName or dataType
-    // After pgTable processes it, sqlName will be 'eql_v2_encrypted'
+    // Check if it's an encrypted column by checking sqlName or dataType.
+    // We accept both the fully-qualified `"public"."eql_v2_encrypted"` form
+    // that `encryptedType` now emits and the bare `eql_v2_encrypted` form
+    // that earlier versions produced, for back-compat with tables built
+    // against older releases.
+    const isEncryptedTypeString = (value: unknown): boolean =>
+      value === EQL_ENCRYPTED_DATA_TYPE || value === 'eql_v2_encrypted'
+
     const isEncrypted =
-      columnAny.sqlName === 'eql_v2_encrypted' ||
-      columnAny.dataType === 'eql_v2_encrypted' ||
+      isEncryptedTypeString(columnAny.sqlName) ||
+      isEncryptedTypeString(columnAny.dataType) ||
       (columnAny.dataType &&
         typeof columnAny.dataType === 'function' &&
-        columnAny.dataType() === 'eql_v2_encrypted')
+        isEncryptedTypeString(columnAny.dataType()))
 
     if (isEncrypted) {
       // Try to get config from property (if still there)

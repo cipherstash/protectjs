@@ -21,6 +21,9 @@ export default defineConfig([
     onSuccess: async () => {
       // Copy bundled SQL files into dist so they ship with the package
       cpSync('src/sql', 'dist/sql', { recursive: true })
+      // Copy Claude skills into dist so the wizard can optionally install them
+      // into the user's project (CIP-2992). Source lives at the monorepo root.
+      cpSync('../../skills', 'dist/skills', { recursive: true })
     },
   },
   {

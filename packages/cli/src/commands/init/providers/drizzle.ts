@@ -11,7 +11,7 @@ export function createDrizzleProvider(): InitProvider {
       { value: 'raw-sql', label: 'Raw SQL / pg' },
     ],
     getNextSteps(state: InitState): string[] {
-      const steps = ['Set up your database: npx @cipherstash/cli db setup --drizzle']
+      const steps = ['Set up your database: npx @cipherstash/cli db install --drizzle']
 
       const manualEdit = state.clientFilePath
         ? `edit ${state.clientFilePath} directly`

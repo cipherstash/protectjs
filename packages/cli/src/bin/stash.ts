@@ -1,5 +1,13 @@
 import { config } from 'dotenv'
-config()
+
+// Load env files in Next.js precedence order. dotenv's default behavior is to
+// not overwrite vars that are already set, so loading .env.local first means
+// its values win over .env for the same keys. Users can still set anything in
+// the real environment to override both.
+config({ path: '.env.local' })
+config({ path: '.env.development.local' })
+config({ path: '.env.development' })
+config({ path: '.env' })
 
 import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
@@ -8,9 +16,9 @@ import * as p from '@clack/prompts'
 // Commands that depend on @cipherstash/stack are lazy-loaded in the switch below.
 import {
   authCommand,
+  envCommand,
   initCommand,
   installCommand,
-  setupCommand,
   statusCommand,
   testConnectionCommand,
   upgradeCommand,
@@ -31,8 +39,8 @@ async function requireStack<T>(importFn: () => Promise<T>): Promise<T> {
     if (isModuleNotFound(err)) {
       p.log.error(
         '@cipherstash/stack is required for this command.\n' +
-        '  Install it with: npm install @cipherstash/stack\n' +
-        '  Or run: npx @cipherstash/cli init',
+          '  Install it with: npm install @cipherstash/stack\n' +
+          '  Or run: npx @cipherstash/cli init',
       )
       process.exit(1) as never
     }
@@ -55,9 +63,8 @@ Commands:
   auth <subcommand>    Authenticate with CipherStash
   wizard               AI-powered encryption setup (reads your codebase)
 
-  db install           Install EQL extensions into your database
+  db install           Scaffold stash.config.ts (if missing) and install EQL extensions
   db upgrade           Upgrade EQL extensions to the latest version
-  db setup             Configure database and install EQL extensions
   db push              Push encryption schema to database (CipherStash Proxy only)
   db validate          Validate encryption schema
   db migrate           Run pending encrypt config migrations
@@ -65,6 +72,8 @@ Commands:
   db test-connection   Test database connectivity
 
   schema build         Build an encryption schema from your database
+
+  env                  (experimental) Print production env vars for deployment
 
 Options:
   --help, -h           Show help
@@ -75,19 +84,19 @@ Init Flags:
   --drizzle            Use Drizzle-specific setup flow
 
 DB Flags:
-  --force                    (setup, install) Reinstall even if already installed
-  --dry-run                  (setup, install, push, upgrade) Show what would happen without making changes
-  --supabase                 (setup, install, upgrade, validate) Use Supabase-compatible mode
-  --drizzle                  (setup, install) Generate a Drizzle migration instead of direct install
-  --exclude-operator-family  (setup, install, upgrade, validate) Skip operator family creation
-  --latest                   (setup, install, upgrade) Fetch the latest EQL from GitHub
+  --force                    (install) Reinstall even if already installed
+  --dry-run                  (install, push, upgrade) Show what would happen without making changes
+  --supabase                 (install, upgrade, validate) Use Supabase-compatible mode (auto-detected from DATABASE_URL)
+  --drizzle                  (install) Generate a Drizzle migration instead of direct install (auto-detected from project)
+  --exclude-operator-family  (install, upgrade, validate) Skip operator family creation
+  --latest                   (install, upgrade) Fetch the latest EQL from GitHub
 
 Examples:
   npx @cipherstash/cli init
   npx @cipherstash/cli init --supabase
   npx @cipherstash/cli auth login
   npx @cipherstash/cli wizard
-  npx @cipherstash/cli db setup
+  npx @cipherstash/cli db install
   npx @cipherstash/cli db push
   npx @cipherstash/cli schema build
 `.trim()
@@ -155,25 +164,17 @@ async function runDbCommand(
         latest: flags.latest,
       })
       break
-    case 'setup':
-      await setupCommand({
-        force: flags.force,
-        dryRun: flags['dry-run'],
-        supabase: flags.supabase,
-        excludeOperatorFamily: flags['exclude-operator-family'],
-        drizzle: flags.drizzle,
-        latest: flags.latest,
-        name: values.name,
-        out: values.out,
-      })
-      break
     case 'push': {
-      const { pushCommand } = await requireStack(() => import('../commands/db/push.js'))
+      const { pushCommand } = await requireStack(
+        () => import('../commands/db/push.js'),
+      )
       await pushCommand({ dryRun: flags['dry-run'] })
       break
     }
     case 'validate': {
-      const { validateCommand } = await requireStack(() => import('../commands/db/validate.js'))
+      const { validateCommand } = await requireStack(
+        () => import('../commands/db/validate.js'),
+      )
       await validateCommand({
         supabase: flags.supabase,
         excludeOperatorFamily: flags['exclude-operator-family'],
@@ -203,7 +204,9 @@ async function runSchemaCommand(
 ) {
   switch (sub) {
     case 'build': {
-      const { builderCommand } = await requireStack(() => import('../commands/schema/build.js'))
+      const { builderCommand } = await requireStack(
+        () => import('../commands/schema/build.js'),
+      )
       await builderCommand({ supabase: flags.supabase })
       break
     }
@@ -254,6 +257,9 @@ async function main() {
       break
     case 'schema':
       await runSchemaCommand(subcommand, flags)
+      break
+    case 'env':
+      await envCommand({ write: flags.write })
       break
     default:
       console.error(`Unknown command: ${command}\n`)
