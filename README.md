@@ -1,6 +1,6 @@
 <div align="center">
   <a href="https://cipherstash.com">
-    <img alt="CipherStash Logo" loading="lazy" width="128" height="128" decoding="async" data-nimg="1" style="color:transparent" src="https://cipherstash.com/assets/cs-github.png">
+    <img alt="CipherStash Logo" loading="lazy" width="128" height="128" decoding="async" data-nimg="1" style="color:transparent" src="https://cipherstash.com/brand/cipherstash-wordmark-dark.svg">
   </a>
   <h1>CipherStash Stack for TypeScript</h1>
 
