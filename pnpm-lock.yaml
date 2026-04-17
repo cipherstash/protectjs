@@ -7,8 +7,8 @@ settings:
 catalogs:
   repo:
     '@cipherstash/auth':
-      specifier: 0.35.0
-      version: 0.35.0
+      specifier: 0.36.0
+      version: 0.36.0
     tsup:
       specifier: 8.4.0
       version: 8.4.0
@@ -75,7 +75,7 @@ importers:
         version: 0.2.87(zod@4.3.6)
       '@cipherstash/auth':
         specifier: catalog:repo
-        version: 0.35.0
+        version: 0.36.0
       '@clack/prompts':
         specifier: 0.10.1
         version: 0.10.1
@@ -471,38 +471,38 @@ packages:
   '@changesets/write@0.4.0':
     resolution: {integrity: sha512-CdTLvIOPiCNuH71pyDu3rA+Q0n65cmAbXnwWH84rKGiFumFzkmHNT8KHTMEchcxN+Kl8I54xGUhJ7l3E7X396Q==}
 
-  '@cipherstash/auth-darwin-arm64@0.35.0':
-    resolution: {integrity: sha512-OnNXQhrNe9puoQdqdisMaG2sQj6DmCcVr4VZZ2e6uOWq7qO3aGfCg3Hmt1LdzwyfCyEMrKtC9rgFFkws/Ac68Q==}
+  '@cipherstash/auth-darwin-arm64@0.36.0':
+    resolution: {integrity: sha512-KnRBW90HHJdxtMTjts1OxnlKdcuKdkWfdd+XwZXWCGlzlIxjq2QGMoVlvGzk7kMoZapLomRMn+f4RBzM1dwsWQ==}
     cpu: [arm64]
     os: [darwin]
 
-  '@cipherstash/auth-darwin-x64@0.35.0':
-    resolution: {integrity: sha512-Z9ohtZ+rYsQmkU9OU8yLHVADxsPIzh9EvAN2h2l+qrL296NtBj/U6XuuxvnMG6TsQEdMeRufokh0tj5H0fxvXg==}
+  '@cipherstash/auth-darwin-x64@0.36.0':
+    resolution: {integrity: sha512-bCAdJSwAz79mFr36GeGn4IddDCRQokFcqV1qzmTsgzjt8Q3B+vmglY7uoGWQUJWTyfDrflEH1P+kivGeKYehyQ==}
     cpu: [x64]
     os: [darwin]
 
-  '@cipherstash/auth-linux-arm64-gnu@0.35.0':
-    resolution: {integrity: sha512-XxXrBwDA3widKzz+FUev3cMA9nUd6pA3fe4c1aNnaxKqSk3TdvxLlrI/MSqW3OKV8ugf7XXbTCgAilj5m+E8uQ==}
+  '@cipherstash/auth-linux-arm64-gnu@0.36.0':
+    resolution: {integrity: sha512-PDpm1EHC1XzVtEDGzcyr0UXNca8IFkfPusqqVJ5CSpzCtlYipIClYui197zQ4NGMHIAQD168IEFOK2TROyb4Tw==}
     cpu: [arm64]
     os: [linux]
 
-  '@cipherstash/auth-linux-x64-gnu@0.35.0':
-    resolution: {integrity: sha512-1/MaFUbQ2fZkadCnjpLbUkppLPeJx7CxVtZrrny7Nb9QupP9dLlJpMZWJlLhzXmabCGoCSMByjEhaaHynL9owg==}
+  '@cipherstash/auth-linux-x64-gnu@0.36.0':
+    resolution: {integrity: sha512-Gm20ezVlGmNrkMH4s+I+JT13hDRD6vEX3fu3VDQQhWUiYCdgbdVsNJQgOr6QMY1cJkkmGyNlQKfiCPn4zlqtMg==}
     cpu: [x64]
     os: [linux]
 
-  '@cipherstash/auth-linux-x64-musl@0.35.0':
-    resolution: {integrity: sha512-9Ol9ykkcwR3ohlvFO4hn+SUdZEPhijtHRLHxUBfimmryuUwTBzQpEkYfes90bVhkzeeQBxwx23IQUGRg7bmiHg==}
+  '@cipherstash/auth-linux-x64-musl@0.36.0':
+    resolution: {integrity: sha512-RUQeLc19JnURAMEoemP3+2DyptK+pqNFrVGgiKKOMVql0SZDVMlN2IyFrTKJ2emv1yuf4Gr1+E4jIdKPR0Oh+g==}
     cpu: [x64]
     os: [linux]
 
-  '@cipherstash/auth-win32-x64-msvc@0.35.0':
-    resolution: {integrity: sha512-9NyN53KSwGwOKmV0kAXl7R90lb7SAGPhLdUp7PpeeNIbK1ZqnutCOTTq+Y0jbgz8YCKjAJda1QruqYGhnZkEtA==}
+  '@cipherstash/auth-win32-x64-msvc@0.36.0':
+    resolution: {integrity: sha512-1mQ8E6YFy7frHkvrDmSixpy47EakGPRh4qgoXPgk9lqZnlbMECYZhoKWQEs5wa3tLGgiX5G6jKC3NQZsOOqEfQ==}
     cpu: [x64]
     os: [win32]
 
-  '@cipherstash/auth@0.35.0':
-    resolution: {integrity: sha512-N5m+9Ct5kdOqufKhoXNzV2crhd0nblYPbcevBXhLF7zeWRZ4xCkpG5pAj62fQGe7TazjfPjDT0zguT1mvtMnIg==}
+  '@cipherstash/auth@0.36.0':
+    resolution: {integrity: sha512-Pb+KdUre8d/lgtsiYpVvCI7zsrZIUElpb0gdU71HMYvNW5sopj3xQv0TLOhxrVLclmOoii/nYLJm+GH3eNYdpg==}
 
   '@cipherstash/protect-ffi-darwin-arm64@0.21.2':
     resolution: {integrity: sha512-k2wSuOAwCptpQSpjcJ8DQBxEkfZOJ7Mag1AV2+qJI2BWxxEFlBHh2xOMD3MxjQLSN1SexfxzaBog6mzizCaaFw==}
@@ -3343,32 +3343,32 @@ snapshots:
       human-id: 4.1.3
       prettier: 2.8.8
 
-  '@cipherstash/auth-darwin-arm64@0.35.0':
+  '@cipherstash/auth-darwin-arm64@0.36.0':
     optional: true
 
-  '@cipherstash/auth-darwin-x64@0.35.0':
+  '@cipherstash/auth-darwin-x64@0.36.0':
     optional: true
 
-  '@cipherstash/auth-linux-arm64-gnu@0.35.0':
+  '@cipherstash/auth-linux-arm64-gnu@0.36.0':
     optional: true
 
-  '@cipherstash/auth-linux-x64-gnu@0.35.0':
+  '@cipherstash/auth-linux-x64-gnu@0.36.0':
     optional: true
 
-  '@cipherstash/auth-linux-x64-musl@0.35.0':
+  '@cipherstash/auth-linux-x64-musl@0.36.0':
     optional: true
 
-  '@cipherstash/auth-win32-x64-msvc@0.35.0':
+  '@cipherstash/auth-win32-x64-msvc@0.36.0':
     optional: true
 
-  '@cipherstash/auth@0.35.0':
+  '@cipherstash/auth@0.36.0':
     optionalDependencies:
-      '@cipherstash/auth-darwin-arm64': 0.35.0
-      '@cipherstash/auth-darwin-x64': 0.35.0
-      '@cipherstash/auth-linux-arm64-gnu': 0.35.0
-      '@cipherstash/auth-linux-x64-gnu': 0.35.0
-      '@cipherstash/auth-linux-x64-musl': 0.35.0
-      '@cipherstash/auth-win32-x64-msvc': 0.35.0
+      '@cipherstash/auth-darwin-arm64': 0.36.0
+      '@cipherstash/auth-darwin-x64': 0.36.0
+      '@cipherstash/auth-linux-arm64-gnu': 0.36.0
+      '@cipherstash/auth-linux-x64-gnu': 0.36.0
+      '@cipherstash/auth-linux-x64-musl': 0.36.0
+      '@cipherstash/auth-win32-x64-msvc': 0.36.0
 
   '@cipherstash/protect-ffi-darwin-arm64@0.21.2':
     optional: true
