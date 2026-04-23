@@ -3,6 +3,11 @@ import { type MigrationPhase, appendEvent } from '@cipherstash/migrate'
 import * as p from '@clack/prompts'
 import pg from 'pg'
 
+/**
+ * Map a user-declared target phase to the event name we write to
+ * `cs_migrations`. `backfilling` is recorded as `backfill_started`; the
+ * phase itself is set to `backfilling` regardless.
+ */
 const PHASE_TO_EVENT: Record<
   MigrationPhase,
   | 'schema_added'
@@ -20,13 +25,35 @@ const PHASE_TO_EVENT: Record<
   dropped: 'dropped',
 }
 
+/**
+ * Options accepted by `stash encrypt advance`. Used to *declare* that a
+ * column has reached a new phase — especially useful for `dual-writing`,
+ * which is an app-code property that the CLI cannot detect automatically.
+ */
 export interface AdvanceCommandOptions {
+  /** Physical table name, e.g. `users`. Supports `schema.table`. */
   table: string
+  /** Physical plaintext column, e.g. `email`. */
   column: string
+  /**
+   * The phase the column is transitioning *to*. Records a corresponding
+   * event (see {@link PHASE_TO_EVENT}). Does not enforce an order — you
+   * can move backwards if needed, e.g. to re-run a backfill.
+   */
   to: MigrationPhase
+  /**
+   * Optional free-form note, stored in the event's `details.note`. Useful
+   * for capturing why a phase transition is happening ("deploy 1.23
+   * introduced dual-write") so it shows up in audit queries later.
+   */
   note?: string
 }
 
+/**
+ * CLI handler for `stash encrypt advance`. Appends a phase-transition event
+ * to `cs_migrations`. When advancing to `dual-writing`, also prints a
+ * reminder about the required persistence-layer code change.
+ */
 export async function advanceCommand(options: AdvanceCommandOptions) {
   p.intro('npx @cipherstash/cli encrypt advance')
 

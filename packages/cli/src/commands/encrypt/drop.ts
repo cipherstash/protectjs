@@ -5,13 +5,34 @@ import { appendEvent, progress } from '@cipherstash/migrate'
 import * as p from '@clack/prompts'
 import pg from 'pg'
 
+/**
+ * Options accepted by `stash encrypt drop`. Generates a migration file
+ * that drops the now-unused plaintext column (renamed to `<col>_plaintext`
+ * by cutover). Does *not* apply the migration — the user runs their usual
+ * migration tool (drizzle-kit, prisma, psql) to actually execute it.
+ */
 export interface DropCommandOptions {
+  /** Physical table name, e.g. `users`. */
   table: string
+  /**
+   * Physical column — the original plaintext name. The generated migration
+   * drops `<column>_plaintext` (the name the column has *after* cutover).
+   */
   column: string
-  /** Directory for generated migration files. Default: `./drizzle`. */
+  /**
+   * Directory to write the generated `.sql` migration into, relative to
+   * the current working directory. Default: `./drizzle`. Use `./migrations`
+   * (or similar) for Prisma / manual psql workflows.
+   */
   migrationsDir?: string
 }
 
+/**
+ * CLI handler for `stash encrypt drop`. Requires the column to be in
+ * phase `cut-over`; otherwise errors out. Writes a timestamped
+ * `ALTER TABLE … DROP COLUMN <col>_plaintext` statement, appends a
+ * `dropped` event, and prints instructions for applying the migration.
+ */
 export async function dropCommand(options: DropCommandOptions) {
   p.intro('npx @cipherstash/cli encrypt drop')
 

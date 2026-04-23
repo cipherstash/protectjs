@@ -3,6 +3,14 @@ import { latestByColumn, readManifest } from '@cipherstash/migrate'
 import * as p from '@clack/prompts'
 import pg from 'pg'
 
+/**
+ * CLI handler for `stash encrypt plan`. Reads the repo manifest and the
+ * latest `cs_migrations` state for each declared column, and prints the
+ * transitions needed to reach each column's `targetPhase`.
+ *
+ * No state changes are made. This is the "what would happen if I
+ * `advance`d everything" preview.
+ */
 export async function planCommand() {
   p.intro('npx @cipherstash/cli encrypt plan')
 

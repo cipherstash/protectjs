@@ -8,12 +8,39 @@ import {
 import * as p from '@clack/prompts'
 import pg from 'pg'
 
+/**
+ * Options accepted by `stash encrypt cutover`. Swaps the plaintext and
+ * encrypted columns via `eql_v2.rename_encrypted_columns()` so that apps
+ * reading `<column>` transparently receive the encrypted column
+ * (decrypted on read by Proxy or client-side by Stack).
+ */
 export interface CutoverCommandOptions {
+  /** Physical table name, e.g. `users`. Supports `schema.table`. */
   table: string
+  /**
+   * Physical plaintext column that is being cut over, e.g. `email`. Used
+   * only for the state-transition check and event log; the actual rename
+   * affects every column in the active EQL config in a single call.
+   */
   column: string
+  /**
+   * Optional Postgres URL of a CipherStash Proxy. When set, the command
+   * connects to the Proxy after the rename and runs `eql_v2.reload_config()`
+   * so Proxy picks up the renamed columns immediately rather than waiting
+   * for its 60-second refresh. When unset, prints a warning to that effect
+   * and returns — the Proxy will refresh on its own.
+   *
+   * Also readable from `CIPHERSTASH_PROXY_URL` in the environment.
+   */
   proxyUrl?: string
 }
 
+/**
+ * CLI handler for `stash encrypt cutover`. Verifies the target column is
+ * in phase `backfilled`, runs `eql_v2.rename_encrypted_columns()` inside
+ * a transaction, appends a `cut_over` event, and optionally triggers a
+ * Proxy config reload. Exits with code `1` if preconditions are not met.
+ */
 export async function cutoverCommand(options: CutoverCommandOptions) {
   p.intro('npx @cipherstash/cli encrypt cutover')
 

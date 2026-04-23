@@ -3,11 +3,21 @@ import path from 'node:path'
 import { type ResolvedStashConfig, loadStashConfig } from '@/config/index.js'
 import type { EncryptionClient } from '@cipherstash/stack/encryption'
 
+/**
+ * Structural shape of `@cipherstash/stack`'s `EncryptedTable` class.
+ * Duck-typed so we don't need to `instanceof` across module boundaries
+ * (which is fragile with dual CJS/ESM).
+ */
 export interface EncryptedTableLike {
   readonly tableName: string
   build(): { tableName: string; columns: Record<string, unknown> }
 }
 
+/**
+ * Everything the encrypt commands need to do real work: resolved stash
+ * config, the user's initialised encryption client, and a table-name-keyed
+ * map of every `EncryptedTable` exported from the client file.
+ */
 export interface EncryptionContext {
   stashConfig: ResolvedStashConfig
   client: EncryptionClient
@@ -15,12 +25,20 @@ export interface EncryptionContext {
 }
 
 /**
- * Load stash.config.ts, dynamic-import the user's encryption client file, and
- * harvest (a) the initialised EncryptionClient and (b) all exported
- * EncryptedTable instances, keyed by tableName. Backfill needs both.
+ * Load `stash.config.ts`, dynamic-import the user's encryption client file
+ * via jiti, and harvest:
  *
- * Exits with code 1 on any load error — consistent with the pattern used by
- * loadStashConfig / loadEncryptConfig.
+ * 1. The initialised `EncryptionClient` — detected by duck-typing any
+ *    export that exposes a `getEncryptConfig()` method.
+ * 2. Every `EncryptedTable` — detected by the pair of `tableName: string`
+ *    and `build(): …` properties. Keyed by `tableName`.
+ *
+ * Both are needed by the backfill runner: the client to call
+ * `bulkEncryptModels`, and the table schema to pass as the second arg.
+ *
+ * Exits the process with code `1` on any load error — the same hard-fail
+ * behaviour `loadStashConfig` / `loadEncryptConfig` already use elsewhere
+ * in the CLI.
  */
 export async function loadEncryptionContext(): Promise<EncryptionContext> {
   const stashConfig = await loadStashConfig()
@@ -83,6 +101,12 @@ export async function loadEncryptionContext(): Promise<EncryptionContext> {
   return { stashConfig, client, tables }
 }
 
+/**
+ * Look up the `EncryptedTable` for the given table name in the loaded
+ * context. Exits the process with code `1` if the table is not declared
+ * in the user's encryption client file — without this schema, backfill
+ * cannot call `bulkEncryptModels`.
+ */
 export function requireTable(
   ctx: EncryptionContext,
   tableName: string,

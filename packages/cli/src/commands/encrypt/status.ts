@@ -17,6 +17,18 @@ interface Row {
   flags: string
 }
 
+/**
+ * CLI handler for `stash encrypt status`. Renders a table with one row per
+ * known (table, column), merging three sources:
+ *
+ * - The repo manifest (`.cipherstash/migrations.json`) — declared intent.
+ * - The active / pending `eql_v2_configuration` row — EQL state + indexes.
+ * - The latest `cs_migrations` event per column — runtime phase + progress.
+ *
+ * Plus `information_schema.columns` to surface structural drift (for
+ * example: intent says a column should be encrypted, but the
+ * `<col>_encrypted` column doesn't exist yet).
+ */
 export async function statusCommand() {
   p.intro('npx @cipherstash/cli encrypt status')
 
