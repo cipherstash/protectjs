@@ -44,7 +44,7 @@ export async function run(options: RunOptions) {
   )
 
   // Phase 1: Prerequisites
-  const prereqs = checkPrerequisites(options.cwd)
+  const prereqs = await checkPrerequisites(options.cwd)
   if (!prereqs.ok) {
     trackPrerequisiteMissing(prereqs.missing)
     p.log.error('Missing prerequisites:')
