@@ -9,7 +9,9 @@ import {
   downloadEqlSql,
   loadBundledEqlSql,
 } from '@/installer/index.js'
+import { installMigrationsSchema } from '@cipherstash/migrate'
 import * as p from '@clack/prompts'
+import pg from 'pg'
 import { ensureEncryptionClient } from './client-scaffold.js'
 import { ensureStashConfig } from './config-scaffold.js'
 import {
@@ -221,6 +223,23 @@ export async function installCommand(options: InstallOptions) {
 
   if (resolved.supabase) {
     p.log.success('Supabase role permissions granted.')
+  }
+
+  s.start('Installing cs_migrations tracking schema...')
+  const migrationsDb = new pg.Client({ connectionString: config.databaseUrl })
+  try {
+    await migrationsDb.connect()
+    await installMigrationsSchema(migrationsDb)
+    s.stop('cs_migrations schema installed.')
+  } catch (err) {
+    s.stop('Failed to install cs_migrations schema.')
+    p.log.warn(
+      err instanceof Error
+        ? err.message
+        : 'Encryption migration tracking is unavailable; `stash encrypt` commands will fail until this is resolved.',
+    )
+  } finally {
+    await migrationsDb.end()
   }
 
   printNextSteps()
