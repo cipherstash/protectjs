@@ -8,7 +8,10 @@ import {
   downloadEqlSql,
   loadBundledEqlSql,
 } from '@/installer/index.js'
-import { installMigrationsSchema } from '@cipherstash/migrate'
+import {
+  MIGRATIONS_SCHEMA_SQL,
+  installMigrationsSchema,
+} from '@cipherstash/migrate'
 import * as p from '@clack/prompts'
 import pg from 'pg'
 import { ensureStashConfig } from './config-scaffold.js'
@@ -334,11 +337,16 @@ async function generateDrizzleMigration(
     }
   }
 
-  // Step 4: Write the EQL SQL into the migration file
+  // Step 4: Write the EQL SQL (and cs_migrations tracking schema) into
+  // the migration file. Bundling both means `drizzle-kit migrate` rolls
+  // everything needed for `stash encrypt ...` out to each environment
+  // in one go, rather than requiring an out-of-band `stash db install`.
   s.start('Writing EQL SQL into migration file...')
 
+  const migrationContents = `${eqlSql}\n\n-- CipherStash encryption-migration tracking schema.\n-- Tracks per-column phase + backfill progress for \`stash encrypt\`.\n${MIGRATIONS_SCHEMA_SQL.trim()}\n`
+
   try {
-    writeFileSync(generatedMigrationPath, eqlSql, 'utf-8')
+    writeFileSync(generatedMigrationPath, migrationContents, 'utf-8')
     s.stop('EQL SQL written to migration file.')
   } catch (error) {
     s.stop('Failed to write migration file.')
