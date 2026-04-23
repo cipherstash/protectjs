@@ -98,7 +98,11 @@ export async function backfillCommand(options: BackfillCommandOptions) {
     const plaintextColumn = options.column
     const encryptedColumn =
       options.encryptedColumn ?? `${options.column}_encrypted`
-    const schemaColumnKey = options.schemaColumnKey ?? options.column
+    // The EncryptedTable schema is keyed by the *encrypted* column name
+    // (because the user's ORM schema declares the encrypted column, not
+    // the plaintext one). Default accordingly — override with
+    // --schema-column-key only if your schema uses a different object key.
+    const schemaColumnKey = options.schemaColumnKey ?? encryptedColumn
 
     p.log.info(
       `Backfilling ${options.table}.${plaintextColumn} → ${encryptedColumn} (pk: ${pkColumn}, chunk: ${options.chunkSize ?? 1000}).`,
