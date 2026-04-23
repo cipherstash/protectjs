@@ -108,9 +108,10 @@ export interface BackfillProgress {
  * - **Physical names** ({@link tableName}, {@link plaintextColumn}, {@link encryptedColumn}, {@link pkColumn})
  *   are Postgres identifiers used verbatim in SQL.
  * - **Schema name** ({@link schemaColumnKey}) is the key on the `EncryptedTable`
- *   schema object that corresponds to the column — usually identical to
- *   `plaintextColumn`, but can differ when you've named the schema field
- *   differently from the DB column.
+ *   schema object that corresponds to the column. In the common drizzle
+ *   convention — where the schema declares the encrypted column (not the
+ *   plaintext one) — this equals `encryptedColumn`. Pass explicitly only
+ *   when your schema's object keys diverge from the physical column names.
  */
 export interface BackfillOptions {
   /**
@@ -141,12 +142,12 @@ export interface BackfillOptions {
    */
   tableName: string
   /**
-   * The key in {@link tableSchema} that corresponds to this column. For a
-   * schema declared as `encryptedTable('users', { email: … })`, this is
-   * `'email'`. It usually equals {@link plaintextColumn}; it differs only
-   * when the schema deliberately uses a different key than the physical
-   * column name (e.g. `{ emailAddress: encryptedColumn('email').equality() }`
-   * would have `schemaColumnKey: 'emailAddress'` and `plaintextColumn: 'email'`).
+   * The key in {@link tableSchema} that corresponds to this column. With
+   * the drizzle `extractEncryptionSchema` convention, where the schema is
+   * derived from a table like `{ email_encrypted: encryptedType(...) }`,
+   * this equals {@link encryptedColumn}. With a handwritten
+   * `encryptedTable('users', { email: … })` schema where there's only one
+   * column, this usually equals {@link plaintextColumn}.
    */
   schemaColumnKey: string
   /**
@@ -330,6 +331,27 @@ export async function runBackfill(
         throw new Error(
           `bulkEncryptModels failed: ${encryptResult.failure.message}`,
         )
+      }
+
+      // Leak guard: a real ciphertext payload is always an object (the EQL
+      // `{c, k, v, …}` envelope). If the value at schemaColumnKey came back
+      // as a primitive, the encryption client silently passed the plaintext
+      // through — typically because the schema is keyed by a different
+      // name than `schemaColumnKey`. Fail loudly instead of persisting the
+      // plaintext as faux-ciphertext (which presents as `(82.60)`-shaped
+      // composite values in the encrypted column).
+      const sample = encryptResult.data[0]
+      if (sample) {
+        const encryptedValue = sample[options.schemaColumnKey]
+        if (
+          encryptedValue === null ||
+          encryptedValue === undefined ||
+          typeof encryptedValue !== 'object'
+        ) {
+          throw new Error(
+            `Encryption client returned a non-ciphertext value at model key "${options.schemaColumnKey}" (got ${typeof encryptedValue}: ${JSON.stringify(encryptedValue)}). This usually means the schema column key does not match your EncryptedTable. Verify that your schema declares a column keyed "${options.schemaColumnKey}", or pass --schema-column-key <name> to override.`,
+          )
+        }
       }
 
       await db.query('BEGIN')
