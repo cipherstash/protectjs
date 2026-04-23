@@ -1,3 +1,4 @@
+import { isEncryptedPayload } from '@cipherstash/stack'
 import type { ClientBase, PoolClient } from 'pg'
 import {
   countUnencrypted,
@@ -333,23 +334,20 @@ export async function runBackfill(
         )
       }
 
-      // Leak guard: a real ciphertext payload is always an object (the EQL
-      // `{c, k, v, …}` envelope). If the value at schemaColumnKey came back
-      // as a primitive, the encryption client silently passed the plaintext
-      // through — typically because the schema is keyed by a different
-      // name than `schemaColumnKey`. Fail loudly instead of persisting the
-      // plaintext as faux-ciphertext (which presents as `(82.60)`-shaped
-      // composite values in the encrypted column).
-      const sample = encryptResult.data[0]
-      if (sample) {
-        const encryptedValue = sample[options.schemaColumnKey]
-        if (
-          encryptedValue === null ||
-          encryptedValue === undefined ||
-          typeof encryptedValue !== 'object'
-        ) {
+      // Leak guard: every row's schemaColumnKey field must be a valid EQL
+      // payload ({ v, i, c|sv, … }). If any row comes back as a primitive
+      // or a mis-shaped object, the encryption client silently passed the
+      // plaintext through — typically because the schema is keyed by a
+      // different name than `schemaColumnKey`. Fail loudly before any
+      // write commits; this is what prevents `(82.60)`-shaped composite
+      // values from ending up in the encrypted column.
+      for (const [i, row] of encryptResult.data.entries()) {
+        const value = row[options.schemaColumnKey]
+        if (!isEncryptedPayload(value)) {
+          const pk = row.__pk ?? page.rows[i]?.pk
+          const preview = JSON.stringify(value)?.slice(0, 120) ?? String(value)
           throw new Error(
-            `Encryption client returned a non-ciphertext value at model key "${options.schemaColumnKey}" (got ${typeof encryptedValue}: ${JSON.stringify(encryptedValue)}). This usually means the schema column key does not match your EncryptedTable. Verify that your schema declares a column keyed "${options.schemaColumnKey}", or pass --schema-column-key <name> to override.`,
+            `Encryption client returned a non-ciphertext value at model key "${options.schemaColumnKey}" for pk=${pk} (got: ${preview}). This usually means the schema column key does not match your EncryptedTable. Verify that your schema declares a column keyed "${options.schemaColumnKey}", or pass --schema-column-key <name> to override.`,
           )
         }
       }
