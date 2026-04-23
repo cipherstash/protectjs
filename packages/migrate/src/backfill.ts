@@ -188,6 +188,16 @@ export interface BackfillOptions {
    * and UI updates; throwing from this callback will kill the backfill.
    */
   onProgress?: (progress: BackfillProgress) => void
+  /**
+   * Optional coercion applied to each row's plaintext value before it is
+   * passed to {@link EncryptionClientLike.bulkEncryptModels}. Needed when
+   * the pg driver's native JS type doesn't match the schema's declared
+   * dataType — e.g. pg returns `numeric` as a string, but a schema
+   * declaring `dataType('number')` expects a JS number. The CLI
+   * builds an appropriate coercer from the schema's `cast_as`; library
+   * callers can supply their own or leave undefined (identity).
+   */
+  transformPlaintext?: (value: unknown) => unknown
 }
 
 /**
@@ -318,9 +328,10 @@ export async function runBackfill(
         break
       }
 
+      const coerce = options.transformPlaintext ?? ((v: unknown) => v)
       const models = page.rows.map((row) => ({
         __pk: row.pk,
-        [options.schemaColumnKey]: row.plaintext,
+        [options.schemaColumnKey]: coerce(row.plaintext),
       }))
 
       const encryptResult = await options.encryptionClient.bulkEncryptModels(
