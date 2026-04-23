@@ -24,7 +24,7 @@
  * @packageDocumentation
  */
 
-export { installMigrationsSchema } from './install.js'
+export { installMigrationsSchema, MIGRATIONS_SCHEMA_SQL } from './install.js'
 export {
   appendEvent,
   latestByColumn,
