@@ -71,7 +71,11 @@ describe.skipIf(!runIntegration)('runBackfill (integration)', () => {
       return Promise.resolve({
         data: input.map((row) => ({
           __pk: row.__pk,
-          email: { ct: String(row.email) },
+          email: {
+            v: 2,
+            i: { t: 'users', c: 'email' },
+            c: `mock-ciphertext:${row.email}`,
+          },
         })),
       })
     },
@@ -251,7 +255,11 @@ describe.skipIf(!runIntegration)('runBackfill (integration)', () => {
         return Promise.resolve({
           data: input.map((row) => ({
             __pk: row.__pk,
-            email: { ct: String(row.email) },
+            email: {
+              v: 2,
+              i: { t: 'users', c: 'email' },
+              c: `mock-ciphertext:${row.email}`,
+            },
           })),
         })
       },
@@ -317,7 +325,9 @@ describe.skipIf(!runIntegration)('runBackfill (integration)', () => {
     // Pre-encrypt half the rows by hand — simulates a dual-write path
     // that was already populating encrypted ciphertext before backfill ran.
     await pool.query(
-      `UPDATE migrate_test.users SET email_encrypted = jsonb_build_object('ct', 'preexisting') WHERE id <= 50`,
+      `UPDATE migrate_test.users
+       SET email_encrypted = jsonb_build_object('v', 2, 'i', jsonb_build_object('t', 'users', 'c', 'email'), 'c', 'preexisting')
+       WHERE id <= 50`,
     )
 
     const db = await pool.connect()
@@ -343,14 +353,14 @@ describe.skipIf(!runIntegration)('runBackfill (integration)', () => {
     // First half still has the pre-existing ciphertext.
     const preserved = await pool.query<{ n: string }>(
       `SELECT count(*)::text AS n FROM migrate_test.users
-       WHERE id <= 50 AND email_encrypted->>'ct' = 'preexisting'`,
+       WHERE id <= 50 AND email_encrypted->>'c' = 'preexisting'`,
     )
     expect(Number(preserved.rows[0]?.n)).toBe(50)
 
     // Second half was backfilled by the stub.
     const backfilled = await pool.query<{ n: string }>(
       `SELECT count(*)::text AS n FROM migrate_test.users
-       WHERE id > 50 AND email_encrypted->>'ct' LIKE 'user-%'`,
+       WHERE id > 50 AND email_encrypted->>'c' LIKE 'mock-ciphertext:user-%'`,
     )
     expect(Number(backfilled.rows[0]?.n)).toBe(50)
   })
