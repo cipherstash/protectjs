@@ -3,16 +3,23 @@ import { join } from 'node:path'
 
 /**
  * Matches drizzle-kit's generated in-place type change to the encrypted
- * column type. We accept both the fully-qualified
- * `"public"."eql_v2_encrypted"` form (emitted after CIP-2990) and the bare
- * `eql_v2_encrypted` form older schemas produced.
+ * column type. drizzle-kit's ALTER COLUMN path wraps the customType
+ * `dataType()` return value in double-quotes and prepends `"{typeSchema}".`.
+ * Custom types have no `typeSchema`, so we see several mangled forms
+ * depending on what `dataType()` returned. We match all of them:
+ *
+ * - bare `eql_v2_encrypted` → `"undefined"."eql_v2_encrypted"`
+ * - pre-quoted `"public"."eql_v2_encrypted"` (stack 0.15.0 regression) →
+ *   `"undefined".""public"."eql_v2_encrypted""`
+ * - the plain `eql_v2_encrypted` and `"public"."eql_v2_encrypted"` forms,
+ *   in case a future drizzle-kit release stops prepending undefined.
  *
  * Captures:
  * - $1: table name (without quotes)
  * - $2: column name (without quotes)
  */
 const ALTER_COLUMN_TO_ENCRYPTED_RE =
-  /ALTER TABLE "([^"]+)"\s+ALTER COLUMN "([^"]+)"\s+SET DATA TYPE (?:"public"\."eql_v2_encrypted"|eql_v2_encrypted)[^;]*;/gi
+  /ALTER TABLE "([^"]+)"\s+ALTER COLUMN "([^"]+)"\s+SET DATA TYPE (?:"undefined"\.""public"\."eql_v2_encrypted""|"undefined"\."eql_v2_encrypted"|"public"\."eql_v2_encrypted"|eql_v2_encrypted)[^;]*;/gi
 
 /**
  * Replace in-place `ALTER COLUMN ... SET DATA TYPE eql_v2_encrypted` statements

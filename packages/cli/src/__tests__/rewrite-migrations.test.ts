@@ -51,6 +51,36 @@ describe('rewriteEncryptedAlterColumns', () => {
     expect(updated).not.toContain('SET DATA TYPE')
   })
 
+  it('rewrites the "undefined" schema form drizzle-kit emits for bare custom types', async () => {
+    const original =
+      'ALTER TABLE "transactions" ALTER COLUMN "amount" SET DATA TYPE "undefined"."eql_v2_encrypted";\n'
+    const filePath = path.join(tmpDir, '0005_undef.sql')
+    fs.writeFileSync(filePath, original)
+
+    await rewriteEncryptedAlterColumns(tmpDir)
+
+    const updated = fs.readFileSync(filePath, 'utf-8')
+    expect(updated).toContain(
+      'ALTER TABLE "transactions" ADD COLUMN "amount__cipherstash_tmp" "public"."eql_v2_encrypted";',
+    )
+    expect(updated).not.toContain('SET DATA TYPE')
+  })
+
+  it('rewrites the double-quoted form produced by stack 0.15.0', async () => {
+    const original =
+      'ALTER TABLE "transactions" ALTER COLUMN "description" SET DATA TYPE "undefined".""public"."eql_v2_encrypted"";\n'
+    const filePath = path.join(tmpDir, '0006_double.sql')
+    fs.writeFileSync(filePath, original)
+
+    await rewriteEncryptedAlterColumns(tmpDir)
+
+    const updated = fs.readFileSync(filePath, 'utf-8')
+    expect(updated).toContain(
+      'ALTER TABLE "transactions" ADD COLUMN "description__cipherstash_tmp" "public"."eql_v2_encrypted";',
+    )
+    expect(updated).not.toContain('SET DATA TYPE')
+  })
+
   it('leaves unrelated migrations untouched', async () => {
     const original =
       'CREATE TABLE "widgets" ("id" integer PRIMARY KEY, "name" text);\n'

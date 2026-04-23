@@ -4,12 +4,18 @@ import { customType } from 'drizzle-orm/pg-core'
 export type { CastAs, MatchIndexOpts, TokenFilter }
 
 // The encrypted column type is created by the EQL install script in the
-// `public` schema (see packages/cli/src/installer/index.ts). Emitting the
-// fully-qualified, quoted identifier here means drizzle-kit writes
-// `"public"."eql_v2_encrypted"` into generated migrations instead of
-// `"undefined"."eql_v2_encrypted"`, which was the symptom that drizzle-kit
-// couldn't resolve against the database.
-const EQL_ENCRYPTED_DATA_TYPE = '"public"."eql_v2_encrypted"'
+// `public` schema (see packages/cli/src/installer/index.ts). We return the
+// bare identifier here — drizzle-kit's CREATE TABLE path emits it correctly
+// (it only prepends a schema when `typeSchema` is set, which is only true
+// for pgEnum columns). The ALTER COLUMN path is a different story: it
+// unconditionally wraps the dataType() return in double-quotes and prepends
+// `"{typeSchema}".`, and since custom types have no typeSchema, the output
+// becomes `"undefined"."eql_v2_encrypted"`. Returning a pre-quoted
+// `"public"."eql_v2_encrypted"` here does NOT fix that — drizzle-kit just
+// double-escapes the quotes, producing `"undefined".""public"."eql_v2_encrypted""`.
+// Instead, the CLI's `rewriteEncryptedAlterColumns` rewrites every broken
+// ALTER COLUMN form into an ADD + DROP + RENAME sequence that does work.
+const EQL_ENCRYPTED_DATA_TYPE = 'eql_v2_encrypted'
 
 /**
  * Configuration for encrypted column indexes and data types
@@ -174,12 +180,12 @@ export function getEncryptedColumnConfig(
     const columnAny = column as any
 
     // Check if it's an encrypted column by checking sqlName or dataType.
-    // We accept both the fully-qualified `"public"."eql_v2_encrypted"` form
-    // that `encryptedType` now emits and the bare `eql_v2_encrypted` form
-    // that earlier versions produced, for back-compat with tables built
-    // against older releases.
+    // We accept both the bare `eql_v2_encrypted` form (current) and the
+    // fully-qualified `"public"."eql_v2_encrypted"` form that @cipherstash/stack
+    // 0.15.0 briefly emitted, for back-compat with tables built against that
+    // release.
     const isEncryptedTypeString = (value: unknown): boolean =>
-      value === EQL_ENCRYPTED_DATA_TYPE || value === 'eql_v2_encrypted'
+      value === EQL_ENCRYPTED_DATA_TYPE || value === '"public"."eql_v2_encrypted"'
 
     const isEncrypted =
       isEncryptedTypeString(columnAny.sqlName) ||
