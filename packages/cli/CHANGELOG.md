@@ -1,5 +1,11 @@
 # @cipherstash/cli
 
+## 0.7.0
+
+### Minor Changes
+
+- 7f5a05a: Fixed issue where the wizard was checking CipherStash auth based on path and now leverages the auth npm package.
+
 ## 0.6.1
 
 ### Patch Changes
