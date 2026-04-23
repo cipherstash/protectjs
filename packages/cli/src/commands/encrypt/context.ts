@@ -67,6 +67,9 @@ export async function loadEncryptionContext(): Promise<EncryptionContext> {
 
   let client: EncryptionClient | undefined
   const tables = new Map<string, EncryptedTableLike>()
+  const drizzleCandidates: unknown[] = []
+
+  const DRIZZLE_NAME_SYMBOL = Symbol.for('drizzle:Name')
 
   for (const value of Object.values(moduleExports)) {
     if (!value || typeof value !== 'object') continue
@@ -88,6 +91,43 @@ export async function loadEncryptionContext(): Promise<EncryptionContext> {
     ) {
       const table = value as EncryptedTableLike
       tables.set(table.tableName, table)
+      continue
+    }
+
+    // Drizzle pgTable — Symbol.for('drizzle:Name') is set by drizzle-orm
+    // on anything constructed via `pgTable()`. We'll run extractEncryptionSchema
+    // on these in a second pass.
+    if ((value as Record<symbol, unknown>)[DRIZZLE_NAME_SYMBOL] !== undefined) {
+      drizzleCandidates.push(value)
+    }
+  }
+
+  // Second pass: auto-derive EncryptedTable schemas from drizzle pgTable
+  // exports so users don't have to manually export the result of
+  // extractEncryptionSchema(). Silently no-op if @cipherstash/stack/drizzle
+  // isn't installed (e.g. a Supabase-only project).
+  if (drizzleCandidates.length > 0) {
+    try {
+      const drizzleModule = (await import('@cipherstash/stack/drizzle')) as {
+        extractEncryptionSchema?: (t: unknown) => EncryptedTableLike
+      }
+      const extract = drizzleModule.extractEncryptionSchema
+      if (extract) {
+        for (const candidate of drizzleCandidates) {
+          try {
+            const derived = extract(candidate)
+            if (derived?.tableName && !tables.has(derived.tableName)) {
+              tables.set(derived.tableName, derived)
+            }
+          } catch {
+            // Table has no encrypted columns, or extraction failed for
+            // another reason. Ignore — not every drizzle table is a
+            // backfill target.
+          }
+        }
+      }
+    } catch {
+      // @cipherstash/stack/drizzle not installed; skip drizzle fallback.
     }
   }
 
