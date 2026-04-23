@@ -104,6 +104,11 @@ export async function backfillCommand(options: BackfillCommandOptions) {
     // --schema-column-key only if your schema uses a different object key.
     const schemaColumnKey = options.schemaColumnKey ?? encryptedColumn
 
+    const transformPlaintext = buildPlaintextCoercer(
+      tableSchema,
+      schemaColumnKey,
+    )
+
     p.log.info(
       `Backfilling ${options.table}.${plaintextColumn} → ${encryptedColumn} (pk: ${pkColumn}, chunk: ${options.chunkSize ?? 1000}).`,
     )
@@ -122,6 +127,7 @@ export async function backfillCommand(options: BackfillCommandOptions) {
       pkColumn,
       chunkSize: options.chunkSize,
       signal: controller.signal,
+      transformPlaintext,
       onProgress: (progress) => {
         if (
           progress.rowsProcessed - lastLogged >= 5000 ||
@@ -154,6 +160,75 @@ export async function backfillCommand(options: BackfillCommandOptions) {
     process.off('SIGTERM', onSignal)
     db.release()
     await pool.end()
+  }
+}
+
+/**
+ * Build a coercer that turns whatever the `pg` driver returns for a given
+ * column into the JS shape `bulkEncryptModels` expects, based on the
+ * schema's declared `cast_as`. Fixes the common "pg returns numeric as
+ * string, Protect wants a JS number" mismatch without forcing the user
+ * to set a global pg type parser.
+ *
+ * - `'number'` / `'double'` / `'real'` / `'int'` etc. → `Number(string)`
+ * - `'bigint'` / `'big_int'` → `BigInt(string)`
+ * - `'date'` → `new Date(string)` if pg returned a string
+ * - `'boolean'` → `"true"`/`"false"` strings coerced to bool
+ * - `'string'` / `'text'` / `'json'` / `'jsonb'` → identity (pg already fits)
+ *
+ * Null / undefined are always passed through unchanged.
+ */
+function buildPlaintextCoercer(
+  // biome-ignore lint/suspicious/noExplicitAny: EncryptedTableLike.build is generic
+  tableSchema: { build(): { columns: Record<string, any> } },
+  schemaColumnKey: string,
+): (value: unknown) => unknown {
+  let castAs: string | undefined
+  try {
+    castAs = tableSchema.build().columns?.[schemaColumnKey]?.cast_as
+  } catch {
+    castAs = undefined
+  }
+
+  switch (castAs) {
+    case 'number':
+    case 'double':
+    case 'real':
+    case 'float':
+    case 'decimal':
+    case 'int':
+    case 'small_int':
+      return (v) => {
+        if (v === null || v === undefined) return v
+        return typeof v === 'string' ? Number(v) : v
+      }
+    case 'bigint':
+    case 'big_int':
+      return (v) => {
+        if (v === null || v === undefined) return v
+        if (typeof v === 'bigint') return v
+        if (typeof v === 'number' || typeof v === 'string') return BigInt(v)
+        return v
+      }
+    case 'date':
+    case 'timestamp':
+      return (v) => {
+        if (v === null || v === undefined) return v
+        if (v instanceof Date) return v
+        if (typeof v === 'string' || typeof v === 'number') return new Date(v)
+        return v
+      }
+    case 'boolean':
+      return (v) => {
+        if (v === null || v === undefined) return v
+        if (typeof v === 'boolean') return v
+        if (typeof v === 'string') return v === 'true' || v === 't'
+        return v
+      }
+    default:
+      // 'string', 'text', 'json', 'jsonb', or unknown — pg already returns
+      // the right JS type for these.
+      return (v) => v
   }
 }
 
