@@ -2,14 +2,6 @@ import auth from '@cipherstash/auth'
 import * as p from '@clack/prompts'
 const { beginDeviceCodeFlow, bindClientDevice } = auth
 
-// TODO(CIP-2996): @cipherstash/auth@0.35.0 (latest on npm as of 2026-04-17)
-// writes the device-code token to a profile dir that later auth reads do not
-// find, so subsequent CLI invocations fail to resolve credentials. The fix is
-// upstream — bump this catalog pin once a newer @cipherstash/auth that
-// aligns the write + read paths ships. Do not paper over it in the CLI:
-// divergent profile-dir logic across tools is exactly what caused the
-// regression in the first place.
-
 // TODO: pull from the CTS API
 export const regions = [
   { value: 'us-east-1.aws', label: 'us-east-1 (Virginia, USA)' },
@@ -53,7 +45,7 @@ export async function login(region: string, _referrer: string | undefined) {
 
   s.start('Waiting for authorization...')
   const auth = await pending.pollForToken()
-  s.stop('Authenticated! Token saved to ~/.cipherstash/auth.json')
+  s.stop('Authenticated!')
 
   p.log.info(
     `Token expires at: ${new Date(auth.expiresAt * 1000).toISOString()}`,
