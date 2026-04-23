@@ -1,3 +1,29 @@
+/**
+ * `@cipherstash/migrate` — primitives for migrating existing plaintext
+ * columns to `eql_v2_encrypted` in production Postgres databases.
+ *
+ * Powers the `stash encrypt` CLI command group, and is usable directly
+ * from a user's own worker/cron when they'd rather not pipe gigabytes
+ * through a CLI process.
+ *
+ * Per-column lifecycle:
+ *
+ * ```
+ * schema-added → dual-writing → backfilling → backfilled → cut-over → dropped
+ * ```
+ *
+ * State is split across three stores on purpose:
+ * - `.cipherstash/migrations.json` — repo-side intent ({@link Manifest})
+ * - `eql_v2_configuration` — EQL intent (unchanged; Proxy's source of truth)
+ * - `cipherstash.cs_migrations` — append-only runtime state written here
+ *
+ * The primary entry point is {@link runBackfill}. The state DAO
+ * ({@link appendEvent}, {@link latestByColumn}, {@link progress}) lets you
+ * build your own UI on top of the same tracking table.
+ *
+ * @packageDocumentation
+ */
+
 export { installMigrationsSchema } from './install.js'
 export {
   appendEvent,

@@ -8,22 +8,73 @@ import { quoteIdent } from './sql.js'
 import { type MigrationPhase, appendEvent, progress } from './state.js'
 
 // Loose structural types — keep this library decoupled from @cipherstash/stack
-// so it can be built and tested without pulling the full stack graph in.
+// so @cipherstash/migrate can be built and tested without pulling the full
+// stack graph in. `EncryptionClientLike` matches the shape `EncryptionClient`
+// from `@cipherstash/stack/encryption` exposes via `bulkEncryptModels`.
+
+/**
+ * Shape returned by {@link EncryptionClientLike.bulkEncryptModels} on success.
+ * `data` is the array of models with the configured fields replaced by
+ * ciphertext payloads, preserving `__pk` and any other non-encrypted fields.
+ */
 export interface BulkEncryptResultSuccess<T> {
   failure?: undefined
   data: T[]
 }
+
+/**
+ * Shape returned by {@link EncryptionClientLike.bulkEncryptModels} on failure.
+ * Matches `@byteslice/result`'s `{ failure: { message } }` convention used
+ * by `@cipherstash/stack`. The backfill halts and writes an `error` event
+ * to `cs_migrations` when this is returned.
+ */
 export interface BulkEncryptResultFailure {
   failure: { message: string; type?: string }
   data?: undefined
 }
+
+/**
+ * Discriminated union returned by bulk-encrypt. Narrow with `if (r.failure)`
+ * vs `if (r.data)`. No exceptions are thrown by the underlying operation.
+ */
 export type BulkEncryptResult<T> =
   | BulkEncryptResultSuccess<T>
   | BulkEncryptResultFailure
 
+/**
+ * A thenable wrapper around {@link BulkEncryptResult}. `@cipherstash/stack`'s
+ * `bulkEncryptModels` returns a fluent operation builder that resolves to a
+ * `Result` when awaited; this alias accepts anything `PromiseLike` so we
+ * don't bind to the full operation class in type-land.
+ */
 export type BulkEncryptThenable<T> = PromiseLike<BulkEncryptResult<T>>
 
+/**
+ * Minimal surface of `@cipherstash/stack`'s `EncryptionClient` used by
+ * {@link runBackfill}. Only `bulkEncryptModels` is required — the backfill
+ * encrypts in batches, it does not need the single-value `encrypt` API.
+ *
+ * Supplying an object that duck-types to this interface is enough; you do
+ * not have to import `EncryptionClient` itself.
+ *
+ * @example
+ * ```ts
+ * // Typical wiring: the user's `src/encryption/index.ts` exports an
+ * // already-initialised client, and you pass it through.
+ * import { encryptionClient } from './src/encryption/index.js'
+ * await runBackfill({ encryptionClient, ... })
+ * ```
+ */
 export interface EncryptionClientLike {
+  /**
+   * Bulk-encrypt a batch of plaintext models against a table schema.
+   *
+   * @param input - Array of models. Each row is `{ [schemaColumnKey]: plaintext, ... }`.
+   *   The backfill also includes a `__pk` field per row so it can correlate
+   *   the encrypted result back to the database row on UPDATE.
+   * @param table - The `EncryptedTable` schema for the target table. Typed
+   *   as `any` here to keep this library decoupled from `@cipherstash/stack`.
+   */
   bulkEncryptModels(
     input: Array<Record<string, unknown>>,
     // biome-ignore lint/suspicious/noExplicitAny: Stack's EncryptedTable is generic
@@ -31,54 +82,184 @@ export interface EncryptionClientLike {
   ): BulkEncryptThenable<Record<string, unknown>>
 }
 
+/**
+ * Snapshot of backfill progress, passed to {@link BackfillOptions.onProgress}
+ * after every successful chunk commit. Values represent the cumulative state
+ * *after* the most recent chunk — including any rows processed by a prior
+ * run that this invocation resumed from.
+ */
 export interface BackfillProgress {
+  /** Total rows written to the encrypted column so far (includes a resumed prior run). */
   rowsProcessed: number
+  /** Total rows we expect to process over the life of this migration (incl. resumed). */
   rowsTotal: number
+  /** PK of the last row processed in the most recent chunk, cast to text. */
   lastPk: string | null
+  /** Chunk size used for this run (echoed from {@link BackfillOptions.chunkSize}). */
   chunkSize: number
+  /** Zero-based index of the chunk that just completed. */
   chunkIndex: number
 }
 
+/**
+ * Options for {@link runBackfill}.
+ *
+ * Distinguishes three separate name spaces that a reader has to keep straight:
+ * - **Physical names** ({@link tableName}, {@link plaintextColumn}, {@link encryptedColumn}, {@link pkColumn})
+ *   are Postgres identifiers used verbatim in SQL.
+ * - **Schema name** ({@link schemaColumnKey}) is the key on the `EncryptedTable`
+ *   schema object that corresponds to the column — usually identical to
+ *   `plaintextColumn`, but can differ when you've named the schema field
+ *   differently from the DB column.
+ */
 export interface BackfillOptions {
-  /** A connection from the pool we can run transactions on. */
+  /**
+   * A pg pool client the runner owns for the duration of the call. The
+   * runner issues `BEGIN`/`COMMIT` on this connection for each chunk, so it
+   * must not be shared across concurrent work during the backfill.
+   *
+   * Acquire with `const db = await pool.connect()`, release with
+   * `db.release()` in your `finally`.
+   */
   db: PoolClient
-  /** User's initialised encryption client. Must expose `bulkEncryptModels`. */
+  /**
+   * Initialised encryption client. See {@link EncryptionClientLike} for the
+   * required surface (just `bulkEncryptModels`).
+   */
   encryptionClient: EncryptionClientLike
-  /** The stack EncryptedTable schema for the target table. */
+  /**
+   * The `EncryptedTable` schema object for the target table, as exported
+   * from the user's `src/encryption/index.ts`. Passed through to
+   * `encryptionClient.bulkEncryptModels(models, tableSchema)`. Typed as
+   * `any` to avoid coupling this library to `@cipherstash/stack`.
+   */
   // biome-ignore lint/suspicious/noExplicitAny: Stack's EncryptedTable is generic
   tableSchema: any
-  /** Physical table name. Supports `schema.table`. */
+  /**
+   * Physical Postgres table name. Supports `"schema.table"` for non-default
+   * schemas (identifiers are quoted automatically).
+   */
   tableName: string
-  /** Logical column key inside `tableSchema`. */
+  /**
+   * The key in {@link tableSchema} that corresponds to this column. For a
+   * schema declared as `encryptedTable('users', { email: … })`, this is
+   * `'email'`. It usually equals {@link plaintextColumn}; it differs only
+   * when the schema deliberately uses a different key than the physical
+   * column name (e.g. `{ emailAddress: encryptedColumn('email').equality() }`
+   * would have `schemaColumnKey: 'emailAddress'` and `plaintextColumn: 'email'`).
+   */
   schemaColumnKey: string
-  /** Physical plaintext column, e.g. `email`. */
+  /**
+   * Physical column that holds the plaintext being encrypted, e.g. `email`.
+   * The runner reads rows where this is `NOT NULL` and the target encrypted
+   * column is `NULL`.
+   */
   plaintextColumn: string
-  /** Physical encrypted column, e.g. `email_encrypted`. */
+  /**
+   * Physical column that receives the `eql_v2_encrypted` ciphertext JSON,
+   * e.g. `email_encrypted`. Must already exist (typically created by
+   * `drizzle-kit` / a prior migration) before backfill starts.
+   */
   encryptedColumn: string
-  /** Physical primary-key column; must be single-column, comparable with `>`. */
+  /**
+   * Physical single-column primary key used for keyset pagination — the
+   * runner issues `WHERE pk > $after ORDER BY pk ASC LIMIT $n`. Must be
+   * comparable with `>` (bigint, integer, text, uuid all work). Composite
+   * primary keys are not yet supported.
+   */
   pkColumn: string
-  /** Rows per chunk. Default 1000. */
+  /**
+   * Rows per chunk / transaction. Default 1000. Tune down if you see lock
+   * contention, up for tables with small row payloads. A single chunk is
+   * one `BEGIN`/`UPDATE`/`INSERT checkpoint`/`COMMIT` cycle, so the value
+   * also bounds how much work is lost when you `Ctrl-C` mid-chunk.
+   */
   chunkSize?: number
-  /** AbortSignal — if aborted between chunks, the backfill exits cleanly. */
+  /**
+   * Optional abort signal. Checked *between* chunks — the in-flight chunk
+   * always completes and checkpoints before the loop exits. Safe to wire
+   * to `SIGINT` / `SIGTERM`; the CLI does exactly this.
+   */
   signal?: AbortSignal
-  /** Called after each successful chunk commit. */
+  /**
+   * Invoked synchronously after each chunk has committed. Safe for logging
+   * and UI updates; throwing from this callback will kill the backfill.
+   */
   onProgress?: (progress: BackfillProgress) => void
 }
 
+/**
+ * Return value from {@link runBackfill}.
+ */
 export interface BackfillResult {
+  /**
+   * `true` if the run began from a previously-recorded checkpoint rather
+   * than starting fresh. Determined by the most recent event for this
+   * column being a `backfill_checkpoint`.
+   */
   resumed: boolean
+  /**
+   * Cumulative rows written to the encrypted column, including any from a
+   * prior run this invocation resumed from.
+   */
   rowsProcessed: number
+  /**
+   * Total rows the migration expects to process end-to-end (including
+   * resumed). Computed as `priorProcessed + currentRunTotal` at start.
+   */
   rowsTotal: number
+  /**
+   * `true` if this run drained all remaining rows. `false` means the run
+   * was aborted (via {@link BackfillOptions.signal}) or is otherwise
+   * paused and should be resumed by re-invoking with the same options.
+   */
   completed: boolean
 }
 
 /**
  * Run a chunked, resumable, idempotent backfill of plaintext → encrypted.
  *
- * Per chunk, in a single transaction: select next page → encrypt via client
- * → UPDATE … FROM (VALUES …) → INSERT checkpoint event. The `encrypted IS
- * NULL` guard and the monotonic PK cursor make re-runs safe even if a chunk
- * partially completes and is retried.
+ * Per chunk, in a single transaction:
+ *   1. `SELECT` the next page of rows where the encrypted column is `NULL`
+ *      and the PK is greater than the cursor.
+ *   2. Encrypt the batch via {@link EncryptionClientLike.bulkEncryptModels}.
+ *   3. `UPDATE … FROM (VALUES …)` to write the ciphertext back.
+ *   4. `INSERT` a `backfill_checkpoint` event into `cipherstash.cs_migrations`.
+ *   5. `COMMIT`.
+ *
+ * **Idempotency** — the `encrypted IS NULL` guard in both the SELECT and the
+ * UPDATE's `WHERE` clause means re-runs never double-write a row, even if
+ * the cursor is lost.
+ *
+ * **Resumability** — restarting with the same arguments will pick up from
+ * the last committed checkpoint. Use {@link BackfillOptions.signal} to
+ * abort cleanly on `SIGINT`.
+ *
+ * **Failure handling** — if any chunk fails (encrypt error or DB error),
+ * the transaction is rolled back, an `error` event is appended to
+ * `cs_migrations` for diagnostics, and the error is re-thrown.
+ *
+ * @example
+ * ```ts
+ * const db = await pool.connect()
+ * try {
+ *   const result = await runBackfill({
+ *     db,
+ *     encryptionClient,
+ *     tableSchema: usersTable,
+ *     tableName: 'users',
+ *     schemaColumnKey: 'email',
+ *     plaintextColumn: 'email',
+ *     encryptedColumn: 'email_encrypted',
+ *     pkColumn: 'id',
+ *     chunkSize: 1000,
+ *     onProgress: (p) => console.log(`${p.rowsProcessed}/${p.rowsTotal}`),
+ *   })
+ *   console.log(result.completed ? 'done' : 'paused — re-run to resume')
+ * } finally {
+ *   db.release()
+ * }
+ * ```
  */
 export async function runBackfill(
   options: BackfillOptions,
