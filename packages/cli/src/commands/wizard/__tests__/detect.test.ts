@@ -108,16 +108,26 @@ describe('detectTypeScript', () => {
 
 describe('detectPackageManager', () => {
   let tmp: string
+  let originalUserAgent: string | undefined
 
   beforeEach(() => {
     tmp = mkdtempSync(join(tmpdir(), 'wizard-test-'))
+    originalUserAgent = process.env.npm_config_user_agent
+    // Tests run under a package manager, so the env leaks in and would
+    // short-circuit the lockfile branches we want to cover.
+    delete process.env.npm_config_user_agent
   })
 
   afterEach(() => {
     rmSync(tmp, { recursive: true, force: true })
+    if (originalUserAgent === undefined) {
+      delete process.env.npm_config_user_agent
+    } else {
+      process.env.npm_config_user_agent = originalUserAgent
+    }
   })
 
-  it('returns undefined when no lockfile exists', () => {
+  it('returns undefined when no lockfile or user agent', () => {
     expect(detectPackageManager(tmp)).toBeUndefined()
   })
 
@@ -153,5 +163,38 @@ describe('detectPackageManager', () => {
     const pm = detectPackageManager(tmp)
     expect(pm?.name).toBe('npm')
     expect(pm?.installCommand).toBe('npm install')
+  })
+
+  it('honours bunx via npm_config_user_agent with no lockfile', () => {
+    process.env.npm_config_user_agent = 'bun/1.1.40 npm/? node/v22.3.0'
+    const pm = detectPackageManager(tmp)
+    expect(pm?.name).toBe('bun')
+    expect(pm?.installCommand).toBe('bun add')
+  })
+
+  it('honours pnpm dlx via user agent', () => {
+    process.env.npm_config_user_agent = 'pnpm/9.0.0 npm/? node/v20.0.0'
+    const pm = detectPackageManager(tmp)
+    expect(pm?.name).toBe('pnpm')
+  })
+
+  it('honours yarn dlx via user agent', () => {
+    process.env.npm_config_user_agent = 'yarn/4.0.0 npm/? node/v20.0.0'
+    const pm = detectPackageManager(tmp)
+    expect(pm?.name).toBe('yarn')
+  })
+
+  it('user agent wins over a mismatched lockfile', () => {
+    writeFileSync(join(tmp, 'pnpm-lock.yaml'), '')
+    process.env.npm_config_user_agent = 'bun/1.1.40 npm/? node/v22.3.0'
+    const pm = detectPackageManager(tmp)
+    expect(pm?.name).toBe('bun')
+  })
+
+  it('ignores npm/npx user agent and falls through to lockfile', () => {
+    writeFileSync(join(tmp, 'bun.lock'), '')
+    process.env.npm_config_user_agent = 'npm/10.2.4 node/v20.0.0'
+    const pm = detectPackageManager(tmp)
+    expect(pm?.name).toBe('bun')
   })
 })

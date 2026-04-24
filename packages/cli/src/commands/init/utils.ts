@@ -11,8 +11,41 @@ export function isPackageInstalled(packageName: string): boolean {
   return existsSync(modulePath)
 }
 
-/** Detects the package manager used in the current project by checking lock files. */
-export function detectPackageManager(): 'npm' | 'pnpm' | 'yarn' | 'bun' {
+export type PackageManager = 'npm' | 'pnpm' | 'yarn' | 'bun'
+
+/**
+ * Parse `npm_config_user_agent` to identify a non-npm runner.
+ *
+ * npm, pnpm, yarn, and bun all set this env var when they invoke a package
+ * script or a `*x`/`dlx`-style runner. It starts with `"<tool>/<version> ..."`.
+ *
+ * We only trust non-npm values. `bunx`, `pnpm dlx`, and `yarn dlx` are
+ * deliberate choices by the user. `npm`/`npx` is the default and often a
+ * reflex invocation, so we don't let it override lockfile detection.
+ */
+function packageManagerFromUserAgent(): PackageManager | undefined {
+  const ua = process.env.npm_config_user_agent
+  if (!ua) return undefined
+  if (ua.startsWith('bun/')) return 'bun'
+  if (ua.startsWith('pnpm/')) return 'pnpm'
+  if (ua.startsWith('yarn/')) return 'yarn'
+  return undefined
+}
+
+/**
+ * Detect the package manager used for the current project.
+ *
+ * Priority:
+ *  1. `npm_config_user_agent` — when the user explicitly invokes via
+ *     `bunx`/`pnpm dlx`/`yarn dlx`, honour that choice even in projects
+ *     without a matching lockfile (e.g. fresh projects).
+ *  2. Lockfile in cwd — respects the existing project convention.
+ *  3. Default to `npm`.
+ */
+export function detectPackageManager(): PackageManager {
+  const fromUserAgent = packageManagerFromUserAgent()
+  if (fromUserAgent) return fromUserAgent
+
   const cwd = process.cwd()
   if (
     existsSync(resolve(cwd, 'bun.lockb')) ||

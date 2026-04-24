@@ -186,13 +186,21 @@ describe('security: regex injection', () => {
 
 describe('detectPackageManagerTool', () => {
   let tmp: string
+  let originalUserAgent: string | undefined
 
   beforeEach(() => {
     tmp = mkdtempSync(join(tmpdir(), 'wizard-test-'))
+    originalUserAgent = process.env.npm_config_user_agent
+    delete process.env.npm_config_user_agent
   })
 
   afterEach(() => {
     rmSync(tmp, { recursive: true, force: true })
+    if (originalUserAgent === undefined) {
+      delete process.env.npm_config_user_agent
+    } else {
+      process.env.npm_config_user_agent = originalUserAgent
+    }
   })
 
   it('returns detected: false when no lockfile', () => {
