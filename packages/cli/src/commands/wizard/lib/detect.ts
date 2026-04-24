@@ -45,28 +45,51 @@ export function detectTypeScript(cwd: string): boolean {
   return existsSync(resolve(cwd, 'tsconfig.json'))
 }
 
-/** Detect the package manager used in the project. */
+const PACKAGE_MANAGERS: Record<
+  'bun' | 'pnpm' | 'yarn' | 'npm',
+  DetectedPackageManager
+> = {
+  bun: { name: 'bun', installCommand: 'bun add', runCommand: 'bun run' },
+  pnpm: { name: 'pnpm', installCommand: 'pnpm add', runCommand: 'pnpm run' },
+  yarn: { name: 'yarn', installCommand: 'yarn add', runCommand: 'yarn run' },
+  npm: { name: 'npm', installCommand: 'npm install', runCommand: 'npm run' },
+}
+
+/**
+ * Identify a non-npm runner from `npm_config_user_agent`.
+ *
+ * `bunx`, `pnpm dlx`, and `yarn dlx` set this env var. We only trust non-npm
+ * values: `npx` is frequently a reflex invocation and shouldn't override
+ * lockfile detection, but `bunx` is a deliberate choice that should win.
+ */
+function packageManagerFromUserAgent(): DetectedPackageManager | undefined {
+  const ua = process.env.npm_config_user_agent
+  if (!ua) return undefined
+  if (ua.startsWith('bun/')) return PACKAGE_MANAGERS.bun
+  if (ua.startsWith('pnpm/')) return PACKAGE_MANAGERS.pnpm
+  if (ua.startsWith('yarn/')) return PACKAGE_MANAGERS.yarn
+  return undefined
+}
+
+/**
+ * Detect the package manager used in the project.
+ *
+ * Priority: runtime user agent (bunx/pnpm dlx/yarn dlx) → lockfile → undefined.
+ */
 export function detectPackageManager(
   cwd: string,
 ): DetectedPackageManager | undefined {
+  const fromUserAgent = packageManagerFromUserAgent()
+  if (fromUserAgent) return fromUserAgent
+
   if (
     existsSync(resolve(cwd, 'bun.lockb')) ||
     existsSync(resolve(cwd, 'bun.lock'))
   ) {
-    return { name: 'bun', installCommand: 'bun add', runCommand: 'bun run' }
+    return PACKAGE_MANAGERS.bun
   }
-  if (existsSync(resolve(cwd, 'pnpm-lock.yaml'))) {
-    return {
-      name: 'pnpm',
-      installCommand: 'pnpm add',
-      runCommand: 'pnpm run',
-    }
-  }
-  if (existsSync(resolve(cwd, 'yarn.lock'))) {
-    return { name: 'yarn', installCommand: 'yarn add', runCommand: 'yarn run' }
-  }
-  if (existsSync(resolve(cwd, 'package-lock.json'))) {
-    return { name: 'npm', installCommand: 'npm install', runCommand: 'npm run' }
-  }
+  if (existsSync(resolve(cwd, 'pnpm-lock.yaml'))) return PACKAGE_MANAGERS.pnpm
+  if (existsSync(resolve(cwd, 'yarn.lock'))) return PACKAGE_MANAGERS.yarn
+  if (existsSync(resolve(cwd, 'package-lock.json'))) return PACKAGE_MANAGERS.npm
   return undefined
 }
