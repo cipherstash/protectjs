@@ -41,7 +41,9 @@ export async function statusCommand() {
     p.log.success(`EQL installed: yes (version: ${version ?? 'unknown'})`)
   } else {
     s.stop('EQL is not installed.')
-    p.log.warn('EQL is not installed. Run `npx @cipherstash/cli db install` to install it.')
+    p.log.warn(
+      'EQL is not installed. Run `npx @cipherstash/cli db install` to install it.',
+    )
     p.outro('Status check complete.')
     return
   }

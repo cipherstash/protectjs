@@ -1,6 +1,12 @@
 export type Integration = 'drizzle' | 'supabase' | 'prisma' | 'generic'
 
-export type RunPhase = 'idle' | 'detecting' | 'gathering' | 'running' | 'completed' | 'error'
+export type RunPhase =
+  | 'idle'
+  | 'detecting'
+  | 'gathering'
+  | 'running'
+  | 'completed'
+  | 'error'
 
 export interface WizardSession {
   // CLI arguments

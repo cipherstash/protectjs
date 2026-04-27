@@ -72,6 +72,65 @@ function findConfigFile(startDir: string): string | undefined {
 }
 
 /**
+ * Structured result from `tryLoadStashConfig()`. Used by callers (like `doctor`)
+ * that need to surface load failures without exiting the process.
+ */
+export type TryLoadStashConfigResult =
+  | { ok: true; config: ResolvedStashConfig; configPath: string }
+  | { ok: false; reason: 'not-found' }
+  | { ok: false; reason: 'import-failed'; configPath: string; cause: unknown }
+  | {
+      ok: false
+      reason: 'invalid'
+      configPath: string
+      issues: ReadonlyArray<{
+        path: ReadonlyArray<PropertyKey>
+        message: string
+      }>
+    }
+
+/**
+ * Non-exiting variant of `loadStashConfig`. Returns a discriminated result
+ * describing what (if anything) went wrong. Used by `stash doctor` so that a
+ * missing or invalid config doesn't abort the rest of the checks.
+ */
+export async function tryLoadStashConfig(): Promise<TryLoadStashConfigResult> {
+  const configPath = findConfigFile(process.cwd())
+
+  if (!configPath) {
+    return { ok: false, reason: 'not-found' }
+  }
+
+  const { createJiti } = await import('jiti')
+  const jiti = createJiti(configPath, {
+    interopDefault: true,
+  })
+
+  let rawConfig: unknown
+  try {
+    rawConfig = await jiti.import(configPath)
+  } catch (error) {
+    return { ok: false, reason: 'import-failed', configPath, cause: error }
+  }
+
+  const result = stashConfigSchema.safeParse(rawConfig)
+
+  if (!result.success) {
+    return {
+      ok: false,
+      reason: 'invalid',
+      configPath,
+      issues: result.error.issues.map((issue) => ({
+        path: issue.path,
+        message: issue.message,
+      })),
+    }
+  }
+
+  return { ok: true, config: result.data, configPath }
+}
+
+/**
  * Load and validate the `stash.config.ts` from the user's project.
  *
  * Searches from `process.cwd()` upward. Uses `jiti` to evaluate the
@@ -80,9 +139,13 @@ function findConfigFile(startDir: string): string | undefined {
  * Exits with code 1 if the config file is not found or fails validation.
  */
 export async function loadStashConfig(): Promise<ResolvedStashConfig> {
-  const configPath = findConfigFile(process.cwd())
+  const result = await tryLoadStashConfig()
 
-  if (!configPath) {
+  if (result.ok) {
+    return result.config
+  }
+
+  if (result.reason === 'not-found') {
     console.error(`Error: Could not find ${CONFIG_FILENAME}
 
 Create a ${CONFIG_FILENAME} file in your project root:
@@ -96,34 +159,21 @@ Create a ${CONFIG_FILENAME} file in your project root:
     process.exit(1)
   }
 
-  const { createJiti } = await import('jiti')
-  const jiti = createJiti(configPath, {
-    interopDefault: true,
-  })
-
-  let rawConfig: unknown
-  try {
-    rawConfig = await jiti.import(configPath)
-  } catch (error) {
-    console.error(`Error: Failed to load ${CONFIG_FILENAME} at ${configPath}\n`)
-    console.error(error)
+  if (result.reason === 'import-failed') {
+    console.error(
+      `Error: Failed to load ${CONFIG_FILENAME} at ${result.configPath}\n`,
+    )
+    console.error(result.cause)
     process.exit(1)
   }
 
-  const result = stashConfigSchema.safeParse(rawConfig)
-
-  if (!result.success) {
-    console.error(`Error: Invalid ${CONFIG_FILENAME}\n`)
-
-    for (const issue of result.error.issues) {
-      console.error(`  - ${issue.path.join('.')}: ${issue.message}`)
-    }
-
-    console.error()
-    process.exit(1)
+  // reason === 'invalid'
+  console.error(`Error: Invalid ${CONFIG_FILENAME}\n`)
+  for (const issue of result.issues) {
+    console.error(`  - ${issue.path.join('.')}: ${issue.message}`)
   }
-
-  return result.data
+  console.error()
+  process.exit(1)
 }
 
 /**

@@ -12,7 +12,17 @@ interface ValidationIssue {
 }
 
 /** Cast-as types that are not string-like — free-text search is meaningless for these. */
-const NON_STRING_CAST_TYPES = new Set(['int', 'small_int', 'big_int', 'real', 'double', 'boolean', 'date', 'number', 'bigint'])
+const NON_STRING_CAST_TYPES = new Set([
+  'int',
+  'small_int',
+  'big_int',
+  'real',
+  'double',
+  'boolean',
+  'date',
+  'number',
+  'bigint',
+])
 
 /**
  * Validate an EncryptConfig against common misconfiguration rules.

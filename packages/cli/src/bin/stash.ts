@@ -62,6 +62,7 @@ Commands:
   init                 Initialize CipherStash for your project
   auth <subcommand>    Authenticate with CipherStash
   wizard               AI-powered encryption setup (reads your codebase)
+  doctor               Diagnose install issues across project, config, auth, env, and database
 
   db install           Scaffold stash.config.ts (if missing) and install EQL extensions
   db upgrade           Upgrade EQL extensions to the latest version
@@ -90,6 +91,14 @@ DB Flags:
   --drizzle                  (install) Generate a Drizzle migration instead of direct install (auto-detected from project)
   --exclude-operator-family  (install, upgrade, validate) Skip operator family creation
   --latest                   (install, upgrade) Fetch the latest EQL from GitHub
+
+Doctor Flags:
+  --json                     Emit a JSON report (suppresses interactive output)
+  --verbose                  Show cause chains for failing checks
+  --skip-db                  Skip checks that open a DB connection
+  --only <category>          Only run one category: project, config, auth, env, database, integration (comma-separated)
+  --fix                      (reserved — not implemented yet)
+  --yes                      (reserved — not implemented yet)
 
 Examples:
   npx @cipherstash/cli init
@@ -198,6 +207,24 @@ async function runDbCommand(
   }
 }
 
+async function runDoctorCommand(
+  flags: Record<string, boolean>,
+  values: Record<string, string>,
+) {
+  // Lazy-load so a broken project (e.g. missing @cipherstash/stack) still
+  // reaches the doctor command rather than tripping on a top-level import.
+  const { runDoctor, parseDoctorFlags } = await import(
+    '../commands/doctor/index.js'
+  )
+  const parsed = parseDoctorFlags(flags, values)
+  const code = await runDoctor({
+    flags: parsed,
+    cwd: process.cwd(),
+    cliVersion: pkg.version,
+  })
+  if (code !== 0) process.exit(code)
+}
+
 async function runSchemaCommand(
   sub: string | undefined,
   flags: Record<string, boolean>,
@@ -254,6 +281,9 @@ async function main() {
     }
     case 'db':
       await runDbCommand(subcommand, flags, values)
+      break
+    case 'doctor':
+      await runDoctorCommand(flags, values)
       break
     case 'schema':
       await runSchemaCommand(subcommand, flags)

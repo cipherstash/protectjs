@@ -7,11 +7,11 @@
  */
 
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
-import { resolve, join } from 'node:path'
+import { join, resolve } from 'node:path'
 import * as p from '@clack/prompts'
 import { introspectDatabase } from '../tools/wizard-tools.js'
 import { checkEnvKeys } from '../tools/wizard-tools.js'
-import type { Integration, DetectedPackageManager } from './types.js'
+import type { DetectedPackageManager, Integration } from './types.js'
 
 export interface ColumnSelection {
   tableName: string
@@ -123,7 +123,8 @@ async function tryIntrospect(cwd: string): Promise<DbTable[] | null> {
   if (!dbUrl) {
     // Ask user for DATABASE_URL
     const urlInput = await p.text({
-      message: 'Enter your DATABASE_URL (or press Enter to skip and enter tables manually):',
+      message:
+        'Enter your DATABASE_URL (or press Enter to skip and enter tables manually):',
       placeholder: 'postgresql://user:pass@host:5432/dbname',
     })
 
@@ -186,7 +187,9 @@ async function selectColumnsFromDb(
     )
 
     if (encryptableColumns.length === 0) {
-      p.log.info(`No encryptable columns found in ${tableName} (IDs, timestamps, and already-encrypted columns are excluded).`)
+      p.log.info(
+        `No encryptable columns found in ${tableName} (IDs, timestamps, and already-encrypted columns are excluded).`,
+      )
       continue
     }
 
@@ -243,11 +246,18 @@ async function selectColumnsManually(): Promise<ColumnSelection[]> {
 
     if (p.isCancel(columnNames) || !columnNames?.trim()) break
 
-    for (const col of columnNames.split(',').map((c) => c.trim()).filter(Boolean)) {
+    for (const col of columnNames
+      .split(',')
+      .map((c) => c.trim())
+      .filter(Boolean)) {
       const dataType = await p.select({
         message: `Data type for "${tableName}.${col}":`,
         options: [
-          { value: 'text', label: 'Text / String', hint: 'varchar, text, char, uuid' },
+          {
+            value: 'text',
+            label: 'Text / String',
+            hint: 'varchar, text, char, uuid',
+          },
           { value: 'number', label: 'Number', hint: 'integer, float, numeric' },
           { value: 'boolean', label: 'Boolean' },
           { value: 'date', label: 'Date / Timestamp' },
