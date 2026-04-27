@@ -48,10 +48,7 @@ export async function fetchIntegrationPrompt(
     // Network failures, DNS errors, AbortSignal.timeout — classifyError
     // recognizes "fetch failed" / ECONNREFUSED and renders the gateway-status footer.
     throw new Error(
-      formatWizardError(
-        'Could not reach the CipherStash AI gateway.',
-        message,
-      ),
+      formatWizardError('Could not reach the CipherStash AI gateway.', message),
     )
   }
 
@@ -67,7 +64,10 @@ export async function fetchIntegrationPrompt(
   }
 
   const body = (await res.json()) as Partial<FetchedPrompt>
-  if (typeof body.prompt !== 'string' || typeof body.promptVersion !== 'string') {
+  if (
+    typeof body.prompt !== 'string' ||
+    typeof body.promptVersion !== 'string'
+  ) {
     throw new Error(
       formatWizardError(
         'The wizard gateway returned an invalid prompt response.',

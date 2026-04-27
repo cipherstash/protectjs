@@ -1,6 +1,8 @@
 import { existsSync } from 'node:fs'
 import { resolve } from 'node:path'
-import auth from '@cipherstash/auth'
+import { hasCredentials } from '@/lib/auth-state.js'
+
+export { hasCredentials }
 
 interface PrerequisiteResult {
   ok: boolean
@@ -30,23 +32,6 @@ export async function checkPrerequisites(
   }
 
   return { ok: missing.length === 0, missing }
-}
-
-// Ask @cipherstash/auth to resolve credentials via its own profile logic
-// rather than probing a hardcoded path — the on-disk layout has shifted
-// between auth versions and duplicating it in the CLI is what caused
-// CIP-2996 in the first place.
-async function hasCredentials(): Promise<boolean> {
-  try {
-    await auth.AutoStrategy.detect().getToken()
-    return true
-  } catch (error) {
-    const code = (error as { code?: string } | null)?.code
-    if (code === 'NOT_AUTHENTICATED' || code === 'MISSING_WORKSPACE_CRN') {
-      return false
-    }
-    throw error
-  }
 }
 
 /** Walk up from cwd to find stash.config.ts. */

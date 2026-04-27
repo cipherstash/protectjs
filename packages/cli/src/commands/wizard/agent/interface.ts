@@ -9,14 +9,14 @@
  * - Interactive conversation loop (user can reply to agent questions)
  */
 
+import type { PermissionResult } from '@anthropic-ai/claude-agent-sdk'
+import auth from '@cipherstash/auth'
 import * as p from '@clack/prompts'
 import { GATEWAY_URL } from '../lib/constants.js'
 import { formatAgentOutput } from '../lib/format.js'
+import type { WizardSession } from '../lib/types.js'
 import { classifyError, formatWizardError } from './errors.js'
 import { scanPreToolUse } from './hooks.js'
-import type { WizardSession } from '../lib/types.js'
-import type { PermissionResult } from '@anthropic-ai/claude-agent-sdk'
-import auth from '@cipherstash/auth'
 
 const { AutoStrategy } = auth
 
@@ -81,10 +81,10 @@ const ALLOWED_WRITE_PATHS = [
 
 /** Sensitive file patterns the agent must not read directly. */
 const SENSITIVE_FILE_PATTERNS = [
-  /\.env($|\.)/,       // .env, .env.local, .env.production, etc.
-  /auth\.json$/,       // ~/.cipherstash/auth.json
-  /secretkey\.json$/,  // ~/.cipherstash/secretkey.json
-  /credentials/i,      // Various credential files
+  /\.env($|\.)/, // .env, .env.local, .env.production, etc.
+  /auth\.json$/, // ~/.cipherstash/auth.json
+  /secretkey\.json$/, // ~/.cipherstash/secretkey.json
+  /credentials/i, // Various credential files
 ]
 
 function isSensitivePath(filePath: string): boolean {
@@ -105,7 +105,10 @@ export function wizardCanUseTool(
   input: Record<string, unknown>,
 ): true | string {
   // Layer 1: Run YARA-style pre-execution scan
-  const hookResult = scanPreToolUse(toolName, String(input.command ?? input.file_path ?? ''))
+  const hookResult = scanPreToolUse(
+    toolName,
+    String(input.command ?? input.file_path ?? ''),
+  )
   if (hookResult.blocked) {
     return hookResult.reason ?? 'Blocked by security scan'
   }
@@ -179,7 +182,10 @@ async function getAccessToken(): Promise<string | undefined> {
 /**
  * Friendly tool name for spinner messages.
  */
-function describeToolUse(toolName: string, input: Record<string, unknown>): string {
+function describeToolUse(
+  toolName: string,
+  input: Record<string, unknown>,
+): string {
   switch (toolName) {
     case 'Read':
       return `Reading ${shortenPath(String(input.file_path ?? ''))}`
@@ -214,7 +220,12 @@ function looksLikeQuestion(text: string): boolean {
   const trimmed = text.trim()
   // Ends with a question mark or contains common question patterns
   if (trimmed.endsWith('?')) return true
-  if (/let me know|which .*(do you|would you|should)|please (choose|select|confirm|tell)/i.test(trimmed)) return true
+  if (
+    /let me know|which .*(do you|would you|should)|please (choose|select|confirm|tell)/i.test(
+      trimmed,
+    )
+  )
+    return true
   return false
 }
 
@@ -337,7 +348,9 @@ export async function initializeAgent(
           },
         },
         stderr: session.debug
-          ? (data: string) => { p.log.warn(`[agent stderr] ${data.trim()}`) }
+          ? (data: string) => {
+              p.log.warn(`[agent stderr] ${data.trim()}`)
+            }
           : undefined,
       }
 
@@ -362,132 +375,142 @@ export async function initializeAgent(
       }
 
       try {
-      for await (const message of response) {
-        // First message from the agent — update spinner
-        if (!receivedFirstMessage && message.type === 'assistant') {
-          receivedFirstMessage = true
-          spinner.message('Agent is analyzing your project...')
-        }
+        for await (const message of response) {
+          // First message from the agent — update spinner
+          if (!receivedFirstMessage && message.type === 'assistant') {
+            receivedFirstMessage = true
+            spinner.message('Agent is analyzing your project...')
+          }
 
-        if (message.type === 'assistant') {
-          lastAssistantHadToolUse = false
-          const content = message.message?.content
-          if (Array.isArray(content)) {
-            for (const block of content) {
-              if (block.type === 'text' && typeof block.text === 'string') {
-                currentTurnText.push(block.text)
-                allCollectedText.push(block.text)
-              }
+          if (message.type === 'assistant') {
+            lastAssistantHadToolUse = false
+            const content = message.message?.content
+            if (Array.isArray(content)) {
+              for (const block of content) {
+                if (block.type === 'text' && typeof block.text === 'string') {
+                  currentTurnText.push(block.text)
+                  allCollectedText.push(block.text)
+                }
 
-              if (block.type === 'tool_use') {
-                lastAssistantHadToolUse = true
-                if (spinnerActive) {
-                  const desc = describeToolUse(
-                    block.name ?? 'unknown',
-                    (block.input as Record<string, unknown>) ?? {},
-                  )
-                  spinner.message(desc)
+                if (block.type === 'tool_use') {
+                  lastAssistantHadToolUse = true
+                  if (spinnerActive) {
+                    const desc = describeToolUse(
+                      block.name ?? 'unknown',
+                      (block.input as Record<string, unknown>) ?? {},
+                    )
+                    spinner.message(desc)
+                  }
                 }
               }
             }
           }
-        }
 
-        if (message.type === 'system' && message.subtype === 'init') {
-          if (spinnerActive) {
-            spinner.message('Agent initialized, starting work...')
+          if (message.type === 'system' && message.subtype === 'init') {
+            if (spinnerActive) {
+              spinner.message('Agent initialized, starting work...')
+            }
           }
-        }
 
-        if (message.type === 'result') {
-          turnCount++
+          if (message.type === 'result') {
+            turnCount++
 
-          const isSuccess = message.subtype === 'success' && !message.is_error
-          if (isSuccess) {
-            const turnText = currentTurnText.join('\n').trim()
+            const isSuccess = message.subtype === 'success' && !message.is_error
+            if (isSuccess) {
+              const turnText = currentTurnText.join('\n').trim()
 
-            // Check if the agent is asking the user a question
-            // (text-only response, no tool calls, and looks like a question)
-            if (
-              turnText.length > 0 &&
-              !lastAssistantHadToolUse &&
-              looksLikeQuestion(turnText) &&
-              turnCount < MAX_CONVERSATION_TURNS
-            ) {
-              // Stop spinner, show agent output, prompt user
-              if (spinnerActive) {
-                spinner.stop('Agent needs your input')
-                spinnerActive = false
-              }
+              // Check if the agent is asking the user a question
+              // (text-only response, no tool calls, and looks like a question)
+              if (
+                turnText.length > 0 &&
+                !lastAssistantHadToolUse &&
+                looksLikeQuestion(turnText) &&
+                turnCount < MAX_CONVERSATION_TURNS
+              ) {
+                // Stop spinner, show agent output, prompt user
+                if (spinnerActive) {
+                  spinner.stop('Agent needs your input')
+                  spinnerActive = false
+                }
 
-              console.log('')
-              console.log(formatAgentOutput(turnText))
-              console.log('')
-
-              const userReply = await p.text({
-                message: 'Your reply (or "done" to finish):',
-                placeholder: 'Type your answer...',
-              })
-
-              if (p.isCancel(userReply) || userReply.toLowerCase().trim() === 'done') {
-                // User wants to stop
-                success = true
-                signalDone()
-              } else {
-                // Send reply to the agent, restart spinner
-                currentTurnText = []
-                spinner.start('Agent is working...')
-                spinnerActive = true
-                pushMessage(userReply)
-              }
-            } else {
-              // Agent is done (made changes, gave final instructions, etc.)
-              success = true
-              const durationSec = ((Date.now() - start) / 1000).toFixed(1)
-              if (spinnerActive) {
-                spinner.stop(`Agent completed in ${durationSec}s`)
-                spinnerActive = false
-              }
-
-              if (turnText.length > 0) {
                 console.log('')
                 console.log(formatAgentOutput(turnText))
                 console.log('')
+
+                const userReply = await p.text({
+                  message: 'Your reply (or "done" to finish):',
+                  placeholder: 'Type your answer...',
+                })
+
+                if (
+                  p.isCancel(userReply) ||
+                  userReply.toLowerCase().trim() === 'done'
+                ) {
+                  // User wants to stop
+                  success = true
+                  signalDone()
+                } else {
+                  // Send reply to the agent, restart spinner
+                  currentTurnText = []
+                  spinner.start('Agent is working...')
+                  spinnerActive = true
+                  pushMessage(userReply)
+                }
+              } else {
+                // Agent is done (made changes, gave final instructions, etc.)
+                success = true
+                const durationSec = ((Date.now() - start) / 1000).toFixed(1)
+                if (spinnerActive) {
+                  spinner.stop(`Agent completed in ${durationSec}s`)
+                  spinnerActive = false
+                }
+
+                if (turnText.length > 0) {
+                  console.log('')
+                  console.log(formatAgentOutput(turnText))
+                  console.log('')
+                }
+
+                signalDone()
+              }
+            } else {
+              // Extract as much detail as possible from the result message
+              const errorDetail =
+                message.error_details ??
+                message.result ??
+                message.last_assistant_message ??
+                'Agent execution failed'
+
+              if (session.debug) {
+                p.log.warn(
+                  `[debug] Result message: ${JSON.stringify(
+                    {
+                      subtype: message.subtype,
+                      is_error: message.is_error,
+                      error: message.error,
+                      error_details: message.error_details,
+                      result: message.result?.slice(0, 500),
+                      last_assistant_message:
+                        message.last_assistant_message?.slice(0, 500),
+                      stop_reason: message.stop_reason,
+                    },
+                    null,
+                    2,
+                  )}`,
+                )
+              }
+
+              errorMessage = classifyError(message.error, errorDetail)
+
+              if (spinnerActive) {
+                spinner.stop('Agent encountered an error')
+                spinnerActive = false
               }
 
               signalDone()
             }
-          } else {
-            // Extract as much detail as possible from the result message
-            const errorDetail = message.error_details
-              ?? message.result
-              ?? message.last_assistant_message
-              ?? 'Agent execution failed'
-
-            if (session.debug) {
-              p.log.warn(`[debug] Result message: ${JSON.stringify({
-                subtype: message.subtype,
-                is_error: message.is_error,
-                error: message.error,
-                error_details: message.error_details,
-                result: message.result?.slice(0, 500),
-                last_assistant_message: message.last_assistant_message?.slice(0, 500),
-                stop_reason: message.stop_reason,
-              }, null, 2)}`)
-            }
-
-            errorMessage = classifyError(message.error, errorDetail)
-
-            if (spinnerActive) {
-              spinner.stop('Agent encountered an error')
-              spinnerActive = false
-            }
-
-            signalDone()
           }
         }
-      }
-
       } catch (err) {
         const msg = err instanceof Error ? err.message : 'Unknown error'
         if (spinnerActive) {

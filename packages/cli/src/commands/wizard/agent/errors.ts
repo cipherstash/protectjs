@@ -60,7 +60,10 @@ export function classifyError(
     return classifyHttpError(status, apiMessage || rawMessage)
   }
 
-  if (rawMessage.includes('ECONNREFUSED') || rawMessage.includes('fetch failed')) {
+  if (
+    rawMessage.includes('ECONNREFUSED') ||
+    rawMessage.includes('fetch failed')
+  ) {
     return formatWizardError(
       'Could not reach the CipherStash AI gateway.',
       'The gateway may be temporarily unavailable. Check the status pages below.',
@@ -106,7 +109,9 @@ export function classifyHttpError(status: number, apiMessage: string): string {
   if (status >= 500) {
     return formatWizardError(
       `The AI service returned an error (HTTP ${status}).`,
-      apiMessage ? `Reason: ${apiMessage}` : 'This is likely a temporary issue.',
+      apiMessage
+        ? `Reason: ${apiMessage}`
+        : 'This is likely a temporary issue.',
     )
   }
   return formatWizardError(

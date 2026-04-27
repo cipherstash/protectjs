@@ -51,7 +51,10 @@ describe('EQLInstaller', () => {
         switch (queryCall) {
           // pg_roles query — not superuser
           case 1:
-            return { rows: [{ rolsuper: false, rolcreatedb: false }], rowCount: 1 }
+            return {
+              rows: [{ rolsuper: false, rolcreatedb: false }],
+              rowCount: 1,
+            }
           // has_database_privilege — no CREATE
           case 2:
             return { rows: [{ has_create: false }], rowCount: 1 }
@@ -130,7 +133,10 @@ describe('EQLInstaller', () => {
       expect(mockQuery).toHaveBeenCalledWith('BEGIN')
       // The second query should be the bundled SQL (a large string)
       const sqlCall = mockQuery.mock.calls.find(
-        (call: string[]) => typeof call[0] === 'string' && call[0] !== 'BEGIN' && call[0] !== 'COMMIT',
+        (call: string[]) =>
+          typeof call[0] === 'string' &&
+          call[0] !== 'BEGIN' &&
+          call[0] !== 'COMMIT',
       )
       expect(sqlCall).toBeDefined()
       expect(sqlCall[0]).toContain('eql_v2')
