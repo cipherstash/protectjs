@@ -62,6 +62,27 @@
 			],
 			"supabase": [
 				"./dist/supabase/index.d.ts"
+			],
+			"prisma": [
+				"./dist/prisma/index.d.ts"
+			],
+			"prisma/control": [
+				"./dist/prisma/exports/control.d.ts"
+			],
+			"prisma/runtime": [
+				"./dist/prisma/exports/runtime.d.ts"
+			],
+			"prisma/pack": [
+				"./dist/prisma/exports/pack.d.ts"
+			],
+			"prisma/column-types": [
+				"./dist/prisma/exports/column-types.d.ts"
+			],
+			"prisma/codec-types": [
+				"./dist/prisma/exports/codec-types.d.ts"
+			],
+			"prisma/operation-types": [
+				"./dist/prisma/exports/operation-types.d.ts"
 			]
 		}
 	},
@@ -176,13 +197,85 @@
 				"default": "./dist/errors/index.cjs"
 			}
 		},
+		"./prisma": {
+			"import": {
+				"types": "./dist/prisma/index.d.ts",
+				"default": "./dist/prisma/index.js"
+			},
+			"require": {
+				"types": "./dist/prisma/index.d.cts",
+				"default": "./dist/prisma/index.cjs"
+			}
+		},
+		"./prisma/control": {
+			"import": {
+				"types": "./dist/prisma/exports/control.d.ts",
+				"default": "./dist/prisma/exports/control.js"
+			},
+			"require": {
+				"types": "./dist/prisma/exports/control.d.cts",
+				"default": "./dist/prisma/exports/control.cjs"
+			}
+		},
+		"./prisma/runtime": {
+			"import": {
+				"types": "./dist/prisma/exports/runtime.d.ts",
+				"default": "./dist/prisma/exports/runtime.js"
+			},
+			"require": {
+				"types": "./dist/prisma/exports/runtime.d.cts",
+				"default": "./dist/prisma/exports/runtime.cjs"
+			}
+		},
+		"./prisma/pack": {
+			"import": {
+				"types": "./dist/prisma/exports/pack.d.ts",
+				"default": "./dist/prisma/exports/pack.js"
+			},
+			"require": {
+				"types": "./dist/prisma/exports/pack.d.cts",
+				"default": "./dist/prisma/exports/pack.cjs"
+			}
+		},
+		"./prisma/column-types": {
+			"import": {
+				"types": "./dist/prisma/exports/column-types.d.ts",
+				"default": "./dist/prisma/exports/column-types.js"
+			},
+			"require": {
+				"types": "./dist/prisma/exports/column-types.d.cts",
+				"default": "./dist/prisma/exports/column-types.cjs"
+			}
+		},
+		"./prisma/codec-types": {
+			"import": {
+				"types": "./dist/prisma/exports/codec-types.d.ts",
+				"default": "./dist/prisma/exports/codec-types.js"
+			},
+			"require": {
+				"types": "./dist/prisma/exports/codec-types.d.cts",
+				"default": "./dist/prisma/exports/codec-types.cjs"
+			}
+		},
+		"./prisma/operation-types": {
+			"import": {
+				"types": "./dist/prisma/exports/operation-types.d.ts",
+				"default": "./dist/prisma/exports/operation-types.js"
+			},
+			"require": {
+				"types": "./dist/prisma/exports/operation-types.d.cts",
+				"default": "./dist/prisma/exports/operation-types.cjs"
+			}
+		},
 		"./package.json": "./package.json"
 	},
 	"scripts": {
+		"prebuild": "tsx scripts/vendor-eql-install.ts",
 		"build": "tsup",
 		"dev": "tsup --watch",
 		"test": "vitest run",
-		"release": "tsup"
+		"release": "tsup",
+		"vendor-eql-install": "tsx scripts/vendor-eql-install.ts"
 	},
 	"devDependencies": {
 		"@clack/prompts": "^0.10.1",
@@ -204,6 +297,7 @@
 	"dependencies": {
 		"@byteslice/result": "0.2.0",
 		"@cipherstash/protect-ffi": "0.21.2",
+		"arktype": "^2.2.0",
 		"evlog": "1.9.0",
 		"uuid": "13.0.0",
 		"zod": "3.24.2"
