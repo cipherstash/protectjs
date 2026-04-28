@@ -1,5 +1,5 @@
-import { existsSync, readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
+import { existsSync, readFileSync, statSync } from 'node:fs'
+import { isAbsolute, resolve } from 'node:path'
 
 /**
  * Return true when the connection string points at a Supabase-hosted Postgres.
@@ -24,6 +24,66 @@ export function detectSupabase(databaseUrl: string | undefined): boolean {
     host.endsWith('.supabase.com') ||
     host.endsWith('.pooler.supabase.com')
   )
+}
+
+/**
+ * Information about the Supabase project layout in the current working
+ * directory. Pure filesystem facts — no DB calls and no I/O beyond `existsSync`
+ * / `statSync`.
+ */
+export interface SupabaseProjectInfo {
+  /**
+   * Whether the migrations directory exists AND is a directory. Used to pick
+   * the migration-vs-direct default in the `db install --supabase` prompt.
+   */
+  hasMigrationsDir: boolean
+  /**
+   * Whether `supabase/config.toml` exists. Informational only — it doesn't
+   * influence the prompt default but is useful for diagnostics.
+   */
+  hasConfigToml: boolean
+  /**
+   * Absolute path to the migrations directory we'd write into. Defaults to
+   * `<cwd>/supabase/migrations`, or `override` (resolved against `cwd` when
+   * relative) when supplied via `--migrations-dir`.
+   */
+  migrationsDir: string
+}
+
+/**
+ * Inspect the working directory for Supabase CLI scaffolding.
+ *
+ * IMPORTANT: this is a hint for choosing the install-mode prompt default —
+ * it does NOT enable `--supabase`. The user must pass `--supabase` explicitly
+ * for any of the migration-file flow to activate.
+ *
+ * @param cwd - Project root to inspect.
+ * @param override - Optional `--migrations-dir` override. Absolute paths are
+ *   used as-is; relative paths are resolved against `cwd`.
+ */
+export function detectSupabaseProject(
+  cwd: string,
+  override?: string,
+): SupabaseProjectInfo {
+  const migrationsDir = override
+    ? isAbsolute(override)
+      ? override
+      : resolve(cwd, override)
+    : resolve(cwd, 'supabase', 'migrations')
+
+  const hasMigrationsDir = existsAsDirectory(migrationsDir)
+  const hasConfigToml = existsSync(resolve(cwd, 'supabase', 'config.toml'))
+
+  return { hasMigrationsDir, hasConfigToml, migrationsDir }
+}
+
+function existsAsDirectory(path: string): boolean {
+  if (!existsSync(path)) return false
+  try {
+    return statSync(path).isDirectory()
+  } catch {
+    return false
+  }
 }
 
 /**

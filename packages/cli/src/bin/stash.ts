@@ -84,10 +84,13 @@ Init Flags:
   --drizzle            Use Drizzle-specific setup flow
 
 DB Flags:
-  --force                    (install) Reinstall even if already installed
+  --force                    (install) Reinstall / overwrite even if already installed
   --dry-run                  (install, push, upgrade) Show what would happen without making changes
   --supabase                 (install, upgrade, validate) Use Supabase-compatible mode (auto-detected from DATABASE_URL)
   --drizzle                  (install) Generate a Drizzle migration instead of direct install (auto-detected from project)
+  --migration                (install, requires --supabase) Write a Supabase migration file instead of running SQL directly
+  --direct                   (install, requires --supabase) Run the SQL directly against the database (mutually exclusive with --migration)
+  --migrations-dir <path>    (install, requires --supabase) Override the Supabase migrations directory (default: supabase/migrations)
   --exclude-operator-family  (install, upgrade, validate) Skip operator family creation
   --latest                   (install, upgrade) Fetch the latest EQL from GitHub
 
@@ -154,6 +157,9 @@ async function runDbCommand(
         latest: flags.latest,
         name: values.name,
         out: values.out,
+        migration: flags.migration,
+        direct: flags.direct,
+        migrationsDir: values['migrations-dir'],
       })
       break
     case 'upgrade':

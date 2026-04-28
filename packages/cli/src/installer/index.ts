@@ -9,6 +9,25 @@ const EQL_INSTALL_NO_OPERATOR_FAMILY_URL =
 const EQL_SCHEMA_NAME = 'eql_v2'
 
 /**
+ * SQL block that grants the EQL schema, tables, routines, and sequences to
+ * Supabase's built-in roles (`anon`, `authenticated`, `service_role`).
+ *
+ * Supabase uses dedicated roles that don't own the schema, so explicit grants
+ * are required. We expose this as a single multi-statement string so it can be
+ * executed in one `client.query()` (Postgres accepts multi-statement strings)
+ * AND embedded directly into a Supabase migration file. One source of truth
+ * for both the runtime install path and the generated migration file.
+ */
+export const SUPABASE_PERMISSIONS_SQL = `GRANT USAGE ON SCHEMA ${EQL_SCHEMA_NAME} TO anon, authenticated, service_role;
+GRANT SELECT ON ALL TABLES IN SCHEMA ${EQL_SCHEMA_NAME} TO anon, authenticated, service_role;
+GRANT EXECUTE ON ALL ROUTINES IN SCHEMA ${EQL_SCHEMA_NAME} TO anon, authenticated, service_role;
+GRANT USAGE ON ALL SEQUENCES IN SCHEMA ${EQL_SCHEMA_NAME} TO anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA ${EQL_SCHEMA_NAME} GRANT SELECT ON TABLES TO anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA ${EQL_SCHEMA_NAME} GRANT EXECUTE ON ROUTINES TO anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA ${EQL_SCHEMA_NAME} GRANT USAGE ON SEQUENCES TO anon, authenticated, service_role;
+`
+
+/**
  * Get the directory of the current file, supporting both ESM and CJS.
  */
 function getCurrentDir(): string {
@@ -274,30 +293,13 @@ export class EQLInstaller {
    * Grant Supabase roles access to the eql_v2 schema.
    *
    * Supabase uses dedicated roles (anon, authenticated, service_role) that
-   * don't own the schema, so explicit grants are required.
+   * don't own the schema, so explicit grants are required. Issues
+   * {@link SUPABASE_PERMISSIONS_SQL} as a single multi-statement query —
+   * Postgres accepts that and it keeps the SQL identical to what we'd write
+   * into a Supabase migration file.
    */
   private async grantSupabasePermissions(client: pg.Client): Promise<void> {
-    const roles = 'anon, authenticated, service_role'
-
-    await client.query(`GRANT USAGE ON SCHEMA ${EQL_SCHEMA_NAME} TO ${roles}`)
-    await client.query(
-      `GRANT SELECT ON ALL TABLES IN SCHEMA ${EQL_SCHEMA_NAME} TO ${roles}`,
-    )
-    await client.query(
-      `GRANT EXECUTE ON ALL ROUTINES IN SCHEMA ${EQL_SCHEMA_NAME} TO ${roles}`,
-    )
-    await client.query(
-      `GRANT USAGE ON ALL SEQUENCES IN SCHEMA ${EQL_SCHEMA_NAME} TO ${roles}`,
-    )
-    await client.query(
-      `ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA ${EQL_SCHEMA_NAME} GRANT SELECT ON TABLES TO ${roles}`,
-    )
-    await client.query(
-      `ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA ${EQL_SCHEMA_NAME} GRANT EXECUTE ON ROUTINES TO ${roles}`,
-    )
-    await client.query(
-      `ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA ${EQL_SCHEMA_NAME} GRANT USAGE ON SEQUENCES TO ${roles}`,
-    )
+    await client.query(SUPABASE_PERMISSIONS_SQL)
   }
 
   /**

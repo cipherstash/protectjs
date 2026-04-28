@@ -10,8 +10,17 @@ import {
 } from '@/installer/index.js'
 import * as p from '@clack/prompts'
 import { ensureStashConfig } from './config-scaffold.js'
-import { detectDrizzle, detectSupabase } from './detect.js'
+import {
+  type SupabaseProjectInfo,
+  detectDrizzle,
+  detectSupabase,
+  detectSupabaseProject,
+} from './detect.js'
 import { rewriteEncryptedAlterColumns } from './rewrite-migrations.js'
+import {
+  SUPABASE_EQL_MIGRATION_FILENAME,
+  writeSupabaseEqlMigration,
+} from './supabase-migration.js'
 
 const DEFAULT_MIGRATION_NAME = 'install-eql'
 const DEFAULT_DRIZZLE_OUT = 'drizzle'
@@ -29,10 +38,39 @@ export interface InstallOptions {
   latest?: boolean
   name?: string
   out?: string
+  /**
+   * Write the EQL install SQL into a Supabase migration file instead of
+   * running it directly against the database. Requires `--supabase`.
+   */
+  migration?: boolean
+  /**
+   * Run the EQL install SQL directly against the database (current behavior).
+   * Requires `--supabase`. Mutually exclusive with `--migration`.
+   */
+  direct?: boolean
+  /**
+   * Override the directory the Supabase migration file is written into.
+   * Defaults to `<cwd>/supabase/migrations`.
+   */
+  migrationsDir?: string
 }
+
+/** Resolved install mode for the Supabase non-Drizzle branch. */
+export type SupabaseInstallMode = 'migration' | 'direct'
 
 export async function installCommand(options: InstallOptions) {
   p.intro('npx @cipherstash/cli db install')
+
+  // Validate mutually-exclusive / supabase-required flags BEFORE doing any
+  // I/O. `--migration` and `--direct` only make sense in the Supabase flow;
+  // they must NOT implicitly enable `--supabase`. (Strong product preference
+  // — auto-enabling here has bitten users before.)
+  const flagError = validateInstallFlags(options)
+  if (flagError) {
+    p.log.error(flagError)
+    p.outro('Installation aborted.')
+    process.exit(1)
+  }
 
   // Scaffold stash.config.ts if missing. `db install` is the single command
   // that gets a project from zero to installed EQL — no separate setup step
@@ -62,6 +100,39 @@ export async function installCommand(options: InstallOptions) {
       excludeOperatorFamily: resolved.excludeOperatorFamily,
     })
     return
+  }
+
+  // Supabase non-Drizzle path: pick between writing a migration file and
+  // running SQL directly. Detection of `supabase/migrations/` only seeds the
+  // prompt default — it never enables `--supabase`. Direct install is the
+  // historical default and remains the fallback when nothing else applies.
+  if (resolved.supabase) {
+    const projectInfo = detectSupabaseProject(
+      process.cwd(),
+      options.migrationsDir,
+    )
+    const mode = await resolveSupabaseInstallMode(options, projectInfo)
+
+    if (mode === 'migration') {
+      // CIP: --latest in the migration path is not yet implemented. Loading
+      // the bundled SQL works today; downloading from GitHub adds an extra
+      // moving part we'd rather defer until someone needs it.
+      if (options.latest) {
+        p.log.error(
+          '`db install --supabase --migration --latest` is not yet supported. Please open an issue at https://github.com/cipherstash/stack/issues if you need this.',
+        )
+        p.outro('Installation aborted.')
+        process.exit(1)
+      }
+
+      await writeSupabaseMigrationFile(s, {
+        projectInfo,
+        force: options.force,
+        dryRun: options.dryRun,
+      })
+      return
+    }
+    // mode === 'direct' — fall through to existing direct-install behavior.
   }
 
   if (options.dryRun) {
@@ -353,6 +424,196 @@ async function generateDrizzleMigration(
   p.log.success(`Migration created: ${generatedMigrationPath}`)
   p.note(
     'Run your Drizzle migrations to install EQL:\n\n  npx drizzle-kit migrate',
+    'Next Steps',
+  )
+  printNextSteps()
+  p.outro('Done!')
+}
+
+/**
+ * Validate flag combinations that we can detect without doing any I/O.
+ *
+ * Rules:
+ *   - `--migration` and `--direct` are mutually exclusive.
+ *   - `--migration`, `--direct`, and `--migrations-dir` each REQUIRE
+ *     `--supabase`. They do NOT auto-imply it.
+ *
+ * Returns a user-facing error message, or `null` when the flags are valid.
+ */
+export function validateInstallFlags(options: InstallOptions): string | null {
+  if (options.migration && options.direct) {
+    return '`--migration` and `--direct` are mutually exclusive. Pick one.'
+  }
+
+  const subFlag =
+    options.migration === true
+      ? '--migration'
+      : options.direct === true
+        ? '--direct'
+        : options.migrationsDir !== undefined
+          ? '--migrations-dir'
+          : null
+
+  if (subFlag !== null && options.supabase !== true) {
+    return `\`${subFlag}\` requires \`--supabase\`. Re-run with \`db install --supabase ${subFlag}\`.`
+  }
+
+  return null
+}
+
+/**
+ * Pick the Supabase install mode purely from inputs. No I/O, no prompts —
+ * easy to unit-test and to reason about.
+ *
+ * - Explicit `--migration` or `--direct` always wins.
+ * - Otherwise, when stdin isn't a TTY, default to `migration` if the
+ *   `supabase/migrations/` directory exists and `direct` otherwise. This is
+ *   the same heuristic the prompt uses for its default — keeps interactive
+ *   and non-interactive runs aligned.
+ * - When stdin IS a TTY and neither flag is set, returns `null` to signal
+ *   that the caller should prompt.
+ */
+export function chooseSupabaseInstallMode(
+  options: Pick<InstallOptions, 'migration' | 'direct'>,
+  projectInfo: SupabaseProjectInfo,
+  isTTY: boolean,
+): SupabaseInstallMode | null {
+  if (options.migration) return 'migration'
+  if (options.direct) return 'direct'
+  if (!isTTY) return projectInfo.hasMigrationsDir ? 'migration' : 'direct'
+  return null
+}
+
+/**
+ * Resolve the install mode, prompting the user when stdin is a TTY and
+ * neither sub-flag was passed. Pure logic lives in
+ * {@link chooseSupabaseInstallMode}; this is the I/O wrapper.
+ */
+async function resolveSupabaseInstallMode(
+  options: InstallOptions,
+  projectInfo: SupabaseProjectInfo,
+): Promise<SupabaseInstallMode> {
+  const isTTY = Boolean(process.stdin.isTTY) && process.env.CI !== 'true'
+  const decided = chooseSupabaseInstallMode(options, projectInfo, isTTY)
+
+  if (decided !== null) {
+    if (
+      !isTTY &&
+      options.migration === undefined &&
+      options.direct === undefined
+    ) {
+      // Make non-interactive choices visible — surprise auto-decisions are a
+      // common debugging headache.
+      p.log.info(
+        projectInfo.hasMigrationsDir
+          ? `Detected ${projectInfo.migrationsDir} — defaulting to --migration in non-interactive mode.`
+          : 'No supabase/migrations directory found — defaulting to --direct in non-interactive mode.',
+      )
+    }
+    return decided
+  }
+
+  const defaultMode: SupabaseInstallMode = projectInfo.hasMigrationsDir
+    ? 'migration'
+    : 'direct'
+
+  const choice = await p.select<SupabaseInstallMode>({
+    message: 'How should EQL be installed?',
+    initialValue: defaultMode,
+    options: [
+      {
+        value: 'migration',
+        label: 'Write a Supabase migration file',
+        hint: projectInfo.hasMigrationsDir
+          ? 'recommended — works with `supabase db reset`'
+          : 'creates supabase/migrations/ if missing',
+      },
+      {
+        value: 'direct',
+        label: 'Run the SQL directly against the database',
+        hint: 'fastest, but `supabase db reset` will not re-install EQL',
+      },
+    ],
+  })
+
+  if (p.isCancel(choice)) {
+    p.cancel('Installation cancelled.')
+    process.exit(0)
+  }
+
+  return choice
+}
+
+/**
+ * Write the `00000000000000_cipherstash_eql.sql` migration to the project's
+ * Supabase migrations directory. Mirrors the structure of the Drizzle
+ * migration helper for parity in the user-facing flow.
+ */
+async function writeSupabaseMigrationFile(
+  s: ReturnType<typeof p.spinner>,
+  opts: {
+    projectInfo: SupabaseProjectInfo
+    force?: boolean
+    dryRun?: boolean
+  },
+): Promise<void> {
+  const { projectInfo, force, dryRun } = opts
+  const targetPath = join(
+    projectInfo.migrationsDir,
+    SUPABASE_EQL_MIGRATION_FILENAME,
+  )
+
+  if (dryRun) {
+    p.log.info('Dry run — no changes will be made.')
+    p.note(
+      [
+        `Would write Supabase migration to:\n  ${targetPath}`,
+        '',
+        'Apply with one of:',
+        '  supabase db reset       # local',
+        '  supabase migration up   # remote (or push)',
+      ].join('\n'),
+      'Dry Run',
+    )
+    p.outro('Dry run complete.')
+    return
+  }
+
+  s.start('Writing CipherStash EQL migration...')
+  let result: { path: string; overwritten: boolean }
+  try {
+    result = await writeSupabaseEqlMigration({
+      migrationsDir: projectInfo.migrationsDir,
+      force,
+    })
+  } catch (error) {
+    s.stop('Failed to write Supabase migration.')
+    const message = error instanceof Error ? error.message : String(error)
+    p.log.error(message)
+    if (!force && message.includes('already exists')) {
+      p.log.info(
+        'Re-run with --force to overwrite the existing migration file.',
+      )
+    }
+    p.outro('Installation aborted.')
+    process.exit(1)
+  }
+
+  s.stop(
+    result.overwritten
+      ? `Overwrote ${result.path}`
+      : `Migration created: ${result.path}`,
+  )
+
+  p.note(
+    [
+      'Apply the migration to install EQL:',
+      '',
+      '  supabase db reset       # local — re-runs all migrations',
+      '  supabase migration up   # remote — applies pending migrations',
+      '',
+      'EQL is NOT installed yet. The SQL only runs when Supabase applies the migration.',
+    ].join('\n'),
     'Next Steps',
   )
   printNextSteps()
