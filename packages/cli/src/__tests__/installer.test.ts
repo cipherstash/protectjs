@@ -51,7 +51,10 @@ describe('EQLInstaller', () => {
         switch (queryCall) {
           // pg_roles query — not superuser
           case 1:
-            return { rows: [{ rolsuper: false, rolcreatedb: false }], rowCount: 1 }
+            return {
+              rows: [{ rolsuper: false, rolcreatedb: false }],
+              rowCount: 1,
+            }
           // has_database_privilege — no CREATE
           case 2:
             return { rows: [{ has_create: false }], rowCount: 1 }
@@ -130,7 +133,10 @@ describe('EQLInstaller', () => {
       expect(mockQuery).toHaveBeenCalledWith('BEGIN')
       // The second query should be the bundled SQL (a large string)
       const sqlCall = mockQuery.mock.calls.find(
-        (call: string[]) => typeof call[0] === 'string' && call[0] !== 'BEGIN' && call[0] !== 'COMMIT',
+        (call: string[]) =>
+          typeof call[0] === 'string' &&
+          call[0] !== 'BEGIN' &&
+          call[0] !== 'COMMIT',
       )
       expect(sqlCall).toBeDefined()
       expect(sqlCall[0]).toContain('eql_v2')
@@ -161,6 +167,41 @@ describe('EQLInstaller', () => {
       expect(mockQuery).toHaveBeenCalledWith('BEGIN')
       expect(mockQuery).toHaveBeenCalledWith(installSql)
       expect(mockQuery).toHaveBeenCalledWith('COMMIT')
+    })
+
+    it('grants Supabase permissions as a single SUPABASE_PERMISSIONS_SQL query', async () => {
+      mockConnect.mockResolvedValue(undefined)
+      mockQuery.mockResolvedValue({ rows: [], rowCount: 0 })
+      mockEnd.mockResolvedValue(undefined)
+
+      const { EQLInstaller, SUPABASE_PERMISSIONS_SQL } = await import(
+        '@/installer/index.ts'
+      )
+      const installer = new EQLInstaller({
+        databaseUrl: 'postgresql://localhost:5432/test',
+      })
+
+      await installer.install({ supabase: true })
+
+      // Capture every query string that isn't a transaction control verb.
+      const otherCalls = mockQuery.mock.calls
+        .map((call: unknown[]) => call[0])
+        .filter(
+          (sql: unknown): sql is string =>
+            typeof sql === 'string' &&
+            sql !== 'BEGIN' &&
+            sql !== 'COMMIT' &&
+            sql !== 'ROLLBACK',
+        )
+
+      // Two non-transaction queries: bundled EQL SQL, then permissions SQL.
+      expect(otherCalls).toHaveLength(2)
+      expect(otherCalls[1]).toBe(SUPABASE_PERMISSIONS_SQL)
+      // Permissions SQL must mention each role + the eql_v2 schema.
+      expect(SUPABASE_PERMISSIONS_SQL).toContain('eql_v2')
+      expect(SUPABASE_PERMISSIONS_SQL).toContain('anon')
+      expect(SUPABASE_PERMISSIONS_SQL).toContain('authenticated')
+      expect(SUPABASE_PERMISSIONS_SQL).toContain('service_role')
     })
 
     it('rolls back on SQL execution failure', async () => {
