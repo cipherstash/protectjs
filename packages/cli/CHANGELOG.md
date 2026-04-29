@@ -1,5 +1,11 @@
 # @cipherstash/cli
 
+## 0.8.0
+
+### Minor Changes
+
+- 34432e9: Added --migration and --direct options to Supabase EQL install steps
+
 ## 0.7.1
 
 ### Patch Changes
