@@ -4,6 +4,8 @@
   </a>
   <h1>CipherStash Stack for TypeScript</h1>
 
+  <p><strong>Data-level access control for TypeScript.</strong><br/>Every sensitive value encrypted with a unique key. Searchable on existing Postgres indexes.<br/>A breach yields ciphertext, nothing useful.</p>
+
 <a href="https://cipherstash.com"><img alt="Built by CipherStash" src="https://raw.githubusercontent.com/cipherstash/meta/refs/heads/main/csbadge.svg?style=for-the-badge&labelColor=000"></a>
 <a href="https://github.com/cipherstash/stack/blob/main/LICENSE.md"><img alt="License" src="https://img.shields.io/npm/l/@cipherstash/stack.svg?style=for-the-badge&labelColor=000000"></a>
 <a href="https://cipherstash.com/docs"><img alt="Docs" src="https://img.shields.io/badge/Docs-333333.svg?style=for-the-badge&logo=readthedocs&labelColor=333"></a>
@@ -13,7 +15,9 @@
 
 ## What is the stack?
 
-- [Encryption](https://cipherstash.com/docs/stack/cipherstash/encryption): Field-level encryption for TypeScript apps with searchable encrypted queries, zero-knowledge key management, and first-class ORM support.
+CipherStash makes access control cryptographic. The rules aren't configured — they're enforced. Every sensitive value carries a decryption policy that travels with the data, wherever it ends up: past the API response, past an agent tool call, past the database. The stack is the TypeScript surface to that model.
+
+- [Encryption](https://cipherstash.com/docs/stack/cipherstash/encryption): Searchable, application-layer field-level encryption for TypeScript apps. Range queries, exact match, and free-text fuzzy search over encrypted fields with sub-millisecond overhead on existing Postgres indexes. Identity-bound keys via `LockContext`. First-class ORM support.
 
 ## Quick look at the stack in action
 
@@ -79,8 +83,10 @@ bun add @cipherstash/stack
 
 ## Use cases
 
-- **Trusted data access**: ensure only your end-users can access their sensitive data using identity-bound encryption
-- **Reduce breach impact**: limit the blast radius of exploited vulnerabilities to only the data the affected user can decrypt
+- **A breach yields ciphertext, nothing useful** — limit the blast radius of compromised credentials and exploited vulnerabilities to the data the attacker's identity can decrypt.
+- **Per-value access policy** — enforce who can decrypt what, wherever the data ends up.
+- **Agent-safe by design** — sensitive values stay encrypted through agent tool calls and downstream pipelines until the right identity asks for them.
+- **Faster, simpler, and more reliable than row-level security** — the policy travels with the data, not the database connection.
 
 ## Documentation
 
