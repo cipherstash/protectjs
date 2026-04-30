@@ -1,5 +1,6 @@
 import auth from '@cipherstash/auth'
 import * as p from '@clack/prompts'
+import { messages } from '../../messages.js'
 const { beginDeviceCodeFlow, bindClientDevice } = auth
 
 // TODO: pull from the CTS API
@@ -15,12 +16,12 @@ export const regions = [
 
 export async function selectRegion(): Promise<string> {
   const region = await p.select({
-    message: 'Select a region',
+    message: messages.auth.selectRegion,
     options: regions,
   })
 
   if (p.isCancel(region)) {
-    p.cancel('Cancelled.')
+    p.cancel(messages.auth.cancelled)
     process.exit(0)
   }
 

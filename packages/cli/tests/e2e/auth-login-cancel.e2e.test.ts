@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { messages } from '../../src/messages.js'
 import { render } from '../helpers/pty.js'
 
 describe('stash auth login — interactive cancel', () => {
@@ -7,12 +8,12 @@ describe('stash auth login — interactive cancel', () => {
 
     // First clack prompt — `selectRegion()` runs synchronously before any
     // network activity, so this is a deterministic assertion target.
-    await r.waitFor('Select a region')
+    await r.waitFor(messages.auth.selectRegion)
 
     r.key('CtrlC')
 
     const { exitCode } = await r.exit
     expect(exitCode).toBe(0)
-    expect(r.output).toContain('Cancelled.')
+    expect(r.output).toContain(messages.auth.cancelled)
   })
 })
