@@ -182,6 +182,7 @@ export async function run(options: RunOptions) {
         cwd: options.cwd,
         integration: selectedIntegration,
         gathered,
+        packageManager,
       })
       changelog.phase(
         'Post-agent steps complete',

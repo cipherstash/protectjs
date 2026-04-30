@@ -11,12 +11,13 @@ import { resolve } from 'node:path'
 import * as p from '@clack/prompts'
 import { rewriteEncryptedAlterColumns } from './rewrite-migrations.js'
 import type { GatheredContext } from './gather.js'
-import type { Integration } from './types.js'
+import type { DetectedPackageManager, Integration } from './types.js'
 
 interface PostAgentOptions {
   cwd: string
   integration: Integration
   gathered: GatheredContext
+  packageManager: DetectedPackageManager | undefined
 }
 
 /**
@@ -29,7 +30,8 @@ const DRIZZLE_OUT_DIRS = ['drizzle', 'migrations', 'src/db/migrations']
  * Run all post-agent steps: install packages, push config, run migrations.
  */
 export async function runPostAgentSteps(opts: PostAgentOptions): Promise<void> {
-  const { cwd, integration, gathered } = opts
+  const { cwd, integration, gathered, packageManager } = opts
+  const runner = packageManager?.execCommand ?? 'npx'
 
   // Step 1: Install @cipherstash/stack
   await runStep(
@@ -39,14 +41,14 @@ export async function runPostAgentSteps(opts: PostAgentOptions): Promise<void> {
     cwd,
   )
 
-  // Step 2: Run npx @cipherstash/cli db install if the project doesn't yet
+  // Step 2: Run runner @cipherstash/cli db install if the project doesn't yet
   // have a stash.config.ts. `db install` scaffolds the config and installs
   // EQL in a single step (CIP-2986).
   if (!gathered.hasStashConfig) {
     await runStep(
-      'Running npx @cipherstash/cli db install...',
-      'npx @cipherstash/cli db install complete',
-      'npx @cipherstash/cli db install',
+      `Running ${runner} @cipherstash/cli db install...`,
+      `${runner} @cipherstash/cli db install complete`,
+      `${runner} @cipherstash/cli db install`,
       cwd,
     )
   }
@@ -55,7 +57,7 @@ export async function runPostAgentSteps(opts: PostAgentOptions): Promise<void> {
   await runStep(
     'Pushing encryption config to database...',
     'Encryption config pushed',
-    'npx @cipherstash/cli db push',
+    `${runner} @cipherstash/cli db push`,
     cwd,
   )
 
@@ -64,7 +66,7 @@ export async function runPostAgentSteps(opts: PostAgentOptions): Promise<void> {
     await runStep(
       'Generating Drizzle migration...',
       'Migration generated',
-      'npx drizzle-kit generate',
+      `${runner} drizzle-kit generate`,
       cwd,
     )
 
@@ -73,7 +75,7 @@ export async function runPostAgentSteps(opts: PostAgentOptions): Promise<void> {
     await rewriteEncryptedMigrations(cwd)
 
     const shouldMigrate = await p.confirm({
-      message: 'Run the migration now? (npx drizzle-kit migrate)',
+      message: `Run the migration now? (${runner} drizzle-kit migrate)`,
       initialValue: true,
     })
 
@@ -81,7 +83,7 @@ export async function runPostAgentSteps(opts: PostAgentOptions): Promise<void> {
       await runStep(
         'Running migration...',
         'Migration complete',
-        'npx drizzle-kit migrate',
+        `${runner} drizzle-kit migrate`,
         cwd,
       )
     }
@@ -90,7 +92,7 @@ export async function runPostAgentSteps(opts: PostAgentOptions): Promise<void> {
   if (integration === 'prisma') {
     const shouldMigrate = await p.confirm({
       message:
-        'Run Prisma migration now? (npx prisma migrate dev --name add-encryption)',
+        `Run Prisma migration now? (${runner} prisma migrate dev --name add-encryption)`,
       initialValue: true,
     })
 
@@ -98,7 +100,7 @@ export async function runPostAgentSteps(opts: PostAgentOptions): Promise<void> {
       await runStep(
         'Running Prisma migration...',
         'Migration complete',
-        'npx prisma migrate dev --name add-encryption',
+        `${runner} prisma migrate dev --name add-encryption`,
         cwd,
       )
     }
