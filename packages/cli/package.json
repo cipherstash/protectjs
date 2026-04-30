@@ -37,6 +37,7 @@
 		"postbuild": "chmod +x ./dist/bin/stash.js",
 		"dev": "tsup --watch",
 		"test": "vitest run",
+		"test:e2e": "vitest run --config vitest.integration.config.ts",
 		"lint": "biome check ."
 	},
 	"dependencies": {
@@ -60,6 +61,8 @@
 	"devDependencies": {
 		"@cipherstash/stack": "workspace:*",
 		"@types/pg": "^8.11.11",
+		"node-pty": "^1.1.0",
+		"strip-ansi": "^7.2.0",
 		"tsup": "catalog:repo",
 		"tsx": "catalog:repo",
 		"typescript": "catalog:repo",

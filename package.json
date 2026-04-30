@@ -72,7 +72,10 @@
         "drizzle-orm": "*"
       }
     },
-    "dedupe-peer-dependents": true
+    "dedupe-peer-dependents": true,
+    "onlyBuiltDependencies": [
+      "node-pty"
+    ]
   },
   "overrides": {
     "@babel/runtime": "7.26.10",
