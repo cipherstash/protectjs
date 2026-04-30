@@ -81,3 +81,9 @@ jobs:
       # Run TurboRepo tests
       - name: Run tests
         run: pnpm run test
+
+      # CLI E2E tests drive the built `dist/bin/stash.js` through a real
+      # pseudo-terminal via node-pty. Run via turbo so the `^build` + `build`
+      # deps declared on the `test:e2e` task are honored.
+      - name: Run CLI E2E tests
+        run: pnpm exec turbo run test:e2e --filter @cipherstash/cli
