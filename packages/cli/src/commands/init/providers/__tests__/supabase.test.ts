@@ -22,7 +22,9 @@ describe('createSupabaseProvider getNextSteps', () => {
 
   it('uses pnpm dlx when package manager is pnpm', () => {
     const steps = provider.getNextSteps({}, 'pnpm')
-    expect(steps[0]).toContain('pnpm dlx @cipherstash/cli db install --supabase')
+    expect(steps[0]).toContain(
+      'pnpm dlx @cipherstash/cli db install --supabase',
+    )
   })
 
   it('leaves the supabase CLI commands alone (those are not npm packages)', () => {
