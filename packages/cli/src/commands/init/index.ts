@@ -6,7 +6,6 @@ import { authenticateStep } from './steps/authenticate.js'
 import { buildSchemaStep } from './steps/build-schema.js'
 import { installForgeStep } from './steps/install-forge.js'
 import { nextStepsStep } from './steps/next-steps.js'
-import { selectConnectionStep } from './steps/select-connection.js'
 import type { InitProvider, InitState } from './types.js'
 import { CancelledError } from './types.js'
 
@@ -17,7 +16,6 @@ const PROVIDER_MAP: Record<string, () => InitProvider> = {
 
 const STEPS = [
   authenticateStep,
-  selectConnectionStep,
   buildSchemaStep,
   installForgeStep,
   nextStepsStep,

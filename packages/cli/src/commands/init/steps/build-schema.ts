@@ -1,34 +1,45 @@
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import * as p from '@clack/prompts'
-import type { InitProvider, InitState, InitStep } from '../types.js'
-import { CancelledError, toIntegration } from '../types.js'
+import { detectDrizzle, detectSupabase } from '../../db/detect.js'
+import type {
+  Integration,
+  InitProvider,
+  InitState,
+  InitStep,
+} from '../types.js'
+import { CancelledError } from '../types.js'
 import { generatePlaceholderClient } from '../utils.js'
 
 const DEFAULT_CLIENT_PATH = './src/encryption/index.ts'
+
+/**
+ * Pick the placeholder template by reading the same signals `db install`
+ * uses — Drizzle config / dependency for `drizzle`, Supabase host in
+ * `DATABASE_URL` for `supabase`, otherwise raw Postgres. Silent: never
+ * prompts the user.
+ */
+function detectIntegration(
+  cwd: string,
+  databaseUrl: string | undefined,
+): Integration {
+  if (detectDrizzle(cwd)) return 'drizzle'
+  if (detectSupabase(databaseUrl)) return 'supabase'
+  return 'postgresql'
+}
 
 export const buildSchemaStep: InitStep = {
   id: 'build-schema',
   name: 'Generate encryption client',
   async run(state: InitState, _provider: InitProvider): Promise<InitState> {
-    if (!state.connectionMethod) {
-      p.log.warn('Skipping schema generation (no connection method selected)')
-      return { ...state, schemaGenerated: false }
-    }
+    const cwd = process.cwd()
+    const integration = detectIntegration(cwd, process.env.DATABASE_URL)
+    const clientFilePath = DEFAULT_CLIENT_PATH
+    const resolvedPath = resolve(cwd, clientFilePath)
 
-    const integration = toIntegration(state.connectionMethod)
-
-    const clientFilePath = await p.text({
-      message: 'Where should we create your encryption client?',
-      placeholder: DEFAULT_CLIENT_PATH,
-      defaultValue: DEFAULT_CLIENT_PATH,
-    })
-
-    if (p.isCancel(clientFilePath)) throw new CancelledError()
-
-    const resolvedPath = resolve(process.cwd(), clientFilePath)
-
-    // If the file already exists, ask what to do
+    // Existing-file branch is the only place we still prompt — silently
+    // overwriting someone's encryption client is bad. Everywhere else we
+    // pick sensible defaults and move on.
     if (existsSync(resolvedPath)) {
       const action = await p.select({
         message: `${clientFilePath} already exists. What would you like to do?`,
@@ -52,14 +63,15 @@ export const buildSchemaStep: InitStep = {
 
     const fileContents = generatePlaceholderClient(integration)
 
-    // Write the file
     const dir = dirname(resolvedPath)
     if (!existsSync(dir)) {
       mkdirSync(dir, { recursive: true })
     }
 
     writeFileSync(resolvedPath, fileContents, 'utf-8')
-    p.log.success(`Encryption client written to ${clientFilePath}`)
+    p.log.success(
+      `Encryption client written to ${clientFilePath} (${integration} template)`,
+    )
 
     return { ...state, clientFilePath, schemaGenerated: true }
   },

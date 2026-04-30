@@ -91,6 +91,28 @@ export function devInstallCommand(
   }
 }
 
+/**
+ * Build the install command(s) that add multiple dependencies at once.
+ * npm/pnpm/yarn/bun all accept a space-separated package list, so we
+ * use the existing `prodInstallCommand` / `devInstallCommand` builders
+ * with a joined argument. Returns one or two strings depending on
+ * whether prod and dev lists are both non-empty.
+ */
+export function combinedInstallCommands(
+  pm: PackageManager,
+  prodPackages: string[],
+  devPackages: string[],
+): string[] {
+  const commands: string[] = []
+  if (prodPackages.length > 0) {
+    commands.push(prodInstallCommand(pm, prodPackages.join(' ')))
+  }
+  if (devPackages.length > 0) {
+    commands.push(devInstallCommand(pm, devPackages.join(' ')))
+  }
+  return commands
+}
+
 function toCamelCase(str: string): string {
   return str.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase())
 }

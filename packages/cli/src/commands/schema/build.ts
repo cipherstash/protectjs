@@ -345,47 +345,6 @@ export async function builderCommand(options: { supabase?: boolean } = {}) {
 
   p.intro('CipherStash Schema Builder')
 
-  // Offer the AI-powered wizard as the recommended path
-  const approach = await p.select({
-    message: 'How would you like to build your encryption schema?',
-    options: [
-      {
-        value: 'ai-wizard',
-        label: 'Use the CipherStash Wizard (Recommended)',
-        hint: 'AI-powered — reads your codebase and modifies schemas in place',
-      },
-      {
-        value: 'builder',
-        label: 'Use the schema builder',
-        hint: 'generates a standalone encryption client from your database',
-      },
-    ],
-  })
-
-  if (p.isCancel(approach)) {
-    p.cancel('Cancelled.')
-    return
-  }
-
-  if (approach === 'ai-wizard') {
-    p.note(
-      [
-        'The CipherStash Wizard uses AI to read your existing codebase,',
-        'find your schema definitions, and integrate encryption directly.',
-        '',
-        'Run it with:',
-        '',
-        '  npx @cipherstash/cli wizard',
-        '',
-        'It works with Drizzle, Supabase, Prisma, and raw SQL projects.',
-        'No Anthropic API key needed — it uses your CipherStash account.',
-      ].join('\n'),
-      'CipherStash Wizard',
-    )
-    p.outro('Run `npx @cipherstash/cli wizard` to get started!')
-    return
-  }
-
   // Schema builder flow — uses DB introspection to generate a client file
   const integration: Integration = options.supabase ? 'supabase' : 'postgresql'
 

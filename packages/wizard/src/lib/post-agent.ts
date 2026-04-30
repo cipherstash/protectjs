@@ -9,7 +9,7 @@ import { execSync } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 import * as p from '@clack/prompts'
-import { rewriteEncryptedAlterColumns } from '../../db/rewrite-migrations.js'
+import { rewriteEncryptedAlterColumns } from './rewrite-migrations.js'
 import type { GatheredContext } from './gather.js'
 import type { Integration } from './types.js'
 

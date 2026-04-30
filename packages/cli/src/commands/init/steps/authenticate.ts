@@ -31,31 +31,22 @@ async function checkExistingAuth(): Promise<ExistingAuth | undefined> {
 export const authenticateStep: InitStep = {
   id: 'authenticate',
   name: 'Authenticate with CipherStash',
-  async run(state: InitState, _provider: InitProvider): Promise<InitState> {
+  async run(state: InitState, provider: InitProvider): Promise<InitState> {
     const existing = await checkExistingAuth()
 
+    // Already authenticated — silently proceed. Users who want to switch
+    // workspaces can run `stash auth login` directly. Asking on every
+    // `init` is friction for the common "re-running init in the same repo"
+    // flow.
     if (existing) {
-      const continueExisting = await p.confirm({
-        message: `You're logged in to workspace ${existing.workspace} (${existing.regionLabel}). Continue with this workspace?`,
-        initialValue: true,
-      })
-
-      if (p.isCancel(continueExisting)) {
-        p.cancel('Cancelled.')
-        process.exit(0)
-      }
-
-      if (continueExisting) {
-        p.log.success(`Using workspace ${existing.workspace}`)
-        return { ...state, authenticated: true }
-      }
-
-      // User wants a different workspace — fall through to login
-      p.log.info('Logging in with a different workspace...')
+      p.log.success(
+        `Using workspace ${existing.workspace} (${existing.regionLabel})`,
+      )
+      return { ...state, authenticated: true }
     }
 
     const region = await selectRegion()
-    await login(region, _provider.name)
+    await login(region, provider.name)
     await bindDevice()
     return { ...state, authenticated: true }
   },
