@@ -98,8 +98,9 @@ export function render(args: string[], opts: RenderOptions = {}): Rendered {
     // debugging a failure.
     NO_COLOR: '1',
     FORCE_COLOR: '0',
-    // Avoid posthog or anything else thinking it's an interactive dev shell.
-    CI: '1',
+    // Match the convention the CLI itself uses (e.g. install.ts checks
+    // `process.env.CI !== 'true'`) so test runs hit the same code paths.
+    CI: 'true',
     ...(opts.env ?? {}),
   }
 
@@ -124,8 +125,13 @@ export function render(args: string[], opts: RenderOptions = {}): Rendered {
 
   const waitFor = async (match: string | RegExp, timeoutMs = 5_000) => {
     const deadline = Date.now() + timeoutMs
-    const matches = (s: string) =>
-      typeof match === 'string' ? s.includes(match) : match.test(s)
+    const matches = (s: string) => {
+      if (typeof match === 'string') return s.includes(match)
+      // Reset stateful regex (`/g`/`/y`) state so successive .test() calls
+      // don't drift through the buffer.
+      match.lastIndex = 0
+      return match.test(s)
+    }
     if (matches(stripAnsi(raw))) return
     await new Promise<void>((res, rej) => {
       const timer = setTimeout(

@@ -40,12 +40,14 @@ get.
 | auth unknown sub | `stash auth bogus` | exit 1, output contains "Unknown auth command" |
 | db unknown sub | `stash db bogus` | exit 1, output contains "Unknown db subcommand" |
 | db migrate stub | `stash db migrate` | exit 0, warns "not yet implemented" |
-| init cancel | `stash init` then ctrl‑c at first prompt | exit 0, output contains "Setup cancelled." |
+| auth login cancel | `stash auth login` then ctrl‑c at the region prompt | exit 0, output contains "Cancelled." |
 
-`init cancel` is the only test that drives a clack prompt; it's enough to
-validate the helper end‑to‑end without standing up auth or a database.
-Deeper flows (full `init`, `db install --dry-run` with fixtures) come in
-a follow‑up once the harness is proven.
+The `auth login` cancel test is the only one that drives a clack prompt —
+enough to validate the helper end‑to‑end without standing up auth or a
+database. `selectRegion()` is a synchronous `p.select` that runs before any
+network I/O, so cancelling there is deterministic. Deeper flows (full
+`init`, `db install --dry-run` with fixtures) come in a follow‑up once the
+harness is proven.
 
 ## Deliverables
 
@@ -65,9 +67,9 @@ a follow‑up once the harness is proven.
    Target: ~80 lines, no external deps beyond `strip-ansi`.
 4. `packages/cli/tests/e2e/smoke.e2e.test.ts` — covers the help / version /
    unknown‑command / `auth` / `db migrate` rows from the table above.
-5. `packages/cli/tests/e2e/init-cancel.e2e.test.ts` — runs `stash init`,
-   waits for the first clack prompt, sends ``, asserts the
-   cancellation message and exit code 0.
+5. `packages/cli/tests/e2e/auth-login-cancel.e2e.test.ts` — runs
+   `stash auth login`, waits for the region prompt ("Select a region"),
+   sends ctrl-c, asserts the cancellation message and exit code 0.
 6. `packages/cli/package.json` script: `"test:e2e": "vitest run --config
    vitest.integration.config.ts"`. Default `test` script unchanged.
 7. `turbo.json` task `test:e2e` with `dependsOn: ["^build", "build"]` so

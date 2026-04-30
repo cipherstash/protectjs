@@ -31,7 +31,10 @@ describe('stash CLI — non-interactive smoke', () => {
     const r = render(['definitely-not-a-command'])
     const { exitCode } = await r.exit
     expect(exitCode).toBe(1)
-    expect(r.output).toContain('Unknown command: definitely-not-a-command')
+    // Assert the stable phrase and the user-supplied token separately so a
+    // copy tweak to the surrounding wording doesn't break the test.
+    expect(r.output).toContain('Unknown command')
+    expect(r.output).toContain('definitely-not-a-command')
     expect(r.output).toContain('Usage: npx @cipherstash/cli')
   })
 
@@ -47,14 +50,16 @@ describe('stash CLI — non-interactive smoke', () => {
     const r = render(['auth', 'bogus-sub'])
     const { exitCode } = await r.exit
     expect(exitCode).toBe(1)
-    expect(r.output).toContain('Unknown auth command: bogus-sub')
+    expect(r.output).toContain('Unknown auth command')
+    expect(r.output).toContain('bogus-sub')
   })
 
   it('db bogus-sub exits 1 with help', async () => {
     const r = render(['db', 'bogus-sub'])
     const { exitCode } = await r.exit
     expect(exitCode).toBe(1)
-    expect(r.output).toContain('Unknown db subcommand: bogus-sub')
+    expect(r.output).toContain('Unknown db subcommand')
+    expect(r.output).toContain('bogus-sub')
   })
 
   it('db migrate is a stub that exits 0 with a "not yet implemented" warning', async () => {
