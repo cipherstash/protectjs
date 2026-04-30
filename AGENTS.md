@@ -141,6 +141,10 @@ pnpm changeset:publish
 - Import `dotenv/config` at the top when tests need environment variables.
 - Prefer testing via the public API. Avoid reaching into private internals.
 - Some tests have larger timeouts (e.g., 30s) to accommodate network calls.
+- `packages/cli` has a second suite — pty-driven E2E tests under
+  `packages/cli/tests/e2e/**` run via `pnpm --filter @cipherstash/cli
+  test:e2e` (requires a build). See `packages/cli/AGENTS.md` for when to
+  add or update them.
 
 ## Bundling and Deployment Notes
 
