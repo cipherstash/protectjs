@@ -43,24 +43,21 @@ describe('runPostAgentSteps execution commands', () => {
     }
   })
 
-  it('executes drizzle-kit using the detected runner (bun → bunx drizzle-kit generate)', async () => {
-    // Confirm prompts for the migrate step would pause execution; the test
-    // skips that by using non-drizzle integration above. Here we only
-    // assert the generate step.
+  it('skips db install when hasStashConfig=true and still uses bunx for db push', async () => {
     await runPostAgentSteps({
       cwd: '/tmp/fake',
-      integration: 'supabase', // avoid the interactive p.confirm in drizzle path
+      integration: 'supabase',
       packageManager: bun,
       gathered: {
         installCommand: 'bun add @cipherstash/stack',
         hasStashConfig: true,
       } as never,
     })
-    // db push runs with no install
     const commands = vi
       .mocked(childProcess.execSync)
       .mock.calls.map((c) => c[0] as string)
     expect(commands).toContain('bunx @cipherstash/cli db push')
+    expect(commands).not.toContain('bunx @cipherstash/cli db install')
   })
 
   it('falls back to npx when packageManager is undefined', async () => {

@@ -27,6 +27,17 @@ describe('createSupabaseProvider getNextSteps', () => {
     )
   })
 
+  it('uses yarn dlx when package manager is yarn', () => {
+    const steps = provider.getNextSteps({}, 'yarn')
+    expect(steps[0]).toBe(
+      'Install EQL: yarn dlx @cipherstash/cli db install --supabase (prompts for migration vs direct)',
+    )
+    expect(steps[2]).toContain('yarn dlx @cipherstash/wizard')
+    // Sanity: the supabase CLI commands stay untouched.
+    expect(steps.join('\n')).toContain('supabase db reset')
+    expect(steps.join('\n')).toContain('supabase migration up')
+  })
+
   it('leaves the supabase CLI commands alone (those are not npm packages)', () => {
     const steps = provider.getNextSteps({}, 'bun')
     expect(steps.join('\n')).toContain('supabase db reset')
