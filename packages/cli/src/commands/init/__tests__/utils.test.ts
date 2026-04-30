@@ -6,6 +6,7 @@ import {
   detectPackageManager,
   devInstallCommand,
   prodInstallCommand,
+  runnerCommand,
 } from '../utils.js'
 
 describe('detectPackageManager', () => {
@@ -130,6 +131,38 @@ describe('devInstallCommand', () => {
   it('returns npm install -D for npm', () => {
     expect(devInstallCommand('npm', '@cipherstash/cli')).toBe(
       'npm install -D @cipherstash/cli',
+    )
+  })
+})
+
+describe('runnerCommand', () => {
+  it('returns npx for npm', () => {
+    expect(runnerCommand('npm', '@cipherstash/cli')).toBe(
+      'npx @cipherstash/cli',
+    )
+  })
+
+  it('returns bunx for bun', () => {
+    expect(runnerCommand('bun', '@cipherstash/cli')).toBe(
+      'bunx @cipherstash/cli',
+    )
+  })
+
+  it('returns pnpm dlx for pnpm', () => {
+    expect(runnerCommand('pnpm', '@cipherstash/cli')).toBe(
+      'pnpm dlx @cipherstash/cli',
+    )
+  })
+
+  it('returns yarn dlx for yarn', () => {
+    expect(runnerCommand('yarn', '@cipherstash/cli')).toBe(
+      'yarn dlx @cipherstash/cli',
+    )
+  })
+
+  it('passes the package reference through verbatim (multi-word args allowed)', () => {
+    expect(runnerCommand('bun', '@cipherstash/cli db install')).toBe(
+      'bunx @cipherstash/cli db install',
     )
   })
 })
