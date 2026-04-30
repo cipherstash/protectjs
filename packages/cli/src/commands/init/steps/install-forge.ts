@@ -3,87 +3,88 @@ import * as p from '@clack/prompts'
 import type { InitProvider, InitState, InitStep } from '../types.js'
 import { CancelledError } from '../types.js'
 import {
+  combinedInstallCommands,
   detectPackageManager,
-  devInstallCommand,
   isPackageInstalled,
-  prodInstallCommand,
 } from '../utils.js'
 
 const STACK_PACKAGE = '@cipherstash/stack'
 const FORGE_PACKAGE = '@cipherstash/cli'
 
-/**
- * Installs a package if not already present.
- * Returns true if installed (or already was), false if skipped or failed.
- */
-async function installIfNeeded(
-  packageName: string,
-  buildCommand: (
-    pm: ReturnType<typeof detectPackageManager>,
-    pkg: string,
-  ) => string,
-  depLabel: string,
-): Promise<boolean> {
-  if (isPackageInstalled(packageName)) {
-    p.log.success(`${packageName} is already installed.`)
-    return true
-  }
-
-  const pm = detectPackageManager()
-  const cmd = buildCommand(pm, packageName)
-
-  const install = await p.confirm({
-    message: `Install ${packageName} as a ${depLabel} dependency? (${cmd})`,
-  })
-
-  if (p.isCancel(install)) throw new CancelledError()
-
-  if (!install) {
-    p.log.info(`Skipping ${packageName} installation.`)
-    p.note(
-      `You can install it manually later:\n  ${cmd}`,
-      'Manual Installation',
-    )
-    return false
-  }
-
-  // Stream npm/pnpm/yarn output directly so the user sees progress. Package
-  // installs can take tens of seconds and a silent spinner makes the CLI look
-  // hung. We log a "starting" line here and a success/failure line after,
-  // letting the package manager own the terminal in between.
-  p.log.step(`Running: ${cmd}`)
-
-  try {
-    execSync(cmd, { cwd: process.cwd(), stdio: 'inherit' })
-    p.log.success(`${packageName} installed successfully`)
-    return true
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err)
-    p.log.error(`${packageName} installation failed`)
-    p.log.error(message)
-    p.note(`You can install it manually:\n  ${cmd}`, 'Manual Installation')
-    return false
-  }
-}
-
 export const installForgeStep: InitStep = {
   id: 'install-forge',
   name: 'Install stack dependencies',
   async run(state: InitState, _provider: InitProvider): Promise<InitState> {
-    // Install @cipherstash/stack as a production dependency
-    const stackInstalled = await installIfNeeded(
-      STACK_PACKAGE,
-      prodInstallCommand,
-      'production',
-    )
+    const stackPresent = isPackageInstalled(STACK_PACKAGE)
+    const forgePresent = isPackageInstalled(FORGE_PACKAGE)
 
-    // Install @cipherstash/cli as a dev dependency
-    const forgeInstalled = await installIfNeeded(
-      FORGE_PACKAGE,
-      devInstallCommand,
-      'dev',
-    )
+    // Both already there — silent success, no prompts.
+    if (stackPresent && forgePresent) {
+      p.log.success(
+        `${STACK_PACKAGE} and ${FORGE_PACKAGE} are already installed.`,
+      )
+      return { ...state, stackInstalled: true, forgeInstalled: true }
+    }
 
-    return { ...state, forgeInstalled, stackInstalled }
+    const pm = detectPackageManager()
+    const prodPackages = stackPresent ? [] : [STACK_PACKAGE]
+    const devPackages = forgePresent ? [] : [FORGE_PACKAGE]
+    const commands = combinedInstallCommands(pm, prodPackages, devPackages)
+
+    const missingList = [
+      ...prodPackages.map((pkg) => `${pkg} (prod)`),
+      ...devPackages.map((pkg) => `${pkg} (dev)`),
+    ].join(', ')
+
+    const install = await p.confirm({
+      message: `Install ${missingList}? (${commands.join(' && ')})`,
+    })
+
+    if (p.isCancel(install)) throw new CancelledError()
+
+    if (!install) {
+      p.log.info('Skipping package installation.')
+      p.note(
+        `You can install them manually later:\n  ${commands.join('\n  ')}`,
+        'Manual Installation',
+      )
+      return {
+        ...state,
+        stackInstalled: stackPresent,
+        forgeInstalled: forgePresent,
+      }
+    }
+
+    // Stream npm/pnpm/yarn output directly so the user sees progress.
+    // Package installs can take tens of seconds and a silent spinner makes
+    // the CLI look hung. We log a "starting" line here and a success line
+    // after, letting the package manager own the terminal in between.
+    let allSucceeded = true
+    for (const cmd of commands) {
+      p.log.step(`Running: ${cmd}`)
+      try {
+        execSync(cmd, { cwd: process.cwd(), stdio: 'inherit' })
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err)
+        p.log.error(`Install failed: ${cmd}`)
+        p.log.error(message)
+        allSucceeded = false
+      }
+    }
+
+    if (allSucceeded) {
+      p.log.success('Stack dependencies installed.')
+    } else {
+      p.note(
+        `You can retry manually:\n  ${commands.join('\n  ')}`,
+        'Manual Installation',
+      )
+    }
+
+    return {
+      ...state,
+      stackInstalled: stackPresent || allSucceeded,
+      forgeInstalled: forgePresent || allSucceeded,
+    }
   },
 }

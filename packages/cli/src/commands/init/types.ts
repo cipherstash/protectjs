@@ -1,5 +1,3 @@
-export type ConnectionMethod = 'drizzle' | 'supabase-js' | 'prisma' | 'raw-sql'
-
 export type Integration = 'drizzle' | 'supabase' | 'postgresql'
 
 export type DataType = 'string' | 'number' | 'boolean' | 'date' | 'json'
@@ -19,7 +17,6 @@ export interface SchemaDef {
 
 export interface InitState {
   authenticated?: boolean
-  connectionMethod?: ConnectionMethod
   clientFilePath?: string
   schemaGenerated?: boolean
   stackInstalled?: boolean
@@ -35,11 +32,6 @@ export interface InitStep {
 export interface InitProvider {
   name: string
   introMessage: string
-  connectionOptions: Array<{
-    value: ConnectionMethod
-    label: string
-    hint?: string
-  }>
   getNextSteps(state: InitState): string[]
 }
 
@@ -47,18 +39,5 @@ export class CancelledError extends Error {
   constructor() {
     super('cancelled')
     this.name = 'CancelledError'
-  }
-}
-
-/** Maps a connection method to the code generation integration type. */
-export function toIntegration(method: ConnectionMethod): Integration {
-  switch (method) {
-    case 'drizzle':
-      return 'drizzle'
-    case 'supabase-js':
-      return 'supabase'
-    case 'prisma':
-    case 'raw-sql':
-      return 'postgresql'
   }
 }

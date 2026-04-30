@@ -61,7 +61,6 @@ Usage: npx @cipherstash/cli <command> [options]
 Commands:
   init                 Initialize CipherStash for your project
   auth <subcommand>    Authenticate with CipherStash
-  wizard               AI-powered encryption setup (reads your codebase)
 
   db install           Scaffold stash.config.ts (if missing) and install EQL extensions
   db upgrade           Upgrade EQL extensions to the latest version
@@ -98,7 +97,6 @@ Examples:
   npx @cipherstash/cli init
   npx @cipherstash/cli init --supabase
   npx @cipherstash/cli auth login
-  npx @cipherstash/cli wizard
   npx @cipherstash/cli db install
   npx @cipherstash/cli db push
   npx @cipherstash/cli schema build
@@ -246,16 +244,6 @@ async function main() {
     case 'auth': {
       const authArgs = subcommand ? [subcommand, ...commandArgs] : commandArgs
       await authCommand(authArgs, flags)
-      break
-    }
-    case 'wizard': {
-      // Lazy-load the wizard so the agent SDK is only imported when needed.
-      const { run } = await import('../commands/wizard/run.js')
-      await run({
-        cwd: process.cwd(),
-        debug: flags.debug,
-        cliVersion: pkg.version,
-      })
       break
     }
     case 'db':

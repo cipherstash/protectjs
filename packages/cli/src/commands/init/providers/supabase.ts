@@ -4,16 +4,6 @@ export function createSupabaseProvider(): InitProvider {
   return {
     name: 'supabase',
     introMessage: 'Setting up CipherStash for your Supabase project...',
-    connectionOptions: [
-      {
-        value: 'supabase-js',
-        label: 'Supabase JS Client',
-        hint: 'recommended',
-      },
-      { value: 'drizzle', label: 'Drizzle ORM' },
-      { value: 'prisma', label: 'Prisma' },
-      { value: 'raw-sql', label: 'Raw SQL / pg' },
-    ],
     getNextSteps(state: InitState): string[] {
       const steps = [
         'Install EQL: npx @cipherstash/cli db install --supabase (prompts for migration vs direct)',
@@ -24,7 +14,7 @@ export function createSupabaseProvider(): InitProvider {
         ? `edit ${state.clientFilePath} directly`
         : 'edit your encryption schema directly'
       steps.push(
-        `Customize your schema: npx @cipherstash/cli wizard (AI-guided, automated) — or ${manualEdit}`,
+        `Customize your schema: npx @cipherstash/wizard (AI-guided, automated) — or ${manualEdit}`,
       )
 
       steps.push(

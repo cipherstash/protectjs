@@ -9,6 +9,7 @@ import {
   loadBundledEqlSql,
 } from '@/installer/index.js'
 import * as p from '@clack/prompts'
+import { ensureEncryptionClient } from './client-scaffold.js'
 import { ensureStashConfig } from './config-scaffold.js'
 import {
   type SupabaseProjectInfo,
@@ -85,6 +86,11 @@ export async function installCommand(options: InstallOptions) {
   s.start('Loading stash.config.ts...')
   const config = await loadStashConfig()
   s.stop('Configuration loaded.')
+
+  // Safety net: if the user ran `db install` without first running `init`,
+  // scaffold the encryption client file so config.client points somewhere
+  // real. No-op when the file already exists.
+  ensureEncryptionClient(config.client, process.cwd(), config.databaseUrl)
 
   // Auto-detect provider hints when the user didn't explicitly pass flags.
   // CIP-2985.
@@ -258,8 +264,8 @@ function printNextSteps(): void {
     [
       'Next steps:',
       '',
-      '  1. Wire up encrypt/decrypt with the wizard:',
-      '       npx @cipherstash/cli wizard',
+      '  1. Wire up encrypt/decrypt with the wizard (AI-guided, automated):',
+      '       npx @cipherstash/wizard',
       '',
       '  2. Or use the client directly from @cipherstash/stack:',
       "       import { Encryption } from '@cipherstash/stack'",

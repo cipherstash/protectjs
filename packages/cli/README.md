@@ -3,7 +3,7 @@
 [![npm version](https://img.shields.io/npm/v/@cipherstash/cli.svg?style=for-the-badge&labelColor=000000)](https://www.npmjs.com/package/@cipherstash/cli)
 [![License: MIT](https://img.shields.io/npm/l/@cipherstash/cli.svg?style=for-the-badge&labelColor=000000)](https://github.com/cipherstash/protectjs/blob/main/LICENSE.md)
 
-The single CLI for CipherStash. It handles authentication, project initialization, AI-guided encryption setup, EQL database lifecycle (install, upgrade, validate, push, migrate), schema building, and encrypted secrets management. Install it as a devDependency alongside the runtime SDK `@cipherstash/stack`.
+The single CLI for CipherStash. It handles authentication, project initialization, EQL database lifecycle (install, upgrade, validate, push, migrate), schema building, and encrypted secrets management. Install it as a devDependency alongside the runtime SDK `@cipherstash/stack`.
 
 ---
 
@@ -14,7 +14,6 @@ npm install -D @cipherstash/cli
 npx @cipherstash/cli auth login    # authenticate with CipherStash
 npx @cipherstash/cli init          # scaffold encryption schema and install dependencies
 npx @cipherstash/cli db install    # scaffold stash.config.ts (if missing) and install EQL
-npx @cipherstash/cli wizard        # AI agent wires encryption into your codebase
 ```
 
 What each step does:
@@ -22,21 +21,23 @@ What each step does:
 - `auth login` — opens a browser-based device code flow and saves a token to `~/.cipherstash/auth.json`.
 - `init` — generates your encryption client file and installs `@cipherstash/cli` as a dev dependency. Pass `--supabase` or `--drizzle` for provider-specific setup.
 - `db install` — detects your encryption client, writes `stash.config.ts` if it's missing, and installs EQL extensions in a single step.
-- `wizard` — reads your codebase with an AI agent (uses the CipherStash-hosted LLM gateway, no Anthropic API key required) and modifies your schema files in place.
+
+After `db install`, declare which columns to encrypt — either run [`@cipherstash/wizard`](https://www.npmjs.com/package/@cipherstash/wizard) to do it automatically, or edit your encryption client file (default `./src/encryption/index.ts`) by hand.
 
 ---
 
 ## Recommended flow
 
 ```
-npx @cipherstash/cli init
-    └── npx @cipherstash/cli db install
-            └── npx @cipherstash/cli wizard        ← fast path: AI edits your files
-                    OR
-                Edit schema files by hand  ← escape hatch
+npx @cipherstash/cli auth login
+    └── npx @cipherstash/cli init
+            └── npx @cipherstash/cli db install
+                    └── npx @cipherstash/wizard       ← fast path: AI edits your files
+                            OR
+                        Edit schema files by hand     ← escape hatch
 ```
 
-`npx @cipherstash/cli wizard` is the recommended path after `db install`. It detects your framework (Drizzle, Supabase, Prisma, raw SQL), introspects your database, and integrates encryption directly into your existing schema definitions. If you prefer to write the schema by hand, skip the wizard and edit your encryption client file directly.
+`@cipherstash/cli` covers authentication, initialization, EQL install/upgrade/validate/push/migrate, and schema introspection. The wizard ([`@cipherstash/wizard`](https://www.npmjs.com/package/@cipherstash/wizard)) is a separate package that calls back into these cli commands after its AI agent finishes editing your schema files.
 
 ---
 
@@ -79,7 +80,7 @@ npx @cipherstash/cli init [--supabase] [--drizzle]
 | `--supabase` | Use the Supabase-specific setup flow |
 | `--drizzle` | Use the Drizzle-specific setup flow |
 
-After `init` completes, the Next Steps output tells you to run `npx @cipherstash/cli db install`, then either `npx @cipherstash/cli wizard` or edit the schema manually.
+After `init` completes, the Next Steps output tells you to run `npx @cipherstash/cli db install`, then edit your encryption client file directly.
 
 ---
 
@@ -91,25 +92,7 @@ Authenticate with CipherStash using a browser-based device code flow.
 npx @cipherstash/cli auth login
 ```
 
-Saves the token to `~/.cipherstash/auth.json`. The wizard checks for this file as a prerequisite before running.
-
----
-
-### `npx @cipherstash/cli wizard`
-
-AI-powered encryption setup. The wizard reads your codebase, detects your framework, introspects your database schema, and edits your existing schema files to add encrypted column definitions.
-
-```bash
-npx @cipherstash/cli wizard
-```
-
-Prerequisites:
-- Authenticated (`npx @cipherstash/cli auth login` completed).
-- `stash.config.ts` present (run `npx @cipherstash/cli db install` first; it will scaffold the config if missing).
-
-Supported integrations: Drizzle ORM, Supabase JS Client, Prisma (experimental), raw SQL / other.
-
-The wizard uses the CipherStash-hosted LLM gateway. No Anthropic API key is required.
+Saves the token to `~/.cipherstash/auth.json`. Database-touching commands check for this file before running.
 
 ---
 
@@ -286,7 +269,7 @@ Build an encryption client file from your database schema using DB introspection
 npx @cipherstash/cli schema build [--supabase]
 ```
 
-The first prompt offers `npx @cipherstash/cli wizard` as the recommended path. If you choose the manual builder, the command connects to your database, lets you select tables and columns to encrypt, asks about searchable indexes, and generates a typed encryption client file.
+Connects to your database, lets you select tables and columns to encrypt, asks about searchable indexes, and generates a typed encryption client file.
 
 Reads `databaseUrl` from `stash.config.ts`.
 
@@ -422,7 +405,7 @@ const sql = await downloadEqlSql(true)         // no operator family variant
 
 ## Relationship to `@cipherstash/stack`
 
-`@cipherstash/stack` is the runtime SDK. It stays lean with no heavy dependencies like `pg` and ships in your production bundle. `@cipherstash/cli` is a devDependency: it handles database tooling, AI-guided setup, and schema lifecycle at development time. Think of it like Drizzle Kit — a companion tool that prepares the database while the runtime SDK handles queries.
+`@cipherstash/stack` is the runtime SDK. It stays lean with no heavy dependencies like `pg` and ships in your production bundle. `@cipherstash/cli` is a devDependency: it handles database tooling and schema lifecycle at development time. Think of it like Drizzle Kit — a companion tool that prepares the database while the runtime SDK handles queries.
 
 ---
 
