@@ -1,3 +1,5 @@
+import type { PackageManager } from './utils.js'
+
 export type Integration = 'drizzle' | 'supabase' | 'postgresql'
 
 export type DataType = 'string' | 'number' | 'boolean' | 'date' | 'json'
@@ -32,7 +34,7 @@ export interface InitStep {
 export interface InitProvider {
   name: string
   introMessage: string
-  getNextSteps(state: InitState): string[]
+  getNextSteps(state: InitState, pm: PackageManager): string[]
 }
 
 export class CancelledError extends Error {
