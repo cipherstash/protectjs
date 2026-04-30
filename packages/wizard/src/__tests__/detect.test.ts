@@ -136,6 +136,7 @@ describe('detectPackageManager', () => {
     const pm = detectPackageManager(tmp)
     expect(pm?.name).toBe('bun')
     expect(pm?.installCommand).toBe('bun add')
+    expect(pm?.execCommand).toBe('bunx')
   })
 
   it('detects bun from bun.lockb', () => {
@@ -149,6 +150,7 @@ describe('detectPackageManager', () => {
     const pm = detectPackageManager(tmp)
     expect(pm?.name).toBe('pnpm')
     expect(pm?.installCommand).toBe('pnpm add')
+    expect(pm?.execCommand).toBe('pnpm dlx')
   })
 
   it('detects yarn', () => {
@@ -156,6 +158,7 @@ describe('detectPackageManager', () => {
     const pm = detectPackageManager(tmp)
     expect(pm?.name).toBe('yarn')
     expect(pm?.installCommand).toBe('yarn add')
+    expect(pm?.execCommand).toBe('yarn dlx')
   })
 
   it('detects npm', () => {
@@ -163,6 +166,7 @@ describe('detectPackageManager', () => {
     const pm = detectPackageManager(tmp)
     expect(pm?.name).toBe('npm')
     expect(pm?.installCommand).toBe('npm install')
+    expect(pm?.execCommand).toBe('npx')
   })
 
   it('honours bunx via npm_config_user_agent with no lockfile', () => {
@@ -170,6 +174,7 @@ describe('detectPackageManager', () => {
     const pm = detectPackageManager(tmp)
     expect(pm?.name).toBe('bun')
     expect(pm?.installCommand).toBe('bun add')
+    expect(pm?.execCommand).toBe('bunx')
   })
 
   it('honours pnpm dlx via user agent', () => {

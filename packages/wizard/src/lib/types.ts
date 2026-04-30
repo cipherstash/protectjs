@@ -28,6 +28,7 @@ export interface DetectedPackageManager {
   name: 'npm' | 'pnpm' | 'yarn' | 'bun'
   installCommand: string
   runCommand: string
+  execCommand: string
 }
 
 export interface FrameworkConfig<
