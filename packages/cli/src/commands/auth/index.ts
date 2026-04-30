@@ -1,7 +1,8 @@
+import { messages } from '../../messages.js'
 import { bindDevice, login, selectRegion } from './login.js'
 
 const HELP = `
-Usage: npx @cipherstash/cli auth <command> [options]
+${messages.auth.usagePrefix} <command> [options]
 
 Commands:
   login     Authenticate with CipherStash
@@ -44,7 +45,7 @@ export async function authCommand(
       }
       break
     default:
-      console.error(`Unknown auth command: ${subcommand}\n`)
+      console.error(`${messages.auth.unknownSubcommand}: ${subcommand}\n`)
       console.log(HELP)
       process.exit(1)
   }

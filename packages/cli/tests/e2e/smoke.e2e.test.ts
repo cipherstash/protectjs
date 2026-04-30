@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
+import { messages } from '../../src/messages.js'
 import { render } from '../helpers/pty.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -14,8 +15,10 @@ describe('stash CLI — non-interactive smoke', () => {
     const r = render(['--help'])
     const { exitCode } = await r.exit
     expect(exitCode).toBe(0)
-    expect(r.output).toContain('CipherStash CLI v')
-    expect(r.output).toContain('Usage: npx @cipherstash/cli')
+    expect(r.output).toContain(messages.cli.versionBannerPrefix)
+    expect(r.output).toContain(messages.cli.usagePrefix)
+    // Command-list items — these are the literal command names users type, not
+    // copy strings, so they stay inline.
     expect(r.output).toContain('init')
     expect(r.output).toContain('db install')
   })
@@ -31,18 +34,18 @@ describe('stash CLI — non-interactive smoke', () => {
     const r = render(['definitely-not-a-command'])
     const { exitCode } = await r.exit
     expect(exitCode).toBe(1)
-    // Assert the stable phrase and the user-supplied token separately so a
-    // copy tweak to the surrounding wording doesn't break the test.
-    expect(r.output).toContain('Unknown command')
+    // Stable phrase + user-supplied token asserted separately so a copy tweak
+    // around the wording doesn't break the test.
+    expect(r.output).toContain(messages.cli.unknownCommand)
     expect(r.output).toContain('definitely-not-a-command')
-    expect(r.output).toContain('Usage: npx @cipherstash/cli')
+    expect(r.output).toContain(messages.cli.usagePrefix)
   })
 
   it('auth with no subcommand prints auth help and exits 0', async () => {
     const r = render(['auth'])
     const { exitCode } = await r.exit
     expect(exitCode).toBe(0)
-    expect(r.output).toContain('Usage: npx @cipherstash/cli auth')
+    expect(r.output).toContain(messages.auth.usagePrefix)
     expect(r.output).toContain('login')
   })
 
@@ -50,7 +53,7 @@ describe('stash CLI — non-interactive smoke', () => {
     const r = render(['auth', 'bogus-sub'])
     const { exitCode } = await r.exit
     expect(exitCode).toBe(1)
-    expect(r.output).toContain('Unknown auth command')
+    expect(r.output).toContain(messages.auth.unknownSubcommand)
     expect(r.output).toContain('bogus-sub')
   })
 
@@ -58,7 +61,7 @@ describe('stash CLI — non-interactive smoke', () => {
     const r = render(['db', 'bogus-sub'])
     const { exitCode } = await r.exit
     expect(exitCode).toBe(1)
-    expect(r.output).toContain('Unknown db subcommand')
+    expect(r.output).toContain(messages.db.unknownSubcommand)
     expect(r.output).toContain('bogus-sub')
   })
 
@@ -66,6 +69,6 @@ describe('stash CLI — non-interactive smoke', () => {
     const r = render(['db', 'migrate'])
     const { exitCode } = await r.exit
     expect(exitCode).toBe(0)
-    expect(r.output).toContain('not yet implemented')
+    expect(r.output).toContain(messages.db.migrateNotImplemented)
   })
 })

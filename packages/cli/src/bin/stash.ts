@@ -23,6 +23,7 @@ import {
   testConnectionCommand,
   upgradeCommand,
 } from '../commands/index.js'
+import { messages } from '../messages.js'
 
 function isModuleNotFound(err: unknown): boolean {
   return (
@@ -54,9 +55,9 @@ const pkg = JSON.parse(
 )
 
 const HELP = `
-CipherStash CLI v${pkg.version}
+${messages.cli.versionBannerPrefix}${pkg.version}
 
-Usage: npx @cipherstash/cli <command> [options]
+${messages.cli.usagePrefix} <command> [options]
 
 Commands:
   init                 Initialize CipherStash for your project
@@ -192,10 +193,10 @@ async function runDbCommand(
       await testConnectionCommand()
       break
     case 'migrate':
-      p.log.warn('"npx @cipherstash/cli db migrate" is not yet implemented.')
+      p.log.warn(messages.db.migrateNotImplemented)
       break
     default:
-      p.log.error(`Unknown db subcommand: ${sub ?? '(none)'}`)
+      p.log.error(`${messages.db.unknownSubcommand}: ${sub ?? '(none)'}`)
       console.log()
       console.log(HELP)
       process.exit(1)
@@ -256,7 +257,7 @@ async function main() {
       await envCommand({ write: flags.write })
       break
     default:
-      console.error(`Unknown command: ${command}\n`)
+      console.error(`${messages.cli.unknownCommand}: ${command}\n`)
       console.log(HELP)
       process.exit(1)
   }

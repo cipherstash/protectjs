@@ -19,10 +19,10 @@ Update `tests/e2e/**` whenever you:
 - Add or rename a top-level command, subcommand, or flag (smoke tests assert
   on help text, command names, and unknown-command behavior).
 - Change the user-facing string for an exit message that an existing E2E
-  asserts on (e.g. "Setup cancelled.", "Unknown auth command:",
-  "not yet implemented"). Either update the assertion or, preferably, route
-  the string through the future `messages.ts` module (see
-  `docs/plans/cli-pty-integration-tests.md`, phase 2).
+  asserts on (e.g. cancellation text, "Unknown auth command", the
+  `db migrate` stub warning). Strings that tests assert on live in
+  `src/messages.ts` — update the constant there and both prod and tests
+  pick it up. *Don't* hard-code the new wording in a test.
 - Touch `src/bin/stash.ts` argv parsing, exit codes, or top-level error
   handling.
 - Add a new clack prompt that changes the *first* prompt rendered for a
@@ -65,11 +65,13 @@ exercise the same code paths.
   `selectRegion()` runs before any network I/O. Don't move the cancel
   assertion to a command that hits the auth server or DB before the first
   prompt — flaky.
-- **Don't assert on full prompt strings if avoidable.** Prefer stable
-  substrings. Phase 2 (planned) introduces a `messages.ts` module so test
-  assertions can import handles and survive copy changes; until then,
-  assert on the most stable fragment ("Select a region", not the full
-  rendered prompt frame).
+- **Use `src/messages.ts` for assertion-stable strings.** The module is a
+  single typed `as const` object grouping copy by area (`cli`, `auth`,
+  `db`). Prod call sites import the same constants the tests do, so a copy
+  tweak only needs to land in one place. Add to `messages.ts` only when a
+  test actually asserts on the string — premature extraction is worse
+  than copy-paste here. For literals tests don't touch (e.g. command
+  names like `init`, `db install`), keep them inline.
 - **Telemetry.** The CLI source no longer imports `posthog-node` (analytics
   moved to `packages/wizard`). The dep is still listed in `package.json`
   and should be removed in a follow-up. If you re-introduce telemetry to
