@@ -97,13 +97,19 @@ Create a ${CONFIG_FILENAME} file in your project root:
   }
 
   const { createJiti } = await import('jiti')
-  const jiti = createJiti(configPath, {
-    interopDefault: true,
-  })
+  const jiti = createJiti(configPath)
 
   let rawConfig: unknown
   try {
-    rawConfig = await jiti.import(configPath)
+    // The per-call `{ default: true }` option is the jiti 2.x way to ask
+    // for the default export to be unwrapped. The `interopDefault`
+    // *constructor* option only applies to the deprecated synchronous
+    // `jiti(id)` callable form — `jiti.import()` silently ignores it and
+    // returns the full module namespace (`{ default: { ... } }`). That
+    // wrapper would then fail Zod validation with a misleading
+    // "databaseUrl: received undefined" even when the user's config sets
+    // it (#374).
+    rawConfig = await jiti.import(configPath, { default: true })
   } catch (error) {
     console.error(`Error: Failed to load ${CONFIG_FILENAME} at ${configPath}\n`)
     console.error(error)
@@ -148,12 +154,13 @@ export async function loadEncryptConfig(
   }
 
   const { createJiti } = await import('jiti')
-  const jiti = createJiti(resolvedPath, {
-    interopDefault: true,
-  })
+  const jiti = createJiti(resolvedPath)
 
   let moduleExports: Record<string, unknown>
   try {
+    // No `{ default: true }` here — we want the full module namespace so
+    // `Object.values` can find an EncryptionClient regardless of whether
+    // the user re-exports it as `default` or as a named binding.
     moduleExports = (await jiti.import(resolvedPath)) as Record<string, unknown>
   } catch (error) {
     console.error(
