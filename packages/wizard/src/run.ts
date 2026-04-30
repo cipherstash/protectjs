@@ -161,7 +161,11 @@ export async function run(options: RunOptions) {
     // and they don't depend on each other.
     const [agent, fetched] = await Promise.all([
       initializeAgent(session),
-      fetchIntegrationPrompt(gathered, options.cliVersion),
+      fetchIntegrationPrompt(
+        gathered,
+        options.cliVersion,
+        packageManager?.execCommand ?? 'npx',
+      ),
     ])
 
     if (session.debug) {
