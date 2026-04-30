@@ -87,3 +87,43 @@ jobs:
       # deps declared on the `test:e2e` task are honored.
       - name: Run CLI E2E tests
         run: pnpm exec turbo run test:e2e --filter @cipherstash/cli
+
+  e2e-tests:
+    name: Run E2E Tests
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+
+    # Auth-dependent suites in `e2e/` skip themselves unless these env vars
+    # are set. We expose them at the job level so the wizard subprocess
+    # picks them up via `process.env`.
+    env:
+      CS_WORKSPACE_CRN: ${{ secrets.CS_WORKSPACE_CRN }}
+      CS_CLIENT_ID: ${{ secrets.CS_CLIENT_ID }}
+      CS_CLIENT_KEY: ${{ secrets.CS_CLIENT_KEY }}
+      CS_CLIENT_ACCESS_KEY: ${{ secrets.CS_CLIENT_ACCESS_KEY }}
+      CS_ZEROKMS_HOST: https://ap-southeast-2.aws.zerokms.cipherstashmanaged.net
+      CS_CTS_HOST: https://ap-southeast-2.aws.cts.cipherstashmanaged.net
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+
+      - uses: pnpm/action-setup@v4
+        name: Install pnpm
+        with:
+          run_install: false
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install
+
+      # Run the standalone `e2e/` workspace via turbo so the `^build`
+      # dep on the `test:e2e` task builds cli + wizard first. CLI's own
+      # E2E (`packages/cli/tests/e2e/**`) is covered by the `run-tests`
+      # job above; we filter to the new workspace here to avoid duplication.
+      - name: Run E2E tests
+        run: pnpm exec turbo run test:e2e --filter @cipherstash/e2e

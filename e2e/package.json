@@ -1,0 +1,17 @@
+{
+  "name": "@cipherstash/e2e",
+  "version": "0.0.0",
+  "private": true,
+  "description": "End-to-end tests that exercise built CipherStash binaries and cross-package behaviour.",
+  "type": "module",
+  "scripts": {
+    "test:e2e": "vitest run"
+  },
+  "dependencies": {
+    "@cipherstash/cli": "workspace:*",
+    "@cipherstash/wizard": "workspace:*"
+  },
+  "devDependencies": {
+    "vitest": "catalog:repo"
+  }
+}
