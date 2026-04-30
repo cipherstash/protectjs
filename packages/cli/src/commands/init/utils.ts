@@ -113,6 +113,31 @@ export function combinedInstallCommands(
   return commands
 }
 
+/**
+ * Returns the one-shot remote-execution command for the given package
+ * manager, ready to prefix a package reference. We mirror what each tool
+ * documents:
+ *   npm  → `npx`
+ *   bun  → `bunx`
+ *   pnpm → `pnpm dlx`
+ *   yarn → `yarn dlx`
+ *
+ * `ref` is appended verbatim, so callers may pass `'@cipherstash/cli'`
+ * or `'@cipherstash/cli db install'`.
+ */
+export function runnerCommand(pm: PackageManager, ref: string): string {
+  switch (pm) {
+    case 'bun':
+      return `bunx ${ref}`
+    case 'pnpm':
+      return `pnpm dlx ${ref}`
+    case 'yarn':
+      return `yarn dlx ${ref}`
+    case 'npm':
+      return `npx ${ref}`
+  }
+}
+
 function toCamelCase(str: string): string {
   return str.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase())
 }

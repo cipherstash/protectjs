@@ -48,7 +48,8 @@
     "clean": "rimraf --glob **/.next **/.turbo **/dist **/node_modules",
     "code:fix": "biome check --write",
     "release": "pnpm run build && changeset publish",
-    "test": "turbo test --filter './packages/*'"
+    "test": "turbo test --filter './packages/*'",
+    "test:e2e": "turbo run test:e2e"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",

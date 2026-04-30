@@ -26,11 +26,12 @@ export function formatWizardError(summary: string, detail?: string): string {
 export function classifyError(
   errorCode: string | undefined,
   rawMessage: string,
+  runner = 'npx',
 ): string {
   if (errorCode === 'authentication_failed') {
     return formatWizardError(
       'Authentication failed.',
-      'Your CipherStash token may be expired or invalid. Run: npx @cipherstash/cli auth login',
+      `Your CipherStash token may be expired or invalid. Run: ${runner} @cipherstash/cli auth login`,
     )
   }
   if (errorCode === 'rate_limit') {
@@ -57,10 +58,13 @@ export function classifyError(
     } catch {
       apiMessage = body
     }
-    return classifyHttpError(status, apiMessage || rawMessage)
+    return classifyHttpError(status, apiMessage || rawMessage, runner)
   }
 
-  if (rawMessage.includes('ECONNREFUSED') || rawMessage.includes('fetch failed')) {
+  if (
+    rawMessage.includes('ECONNREFUSED') ||
+    rawMessage.includes('fetch failed')
+  ) {
     return formatWizardError(
       'Could not reach the CipherStash AI gateway.',
       'The gateway may be temporarily unavailable. Check the status pages below.',
@@ -84,7 +88,11 @@ export function classifyError(
  * Classify an HTTP error from a direct gateway fetch into the same
  * user-friendly format the agent SDK errors use.
  */
-export function classifyHttpError(status: number, apiMessage: string): string {
+export function classifyHttpError(
+  status: number,
+  apiMessage: string,
+  runner = 'npx',
+): string {
   if (status === 400) {
     return formatWizardError(
       `The AI gateway rejected the request (HTTP ${status}).`,
@@ -94,7 +102,7 @@ export function classifyHttpError(status: number, apiMessage: string): string {
   if (status === 401) {
     return formatWizardError(
       'Authentication failed (HTTP 401).',
-      'Your CipherStash token may be expired. Run: npx @cipherstash/cli auth login',
+      `Your CipherStash token may be expired. Run: ${runner} @cipherstash/cli auth login`,
     )
   }
   if (status === 429) {
@@ -106,7 +114,9 @@ export function classifyHttpError(status: number, apiMessage: string): string {
   if (status >= 500) {
     return formatWizardError(
       `The AI service returned an error (HTTP ${status}).`,
-      apiMessage ? `Reason: ${apiMessage}` : 'This is likely a temporary issue.',
+      apiMessage
+        ? `Reason: ${apiMessage}`
+        : 'This is likely a temporary issue.',
     )
   }
   return formatWizardError(

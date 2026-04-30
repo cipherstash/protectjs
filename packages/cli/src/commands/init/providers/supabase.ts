@@ -1,12 +1,15 @@
 import type { InitProvider, InitState } from '../types.js'
+import { type PackageManager, runnerCommand } from '../utils.js'
 
 export function createSupabaseProvider(): InitProvider {
   return {
     name: 'supabase',
     introMessage: 'Setting up CipherStash for your Supabase project...',
-    getNextSteps(state: InitState): string[] {
+    getNextSteps(state: InitState, pm: PackageManager): string[] {
+      const cli = runnerCommand(pm, '@cipherstash/cli')
+      const wizard = runnerCommand(pm, '@cipherstash/wizard')
       const steps = [
-        'Install EQL: npx @cipherstash/cli db install --supabase (prompts for migration vs direct)',
+        `Install EQL: ${cli} db install --supabase (prompts for migration vs direct)`,
         'Apply it: supabase db reset (local) or supabase migration up (remote)',
       ]
 
@@ -14,7 +17,7 @@ export function createSupabaseProvider(): InitProvider {
         ? `edit ${state.clientFilePath} directly`
         : 'edit your encryption schema directly'
       steps.push(
-        `Customize your schema: npx @cipherstash/wizard (AI-guided, automated) — or ${manualEdit}`,
+        `Customize your schema: ${wizard} (AI-guided, automated) — or ${manualEdit}`,
       )
 
       steps.push(

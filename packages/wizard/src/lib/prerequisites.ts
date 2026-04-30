@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 import auth from '@cipherstash/auth'
+import { detectPackageManager } from './detect.js'
 
 interface PrerequisiteResult {
   ok: boolean
@@ -16,16 +17,17 @@ export async function checkPrerequisites(
   cwd: string,
 ): Promise<PrerequisiteResult> {
   const missing: string[] = []
+  const runner = detectPackageManager(cwd)?.execCommand ?? 'npx'
 
   if (!(await hasCredentials())) {
     missing.push(
-      'Not authenticated with CipherStash. Run: npx @cipherstash/cli auth login',
+      `Not authenticated with CipherStash. Run: ${runner} @cipherstash/cli auth login`,
     )
   }
 
   if (!findStashConfig(cwd)) {
     missing.push(
-      'No stash.config.ts found. Run: npx @cipherstash/cli db install',
+      `No stash.config.ts found. Run: ${runner} @cipherstash/cli db install`,
     )
   }
 
