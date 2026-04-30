@@ -9,8 +9,8 @@ import { execSync } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 import * as p from '@clack/prompts'
-import { rewriteEncryptedAlterColumns } from './rewrite-migrations.js'
 import type { GatheredContext } from './gather.js'
+import { rewriteEncryptedAlterColumns } from './rewrite-migrations.js'
 import type { DetectedPackageManager, Integration } from './types.js'
 
 interface PostAgentOptions {
@@ -91,8 +91,7 @@ export async function runPostAgentSteps(opts: PostAgentOptions): Promise<void> {
 
   if (integration === 'prisma') {
     const shouldMigrate = await p.confirm({
-      message:
-        `Run Prisma migration now? (${runner} prisma migrate dev --name add-encryption)`,
+      message: `Run Prisma migration now? (${runner} prisma migrate dev --name add-encryption)`,
       initialValue: true,
     })
 

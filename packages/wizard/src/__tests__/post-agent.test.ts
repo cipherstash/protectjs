@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { runPostAgentSteps } from '../lib/post-agent.js'
 import type { DetectedPackageManager } from '../lib/types.js'
 
@@ -32,7 +32,9 @@ describe('runPostAgentSteps execution commands', () => {
       } as never,
     })
 
-    const commands = vi.mocked(childProcess.execSync).mock.calls.map((c) => c[0] as string)
+    const commands = vi
+      .mocked(childProcess.execSync)
+      .mock.calls.map((c) => c[0] as string)
     expect(commands).toContain('bunx @cipherstash/cli db install')
     expect(commands).toContain('bunx @cipherstash/cli db push')
     // Sanity: no leftover npx forms for the cipherstash binaries.
@@ -49,10 +51,15 @@ describe('runPostAgentSteps execution commands', () => {
       cwd: '/tmp/fake',
       integration: 'supabase', // avoid the interactive p.confirm in drizzle path
       packageManager: bun,
-      gathered: { installCommand: 'bun add @cipherstash/stack', hasStashConfig: true } as never,
+      gathered: {
+        installCommand: 'bun add @cipherstash/stack',
+        hasStashConfig: true,
+      } as never,
     })
     // db push runs with no install
-    const commands = vi.mocked(childProcess.execSync).mock.calls.map((c) => c[0] as string)
+    const commands = vi
+      .mocked(childProcess.execSync)
+      .mock.calls.map((c) => c[0] as string)
     expect(commands).toContain('bunx @cipherstash/cli db push')
   })
 
@@ -61,9 +68,14 @@ describe('runPostAgentSteps execution commands', () => {
       cwd: '/tmp/fake',
       integration: 'supabase',
       packageManager: undefined,
-      gathered: { installCommand: 'npm install @cipherstash/stack', hasStashConfig: false } as never,
+      gathered: {
+        installCommand: 'npm install @cipherstash/stack',
+        hasStashConfig: false,
+      } as never,
     })
-    const commands = vi.mocked(childProcess.execSync).mock.calls.map((c) => c[0] as string)
+    const commands = vi
+      .mocked(childProcess.execSync)
+      .mock.calls.map((c) => c[0] as string)
     expect(commands).toContain('npx @cipherstash/cli db install')
     expect(commands).toContain('npx @cipherstash/cli db push')
   })
