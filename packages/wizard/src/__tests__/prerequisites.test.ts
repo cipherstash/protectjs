@@ -26,12 +26,12 @@ describe('checkPrerequisites missing-list copy', () => {
   beforeEach(() => {
     tmp = mkdtempSync(join(tmpdir(), 'wiz-prereq-'))
     originalUA = process.env.npm_config_user_agent
-    process.env.npm_config_user_agent = undefined
+    delete process.env.npm_config_user_agent
   })
 
   afterEach(() => {
     rmSync(tmp, { recursive: true, force: true })
-    if (originalUA === undefined) process.env.npm_config_user_agent = undefined
+    if (originalUA === undefined) delete process.env.npm_config_user_agent
     else process.env.npm_config_user_agent = originalUA
   })
 
