@@ -1,3 +1,4 @@
+import { detectPackageManager, runnerCommand } from '@/commands/init/utils.js'
 import { loadEncryptConfig, loadStashConfig } from '@/config/index.js'
 import type { EncryptConfig } from '@cipherstash/stack/schema'
 import * as p from '@clack/prompts'
@@ -149,7 +150,7 @@ export async function validateCommand(options: {
   excludeOperatorFamily?: boolean
   databaseUrl?: string
 }) {
-  p.intro('npx @cipherstash/cli db validate')
+  p.intro(runnerCommand(detectPackageManager(), '@cipherstash/cli db validate'))
 
   const s = p.spinner()
 

@@ -2,6 +2,7 @@ import { execSync } from 'node:child_process'
 import { existsSync, unlinkSync, writeFileSync } from 'node:fs'
 import { readdir } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
+import { detectPackageManager, runnerCommand } from '@/commands/init/utils.js'
 import { loadStashConfig } from '@/config/index.js'
 import {
   EQLInstaller,
@@ -65,7 +66,7 @@ export interface InstallOptions {
 export type SupabaseInstallMode = 'migration' | 'direct'
 
 export async function installCommand(options: InstallOptions) {
-  p.intro('npx @cipherstash/cli db install')
+  p.intro(runnerCommand(detectPackageManager(), '@cipherstash/cli db install'))
 
   // Validate mutually-exclusive / supabase-required flags BEFORE doing any
   // I/O. `--migration` and `--direct` only make sense in the Supabase flow;

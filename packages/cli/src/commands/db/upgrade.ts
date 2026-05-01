@@ -1,3 +1,4 @@
+import { detectPackageManager, runnerCommand } from '@/commands/init/utils.js'
 import { loadStashConfig } from '@/config/index.js'
 import { EQLInstaller } from '@/installer/index.js'
 import * as p from '@clack/prompts'
@@ -9,7 +10,8 @@ export async function upgradeCommand(options: {
   latest?: boolean
   databaseUrl?: string
 }) {
-  p.intro('npx @cipherstash/cli db upgrade')
+  const pm = detectPackageManager()
+  p.intro(runnerCommand(pm, '@cipherstash/cli db upgrade'))
 
   const s = p.spinner()
 
@@ -30,7 +32,7 @@ export async function upgradeCommand(options: {
   if (!installed) {
     s.stop('EQL is not installed.')
     p.log.warn(
-      'EQL is not currently installed. Run "npx @cipherstash/cli db install" first.',
+      `EQL is not currently installed. Run "${runnerCommand(pm, '@cipherstash/cli db install')}" first.`,
     )
     p.outro('Upgrade aborted.')
     process.exit(1)

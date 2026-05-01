@@ -1,3 +1,4 @@
+import { detectPackageManager, runnerCommand } from '@/commands/init/utils.js'
 import { detectDotenvFile } from '@/config/database-url.js'
 import { loadStashConfig } from '@/config/index.js'
 import { messages } from '@/messages.js'
@@ -7,7 +8,12 @@ import pg from 'pg'
 export async function testConnectionCommand(
   options: { databaseUrl?: string } = {},
 ) {
-  p.intro('npx @cipherstash/cli db test-connection')
+  p.intro(
+    runnerCommand(
+      detectPackageManager(),
+      '@cipherstash/cli db test-connection',
+    ),
+  )
 
   const s = p.spinner()
 
