@@ -12,11 +12,19 @@
 export const messages = {
   cli: {
     versionBannerPrefix: 'CipherStash CLI v',
-    usagePrefix: 'Usage: npx stash',
+    /**
+     * Stable leader of the usage line. The runner-and-package portion
+     * (e.g. `npx stash` or `bunx stash`) is appended at render time by
+     * the bin so the help text matches how the user invoked the CLI.
+     * Tests assert on this leader plus `'stash'` separately to stay
+     * runner-agnostic.
+     */
+    usagePrefix: 'Usage: ',
     unknownCommand: 'Unknown command',
   },
   auth: {
-    usagePrefix: 'Usage: npx stash auth',
+    /** Same shape as `cli.usagePrefix` — leader only. */
+    usagePrefix: 'Usage: ',
     unknownSubcommand: 'Unknown auth command',
     selectRegion: 'Select a region',
     cancelled: 'Cancelled.',

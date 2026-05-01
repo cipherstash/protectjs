@@ -34,15 +34,32 @@ function isModuleNotFound(err: unknown): boolean {
   )
 }
 
+import {
+  detectPackageManager,
+  prodInstallCommand,
+  runnerCommand,
+} from '../commands/init/utils.js'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
+const pkg = JSON.parse(
+  readFileSync(join(__dirname, '../../package.json'), 'utf-8'),
+)
+
+// Detect once, share across help rendering and the requireStack hint.
+// Detection reads `npm_config_user_agent` (when the user invoked via
+// `bunx`/`pnpm dlx`/`yarn dlx`) and falls back to the lockfile in cwd.
+const PM = detectPackageManager()
+const STASH = runnerCommand(PM, 'stash')
+
 async function requireStack<T>(importFn: () => Promise<T>): Promise<T> {
   try {
     return await importFn()
   } catch (err: unknown) {
     if (isModuleNotFound(err)) {
       p.log.error(
-        '@cipherstash/stack is required for this command.\n' +
-          '  Install it with: npm install @cipherstash/stack\n' +
-          '  Or run: npx stash init',
+        `@cipherstash/stack is required for this command.
+  Install it with: ${prodInstallCommand(PM, '@cipherstash/stack')}
+  Or run: ${STASH} init`,
       )
       process.exit(1) as never
     }
@@ -50,15 +67,10 @@ async function requireStack<T>(importFn: () => Promise<T>): Promise<T> {
   }
 }
 
-const __dirname = dirname(fileURLToPath(import.meta.url))
-const pkg = JSON.parse(
-  readFileSync(join(__dirname, '../../package.json'), 'utf-8'),
-)
-
 const HELP = `
 ${messages.cli.versionBannerPrefix}${pkg.version}
 
-${messages.cli.usagePrefix} <command> [options]
+${messages.cli.usagePrefix}${STASH} <command> [options]
 
 Commands:
   init                 Initialize CipherStash for your project
@@ -98,13 +110,13 @@ DB Flags:
   --database-url <url>       (all db / schema commands) Override DATABASE_URL for this run only — never written to disk
 
 Examples:
-  npx stash init
-  npx stash init --supabase
-  npx stash auth login
-  npx stash wizard
-  npx stash db install
-  npx stash db push
-  npx stash schema build
+  ${STASH} init
+  ${STASH} init --supabase
+  ${STASH} auth login
+  ${STASH} wizard
+  ${STASH} db install
+  ${STASH} db push
+  ${STASH} schema build
 `.trim()
 
 interface ParsedArgs {
