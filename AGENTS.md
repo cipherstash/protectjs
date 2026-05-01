@@ -3,7 +3,7 @@ This is the Protect.js repository - End-to-end, per-value encryption for JavaScr
 ## Prerequisites
 
 - **Node.js**: >= 22 (enforced in `package.json` engines)
-- **pnpm**: 10.14.0 (this repo uses pnpm workspaces and catalogs)
+- **pnpm**: 10.33.2 (this repo uses pnpm workspaces and catalogs)
 - Internet access to install the prebuilt native module `@cipherstash/protect-ffi`
 
 If running integration tests or examples, you will also need CipherStash credentials (see Environment variables below).
@@ -85,7 +85,17 @@ If these variables are missing, tests that require live encryption will fail or 
 - `packages/utils`: Shared config (`utils/config`) and logger (`utils/logger`)
 - `examples/*`: Working apps (basic, drizzle, nextjs-clerk, next-drizzle-mysql, dynamo, hono-supabase)
 - `docs/*`: Concepts, how-to guides (Next.js bundling, SST, npm lockfile v3), reference
-- `skills/*`: Agent skills (`stash-encryption`, `stash-drizzle`, `stash-dynamodb`, `stash-secrets`, `stash-supabase`)
+- `skills/*`: Agent skills (`stash-encryption`, `stash-drizzle`, `stash-dynamodb`, `stash-secrets`, `stash-supabase`, `stash-supply-chain-security`)
+
+## Supply Chain Security
+
+This repo applies a set of supply-chain controls (post-install script policy, install cooldown, frozen-lockfile CI, registry pinning, Dependabot cooldown, CODEOWNERS) sourced from [lirantal/npm-security-best-practices](https://github.com/lirantal/npm-security-best-practices). They're validated by `e2e/tests/supply-chain.e2e.test.ts` so silent regressions fail CI. See `skills/stash-supply-chain-security/SKILL.md` for the full guide.
+
+Three rules to remember when editing CI or pnpm config:
+
+1. **CI uses `pnpm install --frozen-lockfile`.** Don't drop the flag.
+2. **Adding to `pnpm.onlyBuiltDependencies` is an audit decision** — vet the package and explain the addition in the PR.
+3. **Don't commit auth tokens in `.npmrc`.** Tokens belong in user-level `~/.npmrc` or environment variables.
 
 ## Key Concepts and APIs
 

@@ -12,6 +12,7 @@
     "@cipherstash/wizard": "workspace:*"
   },
   "devDependencies": {
-    "vitest": "catalog:repo"
+    "vitest": "catalog:repo",
+    "yaml": "^2.8.3"
   }
 }

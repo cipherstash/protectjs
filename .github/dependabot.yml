@@ -1,0 +1,62 @@
+version: 2
+updates:
+  # ── npm dependencies (pnpm workspace) ──────────────────────────
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "08:00"
+      timezone: Australia/Sydney
+    # Wait for community discovery before opening PRs
+    # (lirantal/npm-security-best-practices #2: install with cooldown).
+    cooldown:
+      default-days: 7
+      semver-major-days: 14
+    open-pull-requests-limit: 10
+    labels:
+      - dependencies
+      - supply-chain
+    commit-message:
+      prefix: "chore(deps)"
+      include: scope
+    groups:
+      dev-dependencies:
+        dependency-type: development
+        update-types:
+          - minor
+          - patch
+      production-minor-patch:
+        dependency-type: production
+        update-types:
+          - minor
+          - patch
+      type-definitions:
+        patterns:
+          - "@types/*"
+    # Major bumps stay un-grouped → one PR each, easier to review.
+    ignore:
+      # Catalog-managed; bump manually via pnpm-workspace.yaml + changeset.
+      - dependency-name: "@cipherstash/auth"
+
+  # ── GitHub Actions ─────────────────────────────────────────────
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    cooldown:
+      default-days: 7
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - github-actions
+    commit-message:
+      prefix: "chore(actions)"
+    groups:
+      actions-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch

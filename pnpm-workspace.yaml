@@ -14,3 +14,10 @@ catalogs:
     '@clerk/nextjs': 6.31.2
     next: 15.5.10
     vite: 6.4.1
+
+# Supply-chain hardening — see skills/stash-supply-chain-security/
+# 7 days in minutes; mirrors the Dependabot cooldown so manual + automated
+# updates have the same community-discovery window.
+minimumReleaseAge: 10080
+# Forbid git/tarball deps anywhere in the lockfile (pnpm ≥ 10.26).
+blockExoticSubdeps: true
