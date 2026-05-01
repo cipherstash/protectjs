@@ -1,0 +1,12 @@
+# Default owners for everything in the repo.
+*                                       @cipherstash/developers
+
+# Supply-chain critical paths — changes here require explicit review
+# (lirantal/npm-security-best-practices; see skills/stash-supply-chain-security/).
+/.github/workflows/                     @cipherstash/developers
+/.github/dependabot.yml                 @cipherstash/developers
+/.github/CODEOWNERS                     @cipherstash/developers
+/pnpm-workspace.yaml                    @cipherstash/developers
+/pnpm-lock.yaml                         @cipherstash/developers
+/.npmrc                                 @cipherstash/developers
+/skills/stash-supply-chain-security/    @cipherstash/developers
