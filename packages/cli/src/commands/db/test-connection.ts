@@ -1,4 +1,6 @@
+import { detectDotenvFile } from '@/config/database-url.js'
 import { loadStashConfig } from '@/config/index.js'
+import { messages } from '@/messages.js'
 import * as p from '@clack/prompts'
 import pg from 'pg'
 
@@ -47,7 +49,7 @@ export async function testConnectionCommand(
 
     p.log.error(`Failed to connect to database: ${message}`)
     console.log()
-    p.log.info('Check your databaseUrl in stash.config.ts or .env file.')
+    p.log.info(messages.db.urlConnectionFailedHint(detectDotenvFile()))
     process.exit(1)
   } finally {
     await client.end()

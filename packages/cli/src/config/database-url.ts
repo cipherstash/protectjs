@@ -87,7 +87,7 @@ export function withResolverContext<T>(
 }
 
 /** Walk dotenv precedence and pick the first existing file. Defaults to `.env`. */
-function detectDotenvFile(cwd: string): string {
+export function detectDotenvFile(cwd: string = process.cwd()): string {
   const candidates = [
     '.env.local',
     '.env.development.local',
@@ -133,11 +133,12 @@ function trySupabaseStatus(): string | undefined {
   return undefined
 }
 
-async function promptForUrl(): Promise<string | undefined> {
+async function promptForUrl(cwd: string): Promise<string | undefined> {
   // Surface the alternative paths before prompting so users don't feel
   // like they're stuck in an interactive flow when a flag or env var
-  // would do.
-  p.note(messages.db.urlPromptTip)
+  // would do. The dotenv file in the tip is detected from cwd so it
+  // matches what the user actually has (`.env.local` vs `.env` etc.).
+  p.note(messages.db.urlPromptTip(detectDotenvFile(cwd)))
 
   const value = await p.text({
     message: messages.db.urlPromptMessage,
@@ -199,7 +200,7 @@ export async function resolveDatabaseUrl(
   const isCi = process.env.CI === 'true'
   const isInteractive = Boolean(process.stdin.isTTY) && !isCi
   if (isInteractive) {
-    const fromPrompt = await promptForUrl()
+    const fromPrompt = await promptForUrl(cwd)
     if (fromPrompt) {
       p.log.info(messages.db.urlResolvedFromPrompt)
       // Hint the user toward making it stick so they don't get re-prompted.

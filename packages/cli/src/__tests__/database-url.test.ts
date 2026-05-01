@@ -205,12 +205,22 @@ describe('resolveDatabaseUrl — prompt source', () => {
     })
   })
 
-  it('shows the alternatives tip before prompting', async () => {
+  it('shows the alternatives tip with the detected dotenv file before prompting', async () => {
+    fs.writeFileSync(path.join(tmpDir, '.env.local'), '')
     clack.text.mockResolvedValueOnce(VALID_URL)
     clack.isCancel.mockReturnValueOnce(false)
     await resolveDatabaseUrl({ cwd: tmpDir })
-    expect(clack.note).toHaveBeenCalledWith(messages.db.urlPromptTip)
+    expect(clack.note).toHaveBeenCalledWith(
+      messages.db.urlPromptTip('.env.local'),
+    )
     expect(clack.text).toHaveBeenCalled()
+  })
+
+  it('defaults the prompt tip to .env when no dotenv files exist', async () => {
+    clack.text.mockResolvedValueOnce(VALID_URL)
+    clack.isCancel.mockReturnValueOnce(false)
+    await resolveDatabaseUrl({ cwd: tmpDir })
+    expect(clack.note).toHaveBeenCalledWith(messages.db.urlPromptTip('.env'))
   })
 
   it('returns the entered URL and suggests an existing dotenv file', async () => {

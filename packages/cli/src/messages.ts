@@ -30,9 +30,20 @@ export const messages = {
     urlResolvedFromSupabase: 'Using DATABASE_URL from supabase status',
     urlResolvedFromPrompt: 'Using DATABASE_URL from prompt',
     urlPromptMessage: 'Paste your DATABASE_URL',
-    /** Shown immediately before the URL prompt to surface alternatives. */
-    urlPromptTip:
-      'Tip: you can also pass --database-url <url> on the command line, or set DATABASE_URL in your environment / .env file.',
+    /**
+     * Shown immediately before the URL prompt to surface alternatives.
+     * `dotenvFile` is the first existing dotenv file in the project (or
+     * `.env` as the default) so the suggestion matches the user's setup.
+     */
+    urlPromptTip: (dotenvFile: string) =>
+      `Tip: you can also pass --database-url <url> on the command line, or set DATABASE_URL in your environment / ${dotenvFile} file.`,
+    /**
+     * Shown when a connection attempt fails — points the user at where
+     * to fix the URL. Same dotenv detection as `urlPromptTip` so the
+     * suggestion matches their setup.
+     */
+    urlConnectionFailedHint: (dotenvFile: string) =>
+      `Check that DATABASE_URL is correct. You can pass --database-url <url> on the command line, set DATABASE_URL in your environment, or write it to ${dotenvFile}.`,
     urlInvalid: 'Not a valid URL',
     urlFlagMalformed:
       'Invalid --database-url: not a parseable connection string',
