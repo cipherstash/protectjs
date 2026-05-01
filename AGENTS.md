@@ -166,6 +166,27 @@ pnpm changeset:publish
    - `pnpm --filter <changed-pkg> build`
    - `pnpm --filter <changed-pkg> test`
 6. Update docs in `docs/*` and usage examples if APIs change.
+7. **Add a changeset before opening or finalising the PR** when the
+   change affects a published package's public behaviour or surface
+   (new feature, bug fix, breaking change, UX-visible tweak). Run
+   `pnpm changeset` (interactive) or hand-write a markdown file under
+   `.changeset/` matching the existing format:
+
+   ```
+   ---
+   '@cipherstash/<pkg>': minor   # or patch / major
+   ---
+
+   <user-facing description of what changed and why>
+   ```
+
+   The repo's `changeset-bot` GitHub app posts a "🦋 No Changeset
+   found" warning on PRs missing one. Skip changesets only for
+   internal-only changes (test-only PRs, internal refactors with no
+   observable behaviour change, repo tooling). When in doubt, add
+   one — releases use Changesets to drive version bumps and
+   `CHANGELOG.md` entries, so a missing changeset means the change
+   ships invisibly.
 
 ## Useful Links in this repo
 

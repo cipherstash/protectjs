@@ -69,10 +69,14 @@ export async function resolveClientPath(
 }
 
 function generateConfig(clientPath: string): string {
-  return `import { defineConfig } from 'stash'
+  // The config calls resolveDatabaseUrl() at evaluation time. The CLI
+  // walks a layered chain (--database-url flag → env → supabase status
+  // → interactive prompt) and returns a usable URL. The connection
+  // string is never persisted — only this declarative call is.
+  return `import { defineConfig, resolveDatabaseUrl } from 'stash'
 
 export default defineConfig({
-  databaseUrl: process.env.DATABASE_URL!,
+  databaseUrl: await resolveDatabaseUrl(),
   client: '${clientPath}',
 })
 `
