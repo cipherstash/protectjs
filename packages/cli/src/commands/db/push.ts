@@ -32,7 +32,7 @@ export async function pushCommand(options: {
   dryRun?: boolean
   databaseUrl?: string
 }) {
-  p.intro(runnerCommand(detectPackageManager(), '@cipherstash/cli db push'))
+  p.intro(runnerCommand(detectPackageManager(), 'stash db push'))
   p.log.info(
     'This command pushes the encryption schema to the database for use with CipherStash Proxy.\nIf you are using the SDK directly (Drizzle, Supabase, or plain PostgreSQL), this step is not required.',
   )

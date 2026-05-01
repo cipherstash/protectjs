@@ -6,7 +6,7 @@ import pg from 'pg'
 
 export async function statusCommand(options: { databaseUrl?: string } = {}) {
   const pm = detectPackageManager()
-  p.intro(runnerCommand(pm, '@cipherstash/cli db status'))
+  p.intro(runnerCommand(pm, 'stash db status'))
 
   const s = p.spinner()
 
@@ -44,7 +44,7 @@ export async function statusCommand(options: { databaseUrl?: string } = {}) {
   } else {
     s.stop('EQL is not installed.')
     p.log.warn(
-      `EQL is not installed. Run \`${runnerCommand(pm, '@cipherstash/cli db install')}\` to install it.`,
+      `EQL is not installed. Run \`${runnerCommand(pm, 'stash db install')}\` to install it.`,
     )
     p.outro('Status check complete.')
     return
@@ -104,7 +104,7 @@ export async function statusCommand(options: { databaseUrl?: string } = {}) {
     const message = error instanceof Error ? error.message : String(error)
     if (message.includes('does not exist')) {
       p.log.info(
-        `Active encrypt config: table not found (run \`${runnerCommand(pm, '@cipherstash/cli db push')}\` to create it)`,
+        `Active encrypt config: table not found (run \`${runnerCommand(pm, 'stash db push')}\` to create it)`,
       )
     } else {
       p.log.error(`Failed to check encrypt configuration: ${message}`)

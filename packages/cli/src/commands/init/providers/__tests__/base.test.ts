@@ -7,7 +7,7 @@ describe('createBaseProvider getNextSteps', () => {
   it('uses npx when package manager is npm', () => {
     const steps = provider.getNextSteps({}, 'npm')
     expect(steps[0]).toBe(
-      'Set up your database: npx @cipherstash/cli db install',
+      'Set up your database: npx stash db install',
     )
     expect(steps[1]).toContain('npx @cipherstash/wizard')
   })
@@ -15,7 +15,7 @@ describe('createBaseProvider getNextSteps', () => {
   it('uses bunx when package manager is bun', () => {
     const steps = provider.getNextSteps({}, 'bun')
     expect(steps[0]).toBe(
-      'Set up your database: bunx @cipherstash/cli db install',
+      'Set up your database: bunx stash db install',
     )
     expect(steps[1]).toContain('bunx @cipherstash/wizard')
     // Sanity: the old hardcoded `npx` should be gone.
@@ -25,7 +25,7 @@ describe('createBaseProvider getNextSteps', () => {
   it('uses pnpm dlx when package manager is pnpm', () => {
     const steps = provider.getNextSteps({}, 'pnpm')
     expect(steps[0]).toBe(
-      'Set up your database: pnpm dlx @cipherstash/cli db install',
+      'Set up your database: pnpm dlx stash db install',
     )
     expect(steps[1]).toContain('pnpm dlx @cipherstash/wizard')
   })
@@ -33,7 +33,7 @@ describe('createBaseProvider getNextSteps', () => {
   it('uses yarn dlx when package manager is yarn', () => {
     const steps = provider.getNextSteps({}, 'yarn')
     expect(steps[0]).toBe(
-      'Set up your database: yarn dlx @cipherstash/cli db install',
+      'Set up your database: yarn dlx stash db install',
     )
   })
 

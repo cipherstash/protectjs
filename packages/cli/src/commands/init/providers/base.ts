@@ -6,7 +6,7 @@ export function createBaseProvider(): InitProvider {
     name: 'base',
     introMessage: 'Setting up CipherStash for your project...',
     getNextSteps(state: InitState, pm: PackageManager): string[] {
-      const cli = runnerCommand(pm, '@cipherstash/cli')
+      const cli = runnerCommand(pm, 'stash')
       const wizard = runnerCommand(pm, '@cipherstash/wizard')
       const manualEdit = state.clientFilePath
         ? `edit ${state.clientFilePath} directly`

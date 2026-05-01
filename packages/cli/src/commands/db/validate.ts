@@ -150,7 +150,7 @@ export async function validateCommand(options: {
   excludeOperatorFamily?: boolean
   databaseUrl?: string
 }) {
-  p.intro(runnerCommand(detectPackageManager(), '@cipherstash/cli db validate'))
+  p.intro(runnerCommand(detectPackageManager(), 'stash db validate'))
 
   const s = p.spinner()
 

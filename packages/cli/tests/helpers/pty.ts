@@ -7,7 +7,7 @@ import stripAnsi from 'strip-ansi'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
-// Built CLI binary. Tests assume `pnpm --filter @cipherstash/cli build` has run.
+// Built CLI binary. Tests assume `pnpm --filter stash build` has run.
 export const STASH_BIN = resolve(__dirname, '../../dist/bin/stash.js')
 
 // pnpm strips the executable bit when unpacking node-pty's macOS prebuilds,

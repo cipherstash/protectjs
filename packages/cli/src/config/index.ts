@@ -25,7 +25,7 @@ export type ResolvedStashConfig = Required<Pick<StashConfig, 'client'>> &
  *
  * @example
  * ```ts
- * import { defineConfig } from '@cipherstash/cli'
+ * import { defineConfig } from 'stash'
  *
  * export default defineConfig({
  *   databaseUrl: process.env.DATABASE_URL!,
@@ -100,7 +100,7 @@ export async function loadStashConfig(
 
 Create a ${CONFIG_FILENAME} file in your project root:
 
-  import { defineConfig, resolveDatabaseUrl } from '@cipherstash/cli'
+  import { defineConfig, resolveDatabaseUrl } from 'stash'
 
   export default defineConfig({
     databaseUrl: await resolveDatabaseUrl(),

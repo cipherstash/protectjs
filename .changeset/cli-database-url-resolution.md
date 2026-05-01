@@ -1,5 +1,5 @@
 ---
-'@cipherstash/cli': minor
+'stash': minor
 ---
 
 Layered `DATABASE_URL` resolution for DB / schema commands.
@@ -16,7 +16,7 @@ if `DATABASE_URL` wasn't already in the environment. The CLI auto-loaded `.env.l
 The scaffolded `stash.config.ts` now calls a resolver directly:
 
 ```ts
-import { defineConfig, resolveDatabaseUrl } from '@cipherstash/cli'
+import { defineConfig, resolveDatabaseUrl } from 'stash'
 
 export default defineConfig({
   databaseUrl: await resolveDatabaseUrl(),

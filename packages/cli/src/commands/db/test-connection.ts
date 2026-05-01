@@ -8,12 +8,7 @@ import pg from 'pg'
 export async function testConnectionCommand(
   options: { databaseUrl?: string } = {},
 ) {
-  p.intro(
-    runnerCommand(
-      detectPackageManager(),
-      '@cipherstash/cli db test-connection',
-    ),
-  )
+  p.intro(runnerCommand(detectPackageManager(), 'stash db test-connection'))
 
   const s = p.spinner()
 

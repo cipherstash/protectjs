@@ -74,7 +74,7 @@ export async function rewriteEncryptedAlterColumns(
 function renderSafeAlter(table: string, column: string): string {
   const tmp = `${column}__cipherstash_tmp`
   return [
-    '-- Rewritten by @cipherstash/cli: in-place ALTER COLUMN cannot cast to',
+    '-- Rewritten by stash: in-place ALTER COLUMN cannot cast to',
     `-- eql_v2_encrypted. If "${table}" already has rows, backfill the new`,
     "-- column via @cipherstash/stack's encryptModel in application code BEFORE",
     '-- running this migration in production. Empty tables are safe as-is.',

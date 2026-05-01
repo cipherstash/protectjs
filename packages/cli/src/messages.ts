@@ -12,19 +12,18 @@
 export const messages = {
   cli: {
     versionBannerPrefix: 'CipherStash CLI v',
-    usagePrefix: 'Usage: npx @cipherstash/cli',
+    usagePrefix: 'Usage: npx stash',
     unknownCommand: 'Unknown command',
   },
   auth: {
-    usagePrefix: 'Usage: npx @cipherstash/cli auth',
+    usagePrefix: 'Usage: npx stash auth',
     unknownSubcommand: 'Unknown auth command',
     selectRegion: 'Select a region',
     cancelled: 'Cancelled.',
   },
   db: {
     unknownSubcommand: 'Unknown db subcommand',
-    migrateNotImplemented:
-      '"npx @cipherstash/cli db migrate" is not yet implemented.',
+    migrateNotImplemented: '"npx stash db migrate" is not yet implemented.',
     /** Source labels surfaced after DATABASE_URL resolution. */
     urlResolvedFromFlag: 'Using DATABASE_URL from --database-url flag',
     urlResolvedFromSupabase: 'Using DATABASE_URL from supabase status',

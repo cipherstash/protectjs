@@ -73,7 +73,7 @@ function generateConfig(clientPath: string): string {
   // walks a layered chain (--database-url flag → env → supabase status
   // → interactive prompt) and returns a usable URL. The connection
   // string is never persisted — only this declarative call is.
-  return `import { defineConfig, resolveDatabaseUrl } from '@cipherstash/cli'
+  return `import { defineConfig, resolveDatabaseUrl } from 'stash'
 
 export default defineConfig({
   databaseUrl: await resolveDatabaseUrl(),

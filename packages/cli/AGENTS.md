@@ -1,4 +1,4 @@
-# `@cipherstash/cli` — agent notes
+# `stash` — agent notes
 
 ## Two test suites
 
@@ -6,8 +6,8 @@ This package has **two** Vitest configs. Run the right one for the change.
 
 | Command | Config | Scope | Needs build? |
 | --- | --- | --- | --- |
-| `pnpm --filter @cipherstash/cli test` | `vitest.config.ts` | Unit tests under `src/__tests__/**` and `src/**/__tests__/**` | No |
-| `pnpm --filter @cipherstash/cli test:e2e` | `vitest.integration.config.ts` | E2E tests under `tests/e2e/**.e2e.test.ts` driving the built `dist/bin/stash.js` through a real pty (`node-pty`) | **Yes** — run `pnpm --filter @cipherstash/cli build` first, or use the turbo `test:e2e` task which depends on `build`. |
+| `pnpm --filter stash test` | `vitest.config.ts` | Unit tests under `src/__tests__/**` and `src/**/__tests__/**` | No |
+| `pnpm --filter stash test:e2e` | `vitest.integration.config.ts` | E2E tests under `tests/e2e/**.e2e.test.ts` driving the built `dist/bin/stash.js` through a real pty (`node-pty`) | **Yes** — run `pnpm --filter stash build` first, or use the turbo `test:e2e` task which depends on `build`. |
 
 The unit config explicitly excludes `tests/e2e/**` so the default `pnpm test`
 stays fast and self-contained.

@@ -166,9 +166,9 @@ Store a secret value that will be encrypted locally before being sent to the Cip
 The secret is encrypted end-to-end, ensuring your plaintext never leaves your machine unencrypted.
 
 Examples:
-  npx @cipherstash/cli secrets set --name DATABASE_URL --value "postgres://..." --environment production
-  npx @cipherstash/cli secrets set -n DATABASE_URL -V "postgres://..." -e production
-  npx @cipherstash/cli secrets set --name API_KEY --value "sk-123..." --environment staging
+  npx stash secrets set --name DATABASE_URL --value "postgres://..." --environment production
+  npx stash secrets set -n DATABASE_URL -V "postgres://..." -e production
+  npx stash secrets set --name API_KEY --value "sk-123..." --environment staging
 		`.trim(),
   },
 })
@@ -221,9 +221,9 @@ Retrieve a secret from CipherStash and decrypt it locally. The secret value is d
 on your machine, ensuring end-to-end security.
 
 Examples:
-  npx @cipherstash/cli secrets get --name DATABASE_URL --environment production
-  npx @cipherstash/cli secrets get -n DATABASE_URL -e production
-  npx @cipherstash/cli secrets get --name API_KEY --environment staging
+  npx stash secrets get --name DATABASE_URL --environment production
+  npx stash secrets get -n DATABASE_URL -e production
+  npx stash secrets get --name API_KEY --environment staging
 		`.trim(),
   },
 })
@@ -305,9 +305,9 @@ List all secrets stored in the specified environment. Only secret names and meta
 are returned; values remain encrypted and are not displayed.
 
 Examples:
-  npx @cipherstash/cli secrets list --environment production
-  npx @cipherstash/cli secrets list -e production
-  npx @cipherstash/cli secrets list --environment staging
+  npx stash secrets list --environment production
+  npx stash secrets list -e production
+  npx stash secrets list --environment staging
 		`.trim(),
   },
 })
@@ -385,9 +385,9 @@ Permanently delete a secret from the specified environment. This action cannot b
 By default, you will be prompted for confirmation before deletion. Use --yes to skip the confirmation.
 
 Examples:
-  npx @cipherstash/cli secrets delete --name DATABASE_URL --environment production
-  npx @cipherstash/cli secrets delete -n DATABASE_URL -e production --yes
-  npx @cipherstash/cli secrets delete --name API_KEY --environment staging -y
+  npx stash secrets delete --name DATABASE_URL --environment production
+  npx stash secrets delete -n DATABASE_URL -e production --yes
+  npx stash secrets delete --name API_KEY --environment staging -y
 		`.trim(),
   },
 })
@@ -421,15 +421,15 @@ Environment Variables:
   CS_CLIENT_ACCESS_KEY      CipherStash client access key (required)
 
 Examples:
-  npx @cipherstash/cli secrets set --name DATABASE_URL --value "postgres://..." --environment production
-  npx @cipherstash/cli secrets set -n DATABASE_URL -V "postgres://..." -e production
-  npx @cipherstash/cli secrets get --name DATABASE_URL --environment production
-  npx @cipherstash/cli secrets get -n DATABASE_URL -e production
-  npx @cipherstash/cli secrets list --environment production
-  npx @cipherstash/cli secrets list -e production
-  npx @cipherstash/cli secrets delete --name DATABASE_URL --environment production
-  npx @cipherstash/cli secrets delete -n DATABASE_URL -e production --yes
-  npx @cipherstash/cli secrets delete -n DATABASE_URL -e production -y
+  npx stash secrets set --name DATABASE_URL --value "postgres://..." --environment production
+  npx stash secrets set -n DATABASE_URL -V "postgres://..." -e production
+  npx stash secrets get --name DATABASE_URL --environment production
+  npx stash secrets get -n DATABASE_URL -e production
+  npx stash secrets list --environment production
+  npx stash secrets list -e production
+  npx stash secrets delete --name DATABASE_URL --environment production
+  npx stash secrets delete -n DATABASE_URL -e production --yes
+  npx stash secrets delete -n DATABASE_URL -e production -y
 		`.trim(),
   },
 })
@@ -452,13 +452,13 @@ your machine unencrypted.
 
 Quick Start:
   1. Set required environment variables (CS_WORKSPACE_CRN, CS_CLIENT_ID, etc.)
-  2. Use 'npx @cipherstash/cli secrets set' to store your first secret
-  3. Use 'npx @cipherstash/cli secrets get' to retrieve secrets when needed
+  2. Use 'npx stash secrets set' to store your first secret
+  3. Use 'npx stash secrets get' to retrieve secrets when needed
 
 Commands:
   secrets  Manage encrypted secrets
 
-Run 'npx @cipherstash/cli <command> --help' for more information about a command.
+Run 'npx stash <command> --help' for more information about a command.
 		`.trim(),
   },
 })

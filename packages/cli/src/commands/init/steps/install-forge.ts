@@ -9,7 +9,7 @@ import {
 } from '../utils.js'
 
 const STACK_PACKAGE = '@cipherstash/stack'
-const FORGE_PACKAGE = '@cipherstash/cli'
+const FORGE_PACKAGE = 'stash'
 
 export const installForgeStep: InitStep = {
   id: 'install-forge',

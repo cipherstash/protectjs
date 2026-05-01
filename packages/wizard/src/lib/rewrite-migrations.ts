@@ -18,7 +18,7 @@ import { join } from 'node:path'
  * - $1: table name (without quotes)
  * - $2: column name (without quotes)
  *
- * Note: a copy of this lives in `@cipherstash/cli` (`db/rewrite-migrations.ts`)
+ * Note: a copy of this lives in `stash` (`db/rewrite-migrations.ts`)
  * because cli's `db install --drizzle` uses the same fix. Both copies are
  * tightly coupled to drizzle-kit's output format — if drizzle-kit changes,
  * both need to be updated together.

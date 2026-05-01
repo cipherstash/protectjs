@@ -10,8 +10,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 // Absolute path to the built CLI's `dist/index.js`. The test config imports
 // from this path because the tmp dir doesn't have a node_modules with
-// `@cipherstash/cli` symlinked. Real users get a clean
-// `import { resolveDatabaseUrl } from '@cipherstash/cli'`.
+// `stash` symlinked. Real users get a clean
+// `import { resolveDatabaseUrl } from 'stash'`.
 const CLI_DIST_INDEX = path.resolve(__dirname, '../../dist/index.js')
 
 describe('db test-connection — DATABASE_URL resolver', () => {

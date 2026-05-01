@@ -1,4 +1,4 @@
-// @cipherstash/cli
+// stash
 // Public API exports
 
 export { defineConfig, loadStashConfig } from './config/index.ts'

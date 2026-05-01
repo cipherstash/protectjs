@@ -111,58 +111,58 @@ describe('prodInstallCommand', () => {
 
 describe('devInstallCommand', () => {
   it('returns bun add -D for bun', () => {
-    expect(devInstallCommand('bun', '@cipherstash/cli')).toBe(
-      'bun add -D @cipherstash/cli',
+    expect(devInstallCommand('bun', 'stash')).toBe(
+      'bun add -D stash',
     )
   })
 
   it('returns pnpm add -D for pnpm', () => {
-    expect(devInstallCommand('pnpm', '@cipherstash/cli')).toBe(
-      'pnpm add -D @cipherstash/cli',
+    expect(devInstallCommand('pnpm', 'stash')).toBe(
+      'pnpm add -D stash',
     )
   })
 
   it('returns yarn add -D for yarn', () => {
-    expect(devInstallCommand('yarn', '@cipherstash/cli')).toBe(
-      'yarn add -D @cipherstash/cli',
+    expect(devInstallCommand('yarn', 'stash')).toBe(
+      'yarn add -D stash',
     )
   })
 
   it('returns npm install -D for npm', () => {
-    expect(devInstallCommand('npm', '@cipherstash/cli')).toBe(
-      'npm install -D @cipherstash/cli',
+    expect(devInstallCommand('npm', 'stash')).toBe(
+      'npm install -D stash',
     )
   })
 })
 
 describe('runnerCommand', () => {
   it('returns npx for npm', () => {
-    expect(runnerCommand('npm', '@cipherstash/cli')).toBe(
-      'npx @cipherstash/cli',
+    expect(runnerCommand('npm', 'stash')).toBe(
+      'npx stash',
     )
   })
 
   it('returns bunx for bun', () => {
-    expect(runnerCommand('bun', '@cipherstash/cli')).toBe(
-      'bunx @cipherstash/cli',
+    expect(runnerCommand('bun', 'stash')).toBe(
+      'bunx stash',
     )
   })
 
   it('returns pnpm dlx for pnpm', () => {
-    expect(runnerCommand('pnpm', '@cipherstash/cli')).toBe(
-      'pnpm dlx @cipherstash/cli',
+    expect(runnerCommand('pnpm', 'stash')).toBe(
+      'pnpm dlx stash',
     )
   })
 
   it('returns yarn dlx for yarn', () => {
-    expect(runnerCommand('yarn', '@cipherstash/cli')).toBe(
-      'yarn dlx @cipherstash/cli',
+    expect(runnerCommand('yarn', 'stash')).toBe(
+      'yarn dlx stash',
     )
   })
 
   it('passes the package reference through verbatim (multi-word args allowed)', () => {
-    expect(runnerCommand('bun', '@cipherstash/cli db install')).toBe(
-      'bunx @cipherstash/cli db install',
+    expect(runnerCommand('bun', 'stash db install')).toBe(
+      'bunx stash db install',
     )
   })
 })

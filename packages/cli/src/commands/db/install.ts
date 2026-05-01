@@ -66,7 +66,7 @@ export interface InstallOptions {
 export type SupabaseInstallMode = 'migration' | 'direct'
 
 export async function installCommand(options: InstallOptions) {
-  p.intro(runnerCommand(detectPackageManager(), '@cipherstash/cli db install'))
+  p.intro(runnerCommand(detectPackageManager(), 'stash db install'))
 
   // Validate mutually-exclusive / supabase-required flags BEFORE doing any
   // I/O. `--migration` and `--direct` only make sense in the Supabase flow;

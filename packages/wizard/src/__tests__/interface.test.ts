@@ -65,10 +65,10 @@ describe('wizardCanUseTool', () => {
       expect(wizardCanUseTool('Bash', { command: 'bun run build' })).toBe(true)
     })
 
-    it('allows npx drizzle-kit, tsc, and npx @cipherstash/cli db', () => {
+    it('allows npx drizzle-kit, tsc, and npx stash db', () => {
       expect(wizardCanUseTool('Bash', { command: 'npx drizzle-kit generate' })).toBe(true)
       expect(wizardCanUseTool('Bash', { command: 'npx tsc --noEmit' })).toBe(true)
-      expect(wizardCanUseTool('Bash', { command: 'npx @cipherstash/cli db push' })).toBe(true)
+      expect(wizardCanUseTool('Bash', { command: 'npx stash db push' })).toBe(true)
     })
 
     it('blocks commands not in allowlist', () => {

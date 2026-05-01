@@ -11,7 +11,7 @@ export async function upgradeCommand(options: {
   databaseUrl?: string
 }) {
   const pm = detectPackageManager()
-  p.intro(runnerCommand(pm, '@cipherstash/cli db upgrade'))
+  p.intro(runnerCommand(pm, 'stash db upgrade'))
 
   const s = p.spinner()
 
@@ -32,7 +32,7 @@ export async function upgradeCommand(options: {
   if (!installed) {
     s.stop('EQL is not installed.')
     p.log.warn(
-      `EQL is not currently installed. Run "${runnerCommand(pm, '@cipherstash/cli db install')}" first.`,
+      `EQL is not currently installed. Run "${runnerCommand(pm, 'stash db install')}" first.`,
     )
     p.outro('Upgrade aborted.')
     process.exit(1)

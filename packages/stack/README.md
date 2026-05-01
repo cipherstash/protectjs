@@ -47,7 +47,7 @@ pnpm add @cipherstash/stack
 ### 1. Initialize and authenticate your project
 
 ```bash
-npx @cipherstash/cli init
+npx stash init
 ```
 
 The wizard will authenticate you, walk you through choosing a database connection method, build an encryption schema, and install the required dependencies.
@@ -438,25 +438,25 @@ await secrets.delete("DATABASE_URL")
 
 ## CLI Reference
 
-The CLI is available via `npx @cipherstash/cli` after install.
+The CLI is available via `npx stash` after install.
 
-### `npx @cipherstash/cli auth`
+### `npx stash auth`
 
 Authenticate with CipherStash.
 
 ```bash
-npx @cipherstash/cli auth login
+npx stash auth login
 ```
 
 This runs the device code flow: it opens your browser, you confirm the code, and a token is saved to `~/.cipherstash/auth.json`. No environment variables or credentials files are needed for local development.
 
-### `npx @cipherstash/cli init`
+### `npx stash init`
 
 Initialize CipherStash for your project with an interactive wizard.
 
 ```bash
-npx @cipherstash/cli init
-npx @cipherstash/cli init --supabase
+npx stash init
+npx stash init --supabase
 ```
 
 The wizard will:
@@ -464,31 +464,31 @@ The wizard will:
 2. Bind your device to the default Keyset
 3. Choose your database connection method (Drizzle ORM, Supabase JS, Prisma, or Raw SQL)
 4. Build an encryption schema interactively or use a placeholder, then generate the encryption client file
-5. Install `@cipherstash/cli` as a dev dependency for database tooling
+5. Install `stash` as a dev dependency for database tooling
 
-After init, run `npx @cipherstash/cli db setup` to configure your database.
+After init, run `npx stash db setup` to configure your database.
 
 | Flag | Description |
 |------|-------------|
 | `--supabase` | Use Supabase-specific setup flow |
 
-### `npx @cipherstash/cli secrets`
+### `npx stash secrets`
 
 Manage encrypted secrets from the terminal.
 
 ```bash
-npx @cipherstash/cli secrets set  -name DATABASE_URL -value "postgres://..." -environment production
-npx @cipherstash/cli secrets get  -name DATABASE_URL -environment production
-npx @cipherstash/cli secrets list -environment production
-npx @cipherstash/cli secrets delete -name DATABASE_URL -environment production
+npx stash secrets set  -name DATABASE_URL -value "postgres://..." -environment production
+npx stash secrets get  -name DATABASE_URL -environment production
+npx stash secrets list -environment production
+npx stash secrets delete -name DATABASE_URL -environment production
 ```
 
 | Command | Flags | Aliases | Description |
 |-----|----|-----|-------|
-| `npx @cipherstash/cli secrets set` | `-name`, `-value`, `-environment` | `-n`, `-V`, `-e` | Encrypt and store a secret |
-| `npx @cipherstash/cli secrets get` | `-name`, `-environment` | `-n`, `-e` | Retrieve and decrypt a secret |
-| `npx @cipherstash/cli secrets list` | `-environment` | `-e` | List all secret names in an environment |
-| `npx @cipherstash/cli secrets delete` | `-name`, `-environment`, `-yes` | `-n`, `-e`, `-y` | Delete a secret (prompts for confirmation unless `-yes`) |
+| `npx stash secrets set` | `-name`, `-value`, `-environment` | `-n`, `-V`, `-e` | Encrypt and store a secret |
+| `npx stash secrets get` | `-name`, `-environment` | `-n`, `-e` | Retrieve and decrypt a secret |
+| `npx stash secrets list` | `-environment` | `-e` | List all secret names in an environment |
+| `npx stash secrets delete` | `-name`, `-environment`, `-yes` | `-n`, `-e`, `-y` | Delete a secret (prompts for confirmation unless `-yes`) |
 
 ## Configuration
 
@@ -676,7 +676,7 @@ If you are migrating from `@cipherstash/protect`, the following table maps the o
 | `csColumn(name)` | `encryptedColumn(name)` | `@cipherstash/stack/schema` |
 | `import { LockContext } from "@cipherstash/protect/identify"` | `import { LockContext } from "@cipherstash/stack/identity"` | `@cipherstash/stack/identity` |
 | N/A | `Secrets` class | `@cipherstash/stack/secrets` |
-| N/A | CLI | `npx @cipherstash/cli` |
+| N/A | CLI | `npx stash` |
 
 All method signatures on the encryption client (`encrypt`, `decrypt`, `encryptModel`, etc.) remain the same. The `Result` pattern (`data` / `failure`) is unchanged.
 

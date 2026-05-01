@@ -2,7 +2,7 @@
  * Layered DATABASE_URL resolution. Called from inside the user's
  * `stash.config.ts` via:
  *
- *   import { defineConfig, resolveDatabaseUrl } from '@cipherstash/cli'
+ *   import { defineConfig, resolveDatabaseUrl } from 'stash'
  *   export default defineConfig({
  *     databaseUrl: await resolveDatabaseUrl(),
  *   })
