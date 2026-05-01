@@ -1,5 +1,11 @@
 # @cipherstash/protect
 
+## 11.1.1
+
+### Patch Changes
+
+- afe6810: Bump protect-ffi version
+
 ## 11.1.0
 
 ### Minor Changes

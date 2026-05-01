@@ -1,5 +1,67 @@
 # @cipherstash/cli
 
+## 0.11.0
+
+### Minor Changes
+
+- de9c02c: Rename the CLI package from `@cipherstash/cli` to `stash`. The published code, commands, and flags are unchanged — this is a pure rename so the day-to-day invocation drops from `npx @cipherstash/cli ...` to `npx stash ...`.
+
+  **Migration**
+
+  1. Update your `package.json` devDependencies:
+
+     ```diff
+     -  "@cipherstash/cli": "^0.10.0"
+     +  "stash": "^0.10.1"
+     ```
+
+  2. Update the `defineConfig` import in `stash.config.ts`:
+
+     ```diff
+     - import { defineConfig } from '@cipherstash/cli'
+     + import { defineConfig } from 'stash'
+     ```
+
+  3. Update any `npx @cipherstash/cli ...` / `bunx @cipherstash/cli ...` / `pnpm dlx @cipherstash/cli ...` / `yarn dlx @cipherstash/cli ...` invocations in scripts, CI, READMEs, and team docs to use `stash` instead. Programmatic exports (`defineConfig`, `loadStashConfig`, `EQLInstaller`, `loadBundledEqlSql`, `downloadEqlSql`, `PermissionCheckResult`) are re-exported from `stash` with the same shapes.
+
+  **Wizard impact (`@cipherstash/wizard`)**
+
+  The wizard's post-agent step and its prerequisite / agent-error hints now reference `stash` (e.g. `Run: bunx stash auth login`, `Running bunx stash db install...`) rather than `@cipherstash/cli`. The wizard package name and `stash-wizard` binary are unchanged — only the strings the wizard prints and the commands it shells out to are affected.
+
+- 8ee11fd: Layered `DATABASE_URL` resolution for DB / schema commands.
+
+  Previously, any DB-touching command (`db install`, `db push`, `db upgrade`, `db status`, `db validate`, `db test-connection`, `schema build`) failed with the cryptic Zod error:
+
+  ```
+  Error: Invalid stash.config.ts
+    - databaseUrl: Invalid input: expected nonoptional, received undefined
+  ```
+
+  if `DATABASE_URL` wasn't already in the environment. The CLI auto-loaded `.env.local` / `.env.development.local` / `.env.development` / `.env`, but had no story for `--database-url` flags, local Supabase, or pasted-once values.
+
+  The scaffolded `stash.config.ts` now calls a resolver directly:
+
+  ```ts
+  import { defineConfig, resolveDatabaseUrl } from "stash";
+
+  export default defineConfig({
+    databaseUrl: await resolveDatabaseUrl(),
+    client: "./src/encryption/index.ts",
+  });
+  ```
+
+  `resolveDatabaseUrl()` walks sources in order; first hit wins:
+
+  1. `--database-url <url>` flag — new, accepted on all seven DB / schema commands. Used for this run only; never written to disk.
+  2. `process.env.DATABASE_URL` — covers shell exports, mise, direnv, dotenv-cli, the existing dotenv loads.
+  3. `supabase status --output env` → `DB_URL` — auto-engaged when `--supabase` is set or a `supabase/config.toml` is detected. Useful for local Supabase users who haven't exported the URL yet.
+  4. Interactive prompt — opens with a tip listing the alternatives (flag, env, the user's actual dotenv file). Skipped under `CI=true` or non-TTY stdin.
+  5. Hard fail with a source-naming error message.
+
+  The connection string is **never persisted to disk** — `stash.config.ts` only contains the `await resolveDatabaseUrl()` call, never a literal URL. The resolver also doesn't mutate `process.env`; CLI flag context is threaded into the config evaluation via `AsyncLocalStorage` so concurrent loads stay isolated. Source labels are logged on non-env paths (`Using DATABASE_URL from --database-url flag` / `from supabase status` / `from prompt`) but the URL itself is never echoed.
+
+  `db test-connection`'s connection-failure hint is now source-aware: it points users at `--database-url`, the env var, and the actual dotenv file in their project (`.env.local` if present, `.env` otherwise) — not the misleading `stash.config.ts` it used to suggest.
+
 ## 0.10.1
 
 ### Patch Changes
