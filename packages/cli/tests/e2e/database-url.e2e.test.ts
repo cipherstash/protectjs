@@ -59,6 +59,13 @@ describe('db test-connection — DATABASE_URL resolver', () => {
     // user typed it (here, on argv — but the spawned process's logs
     // shouldn't echo it back).
     expect(r.output).not.toContain('postgresql://x:x@127.0.0.1:1/x')
+    // Connection failed → the failure hint should point users at the
+    // sources they can actually fix (flag / env / dotenv file). The tmp
+    // dir has no dotenv files so the hint defaults to `.env`. The OLD
+    // misleading "Check your databaseUrl in stash.config.ts" message
+    // must NOT appear — the URL doesn't live in that file anymore.
+    expect(r.output).toContain(messages.db.urlConnectionFailedHint('.env'))
+    expect(r.output).not.toContain('stash.config.ts or .env file')
   })
 
   it('CI=true with no DATABASE_URL and no flag exits 1 with the CI message', async () => {
