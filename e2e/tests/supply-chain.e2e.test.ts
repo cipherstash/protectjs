@@ -87,9 +87,13 @@ describe('supply chain — CI hardening (.github/workflows/tests.yml)', () => {
   }
 
   it('every `pnpm install` invocation uses --frozen-lockfile', () => {
+    // Allow flag tokens (e.g. `pnpm --filter=foo install`, `pnpm -w install`)
+    // between `pnpm` and `install`, but not arbitrary words — that would
+    // false-match scripts like `pnpm run install-x`.
+    const PNPM_INSTALL = /\bpnpm\b(?:\s+-{1,2}\S+)*\s+install\b/
     for (const [jobName, job] of Object.entries(workflow.jobs)) {
       const installSteps = job.steps.filter(
-        (s) => typeof s.run === 'string' && /\bpnpm\s+install\b/.test(s.run),
+        (s) => typeof s.run === 'string' && PNPM_INSTALL.test(s.run),
       )
       for (const step of installSteps) {
         expect(step.run, `${jobName} step "${step.run}"`).toMatch(/--frozen-lockfile/)
@@ -97,11 +101,19 @@ describe('supply chain — CI hardening (.github/workflows/tests.yml)', () => {
     }
   })
 
-  it('every job runs on Node 22', () => {
+  it('every pnpm-using job runs on Node 22', () => {
     for (const [jobName, job] of Object.entries(workflow.jobs)) {
-      const setup = job.steps.find((s) => typeof s.uses === 'string' && s.uses.startsWith('actions/setup-node'))
-      if (!setup) continue
-      expect(String(setup.with?.['node-version']), `${jobName} node version`).toBe('22')
+      const usesPnpm = job.steps.some(
+        (s) =>
+          (typeof s.uses === 'string' && s.uses.startsWith('pnpm/action-setup')) ||
+          (typeof s.run === 'string' && /\bpnpm\b/.test(s.run)),
+      )
+      if (!usesPnpm) continue
+      const setup = job.steps.find(
+        (s) => typeof s.uses === 'string' && s.uses.startsWith('actions/setup-node'),
+      )
+      expect(setup, `${jobName} uses pnpm but lacks actions/setup-node`).toBeTruthy()
+      expect(String(setup?.with?.['node-version']), `${jobName} node version`).toBe('22')
     }
   })
 })
@@ -120,15 +132,22 @@ describe('supply chain — automated dependency updates (Dependabot)', () => {
     expect(npm?.cooldown?.['default-days']).toBeGreaterThanOrEqual(3)
   })
 
-  it('github-actions ecosystem is also covered', () => {
-    expect(db.updates.find((u) => u['package-ecosystem'] === 'github-actions')).toBeDefined()
+  it('github-actions ecosystem is also covered with a ≥ 3 day cooldown', () => {
+    const gha = db.updates.find((u) => u['package-ecosystem'] === 'github-actions')
+    expect(gha).toBeDefined()
+    expect(gha?.cooldown?.['default-days']).toBeGreaterThanOrEqual(3)
   })
 })
 
 describe('supply chain — governance (CODEOWNERS)', () => {
-  it('protects supply-chain critical paths', () => {
-    const co = read('.github/CODEOWNERS')
-    // Each path that, if changed silently, could weaken the chain.
+  it('protects supply-chain critical paths and assigns @cipherstash/developers', () => {
+    // Substring-search comment lines too liberally — strip them first so a
+    // bare comment mentioning the path can't satisfy the assertion.
+    const rules = read('.github/CODEOWNERS')
+      .split('\n')
+      .map((l) => l.trim())
+      .filter((l) => l.length > 0 && !l.startsWith('#'))
+
     for (const path of [
       'pnpm-workspace.yaml',
       'pnpm-lock.yaml',
@@ -136,7 +155,10 @@ describe('supply chain — governance (CODEOWNERS)', () => {
       '.npmrc',
       '.github/workflows/',
     ]) {
-      expect(co, `expected CODEOWNERS to mention ${path}`).toContain(path)
+      const rule = rules.find((l) => l.includes(path))
+      expect(rule, `no CODEOWNERS rule covers ${path}`).toBeDefined()
+      const owners = rule!.split(/\s+/).slice(1)
+      expect(owners, `${path} CODEOWNERS owners`).toContain('@cipherstash/developers')
     }
   })
 })
