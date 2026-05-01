@@ -1,5 +1,11 @@
 # @cipherstash/stack
 
+## 0.15.3
+
+### Patch Changes
+
+- afe6810: Bump protect-ffi version
+
 ## 0.15.2
 
 ### Patch Changes
