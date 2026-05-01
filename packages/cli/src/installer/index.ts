@@ -315,7 +315,7 @@ export class EQLInstaller {
       return readFileSync(bundledSqlPath(filename), 'utf-8')
     } catch (error) {
       throw new Error(
-        `Failed to load bundled EQL install script (${filename}). The package may be corrupted — try reinstalling @cipherstash/cli.`,
+        `Failed to load bundled EQL install script (${filename}). The package may be corrupted — try reinstalling stash.`,
         { cause: error },
       )
     }
@@ -386,7 +386,7 @@ export function loadBundledEqlSql(
     return readFileSync(bundledSqlPath(filename), 'utf-8')
   } catch (error) {
     throw new Error(
-      `Failed to load bundled EQL install script (${filename}). The package may be corrupted — try reinstalling @cipherstash/cli.`,
+      `Failed to load bundled EQL install script (${filename}). The package may be corrupted — try reinstalling stash.`,
       { cause: error },
     )
   }

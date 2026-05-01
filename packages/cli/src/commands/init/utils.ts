@@ -122,8 +122,8 @@ export function combinedInstallCommands(
  *   pnpm → `pnpm dlx`
  *   yarn → `yarn dlx`
  *
- * `ref` is appended verbatim, so callers may pass `'@cipherstash/cli'`
- * or `'@cipherstash/cli db install'`.
+ * `ref` is appended verbatim, so callers may pass `'stash'` or
+ * `'stash db install'`.
  */
 export function runnerCommand(pm: PackageManager, ref: string): string {
   switch (pm) {

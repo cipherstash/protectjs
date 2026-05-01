@@ -12,8 +12,8 @@ Options:
   --drizzle     Track Drizzle as the referrer
 
 Examples:
-  npx @cipherstash/cli auth login
-  npx @cipherstash/cli auth login --supabase
+  npx stash auth login
+  npx stash auth login --supabase
 `.trim()
 
 function referrerFromFlags(flags: Record<string, boolean>): string | undefined {

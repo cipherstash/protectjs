@@ -138,7 +138,7 @@ export async function validateCommand(options: {
   supabase?: boolean
   excludeOperatorFamily?: boolean
 }) {
-  p.intro('npx @cipherstash/cli db validate')
+  p.intro('npx stash db validate')
 
   const s = p.spinner()
 

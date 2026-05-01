@@ -21,13 +21,13 @@ export async function checkPrerequisites(
 
   if (!(await hasCredentials())) {
     missing.push(
-      `Not authenticated with CipherStash. Run: ${runner} @cipherstash/cli auth login`,
+      `Not authenticated with CipherStash. Run: ${runner} stash auth login`,
     )
   }
 
   if (!findStashConfig(cwd)) {
     missing.push(
-      `No stash.config.ts found. Run: ${runner} @cipherstash/cli db install`,
+      `No stash.config.ts found. Run: ${runner} stash db install`,
     )
   }
 

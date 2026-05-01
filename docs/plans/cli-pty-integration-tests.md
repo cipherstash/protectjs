@@ -1,4 +1,4 @@
-# Plan: node-pty Integration Tests for `@cipherstash/cli`
+# Plan: node-pty Integration Tests for `stash`
 
 ## Goal
 
@@ -75,7 +75,7 @@ harness is proven.
 7. `turbo.json` task `test:e2e` with `dependsOn: ["^build", "build"]` so
    the CLI is rebuilt before E2E runs. Keep `cache: false`.
 8. CI: extend the existing test workflow to also run `pnpm --filter
-   @cipherstash/cli test:e2e`. Confirm the prebuilt binary resolves on
+   stash test:e2e`. Confirm the prebuilt binary resolves on
    the GH runners (Linux x64, macOS arm64). If it doesn't, fall back to
    upstream `node-pty` and add `python3` / build tools to the workflow.
 
@@ -182,7 +182,7 @@ export const messages = {
   },
   db: {
     migrateNotImplemented:
-      '"npx @cipherstash/cli db migrate" is not yet implemented.',
+      '"npx stash db migrate" is not yet implemented.',
   },
 } as const
 ```

@@ -16,7 +16,7 @@
     "pg": "8.13.1"
   },
   "devDependencies": {
-    "@cipherstash/cli": "workspace:*",
+    "stash": "workspace:*",
     "tsx": "catalog:repo",
     "typescript": "catalog:repo"
   }

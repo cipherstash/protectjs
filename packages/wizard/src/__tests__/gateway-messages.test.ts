@@ -66,7 +66,7 @@ describe('Gateway AI Messages (integration)', () => {
    */
   function shouldBail(res: Response): boolean {
     if (res.status === 401) {
-      console.warn('Skipping: CipherStash token expired. Run `npx @cipherstash/cli auth login`.')
+      console.warn('Skipping: CipherStash token expired. Run `npx stash auth login`.')
       return true
     }
     if (res.status === 429) {

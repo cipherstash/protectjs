@@ -6,7 +6,7 @@ export function createSupabaseProvider(): InitProvider {
     name: 'supabase',
     introMessage: 'Setting up CipherStash for your Supabase project...',
     getNextSteps(state: InitState, pm: PackageManager): string[] {
-      const cli = runnerCommand(pm, '@cipherstash/cli')
+      const cli = runnerCommand(pm, 'stash')
       const wizard = runnerCommand(pm, '@cipherstash/wizard')
       const steps = [
         `Install EQL: ${cli} db install --supabase (prompts for migration vs direct)`,

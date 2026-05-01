@@ -69,7 +69,7 @@ export async function resolveClientPath(
 }
 
 function generateConfig(clientPath: string): string {
-  return `import { defineConfig } from '@cipherstash/cli'
+  return `import { defineConfig } from 'stash'
 
 export default defineConfig({
   databaseUrl: process.env.DATABASE_URL!,

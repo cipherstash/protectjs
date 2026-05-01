@@ -48,12 +48,12 @@ importers:
 
   e2e:
     dependencies:
-      '@cipherstash/cli':
-        specifier: workspace:*
-        version: link:../packages/cli
       '@cipherstash/wizard':
         specifier: workspace:*
         version: link:../packages/wizard
+      stash:
+        specifier: workspace:*
+        version: link:../packages/cli
     devDependencies:
       vitest:
         specifier: catalog:repo
@@ -71,7 +71,7 @@ importers:
         specifier: 8.13.1
         version: 8.13.1
     devDependencies:
-      '@cipherstash/cli':
+      stash:
         specifier: workspace:*
         version: link:../../packages/cli
       tsx:

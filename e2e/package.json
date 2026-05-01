@@ -8,7 +8,7 @@
     "test:e2e": "vitest run"
   },
   "dependencies": {
-    "@cipherstash/cli": "workspace:*",
+    "stash": "workspace:*",
     "@cipherstash/wizard": "workspace:*"
   },
   "devDependencies": {

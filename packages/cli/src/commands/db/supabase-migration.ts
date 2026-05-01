@@ -24,7 +24,7 @@ export const SUPABASE_EQL_MIGRATION_FILENAME =
  * this file exists for future maintainers reading their own migrations
  * directory.
  */
-const MIGRATION_HEADER = `-- CipherStash EQL — installed by \`npx @cipherstash/cli db install --supabase --migration\`.
+const MIGRATION_HEADER = `-- CipherStash EQL — installed by \`npx stash db install --supabase --migration\`.
 --
 -- This migration installs the CipherStash Encrypt Query Language (EQL) types,
 -- functions, and operators into the \`eql_v2\` schema, then grants Supabase's

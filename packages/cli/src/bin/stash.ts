@@ -41,7 +41,7 @@ async function requireStack<T>(importFn: () => Promise<T>): Promise<T> {
       p.log.error(
         '@cipherstash/stack is required for this command.\n' +
           '  Install it with: npm install @cipherstash/stack\n' +
-          '  Or run: npx @cipherstash/cli init',
+          '  Or run: npx stash init',
       )
       process.exit(1) as never
     }
@@ -95,12 +95,12 @@ DB Flags:
   --latest                   (install, upgrade) Fetch the latest EQL from GitHub
 
 Examples:
-  npx @cipherstash/cli init
-  npx @cipherstash/cli init --supabase
-  npx @cipherstash/cli auth login
-  npx @cipherstash/cli db install
-  npx @cipherstash/cli db push
-  npx @cipherstash/cli schema build
+  npx stash init
+  npx stash init --supabase
+  npx stash auth login
+  npx stash db install
+  npx stash db push
+  npx stash schema build
 `.trim()
 
 interface ParsedArgs {

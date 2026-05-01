@@ -6,7 +6,7 @@ export function createDrizzleProvider(): InitProvider {
     name: 'drizzle',
     introMessage: 'Setting up CipherStash for your Drizzle project...',
     getNextSteps(state: InitState, pm: PackageManager): string[] {
-      const cli = runnerCommand(pm, '@cipherstash/cli')
+      const cli = runnerCommand(pm, 'stash')
       const wizard = runnerCommand(pm, '@cipherstash/wizard')
       const steps = [`Set up your database: ${cli} db install --drizzle`]
 

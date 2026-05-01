@@ -35,8 +35,8 @@ describe('runPostAgentSteps execution commands', () => {
     const commands = vi
       .mocked(childProcess.execSync)
       .mock.calls.map((c) => c[0] as string)
-    expect(commands).toContain('bunx @cipherstash/cli db install')
-    expect(commands).toContain('bunx @cipherstash/cli db push')
+    expect(commands).toContain('bunx stash db install')
+    expect(commands).toContain('bunx stash db push')
     // Sanity: no leftover npx forms for the cipherstash binaries.
     for (const cmd of commands) {
       expect(cmd).not.toMatch(/^npx @cipherstash/)
@@ -56,8 +56,8 @@ describe('runPostAgentSteps execution commands', () => {
     const commands = vi
       .mocked(childProcess.execSync)
       .mock.calls.map((c) => c[0] as string)
-    expect(commands).toContain('bunx @cipherstash/cli db push')
-    expect(commands).not.toContain('bunx @cipherstash/cli db install')
+    expect(commands).toContain('bunx stash db push')
+    expect(commands).not.toContain('bunx stash db install')
   })
 
   it('falls back to npx when packageManager is undefined', async () => {
@@ -73,7 +73,7 @@ describe('runPostAgentSteps execution commands', () => {
     const commands = vi
       .mocked(childProcess.execSync)
       .mock.calls.map((c) => c[0] as string)
-    expect(commands).toContain('npx @cipherstash/cli db install')
-    expect(commands).toContain('npx @cipherstash/cli db push')
+    expect(commands).toContain('npx stash db install')
+    expect(commands).toContain('npx stash db push')
   })
 })

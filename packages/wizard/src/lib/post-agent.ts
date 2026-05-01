@@ -41,14 +41,14 @@ export async function runPostAgentSteps(opts: PostAgentOptions): Promise<void> {
     cwd,
   )
 
-  // Step 2: Run runner @cipherstash/cli db install if the project doesn't yet
+  // Step 2: Run runner stash db install if the project doesn't yet
   // have a stash.config.ts. `db install` scaffolds the config and installs
   // EQL in a single step (CIP-2986).
   if (!gathered.hasStashConfig) {
     await runStep(
-      `Running ${runner} @cipherstash/cli db install...`,
-      `${runner} @cipherstash/cli db install complete`,
-      `${runner} @cipherstash/cli db install`,
+      `Running ${runner} stash db install...`,
+      `${runner} stash db install complete`,
+      `${runner} stash db install`,
       cwd,
     )
   }
@@ -57,7 +57,7 @@ export async function runPostAgentSteps(opts: PostAgentOptions): Promise<void> {
   await runStep(
     'Pushing encryption config to database...',
     'Encryption config pushed',
-    `${runner} @cipherstash/cli db push`,
+    `${runner} stash db push`,
     cwd,
   )
 

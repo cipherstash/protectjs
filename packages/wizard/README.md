@@ -19,7 +19,7 @@ bunx @cipherstash/wizard      # bun
 
 Before running the wizard, your project should have:
 
-- `@cipherstash/cli` available (the wizard shells out to `stash db install` /
+- `stash` available (the wizard shells out to `stash db install` /
   `db push` after the agent finishes editing)
 - A `stash.config.ts` (or the wizard will run `stash db install` to scaffold one)
 - A reachable database via `DATABASE_URL`

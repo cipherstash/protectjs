@@ -40,10 +40,10 @@ describe('checkPrerequisites missing-list copy', () => {
     const r = await checkPrerequisites(tmp)
     expect(r.ok).toBe(false)
     expect(r.missing.join('\n')).toContain(
-      'Run: bunx @cipherstash/cli auth login',
+      'Run: bunx stash auth login',
     )
     expect(r.missing.join('\n')).toContain(
-      'Run: bunx @cipherstash/cli db install',
+      'Run: bunx stash db install',
     )
     expect(r.missing.join('\n')).not.toMatch(/\bnpx\b/)
   })
@@ -52,14 +52,14 @@ describe('checkPrerequisites missing-list copy', () => {
     writeFileSync(join(tmp, 'pnpm-lock.yaml'), '')
     const r = await checkPrerequisites(tmp)
     expect(r.missing.join('\n')).toContain(
-      'Run: pnpm dlx @cipherstash/cli auth login',
+      'Run: pnpm dlx stash auth login',
     )
   })
 
   it('falls back to npx when no package manager can be detected', async () => {
     const r = await checkPrerequisites(tmp)
     expect(r.missing.join('\n')).toContain(
-      'Run: npx @cipherstash/cli auth login',
+      'Run: npx stash auth login',
     )
   })
 })
