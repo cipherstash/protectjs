@@ -3,6 +3,10 @@ import path from 'node:path'
 import type { EncryptionClient } from '@cipherstash/stack/encryption'
 import type { EncryptConfig } from '@cipherstash/stack/schema'
 import { z } from 'zod'
+import {
+  type ResolveDatabaseUrlOptions,
+  withResolverContext,
+} from './database-url.js'
 
 export interface StashConfig {
   /** PostgreSQL connection string */
@@ -77,9 +81,18 @@ function findConfigFile(startDir: string): string | undefined {
  * Searches from `process.cwd()` upward. Uses `jiti` to evaluate the
  * TypeScript config file at runtime without a separate compile step.
  *
+ * The optional `resolverOptions` argument is threaded into an
+ * `AsyncLocalStorage` scope around the jiti-import call, so that any
+ * `await resolveDatabaseUrl()` inside the user's config file picks up
+ * `--database-url` / `--supabase` flag values from the surrounding CLI
+ * command. This is how the CLI passes flag context into config
+ * evaluation without mutating `process.env` or relying on globals.
+ *
  * Exits with code 1 if the config file is not found or fails validation.
  */
-export async function loadStashConfig(): Promise<ResolvedStashConfig> {
+export async function loadStashConfig(
+  resolverOptions: ResolveDatabaseUrlOptions = {},
+): Promise<ResolvedStashConfig> {
   const configPath = findConfigFile(process.cwd())
 
   if (!configPath) {
@@ -87,10 +100,10 @@ export async function loadStashConfig(): Promise<ResolvedStashConfig> {
 
 Create a ${CONFIG_FILENAME} file in your project root:
 
-  import { defineConfig } from '@cipherstash/cli'
+  import { defineConfig, resolveDatabaseUrl } from '@cipherstash/cli'
 
   export default defineConfig({
-    databaseUrl: process.env.DATABASE_URL!,
+    databaseUrl: await resolveDatabaseUrl(),
   })
 `)
     process.exit(1)
@@ -109,7 +122,9 @@ Create a ${CONFIG_FILENAME} file in your project root:
     // wrapper would then fail Zod validation with a misleading
     // "databaseUrl: received undefined" even when the user's config sets
     // it (#374).
-    rawConfig = await jiti.import(configPath, { default: true })
+    rawConfig = await withResolverContext(resolverOptions, () =>
+      jiti.import(configPath, { default: true }),
+    )
   } catch (error) {
     console.error(`Error: Failed to load ${CONFIG_FILENAME} at ${configPath}\n`)
     console.error(error)

@@ -118,7 +118,6 @@ function drizzleTsType(dataType: string): string {
   }
 }
 
-
 function generateClientFromSchemas(
   integration: Integration,
   schemas: SchemaDef[],
@@ -167,9 +166,7 @@ ${columnDefs.join('\n')}
 const ${schemaVarName} = extractEncryptionSchema(${varName})`
   })
 
-  const schemaVarNames = schemas.map(
-    (s) => `${toCamelCase(s.tableName)}Schema`,
-  )
+  const schemaVarNames = schemas.map((s) => `${toCamelCase(s.tableName)}Schema`)
 
   return `import { pgTable, integer, timestamp } from 'drizzle-orm/pg-core'
 import { encryptedType, extractEncryptionSchema } from '@cipherstash/stack/drizzle'
@@ -206,9 +203,7 @@ ${columnDefs.join('\n')}
 })`
   })
 
-  const tableVarNames = schemas.map(
-    (s) => `${toCamelCase(s.tableName)}Table`,
-  )
+  const tableVarNames = schemas.map((s) => `${toCamelCase(s.tableName)}Table`)
 
   return `import { encryptedTable, encryptedColumn } from '@cipherstash/stack/schema'
 import { Encryption } from '@cipherstash/stack'
@@ -340,8 +335,13 @@ async function buildSchemasFromDatabase(
 
 // --- Command ---
 
-export async function builderCommand(options: { supabase?: boolean } = {}) {
-  const config = await loadStashConfig()
+export async function builderCommand(
+  options: { supabase?: boolean; databaseUrl?: string } = {},
+) {
+  const config = await loadStashConfig({
+    databaseUrlFlag: options.databaseUrl,
+    supabase: options.supabase,
+  })
 
   p.intro('CipherStash Schema Builder')
 

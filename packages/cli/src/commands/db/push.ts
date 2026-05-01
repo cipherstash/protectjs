@@ -1,3 +1,4 @@
+import { detectPackageManager, runnerCommand } from '@/commands/init/utils.js'
 import { loadEncryptConfig, loadStashConfig } from '@/config/index.js'
 import type { EncryptConfig } from '@cipherstash/stack/schema'
 import { toEqlCastAs } from '@cipherstash/stack/schema'
@@ -27,8 +28,11 @@ function toEqlConfig(config: EncryptConfig): Record<string, unknown> {
   return { v: config.v, tables }
 }
 
-export async function pushCommand(options: { dryRun?: boolean }) {
-  p.intro('npx @cipherstash/cli db push')
+export async function pushCommand(options: {
+  dryRun?: boolean
+  databaseUrl?: string
+}) {
+  p.intro(runnerCommand(detectPackageManager(), '@cipherstash/cli db push'))
   p.log.info(
     'This command pushes the encryption schema to the database for use with CipherStash Proxy.\nIf you are using the SDK directly (Drizzle, Supabase, or plain PostgreSQL), this step is not required.',
   )
@@ -36,7 +40,7 @@ export async function pushCommand(options: { dryRun?: boolean }) {
   const s = p.spinner()
 
   s.start('Loading stash.config.ts...')
-  const config = await loadStashConfig()
+  const config = await loadStashConfig({ databaseUrlFlag: options.databaseUrl })
   s.stop('Configuration loaded.')
 
   s.start(`Loading encrypt client from ${config.client}...`)

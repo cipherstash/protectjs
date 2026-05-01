@@ -1,15 +1,17 @@
+import { detectPackageManager, runnerCommand } from '@/commands/init/utils.js'
 import { loadStashConfig } from '@/config/index.js'
 import { EQLInstaller } from '@/installer/index.js'
 import * as p from '@clack/prompts'
 import pg from 'pg'
 
-export async function statusCommand() {
-  p.intro('npx @cipherstash/cli db status')
+export async function statusCommand(options: { databaseUrl?: string } = {}) {
+  const pm = detectPackageManager()
+  p.intro(runnerCommand(pm, '@cipherstash/cli db status'))
 
   const s = p.spinner()
 
   s.start('Loading stash.config.ts...')
-  const config = await loadStashConfig()
+  const config = await loadStashConfig({ databaseUrlFlag: options.databaseUrl })
   s.stop('Configuration loaded.')
 
   const installer = new EQLInstaller({
@@ -41,7 +43,9 @@ export async function statusCommand() {
     p.log.success(`EQL installed: yes (version: ${version ?? 'unknown'})`)
   } else {
     s.stop('EQL is not installed.')
-    p.log.warn('EQL is not installed. Run `npx @cipherstash/cli db install` to install it.')
+    p.log.warn(
+      `EQL is not installed. Run \`${runnerCommand(pm, '@cipherstash/cli db install')}\` to install it.`,
+    )
     p.outro('Status check complete.')
     return
   }
@@ -100,7 +104,7 @@ export async function statusCommand() {
     const message = error instanceof Error ? error.message : String(error)
     if (message.includes('does not exist')) {
       p.log.info(
-        'Active encrypt config: table not found (run `npx @cipherstash/cli db push` to create it)',
+        `Active encrypt config: table not found (run \`${runnerCommand(pm, '@cipherstash/cli db push')}\` to create it)`,
       )
     } else {
       p.log.error(`Failed to check encrypt configuration: ${message}`)
