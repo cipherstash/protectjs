@@ -1,4 +1,3 @@
-import { resolveDatabaseUrl } from '@/config/database-url.js'
 import { loadStashConfig } from '@/config/index.js'
 import { EQLInstaller } from '@/installer/index.js'
 import * as p from '@clack/prompts'
@@ -7,12 +6,10 @@ import pg from 'pg'
 export async function statusCommand(options: { databaseUrl?: string } = {}) {
   p.intro('npx @cipherstash/cli db status')
 
-  await resolveDatabaseUrl({ databaseUrlFlag: options.databaseUrl })
-
   const s = p.spinner()
 
   s.start('Loading stash.config.ts...')
-  const config = await loadStashConfig()
+  const config = await loadStashConfig({ databaseUrlFlag: options.databaseUrl })
   s.stop('Configuration loaded.')
 
   const installer = new EQLInstaller({

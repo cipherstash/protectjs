@@ -4,8 +4,8 @@ import path from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { messages } from '../messages.js'
 
-// Mock seams. We hoist them so the in-test reconfiguration touches the same
-// fn instances the resolver imports.
+// Mock seams. Hoisted so the in-test reconfiguration touches the same fn
+// instances the resolver imports.
 const supabase = vi.hoisted(() => ({ execSync: vi.fn() }))
 vi.mock('node:child_process', () => ({ execSync: supabase.execSync }))
 
@@ -29,7 +29,9 @@ vi.mock('@clack/prompts', () => ({
   note: clack.note,
 }))
 
-const { resolveDatabaseUrl } = await import('../config/database-url.js')
+const { resolveDatabaseUrl, withResolverContext } = await import(
+  '../config/database-url.js'
+)
 
 const VALID_URL = 'postgresql://postgres:postgres@127.0.0.1:54322/postgres'
 
@@ -50,7 +52,7 @@ beforeEach(() => {
   originalEnv = process.env.DATABASE_URL
   originalCi = process.env.CI
   originalIsTty = process.stdin.isTTY
-  // biome-ignore lint/performance/noDelete: see config-jiti-integration.test.ts; need an actual unset.
+  // biome-ignore lint/performance/noDelete: process.env.X = undefined assigns the string "undefined" in Node, not unset.
   delete process.env.DATABASE_URL
   // biome-ignore lint/performance/noDelete: ditto.
   delete process.env.CI
@@ -60,13 +62,13 @@ beforeEach(() => {
 
 afterEach(() => {
   if (originalEnv === undefined) {
-    // biome-ignore lint/performance/noDelete: unset, not assignment.
+    // biome-ignore lint/performance/noDelete: see above.
     delete process.env.DATABASE_URL
   } else {
     process.env.DATABASE_URL = originalEnv
   }
   if (originalCi === undefined) {
-    // biome-ignore lint/performance/noDelete: unset, not assignment.
+    // biome-ignore lint/performance/noDelete: see above.
     delete process.env.CI
   } else {
     process.env.CI = originalCi
@@ -82,11 +84,21 @@ afterEach(() => {
 })
 
 describe('resolveDatabaseUrl — flag source', () => {
-  it('uses the flag value and overwrites env, even when env was already set', async () => {
+  it('returns the flag value and does NOT mutate process.env', async () => {
     process.env.DATABASE_URL = 'postgresql://existing@h/d'
     const result = await resolveDatabaseUrl({ databaseUrlFlag: VALID_URL })
-    expect(result).toEqual({ url: VALID_URL, source: 'flag' })
-    expect(process.env.DATABASE_URL).toBe(VALID_URL)
+    expect(result).toBe(VALID_URL)
+    // The whole point of the ALS refactor: env stays untouched.
+    expect(process.env.DATABASE_URL).toBe('postgresql://existing@h/d')
+    expect(clack.log.info).toHaveBeenCalledWith(messages.db.urlResolvedFromFlag)
+  })
+
+  it('reads the flag from withResolverContext when no explicit opts are passed', async () => {
+    const result = await withResolverContext(
+      { databaseUrlFlag: VALID_URL },
+      () => resolveDatabaseUrl(),
+    )
+    expect(result).toBe(VALID_URL)
     expect(clack.log.info).toHaveBeenCalledWith(messages.db.urlResolvedFromFlag)
   })
 
@@ -103,12 +115,12 @@ describe('resolveDatabaseUrl — flag source', () => {
 })
 
 describe('resolveDatabaseUrl — env source', () => {
-  it('returns the existing env value without mutating', async () => {
+  it('returns the existing env value without mutating it', async () => {
     process.env.DATABASE_URL = VALID_URL
     const result = await resolveDatabaseUrl()
-    expect(result).toEqual({ url: VALID_URL, source: 'env' })
-    // env was already set; we don't reassign.
+    expect(result).toBe(VALID_URL)
     expect(process.env.DATABASE_URL).toBe(VALID_URL)
+    // The env source is silent — no source label.
     expect(clack.log.info).not.toHaveBeenCalled()
   })
 
@@ -125,7 +137,7 @@ describe('resolveDatabaseUrl — env source', () => {
 })
 
 describe('resolveDatabaseUrl — supabase source', () => {
-  it('parses DB_URL from `supabase status --output env`', async () => {
+  it('parses DB_URL from `supabase status --output env` and does NOT mutate process.env', async () => {
     detect.detectSupabaseProject.mockReturnValue({
       hasMigrationsDir: true,
       hasConfigToml: true,
@@ -136,8 +148,9 @@ DB_URL=${VALID_URL}
 GRAPHQL_URL=http://127.0.0.1:54321/graphql/v1
 `)
     const result = await resolveDatabaseUrl()
-    expect(result).toEqual({ url: VALID_URL, source: 'supabase-status' })
-    expect(process.env.DATABASE_URL).toBe(VALID_URL)
+    expect(result).toBe(VALID_URL)
+    // No env mutation under the new design.
+    expect(process.env.DATABASE_URL).toBeUndefined()
     expect(clack.log.info).toHaveBeenCalledWith(
       messages.db.urlResolvedFromSupabase,
     )
@@ -150,8 +163,7 @@ GRAPHQL_URL=http://127.0.0.1:54321/graphql/v1
       migrationsDir: '/tmp/x',
     })
     supabase.execSync.mockImplementation(() => {
-      const err = new Error('command not found')
-      throw err
+      throw new Error('command not found')
     })
     process.env.CI = 'true'
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation((() => {
@@ -161,7 +173,7 @@ GRAPHQL_URL=http://127.0.0.1:54321/graphql/v1
     expect(exitSpy).toHaveBeenCalledWith(1)
   })
 
-  it('falls through when JSON/env output has no DB_URL', async () => {
+  it('falls through when supabase env output has no DB_URL', async () => {
     detect.detectSupabaseProject.mockReturnValue({
       hasMigrationsDir: false,
       hasConfigToml: true,
@@ -193,13 +205,22 @@ describe('resolveDatabaseUrl — prompt source', () => {
     })
   })
 
-  it('prompts and uses the entered URL, then suggests a hint file', async () => {
+  it('shows the alternatives tip before prompting', async () => {
+    clack.text.mockResolvedValueOnce(VALID_URL)
+    clack.isCancel.mockReturnValueOnce(false)
+    await resolveDatabaseUrl({ cwd: tmpDir })
+    expect(clack.note).toHaveBeenCalledWith(messages.db.urlPromptTip)
+    expect(clack.text).toHaveBeenCalled()
+  })
+
+  it('returns the entered URL and suggests an existing dotenv file', async () => {
     fs.writeFileSync(path.join(tmpDir, '.env.local'), '')
     clack.text.mockResolvedValueOnce(VALID_URL)
     clack.isCancel.mockReturnValueOnce(false)
     const result = await resolveDatabaseUrl({ cwd: tmpDir })
-    expect(result).toEqual({ url: VALID_URL, source: 'prompt' })
-    expect(process.env.DATABASE_URL).toBe(VALID_URL)
+    expect(result).toBe(VALID_URL)
+    // No env mutation.
+    expect(process.env.DATABASE_URL).toBeUndefined()
     expect(clack.note).toHaveBeenCalledWith(messages.db.urlHint('.env.local'))
   })
 
@@ -251,5 +272,30 @@ describe('resolveDatabaseUrl — CI guard', () => {
     await expect(resolveDatabaseUrl()).rejects.toThrow('process.exit')
     expect(exitSpy).toHaveBeenCalledWith(1)
     expect(clack.text).not.toHaveBeenCalled()
+  })
+})
+
+describe('withResolverContext — concurrent isolation', () => {
+  // The whole reason we use AsyncLocalStorage instead of module-level
+  // state: two concurrent calls must each see their own options without
+  // stepping on each other.
+  it('isolates contexts across concurrent withResolverContext scopes', async () => {
+    const URL_A = 'postgresql://a:a@h/a'
+    const URL_B = 'postgresql://b:b@h/b'
+
+    const [a, b] = await Promise.all([
+      withResolverContext({ databaseUrlFlag: URL_A }, async () => {
+        // Yield to let the other branch start its scope before we read.
+        await new Promise((res) => setTimeout(res, 5))
+        return resolveDatabaseUrl()
+      }),
+      withResolverContext({ databaseUrlFlag: URL_B }, async () => {
+        await new Promise((res) => setTimeout(res, 5))
+        return resolveDatabaseUrl()
+      }),
+    ])
+
+    expect(a).toBe(URL_A)
+    expect(b).toBe(URL_B)
   })
 })

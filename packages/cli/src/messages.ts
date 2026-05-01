@@ -30,6 +30,9 @@ export const messages = {
     urlResolvedFromSupabase: 'Using DATABASE_URL from supabase status',
     urlResolvedFromPrompt: 'Using DATABASE_URL from prompt',
     urlPromptMessage: 'Paste your DATABASE_URL',
+    /** Shown immediately before the URL prompt to surface alternatives. */
+    urlPromptTip:
+      'Tip: you can also pass --database-url <url> on the command line, or set DATABASE_URL in your environment / .env file.',
     urlInvalid: 'Not a valid URL',
     urlFlagMalformed:
       'Invalid --database-url: not a parseable connection string',

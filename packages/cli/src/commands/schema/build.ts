@@ -2,7 +2,6 @@ import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import * as p from '@clack/prompts'
 import pg from 'pg'
-import { resolveDatabaseUrl } from '../../config/database-url.js'
 import { loadStashConfig } from '../../config/index.js'
 
 type Integration = 'drizzle' | 'supabase' | 'postgresql'
@@ -339,11 +338,10 @@ async function buildSchemasFromDatabase(
 export async function builderCommand(
   options: { supabase?: boolean; databaseUrl?: string } = {},
 ) {
-  await resolveDatabaseUrl({
+  const config = await loadStashConfig({
     databaseUrlFlag: options.databaseUrl,
     supabase: options.supabase,
   })
-  const config = await loadStashConfig()
 
   p.intro('CipherStash Schema Builder')
 

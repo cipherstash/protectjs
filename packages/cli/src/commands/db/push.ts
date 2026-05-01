@@ -36,12 +36,10 @@ export async function pushCommand(options: {
     'This command pushes the encryption schema to the database for use with CipherStash Proxy.\nIf you are using the SDK directly (Drizzle, Supabase, or plain PostgreSQL), this step is not required.',
   )
 
-  await resolveDatabaseUrl({ databaseUrlFlag: options.databaseUrl })
-
   const s = p.spinner()
 
   s.start('Loading stash.config.ts...')
-  const config = await loadStashConfig()
+  const config = await loadStashConfig({ databaseUrlFlag: options.databaseUrl })
   s.stop('Configuration loaded.')
 
   s.start(`Loading encrypt client from ${config.client}...`)

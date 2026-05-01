@@ -2,7 +2,6 @@ import { execSync } from 'node:child_process'
 import { existsSync, unlinkSync, writeFileSync } from 'node:fs'
 import { readdir } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
-import { resolveDatabaseUrl } from '@/config/database-url.js'
 import { loadStashConfig } from '@/config/index.js'
 import {
   EQLInstaller,
@@ -79,14 +78,6 @@ export async function installCommand(options: InstallOptions) {
     process.exit(1)
   }
 
-  // Resolve DATABASE_URL through the layered chain (flag → env → supabase
-  // status → prompt) and populate process.env so the scaffolded config's
-  // `process.env.DATABASE_URL!` reference resolves on the upcoming load.
-  await resolveDatabaseUrl({
-    databaseUrlFlag: options.databaseUrl,
-    supabase: options.supabase,
-  })
-
   // Scaffold stash.config.ts if missing. `db install` is the single command
   // that gets a project from zero to installed EQL — no separate setup step
   // (CIP-2986).
@@ -98,7 +89,10 @@ export async function installCommand(options: InstallOptions) {
   const s = p.spinner()
 
   s.start('Loading stash.config.ts...')
-  const config = await loadStashConfig()
+  const config = await loadStashConfig({
+    databaseUrlFlag: options.databaseUrl,
+    supabase: options.supabase,
+  })
   s.stop('Configuration loaded.')
 
   // Safety net: if the user ran `db install` without first running `init`,

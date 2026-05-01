@@ -1,30 +1,32 @@
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { messages } from '../../src/messages.js'
 import { render } from '../helpers/pty.js'
 
-/**
- * E2E coverage for the layered DATABASE_URL resolver. Each case spawns the
- * built `dist/bin/stash.js` and exercises a single resolution path —
- * `--database-url` flag, env, and the CI-guard fail-fast.
- *
- * The pty harness always provides a TTY, so the non-TTY path is covered by
- * the unit suite's `Object.defineProperty(process.stdin, 'isTTY', false)`
- * test in `src/__tests__/database-url.test.ts`.
- */
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+
+// Absolute path to the built CLI's `dist/index.js`. The test config imports
+// from this path because the tmp dir doesn't have a node_modules with
+// `@cipherstash/cli` symlinked. Real users get a clean
+// `import { resolveDatabaseUrl } from '@cipherstash/cli'`.
+const CLI_DIST_INDEX = path.resolve(__dirname, '../../dist/index.js')
+
 describe('db test-connection — DATABASE_URL resolver', () => {
   let tmpDir: string
 
   beforeEach(() => {
     tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'stash-db-url-e2e-'))
-    // A scaffold-shaped config that defers to env. The resolver populates
-    // env in-process before loadStashConfig runs.
+    // Config calls resolveDatabaseUrl() at evaluation time. The CLI's
+    // loadStashConfig wraps the jiti-import in withResolverContext so the
+    // function picks up `--database-url` / `--supabase` flags.
     fs.writeFileSync(
       path.join(tmpDir, 'stash.config.ts'),
-      `export default {
-         databaseUrl: process.env.DATABASE_URL,
+      `import { resolveDatabaseUrl } from '${CLI_DIST_INDEX}'
+       export default {
+         databaseUrl: await resolveDatabaseUrl(),
        }`,
     )
   })
@@ -37,8 +39,8 @@ describe('db test-connection — DATABASE_URL resolver', () => {
 
   it('uses --database-url flag and surfaces the source label', async () => {
     // Bogus host:port — connection will fail after the resolver succeeds.
-    // The test asserts on the log line + non-zero exit, NOT on the specific
-    // connection error (avoids flake if the port happens to be in use).
+    // The test asserts on the log line + non-zero exit, NOT on the
+    // specific connection error (avoids flake if the port is in use).
     const r = render(
       [
         'db',
@@ -53,6 +55,10 @@ describe('db test-connection — DATABASE_URL resolver', () => {
     const { exitCode } = await r.exit
     expect(exitCode).not.toBe(0)
     expect(r.output).toContain(messages.db.urlResolvedFromFlag)
+    // Belt-and-braces: the URL itself must never appear except where the
+    // user typed it (here, on argv — but the spawned process's logs
+    // shouldn't echo it back).
+    expect(r.output).not.toContain('postgresql://x:x@127.0.0.1:1/x')
   })
 
   it('CI=true with no DATABASE_URL and no flag exits 1 with the CI message', async () => {

@@ -1,4 +1,3 @@
-import { resolveDatabaseUrl } from '@/config/database-url.js'
 import { loadEncryptConfig, loadStashConfig } from '@/config/index.js'
 import type { EncryptConfig } from '@cipherstash/stack/schema'
 import * as p from '@clack/prompts'
@@ -152,15 +151,13 @@ export async function validateCommand(options: {
 }) {
   p.intro('npx @cipherstash/cli db validate')
 
-  await resolveDatabaseUrl({
-    databaseUrlFlag: options.databaseUrl,
-    supabase: options.supabase,
-  })
-
   const s = p.spinner()
 
   s.start('Loading stash.config.ts...')
-  const config = await loadStashConfig()
+  const config = await loadStashConfig({
+    databaseUrlFlag: options.databaseUrl,
+    supabase: options.supabase,
+  })
   s.stop('Configuration loaded.')
 
   s.start(`Loading encrypt client from ${config.client}...`)
