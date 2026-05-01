@@ -197,7 +197,10 @@ export async function resolveDatabaseUrl(
   }
 
   // 4. Interactive prompt — skipped in CI / non-TTY.
-  const isCi = process.env.CI === 'true'
+  // Accept the common CI-truthy spellings (`true`, `1`, case-insensitive)
+  // since not every CI provider sets `CI=true` exactly.
+  const ciVar = process.env.CI?.trim()
+  const isCi = ciVar !== undefined && /^(1|true)$/i.test(ciVar)
   const isInteractive = Boolean(process.stdin.isTTY) && !isCi
   if (isInteractive) {
     const fromPrompt = await promptForUrl(cwd)
