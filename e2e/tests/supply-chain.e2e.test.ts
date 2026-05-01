@@ -25,9 +25,12 @@ describe('supply chain — pnpm configuration', () => {
     if (maj === 10) expect(min).toBeGreaterThanOrEqual(26)
   })
 
-  it('pnpm-workspace.yaml sets minimumReleaseAge ≥ 3 days', () => {
+  it('pnpm-workspace.yaml sets minimumReleaseAge ≥ 7 days', () => {
+    // Enforce the configured policy (7 days), not just the lirantal minimum
+    // (3 days). Mirrors the Dependabot cooldown so manual + automated
+    // updates have the same community-discovery window.
     const ws = readYaml('pnpm-workspace.yaml') as { minimumReleaseAge?: number }
-    expect(ws.minimumReleaseAge).toBeGreaterThanOrEqual(4320) // 3 days in minutes
+    expect(ws.minimumReleaseAge).toBeGreaterThanOrEqual(10080) // 7 days in minutes
   })
 
   it('pnpm-workspace.yaml sets blockExoticSubdeps: true', () => {
@@ -154,6 +157,8 @@ describe('supply chain — governance (CODEOWNERS)', () => {
       'dependabot.yml',
       '.npmrc',
       '.github/workflows/',
+      '.github/CODEOWNERS',
+      'skills/stash-supply-chain-security/',
     ]) {
       const rule = rules.find((l) => l.includes(path))
       expect(rule, `no CODEOWNERS rule covers ${path}`).toBeDefined()
