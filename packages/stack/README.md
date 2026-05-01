@@ -1,10 +1,16 @@
 # @cipherstash/stack
 
-The all-in-one TypeScript SDK for the CipherStash data security stack.
+**Data-level access control for TypeScript.** Every sensitive value encrypted with a unique key. Identity-bound, searchable, and built into your existing Postgres stack.
 
 [![npm version](https://img.shields.io/npm/v/@cipherstash/stack.svg?style=for-the-badge&labelColor=000000)](https://www.npmjs.com/package/@cipherstash/stack)
 [![License: MIT](https://img.shields.io/npm/l/@cipherstash/stack.svg?style=for-the-badge&labelColor=000000)](https://github.com/cipherstash/protectjs/blob/main/LICENSE.md)
 [![TypeScript](https://img.shields.io/badge/TypeScript-first-blue?style=for-the-badge&labelColor=000000)](https://www.typescriptlang.org/)
+
+--
+
+CipherStash makes access control cryptographic. The rules aren't configured — they're enforced. Every value is encrypted under a unique key with identity and policy baked in, decryption enforced at the moment of read. A breach yields ciphertext.
+
+This SDK is the TypeScript surface: searchable field-level encryption, identity-bound keys via `LockContext`, bulk operations against [ZeroKMS](https://cipherstash.com/products/zerokms), and first-class integrations for Drizzle, Supabase, Prisma, and DynamoDB.
 
 --
 
