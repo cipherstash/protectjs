@@ -4,10 +4,13 @@ import * as p from '@clack/prompts'
 import { fetchRulebook } from '../lib/fetch-rulebook.js'
 import {
   CONTEXT_REL_PATH,
+  SETUP_PROMPT_REL_PATH,
   buildContextFile,
+  buildSetupPromptContext,
   readCliVersion,
   writeArtifact,
   writeContextFile,
+  writeSetupPrompt,
 } from '../lib/write-context.js'
 import type { InitProvider, InitState, InitStep } from '../types.js'
 import { readEnvKeyNames } from './gather-context.js'
@@ -28,9 +31,9 @@ function spawnCodex(prompt: string): Promise<number> {
 }
 
 /**
- * Hand off to Codex CLI: write AGENTS.md (sentinel-upserted) + context.json,
- * spawn `codex`. If `codex` is not on PATH we still write the artifacts and
- * print install + manual-launch instructions.
+ * Hand off to Codex CLI: write AGENTS.md (sentinel-upserted), context.json,
+ * and setup-prompt.md, then spawn `codex`. If `codex` is not on PATH we
+ * still write the artifacts and print install + manual-launch instructions.
  */
 export const handoffCodexStep: InitStep = {
   id: 'handoff-codex',
@@ -64,7 +67,13 @@ export const handoffCodexStep: InitStep = {
     writeContextFile(contextAbs, ctx)
     p.log.success(`Wrote ${CONTEXT_REL_PATH}`)
 
-    const launchPrompt = `Read AGENTS.md and complete the CipherStash setup. Context is in ${CONTEXT_REL_PATH}.`
+    const promptCtx = buildSetupPromptContext(state, 'codex')
+    if (promptCtx) {
+      writeSetupPrompt(resolve(cwd, SETUP_PROMPT_REL_PATH), promptCtx)
+      p.log.success(`Wrote ${SETUP_PROMPT_REL_PATH}`)
+    }
+
+    const launchPrompt = `Read ${SETUP_PROMPT_REL_PATH} and complete the setup steps. AGENTS.md has the rules; ${CONTEXT_REL_PATH} has the project facts.`
 
     if (!state.agents?.cli.codex) {
       p.note(

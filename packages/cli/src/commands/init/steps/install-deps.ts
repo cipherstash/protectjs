@@ -9,26 +9,38 @@ import {
 } from '../utils.js'
 
 const STACK_PACKAGE = '@cipherstash/stack'
-const FORGE_PACKAGE = 'stash'
+const CLI_PACKAGE = 'stash'
 
-export const installForgeStep: InitStep = {
-  id: 'install-forge',
-  name: 'Install stack dependencies',
+/**
+ * Install the runtime + dev npm packages the user needs to run encryption:
+ *
+ * - `@cipherstash/stack` (prod) — the encryption client and per-integration
+ *   helpers (drizzle, supabase, schema).
+ * - `stash` (dev) — the CLI itself, so the user can run `stash db install`,
+ *   `stash wizard`, etc. as a project script without the global install.
+ *
+ * Skips silently when both are already present. Prompts before running the
+ * install commands so the user sees the package manager invocation that's
+ * about to execute.
+ */
+export const installDepsStep: InitStep = {
+  id: 'install-deps',
+  name: 'Install dependencies',
   async run(state: InitState, _provider: InitProvider): Promise<InitState> {
     const stackPresent = isPackageInstalled(STACK_PACKAGE)
-    const forgePresent = isPackageInstalled(FORGE_PACKAGE)
+    const cliPresent = isPackageInstalled(CLI_PACKAGE)
 
     // Both already there — silent success, no prompts.
-    if (stackPresent && forgePresent) {
+    if (stackPresent && cliPresent) {
       p.log.success(
-        `${STACK_PACKAGE} and ${FORGE_PACKAGE} are already installed.`,
+        `${STACK_PACKAGE} and ${CLI_PACKAGE} are already installed.`,
       )
-      return { ...state, stackInstalled: true, forgeInstalled: true }
+      return { ...state, stackInstalled: true, cliInstalled: true }
     }
 
     const pm = detectPackageManager()
     const prodPackages = stackPresent ? [] : [STACK_PACKAGE]
-    const devPackages = forgePresent ? [] : [FORGE_PACKAGE]
+    const devPackages = cliPresent ? [] : [CLI_PACKAGE]
     const commands = combinedInstallCommands(pm, prodPackages, devPackages)
 
     const missingList = [
@@ -51,7 +63,7 @@ export const installForgeStep: InitStep = {
       return {
         ...state,
         stackInstalled: stackPresent,
-        forgeInstalled: forgePresent,
+        cliInstalled: cliPresent,
       }
     }
 
@@ -84,7 +96,7 @@ export const installForgeStep: InitStep = {
     return {
       ...state,
       stackInstalled: stackPresent || allSucceeded,
-      forgeInstalled: forgePresent || allSucceeded,
+      cliInstalled: cliPresent || allSucceeded,
     }
   },
 }

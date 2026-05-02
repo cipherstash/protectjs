@@ -1,7 +1,16 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import type { InitState, Integration, SchemaDef } from '../types.js'
+import {
+  type SetupPromptContext,
+  renderSetupPrompt,
+} from '../../../rulebook/index.js'
+import type {
+  HandoffChoice,
+  InitState,
+  Integration,
+  SchemaDef,
+} from '../types.js'
 import {
   type PackageManager,
   detectPackageManager,
@@ -10,6 +19,7 @@ import {
 import { upsertManagedBlock } from './sentinel-upsert.js'
 
 export const CONTEXT_REL_PATH = '.cipherstash/context.json'
+export const SETUP_PROMPT_REL_PATH = '.cipherstash/setup-prompt.md'
 
 export interface ContextFile {
   rulebookVersion: string
@@ -39,7 +49,7 @@ export function readCliVersion(): string {
           name?: string
           version?: string
         }
-        if (pkg.name === '@cipherstash/cli' && pkg.version) return pkg.version
+        if (pkg.name === 'stash' && pkg.version) return pkg.version
       } catch {
         // keep walking
       }
@@ -107,4 +117,44 @@ export function buildContextFile(
 export function writeContextFile(absPath: string, ctx: ContextFile): void {
   ensureDir(absPath)
   writeFileSync(absPath, `${JSON.stringify(ctx, null, 2)}\n`, 'utf-8')
+}
+
+/**
+ * Build a `SetupPromptContext` from the current init state for the given
+ * handoff choice. Returns `undefined` for the wizard handoff — the wizard
+ * has its own prompt logic and doesn't read this file.
+ */
+export function buildSetupPromptContext(
+  state: InitState,
+  handoff: HandoffChoice,
+): SetupPromptContext | undefined {
+  if (handoff === 'wizard') return undefined
+  const integration = state.integration ?? 'postgresql'
+  const encryptionClientPath =
+    state.clientFilePath ?? './src/encryption/index.ts'
+  return {
+    integration,
+    encryptionClientPath,
+    packageManager: detectPackageManager(),
+    schema: state.schema ?? { tableName: 'users', columns: [] },
+    schemaFromIntrospection: state.schemaFromIntrospection ?? false,
+    eqlInstalled: state.eqlInstalled ?? false,
+    stackInstalled: state.stackInstalled ?? false,
+    cliInstalled: state.cliInstalled ?? false,
+    handoff,
+  }
+}
+
+/**
+ * Render and persist `.cipherstash/setup-prompt.md`. The file is plain
+ * markdown — no sentinel markers — because it's regenerated wholesale on
+ * every init run and is meant to reflect the current state, not a managed
+ * block alongside user content.
+ */
+export function writeSetupPrompt(
+  absPath: string,
+  ctx: SetupPromptContext,
+): void {
+  ensureDir(absPath)
+  writeFileSync(absPath, renderSetupPrompt(ctx), 'utf-8')
 }

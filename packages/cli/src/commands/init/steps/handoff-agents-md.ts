@@ -3,10 +3,13 @@ import * as p from '@clack/prompts'
 import { fetchRulebook } from '../lib/fetch-rulebook.js'
 import {
   CONTEXT_REL_PATH,
+  SETUP_PROMPT_REL_PATH,
   buildContextFile,
+  buildSetupPromptContext,
   readCliVersion,
   writeArtifact,
   writeContextFile,
+  writeSetupPrompt,
 } from '../lib/write-context.js'
 import type { InitProvider, InitState, InitStep } from '../types.js'
 import { readEnvKeyNames } from './gather-context.js'
@@ -14,12 +17,14 @@ import { readEnvKeyNames } from './gather-context.js'
 const AGENTS_MD_REL_PATH = 'AGENTS.md'
 
 /**
- * Write `AGENTS.md` + `.cipherstash/context.json` and stop.
+ * Write `AGENTS.md`, `.cipherstash/context.json`, and
+ * `.cipherstash/setup-prompt.md`, then stop.
  *
  * For users running editor-based agents (Cursor, Windsurf, Cline) or any
  * tool that follows the AGENTS.md convention. We do not spawn anything —
  * the user opens their tool and the agent picks the file up from the
- * project root automatically.
+ * project root automatically. Pointing them at setup-prompt.md gives them
+ * the project-specific action plan to copy into their first chat.
  */
 export const handoffAgentsMdStep: InitStep = {
   id: 'handoff-agents-md',
@@ -53,13 +58,20 @@ export const handoffAgentsMdStep: InitStep = {
     writeContextFile(contextAbs, ctx)
     p.log.success(`Wrote ${CONTEXT_REL_PATH}`)
 
+    const promptCtx = buildSetupPromptContext(state, 'agents-md')
+    if (promptCtx) {
+      writeSetupPrompt(resolve(cwd, SETUP_PROMPT_REL_PATH), promptCtx)
+      p.log.success(`Wrote ${SETUP_PROMPT_REL_PATH}`)
+    }
+
     p.note(
       [
         `Rules at ${AGENTS_MD_REL_PATH}`,
+        `Action plan at ${SETUP_PROMPT_REL_PATH}`,
         `Context at ${CONTEXT_REL_PATH}`,
         '',
         'Cursor / Windsurf / Cline pick up AGENTS.md automatically.',
-        'For other tools, point your agent at the file and the context.',
+        `Open your agent and point it at ${SETUP_PROMPT_REL_PATH} to start.`,
       ].join('\n'),
       'Drive your editor agent',
     )

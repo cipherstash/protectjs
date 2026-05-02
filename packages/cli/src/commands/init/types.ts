@@ -22,13 +22,23 @@ export type HandoffChoice = 'claude-code' | 'codex' | 'agents-md' | 'wizard'
 
 export interface InitState {
   authenticated?: boolean
+  /** Resolved DATABASE_URL. Set by resolve-database; threaded into every
+   *  downstream step that needs DB access. Never logged or echoed. */
+  databaseUrl?: string
   clientFilePath?: string
   schemaGenerated?: boolean
+  /** True when the encryption schema was sourced from live DB introspection
+   *  rather than the placeholder. Drives messaging in the action prompt. */
+  schemaFromIntrospection?: boolean
   stackInstalled?: boolean
-  forgeInstalled?: boolean
+  /** Renamed from `forgeInstalled` — "Forge" was the legacy name for the
+   *  `stash` CLI. Kept on InitState as `cliInstalled` for clarity. */
+  cliInstalled?: boolean
+  /** True when EQL was installed (or already-installed) by install-eql. */
+  eqlInstalled?: boolean
   /** Detected ORM / framework integration. Set by build-schema. */
   integration?: Integration
-  /** Schema definition that was written to the client file (placeholder for now). */
+  /** Schema definition that was written to the client file. */
   schema?: SchemaDef
   /** Available coding agents in the user's environment. Set by detect-agents. */
   agents?: AgentEnvironment

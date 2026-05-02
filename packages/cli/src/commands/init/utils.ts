@@ -244,6 +244,111 @@ export function generateClientFromSchema(
   }
 }
 
+function generateDrizzleFromSchemas(schemas: SchemaDef[]): string {
+  const tableDefs = schemas.map((schema) => {
+    const varName = `${toCamelCase(schema.tableName)}Table`
+    const schemaVarName = `${toCamelCase(schema.tableName)}Schema`
+
+    const columnDefs = schema.columns.map((col) => {
+      const opts: string[] = []
+      if (col.dataType !== 'string') {
+        opts.push(`dataType: '${col.dataType}'`)
+      }
+      if (col.searchOps.includes('equality')) {
+        opts.push('equality: true')
+      }
+      if (col.searchOps.includes('orderAndRange')) {
+        opts.push('orderAndRange: true')
+      }
+      if (col.searchOps.includes('freeTextSearch')) {
+        opts.push('freeTextSearch: true')
+      }
+
+      const tsType = drizzleTsType(col.dataType)
+      const optsStr =
+        opts.length > 0 ? `, {\n    ${opts.join(',\n    ')},\n  }` : ''
+      return `  ${col.name}: encryptedType<${tsType}>('${col.name}'${optsStr}),`
+    })
+
+    return `export const ${varName} = pgTable('${schema.tableName}', {
+  id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
+${columnDefs.join('\n')}
+  createdAt: timestamp('created_at').defaultNow(),
+})
+
+const ${schemaVarName} = extractEncryptionSchema(${varName})`
+  })
+
+  const schemaVarNames = schemas.map((s) => `${toCamelCase(s.tableName)}Schema`)
+
+  return `import { pgTable, integer, timestamp } from 'drizzle-orm/pg-core'
+import { encryptedType, extractEncryptionSchema } from '@cipherstash/stack/drizzle'
+import { Encryption } from '@cipherstash/stack'
+
+${tableDefs.join('\n\n')}
+
+export const encryptionClient = await Encryption({
+  schemas: [${schemaVarNames.join(', ')}],
+})
+`
+}
+
+function generateGenericFromSchemas(schemas: SchemaDef[]): string {
+  const tableDefs = schemas.map((schema) => {
+    const varName = `${toCamelCase(schema.tableName)}Table`
+
+    const columnDefs = schema.columns.map((col) => {
+      const parts: string[] = [`  ${col.name}: encryptedColumn('${col.name}')`]
+
+      if (col.dataType !== 'string') {
+        parts.push(`.dataType('${col.dataType}')`)
+      }
+
+      for (const op of col.searchOps) {
+        parts.push(`.${op}()`)
+      }
+
+      return `${parts.join('\n    ')},`
+    })
+
+    return `export const ${varName} = encryptedTable('${schema.tableName}', {
+${columnDefs.join('\n')}
+})`
+  })
+
+  const tableVarNames = schemas.map((s) => `${toCamelCase(s.tableName)}Table`)
+
+  return `import { encryptedTable, encryptedColumn } from '@cipherstash/stack/schema'
+import { Encryption } from '@cipherstash/stack'
+
+${tableDefs.join('\n\n')}
+
+export const encryptionClient = await Encryption({
+  schemas: [${tableVarNames.join(', ')}],
+})
+`
+}
+
+/**
+ * Generate the encryption client file contents for one or more schemas.
+ *
+ * The single-schema variants above are kept for the placeholder path (which
+ * is always exactly one table); this is the variant that renders a real
+ * multi-table client from DB introspection.
+ */
+export function generateClientFromSchemas(
+  integration: Integration,
+  schemas: SchemaDef[],
+): string {
+  switch (integration) {
+    case 'drizzle':
+      return generateDrizzleFromSchemas(schemas)
+    case 'supabase':
+    case 'postgresql':
+      return generateGenericFromSchemas(schemas)
+  }
+}
+
 /**
  * Schema definition we ship as the "fresh project" placeholder. Exported
  * separately so steps that follow `build-schema` (gather-context, handoff)

@@ -5,10 +5,13 @@ import { CLAUDE_SKILL_NAME } from '../../../rulebook/index.js'
 import { fetchRulebook } from '../lib/fetch-rulebook.js'
 import {
   CONTEXT_REL_PATH,
+  SETUP_PROMPT_REL_PATH,
   buildContextFile,
+  buildSetupPromptContext,
   readCliVersion,
   writeArtifact,
   writeContextFile,
+  writeSetupPrompt,
 } from '../lib/write-context.js'
 import type { InitProvider, InitState, InitStep } from '../types.js'
 import { readEnvKeyNames } from './gather-context.js'
@@ -39,9 +42,13 @@ function spawnClaude(prompt: string): Promise<number> {
 }
 
 /**
- * Hand off to Claude Code: install the project skill, write context.json,
- * spawn `claude`. If `claude` is not on PATH we still write the artifacts
- * (so the user has them ready) and print install + manual-launch instructions.
+ * Hand off to Claude Code: install the project skill, write context.json
+ * and setup-prompt.md, spawn `claude`. If `claude` is not on PATH we still
+ * write the artifacts and print install + manual-launch instructions.
+ *
+ * The launch prompt points the agent at `setup-prompt.md` first — that's the
+ * project-specific action plan. The skill body is the reusable rulebook and
+ * is referenced from the prompt.
  */
 export const handoffClaudeStep: InitStep = {
   id: 'handoff-claude',
@@ -75,7 +82,13 @@ export const handoffClaudeStep: InitStep = {
     writeContextFile(contextAbs, ctx)
     p.log.success(`Wrote ${CONTEXT_REL_PATH}`)
 
-    const launchPrompt = `Use the ${CLAUDE_SKILL_NAME} skill. Context is in ${CONTEXT_REL_PATH}.`
+    const promptCtx = buildSetupPromptContext(state, 'claude-code')
+    if (promptCtx) {
+      writeSetupPrompt(resolve(cwd, SETUP_PROMPT_REL_PATH), promptCtx)
+      p.log.success(`Wrote ${SETUP_PROMPT_REL_PATH}`)
+    }
+
+    const launchPrompt = `Read ${SETUP_PROMPT_REL_PATH} and complete the setup steps. The ${CLAUDE_SKILL_NAME} skill has the rules; ${CONTEXT_REL_PATH} has the project facts.`
 
     if (!state.agents?.cli.claudeCode) {
       p.note(
