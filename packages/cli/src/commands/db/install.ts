@@ -274,7 +274,7 @@ function printNextSteps(): void {
       'Next steps:',
       '',
       '  1. Wire up encrypt/decrypt with the wizard (AI-guided, automated):',
-      '       npx @cipherstash/wizard',
+      '       stash wizard',
       '',
       '  2. Or use the client directly from @cipherstash/stack:',
       "       import { Encryption } from '@cipherstash/stack'",

@@ -22,6 +22,7 @@ import {
   statusCommand,
   testConnectionCommand,
   upgradeCommand,
+  wizardCommand,
 } from '../commands/index.js'
 import { messages } from '../messages.js'
 
@@ -62,6 +63,7 @@ ${messages.cli.usagePrefix} <command> [options]
 Commands:
   init                 Initialize CipherStash for your project
   auth <subcommand>    Authenticate with CipherStash
+  wizard               AI-guided encryption setup (reads your codebase)
 
   db install           Scaffold stash.config.ts (if missing) and install EQL extensions
   db upgrade           Upgrade EQL extensions to the latest version
@@ -99,6 +101,7 @@ Examples:
   npx stash init
   npx stash init --supabase
   npx stash auth login
+  npx stash wizard
   npx stash db install
   npx stash db push
   npx stash schema build
@@ -268,6 +271,14 @@ async function main() {
     case 'env':
       await envCommand({ write: flags.write })
       break
+    case 'wizard': {
+      // Forward everything after `stash wizard` verbatim. The wizard package
+      // owns its own flag parsing; we don't try to interpret its surface
+      // here so it can evolve independently.
+      const wizardArgs = process.argv.slice(3)
+      await wizardCommand(wizardArgs)
+      break
+    }
     default:
       console.error(`${messages.cli.unknownCommand}: ${command}\n`)
       console.log(HELP)

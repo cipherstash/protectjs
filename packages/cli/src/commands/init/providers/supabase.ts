@@ -7,7 +7,6 @@ export function createSupabaseProvider(): InitProvider {
     introMessage: 'Setting up CipherStash for your Supabase project...',
     getNextSteps(state: InitState, pm: PackageManager): string[] {
       const cli = runnerCommand(pm, 'stash')
-      const wizard = runnerCommand(pm, '@cipherstash/wizard')
       const steps = [
         `Install EQL: ${cli} db install --supabase (prompts for migration vs direct)`,
         'Apply it: supabase db reset (local) or supabase migration up (remote)',
@@ -17,7 +16,7 @@ export function createSupabaseProvider(): InitProvider {
         ? `edit ${state.clientFilePath} directly`
         : 'edit your encryption schema directly'
       steps.push(
-        `Customize your schema: ${wizard} (AI-guided, automated) — or ${manualEdit}`,
+        `Customize your schema: ${cli} wizard (AI-guided, automated) — or ${manualEdit}`,
       )
 
       steps.push(

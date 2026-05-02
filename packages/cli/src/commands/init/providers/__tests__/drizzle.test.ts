@@ -16,7 +16,7 @@ describe('createDrizzleProvider getNextSteps', () => {
     expect(steps[0]).toBe(
       'Set up your database: bunx stash db install --drizzle',
     )
-    expect(steps[1]).toContain('bunx @cipherstash/wizard')
+    expect(steps[1]).toContain('bunx stash wizard')
     for (const s of steps) expect(s).not.toMatch(/\bnpx\b/)
   })
 
