@@ -14,7 +14,6 @@ import {
   writeSetupPrompt,
 } from '../lib/write-context.js'
 import type { InitProvider, InitState, InitStep } from '../types.js'
-import { readEnvKeyNames } from './gather-context.js'
 
 const SKILL_REL_PATH = `.claude/skills/${CLAUDE_SKILL_NAME}/SKILL.md`
 
@@ -57,7 +56,7 @@ export const handoffClaudeStep: InitStep = {
     const cwd = process.cwd()
     const integration = state.integration ?? 'postgresql'
     const cliVersion = readCliVersion()
-    const envKeys = readEnvKeyNames(cwd)
+    const envKeys = state.envKeys ?? []
 
     const rulebookSpinner = p.spinner()
     rulebookSpinner.start('Fetching rulebook...')
@@ -97,7 +96,10 @@ export const handoffClaudeStep: InitStep = {
           `Install: ${CLAUDE_INSTALL_URL}`,
           '',
           'Once installed, run:',
-          `  claude "${launchPrompt}"`,
+          // Single-quote the prompt for the printed example. The launchPrompt
+          // is a closed-form string we control, but printing it inside double
+          // quotes would break if any path inside ever contained a quote.
+          `  claude '${launchPrompt}'`,
         ].join('\n'),
         'Files written — install Claude Code to run the handoff',
       )
@@ -108,7 +110,7 @@ export const handoffClaudeStep: InitStep = {
     const exitCode = await spawnClaude(launchPrompt)
     if (exitCode !== 0) {
       p.log.warn(
-        `Claude Code exited with code ${exitCode}. Re-run \`claude "${launchPrompt}"\` to resume.`,
+        `Claude Code exited with code ${exitCode}. Re-run \`claude '${launchPrompt}'\` to resume.`,
       )
     }
 

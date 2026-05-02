@@ -9,10 +9,6 @@ const baseCtx: SetupPromptContext = {
   integration: 'drizzle',
   encryptionClientPath: './src/encryption/index.ts',
   packageManager: 'pnpm',
-  schema: {
-    tableName: 'users',
-    columns: [{ name: 'email', dataType: 'string', searchOps: ['equality'] }],
-  },
   schemaFromIntrospection: false,
   eqlInstalled: false,
   stackInstalled: false,

@@ -1,7 +1,6 @@
 import type {
   HandoffChoice,
   Integration,
-  SchemaDef,
 } from '../../commands/init/types.js'
 import {
   type PackageManager,
@@ -13,7 +12,6 @@ export interface SetupPromptContext {
   integration: Integration
   encryptionClientPath: string
   packageManager: PackageManager
-  schema: SchemaDef
   schemaFromIntrospection: boolean
   eqlInstalled: boolean
   stackInstalled: boolean

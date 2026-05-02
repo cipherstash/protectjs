@@ -13,7 +13,6 @@ import {
   writeSetupPrompt,
 } from '../lib/write-context.js'
 import type { InitProvider, InitState, InitStep } from '../types.js'
-import { readEnvKeyNames } from './gather-context.js'
 
 const AGENTS_MD_REL_PATH = 'AGENTS.md'
 
@@ -42,7 +41,7 @@ export const handoffCodexStep: InitStep = {
     const cwd = process.cwd()
     const integration = state.integration ?? 'postgresql'
     const cliVersion = readCliVersion()
-    const envKeys = readEnvKeyNames(cwd)
+    const envKeys = state.envKeys ?? []
 
     const rulebookSpinner = p.spinner()
     rulebookSpinner.start('Fetching rulebook...')
@@ -82,7 +81,7 @@ export const handoffCodexStep: InitStep = {
           `Install: ${CODEX_INSTALL_URL}`,
           '',
           'Once installed, run:',
-          `  codex "${launchPrompt}"`,
+          `  codex '${launchPrompt}'`,
         ].join('\n'),
         'Files written — install Codex to run the handoff',
       )
@@ -93,7 +92,7 @@ export const handoffCodexStep: InitStep = {
     const exitCode = await spawnCodex(launchPrompt)
     if (exitCode !== 0) {
       p.log.warn(
-        `Codex exited with code ${exitCode}. Re-run \`codex "${launchPrompt}"\` to resume.`,
+        `Codex exited with code ${exitCode}. Re-run \`codex '${launchPrompt}'\` to resume.`,
       )
     }
 

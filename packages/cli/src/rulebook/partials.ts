@@ -1,15 +1,18 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import type { Integration } from '../commands/init/types.js'
 
 /**
  * Get the directory of the current file, supporting both ESM and CJS.
- * Mirrors the pattern in `src/installer/index.ts` so we work in both bundle
- * variants tsup produces (`dist/index.js` ESM, `dist/index.cjs` CJS).
+ *
+ * `fileURLToPath` is the right way to convert `import.meta.url` into a real
+ * path — `new URL(...).pathname` gives `/C:/...` on Windows and percent-
+ * encodes spaces, both of which break `existsSync` lookups.
  */
 function currentDir(): string {
   if (typeof import.meta?.url === 'string' && import.meta.url) {
-    return dirname(new URL(import.meta.url).pathname)
+    return dirname(fileURLToPath(import.meta.url))
   }
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore — __dirname is the CJS fallback

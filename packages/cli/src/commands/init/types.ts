@@ -31,15 +31,21 @@ export interface InitState {
    *  rather than the placeholder. Drives messaging in the action prompt. */
   schemaFromIntrospection?: boolean
   stackInstalled?: boolean
-  /** Renamed from `forgeInstalled` — "Forge" was the legacy name for the
-   *  `stash` CLI. Kept on InitState as `cliInstalled` for clarity. */
+  /** True when the `stash` CLI is in the project's devDependencies. */
   cliInstalled?: boolean
   /** True when EQL was installed (or already-installed) by install-eql. */
   eqlInstalled?: boolean
   /** Detected ORM / framework integration. Set by build-schema. */
   integration?: Integration
-  /** Schema definition that was written to the client file. */
-  schema?: SchemaDef
+  /** Schema definitions written to the encryption client. Carries every
+   *  table the user picked during introspection (or the single placeholder
+   *  for empty databases). The generated client file is still the canonical
+   *  source for the full set of column types and search ops. */
+  schemas?: SchemaDef[]
+  /** Names of env keys observed in `.env*` files at init time. Never the
+   *  values. Set by build-schema (so the baseline context.json has them);
+   *  read by the handoff steps without re-scanning. */
+  envKeys?: string[]
   /** Available coding agents in the user's environment. Set by detect-agents. */
   agents?: AgentEnvironment
   /** What the user picked at the "how to proceed" step. */

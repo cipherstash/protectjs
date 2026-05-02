@@ -36,20 +36,6 @@ function detectIntegration(
   return 'postgresql'
 }
 
-/**
- * Generate the encryption client from a real DB introspection. Returns
- * `undefined` when introspection fails, the DB has no tables, or the user
- * cancels — callers fall back to the placeholder.
- *
- * Uses the URL already resolved by `resolve-database` (threaded through
- * state) rather than calling the resolver again.
- */
-async function buildFromIntrospection(
-  databaseUrl: string,
-): Promise<SchemaDef[] | undefined> {
-  return buildSchemasFromDatabase(databaseUrl)
-}
-
 export const buildSchemaStep: InitStep = {
   id: 'build-schema',
   name: 'Generate encryption client',
@@ -82,7 +68,7 @@ export const buildSchemaStep: InitStep = {
           clientFilePath,
           schemaGenerated: false,
           integration,
-          schema: PLACEHOLDER_SCHEMA,
+          schemas: [PLACEHOLDER_SCHEMA],
           schemaFromIntrospection: false,
         }
       }
@@ -90,28 +76,25 @@ export const buildSchemaStep: InitStep = {
 
     // Try real introspection first. Falls through to placeholder for an
     // empty database, a connection error, or user cancellation at any prompt.
-    let schemas: SchemaDef[] | undefined
+    let introspected: SchemaDef[] | undefined
     if (state.databaseUrl) {
-      schemas = await buildFromIntrospection(state.databaseUrl)
+      introspected = await buildSchemasFromDatabase(state.databaseUrl)
     }
 
     let fileContents: string
-    let recordedSchema: SchemaDef
+    let recordedSchemas: SchemaDef[]
     let fromIntrospection: boolean
 
-    if (schemas && schemas.length > 0 && schemas[0]) {
-      fileContents = generateClientFromSchemas(integration, schemas)
-      // We record the first schema for context.json so handoffs have a
-      // canonical "what got encrypted" pointer. Multi-table users can read
-      // the full set from the generated client file.
-      recordedSchema = schemas[0]
+    if (introspected && introspected.length > 0) {
+      fileContents = generateClientFromSchemas(integration, introspected)
+      recordedSchemas = introspected
       fromIntrospection = true
     } else {
       p.log.info(
         'No tables found in the public schema — writing a placeholder client. The handoff prompt will note this so the agent reshapes it to your real schema.',
       )
       fileContents = generatePlaceholderClient(integration)
-      recordedSchema = PLACEHOLDER_SCHEMA
+      recordedSchemas = [PLACEHOLDER_SCHEMA]
       fromIntrospection = false
     }
 
@@ -123,17 +106,23 @@ export const buildSchemaStep: InitStep = {
     writeFileSync(resolvedPath, fileContents, 'utf-8')
     p.log.success(
       fromIntrospection
-        ? `Encryption client written to ${clientFilePath} (${integration}, ${schemas?.length ?? 0} table${(schemas?.length ?? 0) !== 1 ? 's' : ''} from introspection)`
+        ? `Encryption client written to ${clientFilePath} (${integration}, ${recordedSchemas.length} table${recordedSchemas.length !== 1 ? 's' : ''} from introspection)`
         : `Encryption client written to ${clientFilePath} (${integration} placeholder)`,
     )
+
+    // Read env-key names once and put them on state. gather-context (later in
+    // the pipeline) and the handoff steps all read from there rather than
+    // re-scanning `.env*` files. Names only — never values.
+    const envKeys = readEnvKeyNames(cwd)
 
     const nextState: InitState = {
       ...state,
       clientFilePath,
       schemaGenerated: true,
       integration,
-      schema: recordedSchema,
+      schemas: recordedSchemas,
       schemaFromIntrospection: fromIntrospection,
+      envKeys,
     }
 
     // Write a baseline `.cipherstash/context.json` immediately so it tracks
@@ -142,7 +131,7 @@ export const buildSchemaStep: InitStep = {
     // is consistent with the client even if init aborts before the handoff
     // (e.g. install-eql failure, Ctrl+C). Without this, an agent reading a
     // stale context.json from a previous run would happily believe it.
-    writeBaselineContextFile(nextState, cwd, readEnvKeyNames(cwd))
+    writeBaselineContextFile(nextState, cwd, envKeys)
 
     return nextState
   },

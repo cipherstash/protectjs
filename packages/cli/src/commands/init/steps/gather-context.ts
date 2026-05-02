@@ -8,8 +8,13 @@ import { detectPackageManager } from '../utils.js'
 /**
  * Names of env keys observed in the project's `.env*` files. We never read or
  * propagate the values — only the names tell the agent which keys to expect.
+ *
+ * Exported so build-schema can populate `state.envKeys` once at the start of
+ * the run; the handoff steps then read from state. Keeping the function here
+ * (rather than under `lib/`) groups it with the other context-gathering
+ * helpers.
  */
-function readEnvKeyNames(cwd: string): string[] {
+export function readEnvKeyNames(cwd: string): string[] {
   const candidates = [
     '.env',
     '.env.local',
@@ -39,12 +44,11 @@ function readEnvKeyNames(cwd: string): string[] {
 }
 
 /**
- * Pull together everything an external agent will need into in-memory state.
+ * Detect available coding agents and log a one-line summary of the state
+ * the user just set up.
  *
- * No file writes happen here — `handoff-claude` is what serialises this to
- * `.cipherstash/context.json`. We split the responsibilities so the wizard /
- * rules-only branches can also reuse the gathered facts later if we ever
- * surface them.
+ * Env keys are already on `state.envKeys` (populated by build-schema); we
+ * only read them off state here to mention the count. No file writes.
  */
 export const gatherContextStep: InitStep = {
   id: 'gather-context',
@@ -52,31 +56,21 @@ export const gatherContextStep: InitStep = {
   async run(state: InitState, _provider: InitProvider): Promise<InitState> {
     const cwd = process.cwd()
     const agents = detectAgents(cwd, process.env)
-    const envKeys = readEnvKeyNames(cwd)
     const pm = detectPackageManager()
+    const envKeyCount = state.envKeys?.length ?? 0
 
     const detectedBits: string[] = []
     if (state.integration)
       detectedBits.push(`integration: ${state.integration}`)
     detectedBits.push(`package manager: ${pm}`)
     if (agents.cli.claudeCode) detectedBits.push('Claude Code CLI: yes')
-    if (envKeys.length > 0) {
-      detectedBits.push(`env keys: ${envKeys.length} found`)
+    if (agents.cli.codex) detectedBits.push('Codex CLI: yes')
+    if (envKeyCount > 0) {
+      detectedBits.push(`env keys: ${envKeyCount} found`)
     }
 
     p.log.info(`Detected — ${detectedBits.join(', ')}`)
 
-    return {
-      ...state,
-      agents,
-      // Stash env key names directly on state via a side channel so handoff
-      // doesn't have to re-read .env files. Re-using `agents` shape would
-      // pollute it, so we use a private getter on the next step instead by
-      // reading env keys again — they're cheap. We deliberately don't store
-      // values here.
-    }
+    return { ...state, agents }
   },
 }
-
-/** Re-export so handoff-claude can call it with the same semantics. */
-export { readEnvKeyNames }

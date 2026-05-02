@@ -1,6 +1,6 @@
-import { spawnSync } from 'node:child_process'
 import { existsSync, statSync } from 'node:fs'
-import { resolve } from 'node:path'
+import { delimiter, resolve } from 'node:path'
+import { platform } from 'node:os'
 
 export type Editor = 'vscode' | 'cursor' | 'unknown'
 
@@ -26,22 +26,30 @@ export interface AgentEnvironment {
 }
 
 /**
- * Look up an executable on PATH without running it. We use `command -v` (POSIX)
- * because it is built into every shell we support and prints a usable path on
- * success / nothing on failure. `which` is not always installed on minimal
- * containers; `command -v` is.
+ * Walk `PATH` looking for an executable. Pure-Node lookup so we don't
+ * depend on `/bin/sh -c command -v` (POSIX-only) or `where` (Windows-only).
+ * Allowlists the bin name to a conservative pattern — a defensive
+ * belt-and-braces given callers only pass closed-enum literals today.
  */
-function isOnPath(bin: string): boolean {
-  // `command -v` is a shell builtin, so we run it via /bin/sh -c with the
-  // command argument inlined. Avoids the DEP0190 warning that fires when you
-  // combine `shell: true` with an args array.
+function isOnPath(bin: string, env: NodeJS.ProcessEnv): boolean {
   if (!/^[a-z0-9_-]+$/i.test(bin)) return false
-  const result = spawnSync('/bin/sh', ['-c', `command -v ${bin}`], {
-    stdio: ['ignore', 'pipe', 'ignore'],
-  })
-  if (result.status !== 0) return false
-  const out = result.stdout?.toString().trim() ?? ''
-  return out.length > 0
+  const path = env.PATH ?? env.Path ?? env.path ?? ''
+  if (!path) return false
+
+  const isWindows = platform() === 'win32'
+  // PATHEXT lets us match `claude.cmd` / `claude.exe` on Windows; on POSIX we
+  // only look for the bare name. We don't honour `process.env.PATHEXT` for
+  // arbitrary user-set casing — `.cmd`, `.exe`, `.bat` cover ~99% of installs.
+  const exts = isWindows ? ['.cmd', '.exe', '.bat', ''] : ['']
+
+  for (const dir of path.split(delimiter)) {
+    if (!dir) continue
+    for (const ext of exts) {
+      const candidate = resolve(dir, `${bin}${ext}`)
+      if (existsSync(candidate)) return true
+    }
+  }
+  return false
 }
 
 function detectEditor(env: NodeJS.ProcessEnv): Editor {
@@ -71,8 +79,8 @@ export function detectAgents(
 ): AgentEnvironment {
   return {
     cli: {
-      claudeCode: isOnPath('claude'),
-      codex: isOnPath('codex'),
+      claudeCode: isOnPath('claude', env),
+      codex: isOnPath('codex', env),
     },
     project: {
       claudeDir: isDirectory(resolve(cwd, '.claude')),

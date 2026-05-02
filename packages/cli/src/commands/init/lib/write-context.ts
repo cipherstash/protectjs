@@ -30,7 +30,10 @@ export interface ContextFile {
   packageManager: PackageManager
   installCommand: string
   envKeys: string[]
-  schema: SchemaDef
+  /** Every encrypted-table schema written to the encryption client. The
+   *  generated client file is still authoritative for column types and ops;
+   *  this lets agents see the full set without parsing TypeScript. */
+  schemas: SchemaDef[]
   generatedAt: string
 }
 
@@ -89,12 +92,12 @@ export function buildContextFile(
 ): ContextFile {
   const integration = state.integration ?? 'postgresql'
   const clientFilePath = state.clientFilePath ?? './src/encryption/index.ts'
-  const schema = state.schema
-  if (!schema) {
+  const schemas = state.schemas
+  if (!schemas || schemas.length === 0) {
     // Should not happen — build-schema always populates this. Keep the
     // assertion explicit so a future refactor that drops the field gets
     // caught here rather than producing a half-empty context.json.
-    throw new Error('Schema missing from init state — cannot write context.')
+    throw new Error('Schemas missing from init state — cannot write context.')
   }
 
   const pm = detectPackageManager()
@@ -106,7 +109,7 @@ export function buildContextFile(
     packageManager: pm,
     installCommand: prodInstallCommand(pm, '@cipherstash/stack'),
     envKeys: [],
-    schema,
+    schemas,
     generatedAt: new Date().toISOString(),
   }
 }
@@ -136,7 +139,7 @@ export function writeBaselineContextFile(
   cwd: string,
   envKeys: string[],
 ): void {
-  if (!state.schema) return
+  if (!state.schemas || state.schemas.length === 0) return
   const absPath = resolve(cwd, CONTEXT_REL_PATH)
   const ctx = buildContextFile(state, RULEBOOK_VERSION)
   ctx.envKeys = envKeys
@@ -160,7 +163,6 @@ export function buildSetupPromptContext(
     integration,
     encryptionClientPath,
     packageManager: detectPackageManager(),
-    schema: state.schema ?? { tableName: 'users', columns: [] },
     schemaFromIntrospection: state.schemaFromIntrospection ?? false,
     eqlInstalled: state.eqlInstalled ?? false,
     stackInstalled: state.stackInstalled ?? false,

@@ -12,17 +12,19 @@ The single CLI for CipherStash. It handles authentication, project initializatio
 ```bash
 npm install -D stash
 npx stash auth login    # authenticate with CipherStash
-npx stash init          # scaffold encryption schema and install dependencies
-npx stash db install    # scaffold stash.config.ts (if missing) and install EQL
+npx stash init          # scaffold, introspect, install EQL, hand off to your agent
 ```
 
-What each step does:
+`stash init` runs the whole setup as one flow: authenticate, resolve `DATABASE_URL`, introspect your database and let you pick which columns to encrypt, install dependencies, install the EQL extension, and finish by handing off to your local coding agent. At the end it presents a four-option menu:
 
-- `auth login` — opens a browser-based device code flow and saves a token to `~/.cipherstash/auth.json`.
-- `init` — generates your encryption client file and installs `stash` as a dev dependency. Pass `--supabase` or `--drizzle` for provider-specific setup.
-- `db install` — detects your encryption client, writes `stash.config.ts` if it's missing, and installs EQL extensions in a single step.
+- **Hand off to Claude Code** — installs a project-local skill at `.claude/skills/cipherstash-setup/SKILL.md`, then launches `claude` interactively.
+- **Hand off to Codex** — writes `AGENTS.md` at the project root, then launches `codex`.
+- **Use the CipherStash Agent** — runs the in-house wizard (`@cipherstash/wizard`).
+- **Write AGENTS.md** — writes the rules file and stops, for Cursor / Windsurf / Cline / any AGENTS.md-aware tool.
 
-After `db install`, declare which columns to encrypt — either run [`@cipherstash/wizard`](https://www.npmjs.com/package/@cipherstash/wizard) to do it automatically, or edit your encryption client file (default `./src/encryption/index.ts`) by hand.
+A project-specific action plan is written to `.cipherstash/setup-prompt.md` regardless of which option you pick — it tells the agent exactly what's already done and what's left, with the right commands for your package manager and ORM. The matching context (selected columns, env keys, paths, versions) is at `.cipherstash/context.json`.
+
+If neither `claude` nor `codex` is on PATH, init still writes the rules files and prints install instructions — your progress is never wasted.
 
 ---
 
@@ -30,14 +32,12 @@ After `db install`, declare which columns to encrypt — either run [`@ciphersta
 
 ```
 npx stash auth login
-    └── npx stash init
-            └── npx stash db install
-                    └── npx @cipherstash/wizard       ← fast path: AI edits your files
-                            OR
-                        Edit schema files by hand     ← escape hatch
+    └── npx stash init     ← introspects DB, installs EQL, hands off to your agent
+            └── Agent edits schema files / generates migrations
+                    └── npx stash db push     ← when ready to roll out further changes
 ```
 
-`stash` covers authentication, initialization, EQL install/upgrade/validate/push/migrate, and schema introspection. The wizard ([`@cipherstash/wizard`](https://www.npmjs.com/package/@cipherstash/wizard)) is a separate package that calls back into these cli commands after its AI agent finishes editing your schema files.
+`stash` covers authentication, initialization, EQL install/upgrade/validate/push/migrate, schema introspection, and a `stash wizard` subcommand that thin-wraps [`@cipherstash/wizard`](https://www.npmjs.com/package/@cipherstash/wizard). The wizard package itself is a separate npm install — kept out of the `stash` bundle so the agent SDK doesn't bloat the CLI.
 
 ---
 
@@ -69,7 +69,7 @@ Commands that consume `stash.config.ts`: `db install`, `db upgrade`, `db push`, 
 
 ### `npx stash init`
 
-Scaffold CipherStash for your project. Generates an encryption client file, writes initial schema code, and installs `stash` as a dev dependency.
+Set up CipherStash end-to-end: authenticate, introspect your database, install dependencies, install EQL, and hand off the rest to your local coding agent.
 
 ```bash
 npx stash init [--supabase] [--drizzle]
@@ -80,7 +80,18 @@ npx stash init [--supabase] [--drizzle]
 | `--supabase` | Use the Supabase-specific setup flow |
 | `--drizzle` | Use the Drizzle-specific setup flow |
 
-After `init` completes, the Next Steps output tells you to run `npx stash db install`, then edit your encryption client file directly.
+What `init` does, in order:
+
+1. **Authenticate** — re-uses an existing token if found, otherwise opens the browser device-code flow.
+2. **Resolve `DATABASE_URL`** — flag → env → `supabase status` → interactive prompt → hard-fail. The same resolver `db install` uses.
+3. **Generate the encryption client** — connects to your database, lists tables, and prompts you to multi-select which columns to encrypt. Writes `./src/encryption/index.ts` with the right shape for the detected ORM (Drizzle / Supabase / plain Postgres). Falls back to a placeholder if the database has no tables yet.
+4. **Install dependencies** — `@cipherstash/stack` (runtime) and `stash` (dev), with a confirmation prompt.
+5. **Install EQL** — runs `stash db install` against the resolved URL after a y/N confirm.
+6. **Hand off** — four-option menu (Claude Code / Codex / CipherStash Agent / write `AGENTS.md`). See the Quickstart section above for what each option writes and spawns.
+
+The full pipeline state — integration, columns, env-key names, paths, versions — is captured in `.cipherstash/context.json`. The action plan at `.cipherstash/setup-prompt.md` tells whichever agent picks up next what's already done and what's left.
+
+`CIPHERSTASH_WIZARD_URL` overrides the gateway endpoint for the rulebook fetch. Useful for local-dev against a wizard gateway running on `localhost`.
 
 ---
 
@@ -93,6 +104,18 @@ npx stash auth login
 ```
 
 Saves the token to `~/.cipherstash/auth.json`. Database-touching commands check for this file before running.
+
+---
+
+### `npx stash wizard`
+
+Launch the CipherStash AI wizard. Thin wrapper around [`@cipherstash/wizard`](https://www.npmjs.com/package/@cipherstash/wizard) — the wizard ships as a separate npm package so the agent SDK stays out of the `stash` bundle, but you don't need to remember a second tool name.
+
+```bash
+npx stash wizard [...flags]
+```
+
+Any flags after `wizard` are forwarded verbatim to the wizard package. On the first run the package manager downloads the wizard (~5s); subsequent runs are instant.
 
 ---
 

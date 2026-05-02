@@ -12,7 +12,6 @@ import {
   writeSetupPrompt,
 } from '../lib/write-context.js'
 import type { InitProvider, InitState, InitStep } from '../types.js'
-import { readEnvKeyNames } from './gather-context.js'
 
 const AGENTS_MD_REL_PATH = 'AGENTS.md'
 
@@ -33,7 +32,7 @@ export const handoffAgentsMdStep: InitStep = {
     const cwd = process.cwd()
     const integration = state.integration ?? 'postgresql'
     const cliVersion = readCliVersion()
-    const envKeys = readEnvKeyNames(cwd)
+    const envKeys = state.envKeys ?? []
 
     const rulebookSpinner = p.spinner()
     rulebookSpinner.start('Fetching rulebook...')
