@@ -56,9 +56,11 @@ describe('CLI init providers — package-manager-aware Next Steps', () => {
       it(`${label} provider renders ${RUNNER[pm]} for pm=${pm}`, () => {
         const steps = create().getNextSteps({}, pm)
         expect(steps[0]).toBe(firstStep(RUNNER[pm]))
-        // The wizard hint should also use the right runner.
-        expect(steps.find((s) => s.includes('@cipherstash/wizard'))).toContain(
-          `${RUNNER[pm]} @cipherstash/wizard`,
+        // The wizard hint should also use the right runner. The wrapper
+        // subcommand is `stash wizard`, so the rendered runner-aware string
+        // looks like e.g. `bunx stash wizard`.
+        expect(steps.find((s) => s.includes('stash wizard'))).toContain(
+          `${RUNNER[pm]} stash wizard`,
         )
         // No accidental npx leakage when the runner isn't npx.
         if (RUNNER[pm] !== 'npx') {
