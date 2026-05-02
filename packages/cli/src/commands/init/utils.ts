@@ -3,12 +3,20 @@ import { resolve } from 'node:path'
 import type { Integration, SchemaDef } from './types.js'
 
 /**
- * Checks if a package is installed in the current project by looking
- * for its directory in node_modules.
+ * Checks if a package is installed and loadable from the current project.
+ *
+ * We require both the package directory AND a `package.json` inside it. A
+ * leftover directory without a manifest (from an aborted install, a previous
+ * tool that wrote the path before failing, or a workspace symlink whose
+ * target was removed) was previously treated as installed — that caused
+ * `installCommand` later in init to load `stash.config.ts` and fail with
+ * `Cannot find module 'stash'` at the jiti import. Requiring the manifest
+ * matches what Node's resolver actually needs to load the module.
  */
 export function isPackageInstalled(packageName: string): boolean {
   const modulePath = resolve(process.cwd(), 'node_modules', packageName)
-  return existsSync(modulePath)
+  const manifestPath = resolve(modulePath, 'package.json')
+  return existsSync(modulePath) && existsSync(manifestPath)
 }
 
 export type PackageManager = 'npm' | 'pnpm' | 'yarn' | 'bun'

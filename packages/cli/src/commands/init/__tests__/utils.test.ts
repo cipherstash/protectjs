@@ -1,10 +1,11 @@
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   detectPackageManager,
   devInstallCommand,
+  isPackageInstalled,
   prodInstallCommand,
   runnerCommand,
 } from '../utils.js'
@@ -164,5 +165,46 @@ describe('runnerCommand', () => {
     expect(runnerCommand('bun', 'stash db install')).toBe(
       'bunx stash db install',
     )
+  })
+})
+
+describe('isPackageInstalled', () => {
+  let tmp: string
+  let cwdSpy: ReturnType<typeof vi.spyOn>
+
+  beforeEach(() => {
+    tmp = mkdtempSync(join(tmpdir(), 'isinstalled-test-'))
+    cwdSpy = vi.spyOn(process, 'cwd').mockReturnValue(tmp)
+  })
+
+  afterEach(() => {
+    cwdSpy.mockRestore()
+    rmSync(tmp, { recursive: true, force: true })
+  })
+
+  it('returns false when node_modules/<name> does not exist', () => {
+    expect(isPackageInstalled('stash')).toBe(false)
+  })
+
+  it('returns true when node_modules/<name>/package.json exists', () => {
+    const pkgDir = join(tmp, 'node_modules', 'stash')
+    mkdirSync(pkgDir, { recursive: true })
+    writeFileSync(join(pkgDir, 'package.json'), '{"name":"stash"}')
+    expect(isPackageInstalled('stash')).toBe(true)
+  })
+
+  it('returns false when the directory exists but no package.json', () => {
+    // The bug we fixed: a leftover dir from an aborted install or stale
+    // workspace symlink would previously be treated as a real install.
+    const pkgDir = join(tmp, 'node_modules', 'stash')
+    mkdirSync(pkgDir, { recursive: true })
+    expect(isPackageInstalled('stash')).toBe(false)
+  })
+
+  it('handles scoped package names', () => {
+    const pkgDir = join(tmp, 'node_modules', '@cipherstash', 'stack')
+    mkdirSync(pkgDir, { recursive: true })
+    writeFileSync(join(pkgDir, 'package.json'), '{"name":"@cipherstash/stack"}')
+    expect(isPackageInstalled('@cipherstash/stack')).toBe(true)
   })
 })

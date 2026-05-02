@@ -2,6 +2,7 @@ import * as p from '@clack/prompts'
 import { installCommand } from '../../db/install.js'
 import type { InitProvider, InitState, InitStep } from '../types.js'
 import { CancelledError } from '../types.js'
+import { isPackageInstalled } from '../utils.js'
 
 /**
  * Run `stash db install` programmatically after a y/N confirm.
@@ -42,6 +43,23 @@ export const installEqlStep: InitStep = {
       p.note(
         'Run `stash db install` before applying any migration that references encrypted columns.',
         'EQL not installed',
+      )
+      return { ...state, eqlInstalled: false }
+    }
+
+    // installCommand scaffolds stash.config.ts (which `import`s from `stash`)
+    // and immediately loads it via jiti. If `stash` isn't actually loadable
+    // from the project, that load throws `Cannot find module 'stash'` from
+    // deep inside jiti — confusing and fatal mid-flow. Detect the precondition
+    // and bail with a clear message instead. install-deps is what installs
+    // the package, so a "no" there leaves us here.
+    if (!isPackageInstalled('stash')) {
+      p.log.error(
+        '`stash` is not installed in this project. The previous step (install-deps) was skipped or failed. Re-run `stash init` and accept the dependency install when prompted, or install it manually:',
+      )
+      p.note(
+        '  npm install --save-dev stash\n  pnpm add -D stash\n  yarn add -D stash\n  bun add -D stash',
+        'Then re-run init',
       )
       return { ...state, eqlInstalled: false }
     }
