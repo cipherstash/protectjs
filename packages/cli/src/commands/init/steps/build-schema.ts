@@ -3,6 +3,7 @@ import { dirname, resolve } from 'node:path'
 import * as p from '@clack/prompts'
 import { detectDrizzle, detectSupabase } from '../../db/detect.js'
 import { buildSchemasFromDatabase } from '../lib/introspect.js'
+import { writeBaselineContextFile } from '../lib/write-context.js'
 import type {
   InitProvider,
   InitState,
@@ -16,6 +17,7 @@ import {
   generateClientFromSchemas,
   generatePlaceholderClient,
 } from '../utils.js'
+import { readEnvKeyNames } from './gather-context.js'
 
 const DEFAULT_CLIENT_PATH = './src/encryption/index.ts'
 
@@ -125,7 +127,7 @@ export const buildSchemaStep: InitStep = {
         : `Encryption client written to ${clientFilePath} (${integration} placeholder)`,
     )
 
-    return {
+    const nextState: InitState = {
       ...state,
       clientFilePath,
       schemaGenerated: true,
@@ -133,5 +135,15 @@ export const buildSchemaStep: InitStep = {
       schema: recordedSchema,
       schemaFromIntrospection: fromIntrospection,
     }
+
+    // Write a baseline `.cipherstash/context.json` immediately so it tracks
+    // the encryption client we just generated. Handoff steps refresh it later
+    // with the gateway-served rulebook version, but this guarantees the file
+    // is consistent with the client even if init aborts before the handoff
+    // (e.g. install-eql failure, Ctrl+C). Without this, an agent reading a
+    // stale context.json from a previous run would happily believe it.
+    writeBaselineContextFile(nextState, cwd, readEnvKeyNames(cwd))
+
+    return nextState
   },
 }

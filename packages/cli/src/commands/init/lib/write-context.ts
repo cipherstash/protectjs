@@ -2,6 +2,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import {
+  RULEBOOK_VERSION,
   type SetupPromptContext,
   renderSetupPrompt,
 } from '../../../rulebook/index.js'
@@ -117,6 +118,29 @@ export function buildContextFile(
 export function writeContextFile(absPath: string, ctx: ContextFile): void {
   ensureDir(absPath)
   writeFileSync(absPath, `${JSON.stringify(ctx, null, 2)}\n`, 'utf-8')
+}
+
+/**
+ * Write `.cipherstash/context.json` immediately after the encryption client
+ * is generated, using the bundled rulebook version. Handoff steps refresh
+ * it later with the gateway-served rulebook version (when reachable), but
+ * having a baseline here means the file is always in sync with the
+ * encryption client even if init aborts mid-flow.
+ *
+ * Without this baseline, a failed install-eql or a Ctrl+C between
+ * build-schema and the handoff would leave context.json from a previous
+ * run on disk — which an agent reading it would happily believe.
+ */
+export function writeBaselineContextFile(
+  state: InitState,
+  cwd: string,
+  envKeys: string[],
+): void {
+  if (!state.schema) return
+  const absPath = resolve(cwd, CONTEXT_REL_PATH)
+  const ctx = buildContextFile(state, RULEBOOK_VERSION)
+  ctx.envKeys = envKeys
+  writeContextFile(absPath, ctx)
 }
 
 /**
