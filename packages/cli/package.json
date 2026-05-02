@@ -7,6 +7,7 @@
 	"files": [
 		"dist",
 		"dist/sql",
+		"dist/rulebook",
 		"README.md",
 		"LICENSE",
 		"CHANGELOG.md"

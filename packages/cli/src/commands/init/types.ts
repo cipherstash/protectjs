@@ -1,3 +1,4 @@
+import type { AgentEnvironment } from './detect-agents.js'
 import type { PackageManager } from './utils.js'
 
 export type Integration = 'drizzle' | 'supabase' | 'postgresql'
@@ -17,12 +18,22 @@ export interface SchemaDef {
   columns: ColumnDef[]
 }
 
+export type HandoffChoice = 'claude-code' | 'wizard' | 'rules-only'
+
 export interface InitState {
   authenticated?: boolean
   clientFilePath?: string
   schemaGenerated?: boolean
   stackInstalled?: boolean
   forgeInstalled?: boolean
+  /** Detected ORM / framework integration. Set by build-schema. */
+  integration?: Integration
+  /** Schema definition that was written to the client file (placeholder for now). */
+  schema?: SchemaDef
+  /** Available coding agents in the user's environment. Set by detect-agents. */
+  agents?: AgentEnvironment
+  /** What the user picked at the "how to proceed" step. */
+  handoff?: HandoffChoice
 }
 
 export interface InitStep {

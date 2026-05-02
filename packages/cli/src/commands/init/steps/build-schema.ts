@@ -9,7 +9,7 @@ import type {
   InitStep,
 } from '../types.js'
 import { CancelledError } from '../types.js'
-import { generatePlaceholderClient } from '../utils.js'
+import { generatePlaceholderClient, PLACEHOLDER_SCHEMA } from '../utils.js'
 
 const DEFAULT_CLIENT_PATH = './src/encryption/index.ts'
 
@@ -57,7 +57,13 @@ export const buildSchemaStep: InitStep = {
 
       if (action === 'keep') {
         p.log.info('Keeping existing encryption client file.')
-        return { ...state, clientFilePath, schemaGenerated: false }
+        return {
+          ...state,
+          clientFilePath,
+          schemaGenerated: false,
+          integration,
+          schema: PLACEHOLDER_SCHEMA,
+        }
       }
     }
 
@@ -73,6 +79,12 @@ export const buildSchemaStep: InitStep = {
       `Encryption client written to ${clientFilePath} (${integration} template)`,
     )
 
-    return { ...state, clientFilePath, schemaGenerated: true }
+    return {
+      ...state,
+      clientFilePath,
+      schemaGenerated: true,
+      integration,
+      schema: PLACEHOLDER_SCHEMA,
+    }
   },
 }

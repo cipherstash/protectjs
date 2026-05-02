@@ -244,23 +244,28 @@ export function generateClientFromSchema(
   }
 }
 
+/**
+ * Schema definition we ship as the "fresh project" placeholder. Exported
+ * separately so steps that follow `build-schema` (gather-context, handoff)
+ * can read it back without re-parsing the generated client file.
+ */
+export const PLACEHOLDER_SCHEMA: SchemaDef = {
+  tableName: 'users',
+  columns: [
+    {
+      name: 'email',
+      dataType: 'string',
+      searchOps: ['equality', 'freeTextSearch'],
+    },
+    {
+      name: 'name',
+      dataType: 'string',
+      searchOps: ['equality', 'freeTextSearch'],
+    },
+  ],
+}
+
 /** Generates an encryption client file with a placeholder schema for getting started. */
 export function generatePlaceholderClient(integration: Integration): string {
-  const placeholder: SchemaDef = {
-    tableName: 'users',
-    columns: [
-      {
-        name: 'email',
-        dataType: 'string',
-        searchOps: ['equality', 'freeTextSearch'],
-      },
-      {
-        name: 'name',
-        dataType: 'string',
-        searchOps: ['equality', 'freeTextSearch'],
-      },
-    ],
-  }
-
-  return generateClientFromSchema(integration, placeholder)
+  return generateClientFromSchema(integration, PLACEHOLDER_SCHEMA)
 }

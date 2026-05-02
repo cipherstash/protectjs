@@ -21,6 +21,12 @@ export default defineConfig([
     onSuccess: async () => {
       // Copy bundled SQL files into dist so they ship with the package
       cpSync('src/sql', 'dist/sql', { recursive: true })
+      // Copy rulebook partials. The runtime resolver in
+      // src/rulebook/partials.ts looks for a sibling `partials/` directory,
+      // so we mirror the source layout under `dist/rulebook/`.
+      cpSync('src/rulebook/partials', 'dist/rulebook/partials', {
+        recursive: true,
+      })
     },
   },
   {
