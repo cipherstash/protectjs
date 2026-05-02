@@ -20,6 +20,7 @@ describe('detectAgents', () => {
     expect(env.project.claudeDir).toBe(false)
     expect(env.project.claudeMd).toBe(false)
     expect(env.project.claudeSkillsDir).toBe(false)
+    expect(env.project.agentsMd).toBe(false)
   })
 
   it('detects CLAUDE.md, .claude/, and .claude/skills/', () => {
@@ -30,6 +31,18 @@ describe('detectAgents', () => {
     expect(env.project.claudeMd).toBe(true)
     expect(env.project.claudeDir).toBe(true)
     expect(env.project.claudeSkillsDir).toBe(true)
+  })
+
+  it('detects AGENTS.md at the project root', () => {
+    writeFileSync(join(tmp, 'AGENTS.md'), '# project rules\n')
+    const env = detectAgents(tmp, {})
+    expect(env.project.agentsMd).toBe(true)
+  })
+
+  it('exposes both claudeCode and codex as boolean fields on cli', () => {
+    const env = detectAgents(tmp, {})
+    expect(typeof env.cli.claudeCode).toBe('boolean')
+    expect(typeof env.cli.codex).toBe('boolean')
   })
 
   it('classifies the editor from env signals', () => {

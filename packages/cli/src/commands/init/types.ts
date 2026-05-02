@@ -18,7 +18,7 @@ export interface SchemaDef {
   columns: ColumnDef[]
 }
 
-export type HandoffChoice = 'claude-code' | 'wizard' | 'rules-only'
+export type HandoffChoice = 'claude-code' | 'codex' | 'agents-md' | 'wizard'
 
 export interface InitState {
   authenticated?: boolean

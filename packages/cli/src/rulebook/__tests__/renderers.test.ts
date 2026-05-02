@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   CLAUDE_SKILL_NAME,
   RULEBOOK_VERSION,
+  renderAgentsMd,
   renderClaudeSkill,
   renderGatewayPrompt,
 } from '../index.js'
@@ -36,5 +37,25 @@ describe('renderClaudeSkill', () => {
   it('mentions context.json as the first action', () => {
     const out = renderClaudeSkill({ integration: 'supabase' })
     expect(out).toContain('.cipherstash/context.json')
+  })
+})
+
+describe('renderAgentsMd', () => {
+  it('emits plain markdown without YAML frontmatter', () => {
+    const out = renderAgentsMd({ integration: 'drizzle' })
+    expect(out.startsWith('---')).toBe(false)
+    expect(out.startsWith('# CipherStash Setup')).toBe(true)
+  })
+
+  it('includes the rulebook version and integration in the header', () => {
+    const out = renderAgentsMd({ integration: 'drizzle' })
+    expect(out).toContain(`Rulebook version: ${RULEBOOK_VERSION}`)
+    expect(out).toContain('integration: drizzle')
+  })
+
+  it('points the agent at .cipherstash/context.json', () => {
+    const out = renderAgentsMd({ integration: 'supabase' })
+    expect(out).toContain('.cipherstash/context.json')
+    expect(out).toContain('First step')
   })
 })

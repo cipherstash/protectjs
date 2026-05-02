@@ -6,3 +6,5 @@ export {
   CLAUDE_SKILL_NAME,
 } from './renderers/claude-skill.js'
 export type { ClaudeSkillContext } from './renderers/claude-skill.js'
+export { renderAgentsMd } from './renderers/agents-md.js'
+export type { AgentsMdContext } from './renderers/agents-md.js'

@@ -8,6 +8,8 @@ export interface AgentEnvironment {
   cli: {
     /** `claude` is on PATH. */
     claudeCode: boolean
+    /** `codex` is on PATH. */
+    codex: boolean
   }
   project: {
     /** A `.claude/` directory exists at the project root. */
@@ -16,6 +18,8 @@ export interface AgentEnvironment {
     claudeMd: boolean
     /** A `.claude/skills/` directory exists at the project root. */
     claudeSkillsDir: boolean
+    /** An `AGENTS.md` file exists at the project root. */
+    agentsMd: boolean
   }
   /** Which editor is hosting the current terminal, if recognisable. */
   editor: Editor
@@ -58,9 +62,6 @@ function isDirectory(path: string): boolean {
 /**
  * Detect available coding agents and editor context.
  *
- * Phase 1 only surfaces Claude Code. The shape leaves room for `codex`,
- * `gemini`, `cursor` etc. in later phases without changing call sites.
- *
  * `cwd` and `env` are injected so tests can mock them; production callers can
  * use the no-arg form.
  */
@@ -71,11 +72,13 @@ export function detectAgents(
   return {
     cli: {
       claudeCode: isOnPath('claude'),
+      codex: isOnPath('codex'),
     },
     project: {
       claudeDir: isDirectory(resolve(cwd, '.claude')),
       claudeMd: existsSync(resolve(cwd, 'CLAUDE.md')),
       claudeSkillsDir: isDirectory(resolve(cwd, '.claude', 'skills')),
+      agentsMd: existsSync(resolve(cwd, 'AGENTS.md')),
     },
     editor: detectEditor(env),
   }
