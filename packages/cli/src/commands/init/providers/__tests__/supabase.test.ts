@@ -16,7 +16,7 @@ describe('createSupabaseProvider getNextSteps', () => {
     expect(steps[0]).toBe(
       'Install EQL: bunx stash db install --supabase (prompts for migration vs direct)',
     )
-    expect(steps[2]).toContain('bunx @cipherstash/wizard') // wizard step is third
+    expect(steps[2]).toContain('bunx stash wizard') // wizard step is third
     for (const s of steps) expect(s).not.toMatch(/\bnpx\b/)
   })
 
@@ -32,7 +32,7 @@ describe('createSupabaseProvider getNextSteps', () => {
     expect(steps[0]).toBe(
       'Install EQL: yarn dlx stash db install --supabase (prompts for migration vs direct)',
     )
-    expect(steps[2]).toContain('yarn dlx @cipherstash/wizard')
+    expect(steps[2]).toContain('yarn dlx stash wizard')
     // Sanity: the supabase CLI commands stay untouched.
     expect(steps.join('\n')).toContain('supabase db reset')
     expect(steps.join('\n')).toContain('supabase migration up')

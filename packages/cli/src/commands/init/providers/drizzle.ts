@@ -7,14 +7,13 @@ export function createDrizzleProvider(): InitProvider {
     introMessage: 'Setting up CipherStash for your Drizzle project...',
     getNextSteps(state: InitState, pm: PackageManager): string[] {
       const cli = runnerCommand(pm, 'stash')
-      const wizard = runnerCommand(pm, '@cipherstash/wizard')
       const steps = [`Set up your database: ${cli} db install --drizzle`]
 
       const manualEdit = state.clientFilePath
         ? `edit ${state.clientFilePath} directly`
         : 'edit your encryption schema directly'
       steps.push(
-        `Customize your schema: ${wizard} (AI-guided, automated) — or ${manualEdit}`,
+        `Customize your schema: ${cli} wizard (AI-guided, automated) — or ${manualEdit}`,
       )
 
       steps.push(

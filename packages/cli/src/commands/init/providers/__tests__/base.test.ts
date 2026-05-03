@@ -9,7 +9,7 @@ describe('createBaseProvider getNextSteps', () => {
     expect(steps[0]).toBe(
       'Set up your database: npx stash db install',
     )
-    expect(steps[1]).toContain('npx @cipherstash/wizard')
+    expect(steps[1]).toContain('npx stash wizard')
   })
 
   it('uses bunx when package manager is bun', () => {
@@ -17,7 +17,7 @@ describe('createBaseProvider getNextSteps', () => {
     expect(steps[0]).toBe(
       'Set up your database: bunx stash db install',
     )
-    expect(steps[1]).toContain('bunx @cipherstash/wizard')
+    expect(steps[1]).toContain('bunx stash wizard')
     // Sanity: the old hardcoded `npx` should be gone.
     for (const s of steps) expect(s).not.toMatch(/\bnpx\b/)
   })
@@ -27,7 +27,7 @@ describe('createBaseProvider getNextSteps', () => {
     expect(steps[0]).toBe(
       'Set up your database: pnpm dlx stash db install',
     )
-    expect(steps[1]).toContain('pnpm dlx @cipherstash/wizard')
+    expect(steps[1]).toContain('pnpm dlx stash wizard')
   })
 
   it('uses yarn dlx when package manager is yarn', () => {
