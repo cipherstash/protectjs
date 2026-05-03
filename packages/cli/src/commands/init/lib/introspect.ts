@@ -63,6 +63,10 @@ export async function introspectDatabase(
   try {
     await client.connect()
 
+    // Tables in the `eql_v2_` namespace are EQL's own configuration / state
+    // (e.g. `eql_v2_configuration`). Encrypting their columns would break EQL
+    // itself, so filter them out at the source — they never get offered as
+    // a choice in the picker.
     const { rows } = await client.query<{
       table_name: string
       column_name: string
@@ -75,6 +79,7 @@ export async function introspectDatabase(
         ON t.table_name = c.table_name AND t.table_schema = c.table_schema
       WHERE c.table_schema = 'public'
         AND t.table_type = 'BASE TABLE'
+        AND c.table_name NOT LIKE 'eql_v2_%'
       ORDER BY c.table_name, c.ordinal_position
     `)
 
@@ -99,7 +104,7 @@ export async function introspectDatabase(
   }
 }
 
-function allSearchOps(dataType: DataType): SearchOp[] {
+export function allSearchOps(dataType: DataType): SearchOp[] {
   const ops: SearchOp[] = ['equality', 'orderAndRange']
   if (dataType === 'string') {
     ops.push('freeTextSearch')
@@ -108,17 +113,99 @@ function allSearchOps(dataType: DataType): SearchOp[] {
 }
 
 /**
+ * Result of running the per-table picker.
+ *
+ *   schema  — user chose ≥1 column (or kept all-already-encrypted as-is)
+ *   skip    — user chose to skip this table; only offered when the user has
+ *             already configured at least one other table this run
+ *   cancel  — user hit Ctrl+C / Esc somewhere; caller should bail entirely
+ */
+export type SelectColumnsResult =
+  | { kind: 'schema'; schema: SchemaDef }
+  | { kind: 'skip' }
+  | { kind: 'cancel' }
+
+/**
+ * Build the final ColumnDef[] for a table by merging:
+ *  - columns already typed `eql_v2_encrypted` in the DB (always included —
+ *    they're already encrypted, dropping them would silently lose data)
+ *  - the columns the user picked in the multiselect
+ *
+ * Output order matches the source table's column order so the generated
+ * client file reads top-to-bottom against the schema. Pure for testing.
+ */
+export function buildColumnDefs(
+  table: DbTable,
+  pickedColumnNames: string[],
+  searchable: boolean,
+): ColumnDef[] {
+  const picked = new Set(pickedColumnNames)
+  return table.columns
+    .filter((c) => c.isEqlEncrypted || picked.has(c.columnName))
+    .map((dbCol) => {
+      const dataType = pgTypeToDataType(dbCol.udtName)
+      return {
+        name: dbCol.columnName,
+        dataType,
+        searchOps: searchable ? allSearchOps(dataType) : [],
+      }
+    })
+}
+
+/**
+ * Format a list of column names like "a, b, c" or "a, b, and c" — small
+ * helper so summaries read naturally in CLI prompts.
+ */
+export function joinNames(names: string[]): string {
+  if (names.length === 1) return names[0]
+  if (names.length === 2) return `${names[0]} and ${names[1]}`
+  return `${names.slice(0, -1).join(', ')}, and ${names[names.length - 1]}`
+}
+
+/** "1 column" / "3 columns" — used in several user-facing summaries. */
+function plural(count: number): string {
+  return count === 1 ? '' : 's'
+}
+
+/**
+ * Prompt for searchable-encryption + emit the success log + build the
+ * final ColumnDef[]. Shared between the all-already-encrypted branch and
+ * the user-pick branch — both end the same way.
+ */
+async function finalizePicks(
+  table: DbTable,
+  picked: string[],
+): Promise<SelectColumnsResult> {
+  const searchable = await p.confirm({
+    message:
+      'Enable searchable encryption on these columns? (you can fine-tune indexes later)',
+    initialValue: true,
+  })
+  if (p.isCancel(searchable)) return { kind: 'cancel' }
+  const columns = buildColumnDefs(table, picked, searchable)
+  p.log.success(
+    `Schema defined: ${table.tableName} with ${columns.length} encrypted column${plural(columns.length)}`,
+  )
+  return { kind: 'schema', schema: { tableName: table.tableName, columns } }
+}
+
+/**
  * Interactive multi-select: which columns in which table should be encrypted?
  *
- * Returns `undefined` if the user cancels at any prompt — callers should
- * propagate the cancellation rather than treating it as "no columns selected".
+ * `priorCount` is how many tables the user has already configured this run.
+ * It's used to decide whether to offer "skip this table" as a recovery
+ * option when the user submits the multiselect with no columns checked —
+ * skipping is only sensible when they've already picked something elsewhere.
  *
- * Pre-selects columns that are already `eql_v2_encrypted` so re-running on a
- * partially encrypted DB is a no-op by default.
+ * Pre-encrypted columns (Postgres type `eql_v2_encrypted`) are *not*
+ * displayed in the multiselect; they're shown above it as a "will be kept"
+ * note and merged back into the schema. Clack doesn't support disabled rows,
+ * so this is the closest we get to "displayed but not toggleable".
  */
 export async function selectTableColumns(
   tables: DbTable[],
-): Promise<SchemaDef | undefined> {
+  priorCount = 0,
+): Promise<SelectColumnsResult> {
   const selectedTable = await p.select({
     message: 'Which table do you want to encrypt columns in?',
     options: tables.map((t) => {
@@ -126,61 +213,79 @@ export async function selectTableColumns(
       const hint =
         eqlCount > 0
           ? `${t.columns.length} columns, ${eqlCount} already encrypted`
-          : `${t.columns.length} column${t.columns.length !== 1 ? 's' : ''}`
+          : `${t.columns.length} column${plural(t.columns.length)}`
       return { value: t.tableName, label: t.tableName, hint }
     }),
   })
 
-  if (p.isCancel(selectedTable)) return undefined
+  if (p.isCancel(selectedTable)) return { kind: 'cancel' }
 
   const table = tables.find((t) => t.tableName === selectedTable)
-  if (!table) return undefined
+  if (!table) return { kind: 'cancel' }
 
   const eqlColumns = table.columns.filter((c) => c.isEqlEncrypted)
+  const pickable = table.columns.filter((c) => !c.isEqlEncrypted)
 
   if (eqlColumns.length > 0) {
     p.log.info(
-      `Detected ${eqlColumns.length} column${eqlColumns.length !== 1 ? 's' : ''} with eql_v2_encrypted type — pre-selected for you.`,
+      `Already encrypted (will be kept as-is): ${joinNames(
+        eqlColumns.map((c) => c.columnName),
+      )}`,
     )
   }
 
-  const selectedColumns = await p.multiselect({
-    message: `Which columns in "${selectedTable}" should be in the encryption schema?`,
-    options: table.columns.map((col) => ({
-      value: col.columnName,
-      label: col.columnName,
-      hint: col.isEqlEncrypted ? 'eql_v2_encrypted' : col.dataType,
-    })),
-    required: true,
-    initialValues: eqlColumns.map((c) => c.columnName),
-  })
+  // Edge case: every column in the table is already encrypted. Nothing to
+  // pick — just confirm the user wants to record this table verbatim.
+  if (pickable.length === 0) {
+    const keep = await p.confirm({
+      message: `All columns in "${selectedTable}" are already encrypted. Keep as-is?`,
+      initialValue: true,
+    })
+    if (p.isCancel(keep)) return { kind: 'cancel' }
+    if (!keep) return { kind: 'skip' }
+    return finalizePicks(table, [])
+  }
 
-  if (p.isCancel(selectedColumns)) return undefined
+  // Loop until the user either picks ≥1 column and confirms, or chooses to
+  // skip the table (only allowed when they've already configured another).
+  while (true) {
+    const picked = await p.multiselect({
+      message: `Which columns in "${selectedTable}" should be encrypted? (space to toggle, enter to confirm)`,
+      options: pickable.map((col) => ({
+        value: col.columnName,
+        label: col.columnName,
+        hint: col.dataType,
+      })),
+      required: false,
+    })
 
-  const searchable = await p.confirm({
-    message:
-      'Enable searchable encryption on these columns? (you can fine-tune indexes later)',
-    initialValue: true,
-  })
+    if (p.isCancel(picked)) return { kind: 'cancel' }
 
-  if (p.isCancel(searchable)) return undefined
-
-  const columns: ColumnDef[] = selectedColumns.map((colName) => {
-    const dbCol = table.columns.find((c) => c.columnName === colName)
-    if (!dbCol) {
-      // Unreachable — multiselect only emits values from the source array.
-      throw new Error(`Column ${colName} not found in table ${selectedTable}`)
+    if (picked.length === 0) {
+      if (priorCount === 0) {
+        p.log.warn(
+          'You need to encrypt at least one column. Use space to toggle a column, enter to confirm.',
+        )
+        continue
+      }
+      const skip = await p.confirm({
+        message: `Skip encryption for the "${selectedTable}" table?`,
+        initialValue: true,
+      })
+      if (p.isCancel(skip)) return { kind: 'cancel' }
+      if (skip) return { kind: 'skip' }
+      continue
     }
-    const dataType = pgTypeToDataType(dbCol.udtName)
-    const searchOps = searchable ? allSearchOps(dataType) : []
-    return { name: colName, dataType, searchOps }
-  })
 
-  p.log.success(
-    `Schema defined: ${selectedTable} with ${columns.length} encrypted column${columns.length !== 1 ? 's' : ''}`,
-  )
+    const proceed = await p.confirm({
+      message: `Encrypt ${picked.length} column${plural(picked.length)} in "${selectedTable}" (${joinNames(picked as string[])})?`,
+      initialValue: true,
+    })
+    if (p.isCancel(proceed)) return { kind: 'cancel' }
+    if (!proceed) continue
 
-  return { tableName: selectedTable, columns }
+    return finalizePicks(table, picked as string[])
+  }
 }
 
 /**
@@ -215,7 +320,7 @@ export async function buildSchemasFromDatabase(
   }
 
   s.stop(
-    `Found ${tables.length} table${tables.length !== 1 ? 's' : ''} in the public schema.`,
+    `Found ${tables.length} table${plural(tables.length)} in the public schema.`,
   )
 
   const schemas: SchemaDef[] = []
@@ -228,11 +333,14 @@ export async function buildSchemasFromDatabase(
     const remaining = tables.filter((t) => !alreadySelected.has(t.tableName))
     if (remaining.length === 0) break
 
-    const schema = await selectTableColumns(remaining)
-    if (!schema) return undefined
-
-    alreadySelected.add(schema.tableName)
-    schemas.push(schema)
+    const result = await selectTableColumns(remaining, schemas.length)
+    if (result.kind === 'cancel') return undefined
+    if (result.kind === 'schema') {
+      alreadySelected.add(result.schema.tableName)
+      schemas.push(result.schema)
+    }
+    // 'skip' just falls through to the "another table?" prompt without
+    // adding anything — the user already had another configured.
 
     // No tables left after this one — skip the redundant "another?" prompt.
     if (alreadySelected.size === tables.length) break
@@ -245,6 +353,8 @@ export async function buildSchemasFromDatabase(
     if (p.isCancel(addMore)) return undefined
     if (!addMore) break
   }
+
+  if (schemas.length === 0) return undefined
 
   return schemas
 }
