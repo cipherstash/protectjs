@@ -87,4 +87,25 @@ describe('renderSetupPrompt', () => {
     expect(agents).not.toContain('.claude/skills/')
     expect(agents).not.toContain('.codex/skills/')
   })
+
+  it('falls back to a generic pointer when no skills were installed', () => {
+    // Defensive case — when bundled skills are missing, installSkills
+    // returns []. The rules pointer must not emit "the  skills loaded
+    // into …" (double space, no names).
+    const claude = renderSetupPrompt({
+      ...baseCtx,
+      handoff: 'claude-code',
+      installedSkills: [],
+    })
+    const codex = renderSetupPrompt({
+      ...baseCtx,
+      handoff: 'codex',
+      installedSkills: [],
+    })
+
+    expect(claude).not.toMatch(/the {2,}skill/)
+    expect(claude).toContain('.claude/skills/')
+    expect(codex).not.toMatch(/the {2,}skill/)
+    expect(codex).toContain('.codex/skills/')
+  })
 })

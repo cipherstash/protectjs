@@ -99,13 +99,22 @@ function rulesPointer(
   handoff: HandoffChoice,
   installedSkills: string[],
 ): string {
-  const skillNames = installedSkills.length
-    ? installedSkills.map((s) => `\`${s}\``).join(', ')
-    : ''
+  // Empty `installedSkills` means the bundled skills were missing at install
+  // time (`installSkills` warned and returned []). Avoid emitting the broken
+  // "the  skills loaded into …" string by falling back to a generic
+  // pointer that doesn't try to enumerate.
   if (handoff === 'claude-code') {
+    if (installedSkills.length === 0) {
+      return 'the installed skills under `.claude/skills/`'
+    }
+    const skillNames = installedSkills.map((s) => `\`${s}\``).join(', ')
     return `the ${skillNames} skill${installedSkills.length !== 1 ? 's' : ''} loaded into \`.claude/skills/\``
   }
   if (handoff === 'codex') {
+    if (installedSkills.length === 0) {
+      return '`AGENTS.md` (durable rules) + the installed skills under `.codex/skills/`'
+    }
+    const skillNames = installedSkills.map((s) => `\`${s}\``).join(', ')
     return `\`AGENTS.md\` (durable rules) + the ${skillNames} skill${installedSkills.length !== 1 ? 's' : ''} loaded into \`.codex/skills/\``
   }
   return 'the `AGENTS.md` at the project root'

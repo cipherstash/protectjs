@@ -52,7 +52,14 @@ export function pgTypeToDataType(udtName: string): DataType {
 export async function introspectDatabase(
   databaseUrl: string,
 ): Promise<DbTable[]> {
-  const client = new pg.Client({ connectionString: databaseUrl })
+  // pg.Client defaults `connectionTimeoutMillis` to "no timeout"; without
+  // this, an unreachable / firewalled database silently hangs the spinner
+  // until the user kills the process. 10 s is generous for healthy hosts
+  // and short enough to surface a real failure quickly.
+  const client = new pg.Client({
+    connectionString: databaseUrl,
+    connectionTimeoutMillis: 10_000,
+  })
   try {
     await client.connect()
 
@@ -212,12 +219,23 @@ export async function buildSchemasFromDatabase(
   )
 
   const schemas: SchemaDef[] = []
+  // Track names already configured this run so we never offer the same
+  // table twice — picking it again would push a duplicate `SchemaDef` and
+  // emit duplicate encrypted-column declarations downstream.
+  const alreadySelected = new Set<string>()
 
   while (true) {
-    const schema = await selectTableColumns(tables)
+    const remaining = tables.filter((t) => !alreadySelected.has(t.tableName))
+    if (remaining.length === 0) break
+
+    const schema = await selectTableColumns(remaining)
     if (!schema) return undefined
 
+    alreadySelected.add(schema.tableName)
     schemas.push(schema)
+
+    // No tables left after this one — skip the redundant "another?" prompt.
+    if (alreadySelected.size === tables.length) break
 
     const addMore = await p.confirm({
       message: 'Encrypt columns in another table?',

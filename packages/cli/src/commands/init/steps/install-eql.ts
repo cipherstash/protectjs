@@ -70,9 +70,13 @@ export const installEqlStep: InitStep = {
         drizzle: drizzle || undefined,
         databaseUrl: state.databaseUrl,
       })
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err)
-      p.log.error(`EQL install failed: ${message}`)
+    } catch {
+      // Don't echo the underlying error — Postgres client errors routinely
+      // include the connection string (with credentials) in the message,
+      // and `state.databaseUrl` flows into this code path.
+      p.log.error(
+        'EQL install failed — check your database connection and try again.',
+      )
       p.note('Re-run with: stash db install', 'You can retry manually')
       return { ...state, eqlInstalled: false }
     }

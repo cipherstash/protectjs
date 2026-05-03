@@ -17,10 +17,10 @@ npx stash init          # scaffold, introspect, install EQL, hand off to your ag
 
 `stash init` runs the whole setup as one flow: authenticate, resolve `DATABASE_URL`, introspect your database and let you pick which columns to encrypt, install dependencies, install the EQL extension, and finish by handing off to your local coding agent. At the end it presents a four-option menu:
 
-- **Hand off to Claude Code** — installs a project-local skill at `.claude/skills/cipherstash-setup/SKILL.md`, then launches `claude` interactively.
-- **Hand off to Codex** — writes `AGENTS.md` at the project root, then launches `codex`.
+- **Hand off to Claude Code** — copies the per-integration set of skills (`stash-encryption`, `stash-<integration>`, `stash-cli`) into `.claude/skills/`, writes `.cipherstash/context.json` and `setup-prompt.md`, then launches `claude` interactively.
+- **Hand off to Codex** — copies the same skills into `.codex/skills/`, writes a sentinel-managed `AGENTS.md` (durable doctrine), plus `.cipherstash/` context files, then launches `codex`.
 - **Use the CipherStash Agent** — runs the in-house wizard (`@cipherstash/wizard`).
-- **Write AGENTS.md** — writes the rules file and stops, for Cursor / Windsurf / Cline / any AGENTS.md-aware tool.
+- **Write AGENTS.md** — for editor agents (Cursor / Windsurf / Cline) that don't auto-load skill directories. Writes a single `AGENTS.md` with the doctrine *plus* the relevant skill content inlined under a sentinel block, and stops.
 
 A project-specific action plan is written to `.cipherstash/setup-prompt.md` regardless of which option you pick — it tells the agent exactly what's already done and what's left, with the right commands for your package manager and ORM. The matching context (selected columns, env keys, paths, versions) is at `.cipherstash/context.json`.
 

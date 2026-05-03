@@ -94,12 +94,16 @@ function stripFrontmatter(body: string): string {
 function readDoctrine(): string | undefined {
   const here = currentDir()
   const candidates = [
+    // Layout-preserving: same directory as the compiled lib file.
     join(here, 'doctrine', 'AGENTS-doctrine.md'),
+    // Dev / preserved-layout build: sibling of `lib/`.
     join(here, '..', 'doctrine', 'AGENTS-doctrine.md'),
-    // Dev: running from `packages/cli/src/commands/init/lib/` — sibling dir.
-    join(here, '..', 'doctrine', 'AGENTS-doctrine.md'),
-    // Prod: dist may flatten or preserve layout.
+    // Prod with shallow flattening (e.g. tsup chunk dir).
     join(here, '..', '..', 'doctrine', 'AGENTS-doctrine.md'),
+    // Prod with deeper flattening — `dist/bin/` calling back into init.
+    join(here, '..', '..', '..', 'doctrine', 'AGENTS-doctrine.md'),
+    // Final fallback: walk further up. Costs ~1ms of stat calls; harmless.
+    join(here, '..', '..', '..', '..', 'doctrine', 'AGENTS-doctrine.md'),
   ]
   for (const candidate of candidates) {
     if (existsSync(candidate)) return readFileSync(resolve(candidate), 'utf-8')
