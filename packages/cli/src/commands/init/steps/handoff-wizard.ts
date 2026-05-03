@@ -1,6 +1,5 @@
 import { resolve } from 'node:path'
 import * as p from '@clack/prompts'
-import { RULEBOOK_VERSION } from '../../../rulebook/index.js'
 import { runWizardSpawn } from '../../wizard/index.js'
 import {
   CONTEXT_REL_PATH,
@@ -18,8 +17,8 @@ import type { InitProvider, InitState, InitStep } from '../types.js'
  * the exit code surfaced rather than `process.exit`-ed so init can finish
  * its own outro and `next-steps` step.
  *
- * No SKILL.md / AGENTS.md is written here. The wizard renders its own
- * agent-side prompt from the gateway and doesn't read disk-bound rulebooks.
+ * No skills are installed here. The wizard fetches its own agent-side
+ * prompt from the gateway and runs its own `maybeInstallSkills` flow.
  */
 export const handoffWizardStep: InitStep = {
   id: 'handoff-wizard',
@@ -29,7 +28,7 @@ export const handoffWizardStep: InitStep = {
     const envKeys = state.envKeys ?? []
 
     const contextAbs = resolve(cwd, CONTEXT_REL_PATH)
-    const ctx = buildContextFile(state, RULEBOOK_VERSION)
+    const ctx = buildContextFile(state)
     ctx.envKeys = envKeys
     writeContextFile(contextAbs, ctx)
     p.log.success(`Wrote ${CONTEXT_REL_PATH}`)

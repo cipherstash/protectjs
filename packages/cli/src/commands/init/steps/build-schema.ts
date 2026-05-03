@@ -126,8 +126,8 @@ export const buildSchemaStep: InitStep = {
     }
 
     // Write a baseline `.cipherstash/context.json` immediately so it tracks
-    // the encryption client we just generated. Handoff steps refresh it later
-    // with the gateway-served rulebook version, but this guarantees the file
+    // the encryption client we just generated. Handoff steps refresh it
+    // later with the list of installed skills, but this guarantees the file
     // is consistent with the client even if init aborts before the handoff
     // (e.g. install-eql failure, Ctrl+C). Without this, an agent reading a
     // stale context.json from a previous run would happily believe it.

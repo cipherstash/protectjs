@@ -1,11 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import {
-  RULEBOOK_VERSION,
-  type SetupPromptContext,
-  renderSetupPrompt,
-} from '../../../rulebook/index.js'
 import type {
   HandoffChoice,
   InitState,
@@ -17,13 +12,12 @@ import {
   detectPackageManager,
   prodInstallCommand,
 } from '../utils.js'
-import { upsertManagedBlock } from './sentinel-upsert.js'
+import { type SetupPromptContext, renderSetupPrompt } from './setup-prompt.js'
 
 export const CONTEXT_REL_PATH = '.cipherstash/context.json'
 export const SETUP_PROMPT_REL_PATH = '.cipherstash/setup-prompt.md'
 
 export interface ContextFile {
-  rulebookVersion: string
   cliVersion: string
   integration: Integration
   encryptionClientPath: string
@@ -34,6 +28,11 @@ export interface ContextFile {
    *  generated client file is still authoritative for column types and ops;
    *  this lets agents see the full set without parsing TypeScript. */
   schemas: SchemaDef[]
+  /** Names of skills `stash init` copied into the project (e.g.
+   *  `stash-encryption`, `stash-drizzle`, `stash-cli`). Empty for the
+   *  AGENTS.md handoff (skill content is inlined into AGENTS.md instead)
+   *  and for wizard (the wizard installs its own). */
+  installedSkills: string[]
   generatedAt: string
 }
 
@@ -69,27 +68,11 @@ function ensureDir(path: string): void {
 }
 
 /**
- * Write a project artifact (SKILL.md / AGENTS.md / etc.) using the
- * managed-block upsert util so re-runs replace only our region.
+ * Build the universal `.cipherstash/context.json` from `InitState`. Throws
+ * on a missing schema — the build-schema step is required to have run
+ * before any handoff fires.
  */
-export function writeArtifact(absPath: string, body: string): void {
-  const existing = existsSync(absPath)
-    ? readFileSync(absPath, 'utf-8')
-    : undefined
-  const next = upsertManagedBlock({ existing, managed: body })
-  ensureDir(absPath)
-  writeFileSync(absPath, next, 'utf-8')
-}
-
-/**
- * Build the universal `.cipherstash/context.json` from `InitState` plus the
- * resolved rulebook version. Throws on a missing schema — the build-schema
- * step is required to have run before any handoff fires.
- */
-export function buildContextFile(
-  state: InitState,
-  rulebookVersion: string,
-): ContextFile {
+export function buildContextFile(state: InitState): ContextFile {
   const integration = state.integration ?? 'postgresql'
   const clientFilePath = state.clientFilePath ?? './src/encryption/index.ts'
   const schemas = state.schemas
@@ -102,7 +85,6 @@ export function buildContextFile(
 
   const pm = detectPackageManager()
   return {
-    rulebookVersion,
     cliVersion: readCliVersion(),
     integration,
     encryptionClientPath: clientFilePath,
@@ -110,6 +92,7 @@ export function buildContextFile(
     installCommand: prodInstallCommand(pm, '@cipherstash/stack'),
     envKeys: [],
     schemas,
+    installedSkills: [],
     generatedAt: new Date().toISOString(),
   }
 }
@@ -125,9 +108,8 @@ export function writeContextFile(absPath: string, ctx: ContextFile): void {
 
 /**
  * Write `.cipherstash/context.json` immediately after the encryption client
- * is generated, using the bundled rulebook version. Handoff steps refresh
- * it later with the gateway-served rulebook version (when reachable), but
- * having a baseline here means the file is always in sync with the
+ * is generated. Handoff steps refresh it later with the list of skills they
+ * installed; this baseline guarantees the file is always in sync with the
  * encryption client even if init aborts mid-flow.
  *
  * Without this baseline, a failed install-eql or a Ctrl+C between
@@ -141,7 +123,7 @@ export function writeBaselineContextFile(
 ): void {
   if (!state.schemas || state.schemas.length === 0) return
   const absPath = resolve(cwd, CONTEXT_REL_PATH)
-  const ctx = buildContextFile(state, RULEBOOK_VERSION)
+  const ctx = buildContextFile(state)
   ctx.envKeys = envKeys
   writeContextFile(absPath, ctx)
 }
@@ -154,6 +136,7 @@ export function writeBaselineContextFile(
 export function buildSetupPromptContext(
   state: InitState,
   handoff: HandoffChoice,
+  installedSkills: string[],
 ): SetupPromptContext | undefined {
   if (handoff === 'wizard') return undefined
   const integration = state.integration ?? 'postgresql'
@@ -168,6 +151,7 @@ export function buildSetupPromptContext(
     stackInstalled: state.stackInstalled ?? false,
     cliInstalled: state.cliInstalled ?? false,
     handoff,
+    installedSkills,
   }
 }
 

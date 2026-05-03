@@ -1,9 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
-  RULEBOOK_VERSION,
-  type SetupPromptContext,
-  renderSetupPrompt,
-} from '../index.js'
+import { type SetupPromptContext, renderSetupPrompt } from '../setup-prompt.js'
 
 const baseCtx: SetupPromptContext = {
   integration: 'drizzle',
@@ -14,14 +10,16 @@ const baseCtx: SetupPromptContext = {
   stackInstalled: false,
   cliInstalled: false,
   handoff: 'claude-code',
+  installedSkills: ['stash-encryption', 'stash-drizzle', 'stash-cli'],
 }
 
 describe('renderSetupPrompt', () => {
-  it('emits the rulebook version + integration in the header', () => {
+  it('emits integration + package manager in the header', () => {
     const out = renderSetupPrompt(baseCtx)
-    expect(out).toContain(`Rulebook version: ${RULEBOOK_VERSION}`)
     expect(out).toContain('Integration: drizzle')
     expect(out).toContain('Package manager: pnpm')
+    // The rulebook version line is gone — the rulebook package no longer exists.
+    expect(out).not.toMatch(/Rulebook version:/)
   })
 
   it('marks placeholder schema as a TODO when not from introspection', () => {
@@ -60,6 +58,7 @@ describe('renderSetupPrompt', () => {
     const out = renderSetupPrompt({
       ...baseCtx,
       integration: 'supabase',
+      installedSkills: ['stash-encryption', 'stash-supabase', 'stash-cli'],
     })
     expect(out).toContain('supabase migration new')
     expect(out).toContain('encryptedSupabase')
@@ -75,13 +74,17 @@ describe('renderSetupPrompt', () => {
     expect(yarn).toContain('yarn drizzle-kit generate')
   })
 
-  it('points claude-code handoffs at the skill, others at AGENTS.md', () => {
+  it('points each handoff at the right rule source', () => {
     const claude = renderSetupPrompt({ ...baseCtx, handoff: 'claude-code' })
     const codex = renderSetupPrompt({ ...baseCtx, handoff: 'codex' })
     const agents = renderSetupPrompt({ ...baseCtx, handoff: 'agents-md' })
 
-    expect(claude).toContain('cipherstash-setup` skill')
+    expect(claude).toContain('.claude/skills/')
+    expect(claude).toContain('`stash-encryption`')
     expect(codex).toContain('AGENTS.md')
+    expect(codex).toContain('.codex/skills/')
     expect(agents).toContain('AGENTS.md')
+    expect(agents).not.toContain('.claude/skills/')
+    expect(agents).not.toContain('.codex/skills/')
   })
 })

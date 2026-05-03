@@ -1,21 +1,18 @@
 import { spawn } from 'node:child_process'
 import { resolve } from 'node:path'
 import * as p from '@clack/prompts'
-import { CLAUDE_SKILL_NAME } from '../../../rulebook/index.js'
-import { fetchRulebook } from '../lib/fetch-rulebook.js'
+import { installSkills } from '../lib/install-skills.js'
 import {
   CONTEXT_REL_PATH,
   SETUP_PROMPT_REL_PATH,
   buildContextFile,
   buildSetupPromptContext,
-  readCliVersion,
-  writeArtifact,
   writeContextFile,
   writeSetupPrompt,
 } from '../lib/write-context.js'
 import type { InitProvider, InitState, InitStep } from '../types.js'
 
-const SKILL_REL_PATH = `.claude/skills/${CLAUDE_SKILL_NAME}/SKILL.md`
+const CLAUDE_SKILLS_DIR = '.claude/skills'
 
 const CLAUDE_INSTALL_URL =
   'https://docs.claude.com/en/docs/claude-code/quickstart'
@@ -41,13 +38,15 @@ function spawnClaude(prompt: string): Promise<number> {
 }
 
 /**
- * Hand off to Claude Code: install the project skill, write context.json
- * and setup-prompt.md, spawn `claude`. If `claude` is not on PATH we still
- * write the artifacts and print install + manual-launch instructions.
+ * Hand off to Claude Code: copy the per-integration set of skills into
+ * `.claude/skills/`, write `.cipherstash/context.json` and
+ * `.cipherstash/setup-prompt.md`, then spawn `claude`. If `claude` is not
+ * on PATH we still write the artifacts and print install + manual-launch
+ * instructions.
  *
- * The launch prompt points the agent at `setup-prompt.md` first — that's the
- * project-specific action plan. The skill body is the reusable rulebook and
- * is referenced from the prompt.
+ * The launch prompt points the agent at `setup-prompt.md` first — that's
+ * the project-specific action plan. Claude auto-loads the installed skills
+ * for the durable rules and API references.
  */
 export const handoffClaudeStep: InitStep = {
   id: 'handoff-claude',
@@ -55,39 +54,29 @@ export const handoffClaudeStep: InitStep = {
   async run(state: InitState, _provider: InitProvider): Promise<InitState> {
     const cwd = process.cwd()
     const integration = state.integration ?? 'postgresql'
-    const cliVersion = readCliVersion()
     const envKeys = state.envKeys ?? []
 
-    const rulebookSpinner = p.spinner()
-    rulebookSpinner.start('Fetching rulebook...')
-    const rulebook = await fetchRulebook({
-      integration,
-      agent: 'claude-code',
-      clientVersion: cliVersion,
-    })
-    rulebookSpinner.stop(
-      rulebook.source === 'gateway'
-        ? `Rulebook ${rulebook.rulebookVersion} fetched.`
-        : `Rulebook ${rulebook.rulebookVersion} (bundled — gateway unavailable).`,
-    )
-
-    const skillAbs = resolve(cwd, SKILL_REL_PATH)
-    writeArtifact(skillAbs, rulebook.body)
-    p.log.success(`Wrote ${SKILL_REL_PATH}`)
+    const installed = installSkills(cwd, CLAUDE_SKILLS_DIR, integration)
+    if (installed.length > 0) {
+      p.log.success(
+        `Installed ${installed.length} skill${installed.length !== 1 ? 's' : ''} into ${CLAUDE_SKILLS_DIR}/: ${installed.join(', ')}`,
+      )
+    }
 
     const contextAbs = resolve(cwd, CONTEXT_REL_PATH)
-    const ctx = buildContextFile(state, rulebook.rulebookVersion)
+    const ctx = buildContextFile(state)
     ctx.envKeys = envKeys
+    ctx.installedSkills = installed
     writeContextFile(contextAbs, ctx)
     p.log.success(`Wrote ${CONTEXT_REL_PATH}`)
 
-    const promptCtx = buildSetupPromptContext(state, 'claude-code')
+    const promptCtx = buildSetupPromptContext(state, 'claude-code', installed)
     if (promptCtx) {
       writeSetupPrompt(resolve(cwd, SETUP_PROMPT_REL_PATH), promptCtx)
       p.log.success(`Wrote ${SETUP_PROMPT_REL_PATH}`)
     }
 
-    const launchPrompt = `Read ${SETUP_PROMPT_REL_PATH} and complete the setup steps. The ${CLAUDE_SKILL_NAME} skill has the rules; ${CONTEXT_REL_PATH} has the project facts.`
+    const launchPrompt = `Read ${SETUP_PROMPT_REL_PATH} and complete the setup steps. The installed skills under ${CLAUDE_SKILLS_DIR}/ have the rules; ${CONTEXT_REL_PATH} has the project facts.`
 
     if (!state.agents?.cli.claudeCode) {
       p.note(

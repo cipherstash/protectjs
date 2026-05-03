@@ -1,12 +1,5 @@
-import type {
-  HandoffChoice,
-  Integration,
-} from '../../commands/init/types.js'
-import {
-  type PackageManager,
-  runnerCommand,
-} from '../../commands/init/utils.js'
-import { RULEBOOK_VERSION } from '../version.js'
+import type { HandoffChoice, Integration } from '../types.js'
+import { type PackageManager, runnerCommand } from '../utils.js'
 
 export interface SetupPromptContext {
   integration: Integration
@@ -19,6 +12,12 @@ export interface SetupPromptContext {
   /** Which handoff option the user picked. Lets us tailor wording (e.g. the
    *  Codex prompt names AGENTS.md, Claude names the skill). */
   handoff: HandoffChoice
+  /** Names of skills `stash init` copied into the project (e.g.
+   *  `stash-encryption`, `stash-drizzle`, `stash-cli`). The action prompt
+   *  names them so the agent knows which references to consult. Empty for
+   *  the `agents-md` handoff (no skills directory installed) and for
+   *  `wizard` (the wizard installs its own). */
+  installedSkills: string[]
 }
 
 interface MigrationCommands {
@@ -88,15 +87,40 @@ function todo(line: string): string {
 }
 
 /**
+ * Phrase the "where the rules live" pointer for each handoff target.
+ *
+ *   claude-code → skills loaded into `.claude/skills/`
+ *   codex       → AGENTS.md (durable doctrine) + skills in `.codex/skills/`
+ *   agents-md   → AGENTS.md only (Cursor / Windsurf / Cline don't load
+ *                 skill directories, so the rules are inlined there)
+ *   wizard      → handled separately; this prompt isn't written for wizard
+ */
+function rulesPointer(
+  handoff: HandoffChoice,
+  installedSkills: string[],
+): string {
+  const skillNames = installedSkills.length
+    ? installedSkills.map((s) => `\`${s}\``).join(', ')
+    : ''
+  if (handoff === 'claude-code') {
+    return `the ${skillNames} skill${installedSkills.length !== 1 ? 's' : ''} loaded into \`.claude/skills/\``
+  }
+  if (handoff === 'codex') {
+    return `\`AGENTS.md\` (durable rules) + the ${skillNames} skill${installedSkills.length !== 1 ? 's' : ''} loaded into \`.codex/skills/\``
+  }
+  return 'the `AGENTS.md` at the project root'
+}
+
+/**
  * Render the project-specific action prompt.
  *
  * This is the file the agent reads first — it tells them exactly what state
  * the project is in, what's already done, and what to do next, with concrete
- * paths and commands. The skill / AGENTS.md provides reusable rules; this
+ * paths and commands. The skills / AGENTS.md provide reusable rules; this
  * file is the imperative for *this run*.
  *
  * Structure: header → "what's done" checklist → "what's next" actionable list
- * → reference to the skill/AGENTS.md for the rules.
+ * → reference to the skills/AGENTS.md for the rules.
  */
 export function renderSetupPrompt(ctx: SetupPromptContext): string {
   const cli = runnerCommand(ctx.packageManager, 'stash')
@@ -140,7 +164,7 @@ export function renderSetupPrompt(ctx: SetupPromptContext): string {
   if (!ctx.schemaFromIntrospection) {
     next.push(
       todo(
-        `**Reshape the encryption client.** \`${ctx.encryptionClientPath}\` currently uses a placeholder \`users\` table with \`email\` and \`name\` columns. Read the user's existing schema (probably under \`src/db/\` or similar for ${ctx.integration}), decide which real tables and columns should be encrypted, and update the encryption client to match. Refer to the integration rules for the column types and constraints to use.`,
+        `**Reshape the encryption client.** \`${ctx.encryptionClientPath}\` currently uses a placeholder \`users\` table with \`email\` and \`name\` columns. Read the user's existing schema (probably under \`src/db/\` or similar for ${ctx.integration}), decide which real tables and columns should be encrypted, and update the encryption client to match. Refer to the skills for the column types and constraints to use.`,
       ),
     )
   }
@@ -156,7 +180,7 @@ export function renderSetupPrompt(ctx: SetupPromptContext): string {
   if (ctx.integration === 'supabase') {
     next.push(
       todo(
-        '**Wrap the Supabase client.** Find every call to `createClient` / `createServerClient` / `createBrowserClient` from `@supabase/supabase-js` or `@supabase/ssr`. Wrap each with `encryptedSupabase({ encryptionClient, supabaseClient })` from `@cipherstash/stack/supabase` (see the rulebook for the exact API).',
+        '**Wrap the Supabase client.** Find every call to `createClient` / `createServerClient` / `createBrowserClient` from `@supabase/supabase-js` or `@supabase/ssr`. Wrap each with `encryptedSupabase({ encryptionClient, supabaseClient })` from `@cipherstash/stack/supabase` (see the `stash-supabase` skill for the exact API).',
       ),
     )
   }
@@ -186,19 +210,13 @@ export function renderSetupPrompt(ctx: SetupPromptContext): string {
     ),
   )
 
-  const ruleSource =
-    ctx.handoff === 'claude-code'
-      ? 'the `cipherstash-setup` skill (already loaded — `.claude/skills/cipherstash-setup/SKILL.md`)'
-      : 'the `AGENTS.md` at the project root'
-
   return [
     '# CipherStash setup — action plan',
     '',
-    `Rulebook version: ${RULEBOOK_VERSION}`,
     `Integration: ${ctx.integration}`,
     `Package manager: ${ctx.packageManager}`,
     '',
-    `You are picking up a CipherStash setup that \`stash init\` has started. Read this file in full before touching anything. Project-specific facts live in \`.cipherstash/context.json\`. Reusable rules (column types, things never to touch, never-\`.notNull()\`-on-encrypted etc.) live in ${ruleSource}.`,
+    `You are picking up a CipherStash setup that \`stash init\` has started. Read this file in full before touching anything. Project-specific facts live in \`.cipherstash/context.json\`. Reusable rules (column types, things never to touch, never-\`.notNull()\`-on-encrypted etc.) live in ${rulesPointer(ctx.handoff, ctx.installedSkills)}.`,
     '',
     '## What `stash init` already did',
     '',
