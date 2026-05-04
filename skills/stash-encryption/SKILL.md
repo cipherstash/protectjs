@@ -551,6 +551,88 @@ CREATE TABLE users (
 );
 ```
 
+## Column Migration Lifecycle
+
+Adding a fresh encrypted column to a table you don't yet write to is the easy case — declare it in the schema, run the migration, start writing. The harder case is taking an **existing plaintext column with live data** and turning it into an encrypted one without dropping a write or returning the wrong value mid-cutover. CipherStash models that as a six-phase lifecycle:
+
+```
+schema-added → dual-writing → backfilling → backfilled → cut-over → dropped
+```
+
+| Phase | What's true | What changes here |
+|---|---|---|
+| `schema-added` | The encrypted twin column (`<col>_encrypted`) exists in the DB and is registered in `eql_v2_configuration`. The plaintext column is unchanged; the application still writes only plaintext. | A schema migration adds the column. |
+| `dual-writing` | Application code now writes both `<col>` (plaintext, unchanged) **and** `<col>_encrypted` (encrypted via the encryption client) on every insert/update. Reads still come from the plaintext column. | Persistence-layer code change. The CLI cannot detect this state; the user (or agent) declares the transition. |
+| `backfilling` | A backfill job is encrypting the existing plaintext rows into `<col>_encrypted`, in chunks, resumably. New rows continue to land in both columns from dual-writing. | The backfill engine in `@cipherstash/migrate` (driven by `stash encrypt backfill`). |
+| `backfilled` | Every row has a non-null `<col>_encrypted` value. Plaintext column still authoritative for reads. | Backfill completes, records the transition. |
+| `cut-over` | A single transaction renames `<col>` → `<col>_plaintext` and `<col>_encrypted` → `<col>` (`eql_v2.rename_encrypted_columns()`). Application reads of `<col>` now return decrypted ciphertext transparently — no app code change required for reads. | One DB transaction. |
+| `dropped` | `<col>_plaintext` is removed via a regular schema migration. The application stops writing to it (dual-writing logic is removed). | App-code change to remove dual-writes + a schema migration. |
+
+### State storage
+
+Three sources of truth, kept separate on purpose:
+
+- **`.cipherstash/migrations.json`** (repo) — *intent*. Which columns the developer wants to encrypt and at which phase, code-reviewable.
+- **`eql_v2_configuration`** (DB, EQL-managed) — *EQL intent*. Which columns are encrypted and with which indexes; drives the CipherStash Proxy.
+- **`cipherstash.cs_migrations`** (DB, CipherStash-managed) — *runtime state*. Append-only event log: phase transitions, backfill cursors, error rows. Latest row per `(table, column)` is the current state.
+
+`stash encrypt status` shows all three side-by-side and flags drift (e.g. EQL says registered, the physical `<col>_encrypted` column is missing).
+
+### CLI surface
+
+The `stash encrypt` command group drives each phase. See the `stash-cli` skill for full flag reference. Typical sequence for a single column:
+
+```bash
+# Phase 1 — schema-added
+# Add the encrypted twin via your normal migration tooling (drizzle-kit / supabase migrations / etc.)
+
+# Phase 2 — dual-writing
+stash encrypt advance --to dual-writing --table users --column email
+# (Edit the application code to write both columns. The CLI offers to spawn the
+#  agent picked at `stash init` time with a prompt tailored to your integration.)
+
+# Phase 3 — backfilling
+stash encrypt backfill --table users --column email
+# Resumable; checkpoints to cs_migrations after every chunk. SIGINT-safe.
+
+# Phase 4 — cut-over
+stash encrypt cutover --table users --column email
+# Single-transaction rename swap.
+
+# Phase 5 — dropped
+stash encrypt drop --table users --column email
+# Emits a migration file removing <col>_plaintext. Apply with your normal tooling.
+```
+
+### Library use
+
+Long-running backfills can also embed the engine directly without the CLI:
+
+```typescript
+import { runBackfill } from '@cipherstash/migrate'
+import { Encryption } from '@cipherstash/stack'
+
+const client = await Encryption({ schemas: [users] })
+
+await runBackfill({
+  table: 'users',
+  column: 'email',
+  client,
+  db,                  // postgres-js or drizzle connection
+  chunkSize: 1000,
+  signal: abortCtrl.signal,
+})
+```
+
+Useful when the backfill needs to run in a worker, on a schedule, or alongside an existing job runner.
+
+### Invariants the lifecycle preserves
+
+- **Reads never return the wrong value.** Until cut-over, reads come from the plaintext column. After cut-over, the same `SELECT email` returns the decrypted ciphertext via Proxy or the encryption client. There is no in-between.
+- **Writes never drop.** Dual-writing keeps both columns in sync until the cut-over moment. After cut-over, writes go to the encrypted column.
+- **Re-runs are safe.** Backfill is idempotent (`<col> IS NOT NULL AND <col>_encrypted IS NULL` guards every chunk). `cs_migrations` is append-only.
+- **Rollback is possible up to cut-over.** Until the rename happens, the plaintext column is authoritative; aborting just leaves the encrypted twin partially populated. After cut-over, rollback is a manual restore — the migration plan should treat cut-over as the one-way door.
+
 ## Migration from @cipherstash/protect
 
 | `@cipherstash/protect` | `@cipherstash/stack` | Import Path |

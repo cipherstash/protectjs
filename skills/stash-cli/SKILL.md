@@ -252,6 +252,75 @@ npx stash db migrate
 
 Not yet implemented — placeholder for future encrypt-config migration tooling.
 
+### `encrypt` — Migrate plaintext columns to encrypted, in phases
+
+The `encrypt` group orchestrates the column-encryption lifecycle:
+`schema-added → dual-writing → backfilling → backfilled → cut-over → dropped`.
+It drives the `@cipherstash/migrate` library, which records every transition in a `cipherstash.cs_migrations` table (installed by `stash db install`) and reads the user's intent from `.cipherstash/migrations.json`. See the `stash-encryption` skill for the lifecycle model itself; this section documents the CLI surface.
+
+The examples below use `npx stash`. Substitute `bunx`, `pnpm dlx`, or `yarn dlx` (or run `stash` directly when it's installed as a project dev dep — `stash init` sets that up).
+
+#### `encrypt status` — Show per-column phase, EQL state, and backfill progress
+
+```bash
+npx stash encrypt status
+npx stash encrypt status --table users
+```
+
+Reads three sources in parallel — the `migrations.json` manifest (intent), the live `eql_v2_configuration` row (EQL state), and the latest `cs_migrations` event per column (runtime state) — and renders a table per column with phase, indexes, progress, and any drift between intent and observed state.
+
+#### `encrypt plan` — Diff intent vs. observed state
+
+```bash
+npx stash encrypt plan
+```
+
+Like `status`, but explicitly lists what would change to reconcile observed state with `.cipherstash/migrations.json`. Read-only — does not mutate the DB or the manifest.
+
+#### `encrypt advance --to <phase>` — Record a phase transition
+
+```bash
+npx stash encrypt advance --to dual-writing --table users --column email
+npx stash encrypt advance --to backfilling  --table users --column email
+```
+
+Records that the user has moved a column to the named phase. Some phases (e.g. `dual-writing`) reflect application code state that the CLI can't safely auto-detect, so the user declares the transition explicitly. The command also surfaces a tailored prompt for editing the persistence code; if `.cipherstash/context.json` records a Claude / Codex handoff from `stash init`, it offers to spawn that agent with the prompt.
+
+#### `encrypt backfill` — Resumably encrypt plaintext into the encrypted column
+
+```bash
+npx stash encrypt backfill --table users --column email
+npx stash encrypt backfill --table users --column email --chunk-size 5000
+npx stash encrypt backfill --resume
+npx stash encrypt backfill --table users --column email --dry-run
+```
+
+Chunked, resumable, idempotent backfill. Walks the table in keyset-pagination order, encrypts each chunk via `bulkEncryptModels` from `@cipherstash/stack`, and writes a single `UPDATE ... FROM (VALUES ...)` per chunk inside a transaction that also checkpoints to `cs_migrations`. SIGINT/SIGTERM finishes the current chunk and exits cleanly; `--resume` picks up from the last checkpoint. The `<col> IS NOT NULL AND <col>_encrypted IS NULL` guard makes concurrent runners and re-runs safe — they converge.
+
+Flags:
+
+- `--table <name>` / `--column <name>` — required (or pass nothing to backfill every column the manifest marks `backfilling`).
+- `--chunk-size <n>` — default 1000. Lower for lock contention, raise for wide rows.
+- `--resume` — pick up from the last `backfill_checkpoint` event.
+- `--dry-run` — sample one chunk and print timings; no writes.
+- `--continue-on-error` — log row failures and keep going. Default is fail-fast.
+
+#### `encrypt cutover` — Rename swap encrypted → primary column
+
+```bash
+npx stash encrypt cutover --table users --column email
+```
+
+For columns in the `backfilled` phase, runs `eql_v2.rename_encrypted_columns()` in a single transaction (renames `<col>` → `<col>_plaintext` and `<col>_encrypted` → `<col>`) and, if a Proxy URL is configured, calls `eql_v2.reload_config()` over that connection so the Proxy picks up the new shape immediately. App reads of `<col>` now return decrypted ciphertext transparently — no app code change required for reads.
+
+#### `encrypt drop` — Generate a migration that removes the plaintext column
+
+```bash
+npx stash encrypt drop --table users --column email
+```
+
+For columns in the `cut_over` phase. Detects the user's migration tooling (Drizzle today; Prisma + raw-SQL planned) and emits a migration file containing `ALTER TABLE <table> DROP COLUMN <col>_plaintext;`. Does not apply the migration — the user reviews and runs their normal migrate command. Records the `dropped` event only after a follow-up `encrypt status` confirms the column is gone from `information_schema.columns`.
+
 ### `schema build` — Generate an encryption client from your database
 
 ```bash

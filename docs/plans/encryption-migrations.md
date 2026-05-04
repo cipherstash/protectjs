@@ -10,7 +10,7 @@ This plan adds a shared migration substrate — CLI + library — that walks eac
 schema-added → dual-writing → backfilling → backfilled → cut-over → dropped
 ```
 
-The same mechanism serves Stack and Proxy users. Phase 1 ships the status inspector and the backfill engine (the two pieces with no good existing workaround). The other phases get lightweight commands that mostly orchestrate existing EQL functions and delegate code changes to the rulebook/agent flow.
+The same mechanism serves Stack and Proxy users. Phase 1 ships the status inspector and the backfill engine (the two pieces with no good existing workaround). The other phases get lightweight commands that mostly orchestrate existing EQL functions and delegate the code changes (e.g. wiring dual-writes into the persistence layer) to the agent handoff that `stash init` set up — Claude / Codex / AGENTS.md, with the relevant skills already installed.
 
 ## Scope (Phase 1)
 
@@ -19,7 +19,7 @@ The same mechanism serves Stack and Proxy users. Phase 1 ships the status inspec
 3. A new `cs_migrations` table + small library (`@cipherstash/migrate` or co-located in `@cipherstash/stack`) that the CLI commands drive. Library is exported so users can embed backfill in their own workers/cron later without new infra.
 4. `.cipherstash/migrations.json` repo manifest = intent (desired columns + index set + target phase). `stash encrypt plan` diffs intent vs. observed state.
 5. Thin wrappers for the other phases so users can drive end-to-end from the CLI today, even if those phases are mostly pass-throughs:
-   - `stash encrypt advance --to dual-writing` — records user-declared transition into `cs_migrations` and reminds them what code change is needed. Delegates code changes to the agent-handoff rulebook (see `init-agent-handoff.md`).
+   - `stash encrypt advance --to dual-writing` — records user-declared transition into `cs_migrations` and reminds them what code change is needed. The actual edits are delegated to whichever agent the user picked at `stash init` time (Claude Code / Codex / AGENTS.md); the relevant skills (`stash-encryption`, integration-specific skill, `stash-cli`) have already been installed by init.
    - `stash encrypt cutover` — wraps `eql_v2.rename_encrypted_columns()` + `eql_v2.reload_config()` (via Proxy if present).
    - `stash encrypt drop` — emits a migration file that drops `<col>_plaintext`.
 
@@ -124,7 +124,7 @@ Drift flags:
 
 Records a user-declared transition. This is the honest path for phases where the tool can't safely detect the state (dual-writing is an app-code property, not a DB property):
 
-- `--to dual-writing`: insert `dual_writing` event; print a reminder + the relevant rulebook snippet for editing persistence code. Offer to invoke the agent handoff if configured.
+- `--to dual-writing`: insert `dual_writing` event; print a tailored prompt for editing the persistence code. When `.cipherstash/context.json` records a Claude / Codex handoff, offer to spawn that agent with the prompt; otherwise print the prompt for the user to paste into their editor agent. The integration skill installed by `stash init` (`stash-drizzle` / `stash-supabase` / etc.) is the source of truth for "what does dual-writing look like for this stack".
 - `--to backfilling`: insert event; effectively equivalent to starting `stash encrypt backfill` (and does so unless `--no-run`).
 
 ### 5. `stash encrypt cutover`
@@ -172,16 +172,16 @@ For columns in `cut_over` phase:
   - `src/manifest.ts` — read/write `.cipherstash/migrations.json`
   - `src/schema.sql` — `cs_migrations` DDL, installed by `db install` or an explicit `encrypt install` step
 - `stack/packages/cli/src/commands/db/install.ts` — extend to install `cs_migrations` schema alongside EQL
-- `stack/packages/cli/src/commands/wizard/lib/gather.ts` — reuse introspection for `status` (no changes needed, just an import)
+- `stack/packages/cli/src/commands/init/lib/introspect.ts` — `introspectDatabase` lives here post-#395; `status.ts` reuses it via direct import
 - `stack/packages/cli/src/config/` — extend `stash.config.ts` loader so backfill subprocess can dynamically import user's encryption client
 - `stack/packages/cli/package.json` — add `@cipherstash/migrate` dep
-- Rulebook partials (see `init-agent-handoff.md`) — **add** per-integration sections for "how to wire dual-write in your persistence layer" so the agent handoff can apply Phase 2 code changes consistently
+- Top-level skills (`/skills/stash-encryption/SKILL.md`, `/skills/stash-{drizzle,supabase}/SKILL.md`) — **add** sections on the migration lifecycle and per-integration dual-write patterns so the agent handoff that `stash init` set up can apply Phase 2 code changes consistently. The skills are the canonical guidance source for agents post-#395.
 
 ## Existing primitives to reuse (do not reinvent)
 
 - `@cipherstash/stack` `bulkEncryptModels`, `bulkDecryptModels`, `encryptModel`, `decryptModel` (at `packages/stack/src/encryption/operations/`). Bulk APIs do not chunk internally — our code chunks.
-- `introspectDatabase` in `packages/cli/src/commands/wizard/tools/wizard-tools.ts:150-191`.
-- `loadStashConfig` + dynamic encryption-client import (currently in `packages/cli/src/commands/wizard/lib/`) — lift into `@cipherstash/migrate` so both CLI and library users get it.
+- `introspectDatabase` in `packages/cli/src/commands/init/lib/introspect.ts` (moved here from the old wizard package as part of the #395 init handoff work).
+- `loadStashConfig` + dynamic encryption-client import lives at `packages/cli/src/config/`. Re-export from `@cipherstash/migrate` so library consumers don't need a hidden cross-package import.
 - `rewriteEncryptedAlterColumns` in `packages/cli/src/commands/db/rewrite-migrations.ts` — the phase-1 schema-add is already solved by drizzle-kit + this rewriter. The new commands **will not** re-solve it.
 - EQL functions (Postgres): `eql_v2.add_column`, `eql_v2.add_search_config`, `eql_v2.migrate_config`, `eql_v2.activate_config`, `eql_v2.rename_encrypted_columns`, `eql_v2.reload_config`, `eql_v2.count_encrypted_with_active_config`, `eql_v2.select_pending_columns`, `eql_v2.ready_for_encryption`.
 - `db push` in `packages/cli/src/commands/db/push.ts` — already handles writing to `eql_v2_configuration`; reuse the DAO.
