@@ -291,20 +291,22 @@ function resolveProviderOptions(
 }
 
 function printNextSteps(): void {
-  const pm = detectPackageManager()
   p.note(
     [
-      'Next steps:',
+      'Your project is set up. To encrypt your first column, pick the path',
+      'that fits and ask your agent (the one `stash init` handed off to,',
+      'or whichever agent you use):',
       '',
-      '  1. Wire up encrypt/decrypt with the wizard (AI-guided, automated):',
-      `       ${runnerCommand(pm, 'stash')} wizard`,
+      '  Migrate an existing populated column (preserves live data):',
+      '    Ask: "Use the stash lifecycle to encrypt <table>.<column>."',
       '',
-      '  2. Or use the client directly from @cipherstash/stack:',
-      "       import { Encryption } from '@cipherstash/stack'",
-      '       const client = await Encryption({ /* ... */ })',
-      '       await client.encryptModel(record, table).run()',
+      '  Add a new encrypted column from scratch (no plaintext predecessor):',
+      '    Ask: "Add an encrypted <column> to <table>."',
       '',
-      '  3. Docs: https://cipherstash.com/docs',
+      'The agent will edit your schema, generate the migration, wire the',
+      'application code, and run the relevant `stash encrypt` commands.',
+      'Reference: the stash-encryption / stash-cli skills (loaded in your',
+      "agent's workspace) and https://cipherstash.com/docs.",
     ].join('\n'),
     'What next',
   )
