@@ -41,8 +41,6 @@ jobs:
           echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> ./packages/protect/.env
           echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> ./packages/protect/.env
           echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> ./packages/protect/.env
-          echo "CS_ZEROKMS_HOST=https://ap-southeast-2.aws.zerokms.cipherstashmanaged.net" >> ./packages/protect/.env
-          echo "CS_CTS_HOST=https://ap-southeast-2.aws.cts.cipherstashmanaged.net" >> ./packages/protect/.env
 
       - name: Create .env file in ./packages/stack/
         run: |
@@ -54,8 +52,6 @@ jobs:
           echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> ./packages/stack/.env
           echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> ./packages/stack/.env
           echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> ./packages/stack/.env
-          echo "CS_ZEROKMS_HOST=https://ap-southeast-2.aws.zerokms.cipherstashmanaged.net" >> ./packages/stack/.env
-          echo "CS_CTS_HOST=https://ap-southeast-2.aws.cts.cipherstashmanaged.net" >> ./packages/stack/.env
 
       - name: Create .env file in ./packages/protect-dynamodb/
         run: |
@@ -64,8 +60,6 @@ jobs:
           echo "CS_CLIENT_ID=${{ secrets.CS_CLIENT_ID }}" >> ./packages/protect-dynamodb/.env
           echo "CS_CLIENT_KEY=${{ secrets.CS_CLIENT_KEY }}" >> ./packages/protect-dynamodb/.env
           echo "CS_CLIENT_ACCESS_KEY=${{ secrets.CS_CLIENT_ACCESS_KEY }}" >> ./packages/protect-dynamodb/.env
-          echo "CS_ZEROKMS_HOST=https://ap-southeast-2.aws.zerokms.cipherstashmanaged.net" >> ./packages/protect/.env
-          echo "CS_CTS_HOST=https://ap-southeast-2.aws.cts.cipherstashmanaged.net" >> ./packages/protect/.env
 
       - name: Create .env file in ./packages/drizzle/
         run: |
@@ -75,8 +69,6 @@ jobs:
           echo "CS_CLIENT_KEY=${{ secrets.CS_CLIENT_KEY }}" >> ./packages/drizzle/.env
           echo "CS_CLIENT_ACCESS_KEY=${{ secrets.CS_CLIENT_ACCESS_KEY }}" >> ./packages/drizzle/.env
           echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> ./packages/drizzle/.env
-          echo "CS_ZEROKMS_HOST=https://ap-southeast-2.aws.zerokms.cipherstashmanaged.net" >> ./packages/protect/.env
-          echo "CS_CTS_HOST=https://ap-southeast-2.aws.cts.cipherstashmanaged.net" >> ./packages/protect/.env
 
       # Run TurboRepo tests
       - name: Run tests
