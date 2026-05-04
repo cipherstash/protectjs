@@ -50,4 +50,19 @@ describe('lint-no-hardcoded-runners', () => {
     expect(r.output).toMatch(/multiline-offender\.ts:3/)
     expect(r.output).toMatch(/multiline-offender\.ts:4/)
   })
+
+  it('flags `Usage: npx ...` lines inside multi-line template literals', () => {
+    const r = run(fx('wizard-style.ts'))
+    expect(r.exitCode).toBe(1)
+    expect(r.output).toMatch(/wizard-style\.ts:4/)
+  })
+
+  it("flags hardcoded default params like `runner = 'npx'`", () => {
+    const r = run(fx('default-param.ts'))
+    expect(r.exitCode).toBe(1)
+  })
+
+  it('does not flag `npx` used as part of a JS identifier', () => {
+    expect(run(fx('identifier.ts')).exitCode).toBe(0)
+  })
 })

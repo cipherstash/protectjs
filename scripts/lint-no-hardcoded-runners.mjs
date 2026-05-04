@@ -9,6 +9,8 @@ const REPO_ROOT = resolve(import.meta.dirname, '..')
 const ALLOWLISTED_PATHS = new Set([
   'packages/wizard/src/lib/detect.ts',          // npm row of the PM table
   'packages/cli/src/commands/init/utils.ts',    // runnerCommand `case 'npm'`
+  'packages/protect/src/bin/runner.ts',         // Pre-allowlisted: helper for Task 11
+  'packages/drizzle/src/bin/runner.ts',         // Pre-allowlisted: helper for Task 13
   'scripts/lint-no-hardcoded-runners.mjs',      // this script's own docs
 ])
 
@@ -17,11 +19,15 @@ const TARGETS = process.argv.slice(2).length
   ? process.argv.slice(2)
   : ['packages']
 
-// A: same-line quoted literal — `'Usage: npx ...'` or backtick equivalents
-const NPX_INLINE = /['"`].*\bnpx\b/
-
-// B: indented `npx <something>` line — usually a template-literal continuation
-const NPX_INDENTED = /^\s*npx\s+\S/
+// Catches:
+//   - `'npx'` / `"npx"` / `` `npx `` — bare-quoted, e.g. `?? 'npx'` or `runner = 'npx'`
+//   - `Usage: npx @cipherstash/cli` and any string content where `npx`
+//     precedes a command (`npx ` followed by an id-like char `[@\w-]`),
+//     including continuation lines inside multi-line template literals.
+// `npx` as a JS identifier (e.g. `npxResult`, `let npx = 5`) is NOT matched
+// because the second alternative requires whitespace+id after the token, and
+// the first requires a surrounding quote.
+const NPX_TOKEN = /['"`]npx\b|(?:^|[^a-zA-Z0-9_$])npx\s+[@\w-]/
 
 async function* walk(dir) {
   const entries = await readdir(dir, { withFileTypes: true })
@@ -68,7 +74,7 @@ for (const target of TARGETS) {
     if (/\.(test|spec)\.(ts|tsx|mts|cts)$/.test(file)) continue
     const lines = readFileSync(file, 'utf8').split('\n')
     lines.forEach((line, idx) => {
-      const matches = NPX_INLINE.test(line) || NPX_INDENTED.test(line)
+      const matches = NPX_TOKEN.test(line)
       if (!matches) return
       if (isCommentLine(line)) return
       if (isAllowedFallback(line)) return
