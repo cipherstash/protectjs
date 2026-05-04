@@ -8,6 +8,7 @@ import {
   run,
 } from '@stricli/core'
 import { Stash } from '../stash/index.js'
+import { detectRunner } from './runner.js'
 
 // ANSI color codes for beautiful terminal output
 const colors = {
@@ -36,6 +37,10 @@ const style = {
   value: (text: string) => `${colors.bold}${text}${colors.reset}`,
   bullet: () => `${colors.green}•${colors.reset}`,
 }
+
+// Detect the package manager and build the CLI reference
+const runner = detectRunner()
+const cliRef = `${runner} stash`
 
 /**
  * Get configuration from environment variables
@@ -166,9 +171,9 @@ Store a secret value that will be encrypted locally before being sent to the Cip
 The secret is encrypted end-to-end, ensuring your plaintext never leaves your machine unencrypted.
 
 Examples:
-  npx stash secrets set --name DATABASE_URL --value "postgres://..." --environment production
-  npx stash secrets set -n DATABASE_URL -V "postgres://..." -e production
-  npx stash secrets set --name API_KEY --value "sk-123..." --environment staging
+  ${cliRef} secrets set --name DATABASE_URL --value "postgres://..." --environment production
+  ${cliRef} secrets set -n DATABASE_URL -V "postgres://..." -e production
+  ${cliRef} secrets set --name API_KEY --value "sk-123..." --environment staging
 		`.trim(),
   },
 })
@@ -221,9 +226,9 @@ Retrieve a secret from CipherStash and decrypt it locally. The secret value is d
 on your machine, ensuring end-to-end security.
 
 Examples:
-  npx stash secrets get --name DATABASE_URL --environment production
-  npx stash secrets get -n DATABASE_URL -e production
-  npx stash secrets get --name API_KEY --environment staging
+  ${cliRef} secrets get --name DATABASE_URL --environment production
+  ${cliRef} secrets get -n DATABASE_URL -e production
+  ${cliRef} secrets get --name API_KEY --environment staging
 		`.trim(),
   },
 })
@@ -305,9 +310,9 @@ List all secrets stored in the specified environment. Only secret names and meta
 are returned; values remain encrypted and are not displayed.
 
 Examples:
-  npx stash secrets list --environment production
-  npx stash secrets list -e production
-  npx stash secrets list --environment staging
+  ${cliRef} secrets list --environment production
+  ${cliRef} secrets list -e production
+  ${cliRef} secrets list --environment staging
 		`.trim(),
   },
 })
@@ -385,9 +390,9 @@ Permanently delete a secret from the specified environment. This action cannot b
 By default, you will be prompted for confirmation before deletion. Use --yes to skip the confirmation.
 
 Examples:
-  npx stash secrets delete --name DATABASE_URL --environment production
-  npx stash secrets delete -n DATABASE_URL -e production --yes
-  npx stash secrets delete --name API_KEY --environment staging -y
+  ${cliRef} secrets delete --name DATABASE_URL --environment production
+  ${cliRef} secrets delete -n DATABASE_URL -e production --yes
+  ${cliRef} secrets delete --name API_KEY --environment staging -y
 		`.trim(),
   },
 })
@@ -421,15 +426,15 @@ Environment Variables:
   CS_CLIENT_ACCESS_KEY      CipherStash client access key (required)
 
 Examples:
-  npx stash secrets set --name DATABASE_URL --value "postgres://..." --environment production
-  npx stash secrets set -n DATABASE_URL -V "postgres://..." -e production
-  npx stash secrets get --name DATABASE_URL --environment production
-  npx stash secrets get -n DATABASE_URL -e production
-  npx stash secrets list --environment production
-  npx stash secrets list -e production
-  npx stash secrets delete --name DATABASE_URL --environment production
-  npx stash secrets delete -n DATABASE_URL -e production --yes
-  npx stash secrets delete -n DATABASE_URL -e production -y
+  ${cliRef} secrets set --name DATABASE_URL --value "postgres://..." --environment production
+  ${cliRef} secrets set -n DATABASE_URL -V "postgres://..." -e production
+  ${cliRef} secrets get --name DATABASE_URL --environment production
+  ${cliRef} secrets get -n DATABASE_URL -e production
+  ${cliRef} secrets list --environment production
+  ${cliRef} secrets list -e production
+  ${cliRef} secrets delete --name DATABASE_URL --environment production
+  ${cliRef} secrets delete -n DATABASE_URL -e production --yes
+  ${cliRef} secrets delete -n DATABASE_URL -e production -y
 		`.trim(),
   },
 })
@@ -452,13 +457,13 @@ your machine unencrypted.
 
 Quick Start:
   1. Set required environment variables (CS_WORKSPACE_CRN, CS_CLIENT_ID, etc.)
-  2. Use 'npx stash secrets set' to store your first secret
-  3. Use 'npx stash secrets get' to retrieve secrets when needed
+  2. Use '${cliRef} secrets set' to store your first secret
+  3. Use '${cliRef} secrets get' to retrieve secrets when needed
 
 Commands:
   secrets  Manage encrypted secrets
 
-Run 'npx stash <command> --help' for more information about a command.
+Run '${cliRef} <command> --help' for more information about a command.
 		`.trim(),
   },
 })
