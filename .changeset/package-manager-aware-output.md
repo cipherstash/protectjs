@@ -1,5 +1,5 @@
 ---
-"@cipherstash/cli": patch
+"stash": patch
 "@cipherstash/wizard": patch
 "@cipherstash/protect": patch
 "@cipherstash/drizzle": patch
