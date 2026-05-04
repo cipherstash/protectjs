@@ -6,7 +6,6 @@
 	"author": "CipherStash <hello@cipherstash.com>",
 	"files": [
 		"dist",
-		"dist/sql",
 		"README.md",
 		"LICENSE",
 		"CHANGELOG.md"

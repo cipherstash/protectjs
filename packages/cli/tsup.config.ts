@@ -1,4 +1,4 @@
-import { cpSync } from 'node:fs'
+import { cpSync, existsSync } from 'node:fs'
 import { defineConfig } from 'tsup'
 
 export default defineConfig([
@@ -21,6 +21,20 @@ export default defineConfig([
     onSuccess: async () => {
       // Copy bundled SQL files into dist so they ship with the package
       cpSync('src/sql', 'dist/sql', { recursive: true })
+      // Skills live at the monorepo root and ship inside the CLI tarball so
+      // `stash init` can copy them into the user's `.claude/skills/` or
+      // `.codex/skills/` directory at handoff time. Mirror of
+      // packages/wizard/tsup.config.ts:24.
+      if (existsSync('../../skills')) {
+        cpSync('../../skills', 'dist/skills', { recursive: true })
+      }
+      // The AGENTS.md doctrine fragment is read at handoff time and
+      // wrapped in a sentinel block. The runtime resolver in
+      // src/commands/init/lib/build-agents-md.ts walks up looking for a
+      // sibling `doctrine/` dir, so mirror the source layout under dist.
+      cpSync('src/commands/init/doctrine', 'dist/commands/init/doctrine', {
+        recursive: true,
+      })
     },
   },
   {

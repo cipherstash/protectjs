@@ -4,8 +4,12 @@ import { createDrizzleProvider } from './providers/drizzle.js'
 import { createSupabaseProvider } from './providers/supabase.js'
 import { authenticateStep } from './steps/authenticate.js'
 import { buildSchemaStep } from './steps/build-schema.js'
-import { installForgeStep } from './steps/install-forge.js'
+import { gatherContextStep } from './steps/gather-context.js'
+import { howToProceedStep } from './steps/how-to-proceed.js'
+import { installDepsStep } from './steps/install-deps.js'
+import { installEqlStep } from './steps/install-eql.js'
 import { nextStepsStep } from './steps/next-steps.js'
+import { resolveDatabaseStep } from './steps/resolve-database.js'
 import type { InitProvider, InitState } from './types.js'
 import { CancelledError } from './types.js'
 
@@ -16,8 +20,12 @@ const PROVIDER_MAP: Record<string, () => InitProvider> = {
 
 const STEPS = [
   authenticateStep,
+  resolveDatabaseStep,
   buildSchemaStep,
-  installForgeStep,
+  installDepsStep,
+  installEqlStep,
+  gatherContextStep,
+  howToProceedStep,
   nextStepsStep,
 ]
 

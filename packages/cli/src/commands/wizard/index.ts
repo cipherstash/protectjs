@@ -28,20 +28,17 @@ function splitRunner(cmd: string): { bin: string; preArgs: string[] } {
 }
 
 /**
- * Thin wrapper around `@cipherstash/wizard`.
+ * Spawn `@cipherstash/wizard` and return its exit code.
  *
- * The wizard ships as its own package so the heavy agent SDK stays out of the
- * `stash` CLI bundle. This wrapper exists so users see one CLI surface
- * (`stash wizard`) instead of being told to remember a second tool name.
- *
- * On a cold cache (the wizard package isn't installed in the project) the
- * package manager will download it before running — that can take a few
- * seconds. We surface that explicitly so the user doesn't think the CLI is
- * hung. We don't show a spinner because the wizard itself uses clack and
- * needs an inherited TTY; intercepting child stdout would break the wizard's
- * own UI.
+ * The wizard ships as its own package so the heavy agent SDK stays out of
+ * the `stash` CLI bundle. Returning the exit code (rather than calling
+ * `process.exit`) lets callers decide whether to abort: the top-level
+ * `stash wizard` subcommand exits the process; the `init` handoff path
+ * keeps init alive so it can run its outro, log final state, etc.
  */
-export async function wizardCommand(passthroughArgs: string[]): Promise<void> {
+export async function runWizardSpawn(
+  passthroughArgs: string[],
+): Promise<number> {
   const pm = detectPackageManager()
   const runner = runnerCommand(pm, WIZARD_PACKAGE)
   const cached = isPackageInstalled(WIZARD_PACKAGE)
@@ -57,7 +54,7 @@ export async function wizardCommand(passthroughArgs: string[]): Promise<void> {
   const { bin, preArgs } = splitRunner(runner)
   const args = [...preArgs, ...passthroughArgs]
 
-  const exitCode = await new Promise<number>((resolvePromise) => {
+  return new Promise<number>((resolvePromise) => {
     const child = spawn(bin, args, { stdio: 'inherit', shell: false })
     child.on('close', (code) => resolvePromise(code ?? 0))
     child.on('error', (err) => {
@@ -65,7 +62,16 @@ export async function wizardCommand(passthroughArgs: string[]): Promise<void> {
       resolvePromise(127)
     })
   })
+}
 
+/**
+ * Top-level `stash wizard` subcommand. Spawns the wizard and exits with
+ * its exit code so users see the wizard's failure state directly. For the
+ * in-process `init` handoff that wants to preserve init's lifecycle, call
+ * `runWizardSpawn` instead.
+ */
+export async function wizardCommand(passthroughArgs: string[]): Promise<void> {
+  const exitCode = await runWizardSpawn(passthroughArgs)
   if (exitCode !== 0) {
     process.exit(exitCode)
   }
