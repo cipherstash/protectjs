@@ -23,7 +23,7 @@ export type MigrationEvent =
 
 /**
  * The per-column lifecycle phase as surfaced in status/plan output and
- * accepted by `stash encrypt advance --to <phase>`.
+ * driven by the `stash encrypt {backfill,cutover,drop}` commands.
  *
  * ```
  * schema-added  → the <col>_encrypted column exists and is registered with EQL

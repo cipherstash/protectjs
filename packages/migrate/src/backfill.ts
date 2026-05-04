@@ -198,6 +198,25 @@ export interface BackfillOptions {
    * callers can supply their own or leave undefined (identity).
    */
   transformPlaintext?: (value: unknown) => unknown
+  /**
+   * When true, encrypt every row whose plaintext is non-null — including
+   * rows that already have a ciphertext in {@link encryptedColumn}.
+   *
+   * The default backfill skips already-encrypted rows for idempotency.
+   * `force` is the recovery path for *drift*: rows where the ciphertext
+   * is out of sync with the plaintext because the application was
+   * updating the plaintext column without dual-writing the encrypted
+   * twin. The drifted ciphertext is overwritten by re-encrypting the
+   * current plaintext.
+   *
+   * Not destructive (overwriting a correctly-encrypted value with a
+   * fresh encryption of the same plaintext is wasted work, not data
+   * loss), but expensive: every row is re-encrypted even if it didn't
+   * need to be. The CLI also appends `details: { force: true }` to the
+   * `backfill_started` event so audit queries can spot the recovery
+   * runs in `cs_migrations` history.
+   */
+  force?: boolean
 }
 
 /**
@@ -279,11 +298,13 @@ export async function runBackfill(
   const chunkSize = options.chunkSize ?? 1000
   const { db, tableName, pkColumn, plaintextColumn, encryptedColumn } = options
 
+  const force = options.force ?? false
   const rowsTotal = await countUnencrypted(
     db,
     tableName,
     plaintextColumn,
     encryptedColumn,
+    force,
   )
 
   const last = await progress(db, tableName, plaintextColumn)
@@ -301,7 +322,7 @@ export async function runBackfill(
     cursorValue: resumeCursor,
     rowsProcessed: priorProcessed,
     rowsTotal: priorProcessed + rowsTotal,
-    details: { chunkSize, resumed },
+    details: { chunkSize, resumed, ...(force ? { force: true } : {}) },
   })
 
   let cursor = resumeCursor
@@ -321,6 +342,7 @@ export async function runBackfill(
         encryptedColumn,
         after: cursor,
         limit: chunkSize,
+        force,
       })
 
       if (page.rows.length === 0) {
@@ -371,6 +393,7 @@ export async function runBackfill(
           encryptedColumn,
           schemaColumnKey: options.schemaColumnKey,
           encryptedRows: encryptResult.data,
+          force,
         })
         rowsProcessed += page.rows.length
         cursor = page.lastPk
@@ -443,6 +466,11 @@ interface WriteChunkOptions {
   encryptedColumn: string
   schemaColumnKey: string
   encryptedRows: Array<Record<string, unknown>>
+  /**
+   * When true, drop the `t.<enc> IS NULL` clause so already-encrypted
+   * rows get overwritten. Mirrors the same flag in the SELECT side.
+   */
+  force?: boolean
 }
 
 async function writeEncryptedChunk(
@@ -468,11 +496,15 @@ async function writeEncryptedChunk(
     })
     .join(', ')
 
+  const where = opts.force
+    ? `t.${pk}::text = v.pk::text`
+    : `t.${pk}::text = v.pk::text AND t.${enc} IS NULL`
+
   const sql = `
     UPDATE ${table} AS t
     SET ${enc} = v.enc
     FROM (VALUES ${valuesSql}) AS v(pk, enc)
-    WHERE t.${pk}::text = v.pk::text AND t.${enc} IS NULL
+    WHERE ${where}
   `
 
   await db.query(sql, params)

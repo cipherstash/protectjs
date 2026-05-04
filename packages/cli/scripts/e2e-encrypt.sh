@@ -32,11 +32,8 @@ echo "==> 2. Seed 5000 plaintext users"
 psql "$DATABASE_URL" -f "$FIXTURES/seed-users.sql" >/dev/null
 psql "$DATABASE_URL" -c "ALTER TABLE users ADD COLUMN email_encrypted eql_v2_encrypted" >/dev/null
 
-echo "==> 3. Record dual-writing"
-"$STASH" encrypt advance --to dual-writing --table users --column email
-
-echo "==> 4. Backfill with interrupt/resume"
-"$STASH" encrypt backfill --table users --column email --chunk-size 500 &
+echo "==> 3. Backfill with interrupt/resume (dual-writes confirmed via flag for non-interactive run)"
+"$STASH" encrypt backfill --table users --column email --chunk-size 500 --confirm-dual-writes-deployed &
 PID=$!
 sleep 2
 kill -INT "$PID" || true
@@ -50,13 +47,13 @@ if [ "$REMAINING" != "0" ]; then
 fi
 echo "OK: all 5000 rows encrypted"
 
-echo "==> 5. Status"
+echo "==> 4. Status"
 "$STASH" encrypt status
 
-echo "==> 6. Cutover"
+echo "==> 5. Cutover"
 "$STASH" encrypt cutover --table users --column email
 
-echo "==> 7. Drop"
+echo "==> 6. Drop"
 "$STASH" encrypt drop --table users --column email --migrations-dir "$(pwd)/drizzle"
 
 echo "==> Done."

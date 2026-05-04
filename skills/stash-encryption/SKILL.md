@@ -586,14 +586,19 @@ The `stash encrypt` command group drives each phase. See the `stash-cli` skill f
 # Phase 1 — schema-added
 # Add the encrypted twin via your normal migration tooling (drizzle-kit / supabase migrations / etc.)
 
-# Phase 2 — dual-writing
-stash encrypt advance --to dual-writing --table users --column email
-# (Edit the application code to write both columns. The CLI offers to spawn the
-#  agent picked at `stash init` time with a prompt tailored to your integration.)
-
-# Phase 3 — backfilling
+# Phase 2 + 3 — dual-writing then backfilling, in one command
+# (First, edit the application code to write both columns and ship that deploy.
+#  Then run backfill — it will prompt to confirm dual-writes are live, append
+#  the `dual_writing` event, and run the chunked encryption loop.)
 stash encrypt backfill --table users --column email
+# In CI / non-interactive contexts, swap the prompt for the explicit flag:
+stash encrypt backfill --table users --column email --confirm-dual-writes-deployed
 # Resumable; checkpoints to cs_migrations after every chunk. SIGINT-safe.
+
+# Recovery — if dual-writes weren't actually live when backfill first ran,
+# rows inserted during the backfill landed in plaintext only and the encrypted
+# twin is stale. Re-run with --force to re-encrypt every row regardless.
+stash encrypt backfill --table users --column email --force
 
 # Phase 4 — cut-over
 stash encrypt cutover --table users --column email

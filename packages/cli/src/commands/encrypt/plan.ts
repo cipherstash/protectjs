@@ -35,7 +35,7 @@ export async function planCommand() {
         const current = state.get(key)
         if (!current) {
           actions.push(
-            `  + ${key}: no migration recorded; start with \`stash encrypt advance --to schema-added\``,
+            `  + ${key}: no migration recorded; add the encrypted column via your migration tooling, then run \`stash encrypt backfill --table ${tableName} --column ${column.column}\` once dual-writing is deployed`,
           )
           continue
         }

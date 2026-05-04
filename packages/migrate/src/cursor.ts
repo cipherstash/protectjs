@@ -26,6 +26,14 @@ export interface KeysetPageOptions {
   after: string | null
   /** Maximum rows returned per call. */
   limit: number
+  /**
+   * When true, drop the `<encrypted_col> IS NULL` guard so rows that
+   * already have ciphertext are re-emitted. Used by `stash encrypt
+   * backfill --force` to recover from drift (e.g. dual-writes weren't
+   * actually deployed when an earlier backfill ran). Off by default — the
+   * guard makes normal re-runs idempotent.
+   */
+  force?: boolean
 }
 
 /**
@@ -56,7 +64,9 @@ export async function fetchUnencryptedPage(
   const table = qualifyTable(opts.tableName)
 
   const params: unknown[] = []
-  let where = `${plain} IS NOT NULL AND ${enc} IS NULL`
+  let where = opts.force
+    ? `${plain} IS NOT NULL`
+    : `${plain} IS NOT NULL AND ${enc} IS NULL`
   if (opts.after !== null) {
     params.push(opts.after)
     where += ` AND ${pk} > $${params.length}`
@@ -86,18 +96,26 @@ export async function fetchUnencryptedPage(
  * `rowsTotal` for progress reporting; does not hold a snapshot, so new
  * rows inserted during the backfill are simply picked up on the next
  * chunk's SELECT.
+ *
+ * When `force` is true, drops the `encrypted IS NULL` guard — used by
+ * `--force` to count every plaintext row, including ones that already
+ * have a (potentially stale) ciphertext.
  */
 export async function countUnencrypted(
   client: ClientBase,
   tableName: string,
   plaintextColumn: string,
   encryptedColumn: string,
+  force = false,
 ): Promise<number> {
   const plain = quoteIdent(plaintextColumn)
   const enc = quoteIdent(encryptedColumn)
   const table = qualifyTable(tableName)
+  const where = force
+    ? `${plain} IS NOT NULL`
+    : `${plain} IS NOT NULL AND ${enc} IS NULL`
   const result = await client.query<{ count: string }>(
-    `SELECT count(*)::text AS count FROM ${table} WHERE ${plain} IS NOT NULL AND ${enc} IS NULL`,
+    `SELECT count(*)::text AS count FROM ${table} WHERE ${where}`,
   )
   return Number(result.rows[0]?.count ?? 0)
 }

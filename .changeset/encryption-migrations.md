@@ -1,5 +1,5 @@
 ---
-'@cipherstash/cli': minor
+'stash': minor
 '@cipherstash/migrate': minor
 ---
 
@@ -9,8 +9,7 @@ New CLI commands:
 
 - `stash encrypt status` — per-column migration status (phase, backfill progress, drift between intent and state, EQL registration).
 - `stash encrypt plan` — diff `.cipherstash/migrations.json` (intent) vs observed state.
-- `stash encrypt advance --to <phase> --table <t> --column <c>` — record a phase transition (`schema-added` / `dual-writing` / `backfilling` / `backfilled` / `cut-over` / `dropped`).
-- `stash encrypt backfill --table <t> --column <c>` — resumable, idempotent, chunked encryption of plaintext into `<col>_encrypted`. Uses the user's encryption client (Protect/Stack). SIGINT-safe; re-run to resume.
+- `stash encrypt backfill --table <t> --column <c>` — resumable, idempotent, chunked encryption of plaintext into `<col>_encrypted`. Uses the user's encryption client (Protect/Stack). SIGINT-safe; re-run to resume. The first run on a column prompts to confirm dual-writes are deployed (or accept `--confirm-dual-writes-deployed` for non-interactive contexts), records the `dual_writing` transition in `cs_migrations`, then runs the chunked encryption loop. `--force` re-encrypts every plaintext row regardless of current state — recovery path for drift caused by an earlier backfill running before dual-writes were actually live.
 - `stash encrypt cutover --table <t> --column <c>` — runs `eql_v2.rename_encrypted_columns()` inside a transaction; optionally forces Proxy config refresh via `CIPHERSTASH_PROXY_URL`. After cutover, apps reading `<col>` transparently receive the encrypted column.
 - `stash encrypt drop --table <t> --column <c>` — generates a migration file that drops the old plaintext column.
 

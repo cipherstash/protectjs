@@ -277,33 +277,28 @@ npx stash encrypt plan
 
 Like `status`, but explicitly lists what would change to reconcile observed state with `.cipherstash/migrations.json`. Read-only — does not mutate the DB or the manifest.
 
-#### `encrypt advance --to <phase>` — Record a phase transition
-
-```bash
-npx stash encrypt advance --to dual-writing --table users --column email
-npx stash encrypt advance --to backfilling  --table users --column email
-```
-
-Records that the user has moved a column to the named phase. Some phases (e.g. `dual-writing`) reflect application code state that the CLI can't safely auto-detect, so the user declares the transition explicitly. The command also surfaces a tailored prompt for editing the persistence code; if `.cipherstash/context.json` records a Claude / Codex handoff from `stash init`, it offers to spawn that agent with the prompt.
-
 #### `encrypt backfill` — Resumably encrypt plaintext into the encrypted column
 
 ```bash
 npx stash encrypt backfill --table users --column email
 npx stash encrypt backfill --table users --column email --chunk-size 5000
-npx stash encrypt backfill --resume
-npx stash encrypt backfill --table users --column email --dry-run
+npx stash encrypt backfill --table users --column email --confirm-dual-writes-deployed
+npx stash encrypt backfill --table users --column email --force
 ```
 
-Chunked, resumable, idempotent backfill. Walks the table in keyset-pagination order, encrypts each chunk via `bulkEncryptModels` from `@cipherstash/stack`, and writes a single `UPDATE ... FROM (VALUES ...)` per chunk inside a transaction that also checkpoints to `cs_migrations`. SIGINT/SIGTERM finishes the current chunk and exits cleanly; `--resume` picks up from the last checkpoint. The `<col> IS NOT NULL AND <col>_encrypted IS NULL` guard makes concurrent runners and re-runs safe — they converge.
+Chunked, resumable, idempotent backfill. Walks the table in keyset-pagination order, encrypts each chunk via `bulkEncryptModels` from `@cipherstash/stack`, and writes a single `UPDATE ... FROM (VALUES ...)` per chunk inside a transaction that also checkpoints to `cs_migrations`. SIGINT/SIGTERM finishes the current chunk and exits cleanly; re-running picks up from the last checkpoint. The `<col> IS NOT NULL AND <col>_encrypted IS NULL` guard makes concurrent runners and re-runs safe — they converge.
+
+**Dual-write precondition.** Backfill requires the application to already be writing to both `<col>` (plaintext) and `<col>_encrypted` (ciphertext) on every insert/update — otherwise rows inserted *during* the backfill land in plaintext only and create silent migration drift. The first run on a column prompts the user (interactive) or accepts `--confirm-dual-writes-deployed` (non-interactive, with a loud warning), then records the `dual_writing` transition in `cs_migrations`. Subsequent runs / resumes don't need the prompt — the bookmark is persisted.
 
 Flags:
 
-- `--table <name>` / `--column <name>` — required (or pass nothing to backfill every column the manifest marks `backfilling`).
+- `--table <name>` / `--column <name>` — required.
 - `--chunk-size <n>` — default 1000. Lower for lock contention, raise for wide rows.
-- `--resume` — pick up from the last `backfill_checkpoint` event.
-- `--dry-run` — sample one chunk and print timings; no writes.
-- `--continue-on-error` — log row failures and keep going. Default is fail-fast.
+- `--pk-column <name>` — override primary-key auto-detection. Required for composite PKs (pick one comparable column).
+- `--encrypted-column <name>` — override `<col>_encrypted` if your schema uses a non-standard target name.
+- `--schema-column-key <key>` — override the key used to look up the column in the `EncryptedTable` schema; defaults to the encrypted column name.
+- `--confirm-dual-writes-deployed` — non-interactive equivalent of saying yes to the dual-write prompt. Use in CI/scripts.
+- `--force` — re-encrypt every plaintext row, including rows that already have a (potentially stale) ciphertext. Recovery path for drift caused by dual-writes that weren't actually deployed when an earlier backfill ran. Expensive but not destructive — re-encrypting a correctly-encrypted value just rewrites the same payload. Audit-trail-flagged via `details.force = true` in `cs_migrations`.
 
 #### `encrypt cutover` — Rename swap encrypted → primary column
 

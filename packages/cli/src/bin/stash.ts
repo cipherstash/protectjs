@@ -89,7 +89,6 @@ Commands:
 
   encrypt status       Show per-column migration status (phase, progress, drift)
   encrypt plan         Diff intent (.cipherstash/migrations.json) vs observed state
-  encrypt advance      Record a phase transition for a column
   encrypt backfill     Resumably encrypt plaintext into the encrypted column
   encrypt cutover      Rename swap encrypted → primary column
   encrypt drop         Generate a migration to drop the plaintext column
@@ -253,22 +252,6 @@ async function runEncryptCommand(
       await planCommand()
       break
     }
-    case 'advance': {
-      const table = requireValue(values, 'table')
-      const column = requireValue(values, 'column')
-      const to = requireValue(values, 'to') as
-        | 'schema-added'
-        | 'dual-writing'
-        | 'backfilling'
-        | 'backfilled'
-        | 'cut-over'
-        | 'dropped'
-      const { advanceCommand } = await requireStack(
-        () => import('../commands/encrypt/advance.js'),
-      )
-      await advanceCommand({ table, column, to, note: values.note })
-      break
-    }
     case 'backfill': {
       const table = requireValue(values, 'table')
       const column = requireValue(values, 'column')
@@ -284,6 +267,8 @@ async function runEncryptCommand(
           : undefined,
         encryptedColumn: values['encrypted-column'],
         schemaColumnKey: values['schema-column-key'],
+        confirmDualWritesDeployed: flags['confirm-dual-writes-deployed'],
+        force: flags.force,
       })
       break
     }

@@ -15,15 +15,14 @@ The same mechanism serves Stack and Proxy users. Phase 1 ships the status inspec
 ## Scope (Phase 1)
 
 1. `stash encrypt status` — per-column view of current phase, EQL registration, backfill progress, drift between intent and state.
-2. `stash encrypt backfill` — resumable, idempotent, chunked plaintext → encrypted migration using the user's encryption client (Protect/Stack mode). Progress reporting, checkpoint on every chunk, `--resume` / `--table` / `--column` / `--chunk-size` flags.
+2. `stash encrypt backfill` — resumable, idempotent, chunked plaintext → encrypted migration using the user's encryption client (Protect/Stack mode). Progress reporting, checkpoint on every chunk, `--resume` / `--table` / `--column` / `--chunk-size` / `--force` / `--confirm-dual-writes-deployed` flags. The first run on a column prompts the user (or accepts `--confirm-dual-writes-deployed` for non-interactive contexts) to confirm the application is dual-writing, and records that as the `dual_writing` transition in `cs_migrations` — there is no separate "advance" command.
 3. A new `cs_migrations` table + small library (`@cipherstash/migrate` or co-located in `@cipherstash/stack`) that the CLI commands drive. Library is exported so users can embed backfill in their own workers/cron later without new infra.
 4. `.cipherstash/migrations.json` repo manifest = intent (desired columns + index set + target phase). `stash encrypt plan` diffs intent vs. observed state.
-5. Thin wrappers for the other phases so users can drive end-to-end from the CLI today, even if those phases are mostly pass-throughs:
-   - `stash encrypt advance --to dual-writing` — records user-declared transition into `cs_migrations` and reminds them what code change is needed. The actual edits are delegated to whichever agent the user picked at `stash init` time (Claude Code / Codex / AGENTS.md); the relevant skills (`stash-encryption`, integration-specific skill, `stash-cli`) have already been installed by init.
+5. Thin wrappers for the post-backfill phases so users can drive end-to-end from the CLI today, even if those phases are mostly pass-throughs:
    - `stash encrypt cutover` — wraps `eql_v2.rename_encrypted_columns()` + `eql_v2.reload_config()` (via Proxy if present).
    - `stash encrypt drop` — emits a migration file that drops `<col>_plaintext`.
 
-**Out of Phase 1:** Proxy-mode backfill (Phase 2), CS-hosted backfill runner (Phase 3), upstreaming `cs_migrations` into EQL as `eql_v2_migrations` (Phase 3).
+**Out of Phase 1:** Proxy-mode backfill (Phase 2), CS-hosted backfill runner (Phase 3), upstreaming `cs_migrations` into EQL as `eql_v2_migrations` (Phase 3), `stash encrypt update` for re-encrypting an already-cut-over column with new EQL config (next change).
 
 ## Architecture
 
@@ -120,12 +119,17 @@ Drift flags:
 
 **Batch sizing guidance in docs:** start at 1000, lower if you see locking contention, raise for wide columns with small values. Include a `--dry-run` that samples one chunk and prints timings.
 
-### 4. `stash encrypt advance --to <phase>`
+### 4. Dual-write confirmation, folded into `backfill`
 
-Records a user-declared transition. This is the honest path for phases where the tool can't safely detect the state (dual-writing is an app-code property, not a DB property):
+`dual-writing` is an application-code property — the CLI cannot detect it from the database. Earlier drafts of this plan exposed a separate `stash encrypt advance --to dual-writing` command to record the transition; that turned out to be over-modelling, since it only ever did meaningful work for one transition and the user had to know to invoke it.
 
-- `--to dual-writing`: insert `dual_writing` event; print a tailored prompt for editing the persistence code. When `.cipherstash/context.json` records a Claude / Codex handoff, offer to spawn that agent with the prompt; otherwise print the prompt for the user to paste into their editor agent. The integration skill installed by `stash init` (`stash-drizzle` / `stash-supabase` / etc.) is the source of truth for "what does dual-writing look like for this stack".
-- `--to backfilling`: insert event; effectively equivalent to starting `stash encrypt backfill` (and does so unless `--no-run`).
+Backfill now owns the bookmark. The first time backfill runs against a column, it requires explicit confirmation that the application is dual-writing:
+
+- **Interactive (TTY)** — `p.confirm({ message: 'Has the dual-write code been deployed for users.email?' })`. On yes, the CLI appends a `dual_writing` event and proceeds.
+- **Non-interactive** — the user must pass `--confirm-dual-writes-deployed`. The CLI prints a loud warning that the user is asserting the precondition, then proceeds.
+- **Subsequent runs** — once `cs_migrations` has the `dual_writing` event for the column, the prompt and flag are skipped. Resume / re-run is friction-free.
+
+If the user lies (says yes but dual-writes aren't actually live), rows inserted during the backfill land in plaintext only and the recovery is `stash encrypt backfill --force`, which drops the `<col>_encrypted IS NULL` guard and re-encrypts every row regardless of current state. Audit trail: the `force` run is recorded with `details.force = true` in `cs_migrations` so it shows up in `encrypt status` history as a distinct event.
 
 ### 5. `stash encrypt cutover`
 
@@ -156,13 +160,11 @@ For columns in `cut_over` phase:
 ## Critical files to modify or create
 
 - `stack/packages/cli/src/commands/encrypt/` — **new command group** (parallel to `db/`)
-  - `index.ts` — subcommand registration
   - `status.ts` — new
-  - `backfill.ts` — new
-  - `advance.ts` — new
+  - `plan.ts` — new (diffs intent vs. observed)
+  - `backfill.ts` — new (also handles the dual-write confirmation + `--force` recovery path)
   - `cutover.ts` — new
   - `drop.ts` — new
-  - `plan.ts` — new (diffs intent vs. observed)
 - `stack/packages/cli/src/bin/stash.ts` — register `encrypt` subcommand (analogous to existing `db` registration at ~line 237)
 - `stack/packages/migrate/` — **new package** (library the CLI drives)
   - `src/state.ts` — `cs_migrations` DAO (append event, get latest, get progress)
@@ -195,10 +197,11 @@ For columns in `cut_over` phase:
 2. **Integration (Drizzle, local Postgres)**
    - Seed 100k-row `users` table with plaintext `email`.
    - `stash db install` → EQL + `cs_migrations` installed.
-   - `stash encrypt advance --to dual-writing --table users --column email` → records event.
    - Manually wire dual-write in the test app's insert code (simulates user + agent handoff).
-   - `stash encrypt backfill --table users --column email` → completes; progress output sane; `COUNT(*) WHERE email_encrypted IS NULL` = 0.
-   - Kill mid-backfill (SIGINT) → re-run with `--resume` → completes without duplicate encryption; `cs_migrations` shows continuous cursor progression.
+   - `stash encrypt backfill --table users --column email` → interactive prompt confirms dual-writes are deployed, appends `dual_writing` event, runs to completion; progress output sane; `COUNT(*) WHERE email_encrypted IS NULL` = 0.
+   - Same flow non-interactively: `--confirm-dual-writes-deployed` accepted, loud warning printed.
+   - Kill mid-backfill (SIGINT) → re-run with `--resume` → completes without duplicate encryption; `cs_migrations` shows continuous cursor progression; no second `dual_writing` event.
+   - `stash encrypt backfill --force` after manually corrupting an encrypted row → re-encrypts every row; `details.force = true` recorded in `cs_migrations`.
    - `stash encrypt status` → shows `backfilled`.
    - `stash encrypt cutover` → rename executes; app (still running, reads `email`) now gets decrypted ciphertext transparently.
    - `stash encrypt drop` → migration file emitted; apply; `email_plaintext` gone.
