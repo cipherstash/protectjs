@@ -385,6 +385,14 @@ export const encryptionClient = await Encryption({ schemas: [usersEncryptionSche
 
 Generate the migration with `drizzle-kit generate`. The generated SQL should be a single `ALTER TABLE ... ADD COLUMN email_encrypted eql_v2_encrypted;`. Apply with `drizzle-kit migrate`.
 
+Register the new encryption config with EQL:
+
+```bash
+stash db push
+```
+
+If this is the project's first encrypted column, `db push` writes directly to the active EQL config (nothing to rename). If an active config already exists, `db push` writes the new config as `pending` — that's expected. The pending row will be promoted to active by `stash encrypt cutover` in phase 4.
+
 After this phase, rows still have `email_encrypted = NULL`. App reads still come from `email`. Nothing has broken.
 
 ### Phase 2 — Dual-writing: write to both columns from app code
@@ -423,13 +431,25 @@ Resumable, idempotent, chunked. The CLI walks the table in keyset-pagination ord
 
 If something goes wrong (e.g. you discover the dual-write code wasn't actually live when backfill ran), re-run with `--force` to re-encrypt every row regardless of current state.
 
-### Phase 4 — Cutover: rename swap
+### Phase 4 — Cutover: rename swap and activate
+
+First, update the Drizzle schema to the post-cutover shape — switch `email` to use `encryptedType` and remove the `email_encrypted` column. Then re-push the encryption config so EQL has a pending row that points at `email` (no `_encrypted` suffix):
+
+```bash
+stash db push
+# → writes the new config as `pending`. Active config (still pointing at
+#   `email_encrypted`) keeps serving while we complete the cutover.
+```
+
+Now run the cutover:
 
 ```bash
 stash encrypt cutover --table users --column email
 ```
 
-Single-transaction rename: `email` becomes `email_plaintext`, `email_encrypted` becomes `email`. The Drizzle schema needs to be updated to reflect the new shape — switch `email` to use `encryptedType` and remove the `email_encrypted` column:
+Inside one transaction it: (1) renames `email` → `email_plaintext` and `email_encrypted` → `email`, (2) promotes the pending EQL config to `active` (and the prior active to `inactive`), (3) records a `cut_over` event in `cs_migrations`.
+
+The Drizzle schema you just edited now matches the physical DB shape — `email` is the encrypted column. Keep the temporary `email_plaintext: text('email_plaintext')` declaration in the schema file until phase 5 drops it:
 
 ```typescript
 // src/db/schema.ts (post-cutover)

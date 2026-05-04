@@ -79,7 +79,8 @@ Commands:
 
   db install           Scaffold stash.config.ts (if missing) and install EQL extensions
   db upgrade           Upgrade EQL extensions to the latest version
-  db push              Push encryption schema to database (CipherStash Proxy only)
+  db push              Push encryption schema (writes pending if active config already exists)
+  db activate          Promote pending → active without renames (use after additive db push)
   db validate          Validate encryption schema
   db migrate           Run pending encrypt config migrations
   db status            Show EQL installation status
@@ -202,6 +203,13 @@ async function runDbCommand(
         () => import('../commands/db/push.js'),
       )
       await pushCommand({ dryRun: flags['dry-run'], databaseUrl })
+      break
+    }
+    case 'activate': {
+      const { activateCommand } = await requireStack(
+        () => import('../commands/db/activate.js'),
+      )
+      await activateCommand({ databaseUrl })
       break
     }
     case 'validate': {

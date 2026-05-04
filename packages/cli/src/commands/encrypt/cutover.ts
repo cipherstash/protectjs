@@ -1,6 +1,8 @@
 import { loadStashConfig } from '@/config/index.js'
 import {
+  activateConfig,
   appendEvent,
+  migrateConfig,
   progress,
   reloadConfig,
   renameEncryptedColumns,
@@ -58,9 +60,33 @@ export async function cutoverCommand(options: CutoverCommandOptions) {
       process.exit(1)
     }
 
+    // Verify a pending EQL config exists. cutover assumes the user has
+    // already run `stash db push` against a schema that switches the
+    // column from `<col>_encrypted` (or whatever twin name) to `<col>` —
+    // db push writes that as pending, and cutover transitions
+    // pending → encrypting → active alongside the physical rename.
+    const pending = await client.query<{ exists: boolean }>(
+      "SELECT EXISTS(SELECT 1 FROM eql_v2_configuration WHERE state = 'pending') AS exists",
+    )
+    if (pending.rows[0]?.exists !== true) {
+      p.log.error(
+        'No pending EQL configuration. Update your schema to point at the encrypted column (drop the `_encrypted` suffix), then run `stash db push` to register the pending change before cutting over.',
+      )
+      process.exit(1)
+    }
+
+    // Full lifecycle in one transaction:
+    //   1. rename_encrypted_columns — physical column rename
+    //   2. migrate_config            — pending → encrypting
+    //   3. activate_config           — encrypting → active (and prior active → inactive)
+    // Each step is a side-effect-free function from the user's POV
+    // (everything happens inside the txn). Rollback on any error leaves
+    // the system in its pre-cutover state.
     await client.query('BEGIN')
     try {
       await renameEncryptedColumns(client)
+      await migrateConfig(client)
+      await activateConfig(client)
       await appendEvent(client, {
         tableName: options.table,
         columnName: options.column,
@@ -75,7 +101,7 @@ export async function cutoverCommand(options: CutoverCommandOptions) {
     }
 
     p.log.success(
-      `Renamed ${options.column} → ${options.column}_plaintext and ${options.column}_encrypted → ${options.column}.`,
+      `Renamed ${options.column} → ${options.column}_plaintext and ${options.column}_encrypted → ${options.column}; pending config promoted to active.`,
     )
 
     const proxyUrl = options.proxyUrl ?? process.env.CIPHERSTASH_PROXY_URL

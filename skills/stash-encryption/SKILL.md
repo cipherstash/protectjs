@@ -618,7 +618,13 @@ The `stash encrypt` command group drives each phase. See the `stash-cli` skill f
 
 ```bash
 # Phase 1 — schema-added
-# Add the encrypted twin via your normal migration tooling (drizzle-kit / supabase migrations / etc.)
+# Add the encrypted twin column via your normal migration tooling
+# (drizzle-kit / supabase migrations / etc.). Then register the new
+# encryption config with EQL:
+stash db push
+# First push (no active config yet) → writes directly to active.
+# Subsequent push (active already exists) → writes pending; cutover
+# in phase 4 will promote it.
 
 # Phase 2 + 3 — dual-writing then backfilling, in one command
 # (First, edit the application code to write both columns and ship that deploy.
@@ -635,8 +641,15 @@ stash encrypt backfill --table users --column email --confirm-dual-writes-deploy
 stash encrypt backfill --table users --column email --force
 
 # Phase 4 — cut-over
+# First, edit the schema to drop the `_encrypted` suffix (the column will now
+# be named `email`, declared with encryptedType / encryptedColumn). Re-push:
+stash db push
+# → writes the renamed-shape config as `pending`. The active config (still
+#   pointing at `email_encrypted`) keeps serving until cutover finishes.
+
+# Now run the cutover. In one transaction: rename the physical columns,
+# promote pending → active, record cs_migrations event.
 stash encrypt cutover --table users --column email
-# Single-transaction rename swap.
 
 # Phase 5 — dropped
 stash encrypt drop --table users --column email

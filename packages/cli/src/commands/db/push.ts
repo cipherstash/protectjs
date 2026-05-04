@@ -1,5 +1,6 @@
 import { detectPackageManager, runnerCommand } from '@/commands/init/utils.js'
 import { loadEncryptConfig, loadStashConfig } from '@/config/index.js'
+import { discardPendingConfig } from '@cipherstash/migrate'
 import type { EncryptConfig } from '@cipherstash/stack/schema'
 import { toEqlCastAs } from '@cipherstash/stack/schema'
 import type { CastAs } from '@cipherstash/stack/schema'
@@ -82,20 +83,69 @@ export async function pushCommand(options: {
     await client.connect()
     s.stop('Connected to Postgres.')
 
-    s.start('Updating eql_v2_configuration...')
-    await client.query(`
-      UPDATE eql_v2_configuration SET state = 'inactive'
-    `)
-
-    await client.query(
-      `
-        INSERT INTO eql_v2_configuration (state, data) VALUES ('active', $1)
-      `,
-      [eqlConfig],
+    s.start('Checking eql_v2_configuration state...')
+    const activeResult = await client.query<{ exists: boolean }>(
+      "SELECT EXISTS(SELECT 1 FROM eql_v2_configuration WHERE state = 'active') AS exists",
     )
-    s.stop('Updated eql_v2_configuration.')
+    const hasActive = activeResult.rows[0]?.exists === true
+    s.stop(
+      hasActive
+        ? 'Active configuration found.'
+        : 'No active configuration yet (first push).',
+    )
 
-    p.outro('Push complete.')
+    if (!hasActive) {
+      // First push: nothing to rename, no risk of contention with a live
+      // Proxy reading the active config. Insert directly as `active`.
+      s.start('Writing initial active configuration...')
+      await client.query(
+        "INSERT INTO eql_v2_configuration (state, data) VALUES ('active', $1)",
+        [eqlConfig],
+      )
+      s.stop('Active configuration written.')
+      p.outro('Push complete. Encryption is live.')
+      return
+    }
+
+    // Active config already exists. Write the new config as `pending` so
+    // the EQL state machine (pending → encrypting → active) can mediate
+    // the change — the same flow Proxy uses for hot-reloads. The user
+    // promotes pending → active by running either `stash encrypt cutover`
+    // (when columns need renaming, e.g. `<col>_encrypted` → `<col>`) or
+    // `stash db activate` (when the change is purely additive).
+    s.start('Replacing pending configuration...')
+    await client.query('BEGIN')
+    try {
+      await discardPendingConfig(client)
+      await client.query(
+        "INSERT INTO eql_v2_configuration (state, data) VALUES ('pending', $1)",
+        [eqlConfig],
+      )
+      await client.query('COMMIT')
+    } catch (err) {
+      await client.query('ROLLBACK').catch(() => {})
+      throw err
+    }
+    s.stop('Pending configuration written.')
+
+    p.note(
+      [
+        'A pending configuration is registered but not yet active. The current',
+        'active configuration continues to serve reads until you finalise it:',
+        '',
+        '  stash encrypt cutover --table T --column C',
+        '    Renames `<col>_encrypted` → `<col>` (and `<col>` → `<col>_plaintext`),',
+        '    then promotes pending → active. Use this when the new config replaces',
+        '    a column you migrated via `stash encrypt backfill`.',
+        '',
+        '  stash db activate',
+        '    Promotes pending → active without renaming. Use this when the new',
+        '    config purely adds columns or changes index ops on already-active',
+        '    columns (no `<col>_encrypted` twin to swap in).',
+      ].join('\n'),
+      'Next step',
+    )
+    p.outro('Push complete (pending).')
   } catch (error) {
     s.stop('Failed.')
     p.log.error(

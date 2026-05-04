@@ -191,9 +191,12 @@ npx stash db validate --exclude-operator-family
 
 Validation also runs automatically before `db push` — issues are logged as warnings but don't block the push.
 
-### `db push` — Push encryption schema to the database (CipherStash Proxy only)
+### `db push` — Register the encryption schema with EQL
 
-This command is **only required when using CipherStash Proxy**. If you're using the SDK directly (Drizzle, Supabase, or plain PostgreSQL), this step is not needed — the schema lives in your application code as the source of truth.
+Synchronises the CipherStash configuration in `eql_v2_configuration` with what your encryption client declares. Required:
+
+- For CipherStash Proxy users (so Proxy knows which columns to encrypt/decrypt).
+- For SDK users running the column-encryption lifecycle (`stash encrypt {backfill,cutover,drop}`) — `cutover` reads pending columns from EQL config to know what to rename.
 
 ```bash
 npx stash db push
@@ -207,11 +210,20 @@ npx stash db push --dry-run
 | `--dry-run` | Load and validate the schema, then print it as JSON. No database changes. |
 
 When pushing, the CLI:
+
 1. Loads the encryption client from the path in `stash.config.ts`.
 2. Runs schema validation (warns but doesn't block).
 3. Transforms SDK data types to EQL-compatible `cast_as` values (see table below).
-4. Connects to Postgres and marks existing `eql_v2_configuration` rows as `inactive`.
-5. Inserts the new config as an `active` row.
+4. Connects to Postgres and decides where to write based on existing state:
+   - **No active EQL config exists** (first push) → writes directly to `active`. Encryption is live immediately. No further step required.
+   - **Active config already exists** → writes the new config as `pending`, replacing any prior pending. The active config keeps serving until you finalise the change with one of the activation commands below.
+
+**Activation after a `pending` push:**
+
+| Situation | Command |
+|-----------|---------|
+| Adding a brand-new encrypted column (no rename) | `npx stash db activate` |
+| Cutting over from a `<col>_encrypted` twin (path 3 lifecycle) | `npx stash encrypt cutover --table T --column C` |
 
 **SDK to EQL type mapping:**
 
@@ -224,6 +236,18 @@ When pushing, the CLI:
 | `boolean` | `boolean` |
 | `date` | `date` |
 | `json` | `jsonb` |
+
+### `db activate` — Promote pending → active without renaming
+
+Runs `eql_v2.migrate_config()` followed by `eql_v2.activate_config()` inside a single transaction, advancing any `pending` row to `active` (and marking the prior `active` as `inactive`). No physical column renames.
+
+```bash
+npx stash db activate
+```
+
+Use after `npx stash db push` when the new config purely adds columns or changes index ops without renaming any column. For path 3 (existing populated column → encrypted), use `npx stash encrypt cutover` instead — it does the same activation plus the physical rename.
+
+Errors out with a clear message when there is no pending configuration to activate.
 
 ### `db status` — Show EQL installation status
 
@@ -300,13 +324,22 @@ Flags:
 - `--confirm-dual-writes-deployed` — non-interactive equivalent of saying yes to the dual-write prompt. Use in CI/scripts.
 - `--force` — re-encrypt every plaintext row, including rows that already have a (potentially stale) ciphertext. Recovery path for drift caused by dual-writes that weren't actually deployed when an earlier backfill ran. Expensive but not destructive — re-encrypting a correctly-encrypted value just rewrites the same payload. Audit-trail-flagged via `details.force = true` in `cs_migrations`.
 
-#### `encrypt cutover` — Rename swap encrypted → primary column
+#### `encrypt cutover` — Rename swap encrypted → primary column AND promote pending → active
 
 ```bash
 npx stash encrypt cutover --table users --column email
 ```
 
-For columns in the `backfilled` phase, runs `eql_v2.rename_encrypted_columns()` in a single transaction (renames `<col>` → `<col>_plaintext` and `<col>_encrypted` → `<col>`) and, if a Proxy URL is configured, calls `eql_v2.reload_config()` over that connection so the Proxy picks up the new shape immediately. App reads of `<col>` now return decrypted ciphertext transparently — no app code change required for reads.
+**Precondition:** the column must be in the `backfilled` phase per `cs_migrations`, AND a pending EQL configuration must exist (registered via `stash db push` against a schema where the column is declared under its final name without the `_encrypted` suffix).
+
+In a single transaction, the command:
+
+1. Runs `eql_v2.rename_encrypted_columns()` to rename `<col>` → `<col>_plaintext` and `<col>_encrypted` → `<col>`.
+2. Runs `eql_v2.migrate_config()` to advance the pending config to `encrypting`.
+3. Runs `eql_v2.activate_config()` to promote it to `active` (and mark the prior active config as `inactive`).
+4. Appends a `cut_over` event to `cs_migrations` for the column.
+
+If a Proxy URL is configured (via `--proxy-url` or `CIPHERSTASH_PROXY_URL`), it then connects to the Proxy and calls `eql_v2.reload_config()` so Proxy picks up the new shape immediately. App reads of `<col>` now return decrypted ciphertext transparently — no app code change required for reads.
 
 #### `encrypt drop` — Generate a migration that removes the plaintext column
 

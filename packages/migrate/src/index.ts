@@ -38,6 +38,9 @@ export {
   selectPendingColumns,
   readyForEncryption,
   renameEncryptedColumns,
+  migrateConfig,
+  activateConfig,
+  discardPendingConfig,
   reloadConfig,
   countEncryptedWithActiveConfig,
 } from './eql.js'
