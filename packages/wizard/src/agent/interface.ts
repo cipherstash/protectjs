@@ -15,6 +15,7 @@ import * as p from '@clack/prompts'
 import { GATEWAY_URL } from '../lib/constants.js'
 import { formatAgentOutput } from '../lib/format.js'
 import type { WizardSession } from '../lib/types.js'
+import { PACKAGE_MANAGERS } from '../lib/detect.js'
 import { classifyError, formatWizardError } from './errors.js'
 import { scanPreToolUse } from './hooks.js'
 
@@ -46,7 +47,7 @@ export interface WizardAgentResult {
 }
 
 /** Package manager DLX runner prefixes (tools run via runner dlx). */
-const RUNNER_PREFIXES = ['npx', 'bunx', 'pnpm dlx', 'yarn dlx'] as const
+const RUNNER_PREFIXES = Object.values(PACKAGE_MANAGERS).map((pm) => pm.execCommand)
 
 /** Tools allowed to run via any DLX runner. */
 const ALLOWED_DLX_TOOLS = ['drizzle-kit', 'tsc', 'stash db'] as const

@@ -11,7 +11,6 @@ const ALLOWLISTED_PATHS = new Set([
   'packages/cli/src/commands/init/utils.ts',    // runnerCommand `case 'npm'`
   'packages/protect/src/bin/runner.ts',         // Pre-allowlisted: helper for Task 11
   'packages/drizzle/src/bin/runner.ts',         // Pre-allowlisted: helper for Task 13
-  'packages/wizard/src/agent/interface.ts',     // RUNNER_PREFIXES constant for comparison (Task 12)
   'scripts/lint-no-hardcoded-runners.mjs',      // this script's own docs
 ])
 

@@ -45,7 +45,7 @@ export function detectTypeScript(cwd: string): boolean {
   return existsSync(resolve(cwd, 'tsconfig.json'))
 }
 
-const PACKAGE_MANAGERS: Record<
+export const PACKAGE_MANAGERS: Record<
   'bun' | 'pnpm' | 'yarn' | 'npm',
   DetectedPackageManager
 > = {
