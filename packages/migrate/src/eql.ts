@@ -121,7 +121,9 @@ export async function discardPendingConfig(client: ClientBase): Promise<void> {
   // The EQL `discard()` function raises when there's no pending row —
   // we want a no-op in that case, so DELETE directly. Safer than
   // wrapping eql_v2.discard() in a try/catch that swallows shape errors.
-  await client.query("DELETE FROM eql_v2_configuration WHERE state = 'pending'")
+  await client.query(
+    "DELETE FROM public.eql_v2_configuration WHERE state = 'pending'",
+  )
 }
 
 /**
@@ -144,15 +146,21 @@ export async function reloadConfig(client: ClientBase): Promise<void> {
  * wrong (wrong config active, or the backfill wrote with a stale version).
  *
  * Wraps `eql_v2.count_encrypted_with_active_config(table, column)`.
+ *
+ * Returns `bigint` because the underlying Postgres function returns
+ * `BIGINT` and naively coercing to JS `number` loses precision past
+ * `Number.MAX_SAFE_INTEGER` — exactly the row counts large-table users
+ * are running this against. Callers that need a JS number can do their
+ * own range check.
  */
 export async function countEncryptedWithActiveConfig(
   client: ClientBase,
   tableName: string,
   columnName: string,
-): Promise<number> {
+): Promise<bigint> {
   const result = await client.query<{ count: string }>(
     'SELECT eql_v2.count_encrypted_with_active_config($1, $2) AS count',
     [tableName, columnName],
   )
-  return Number(result.rows[0]?.count ?? 0)
+  return BigInt(result.rows[0]?.count ?? '0')
 }

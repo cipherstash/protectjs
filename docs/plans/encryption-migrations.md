@@ -139,6 +139,11 @@ For each column in `backfilled` phase, in a single transaction:
 BEGIN;
 -- Renames <col> -> <col>_plaintext, <col>_encrypted -> <col>
 SELECT eql_v2.rename_encrypted_columns();
+-- Promote the pending config that was registered by the most recent
+-- `stash db push` (which the user ran after switching the schema to
+-- declare the encrypted column under its final name).
+SELECT eql_v2.migrate_config();   -- pending → encrypting
+SELECT eql_v2.activate_config();  -- encrypting → active (prior active → inactive)
 COMMIT;
 
 -- If Proxy URL is configured, force refresh
@@ -146,7 +151,7 @@ COMMIT;
 SELECT eql_v2.reload_config();
 ```
 
-Record `cut_over` event. App's existing `SELECT email FROM users` now returns the encrypted column (decrypted transparently by Proxy or client-side by Stack). No app code change required for reads — this is the big payoff of the rename approach.
+Record `cut_over` event. App's existing `SELECT email FROM users` returns the encrypted column post-cutover; reading code paths must decrypt via the encryption client (e.g. `decryptModel(rows[0], usersTable)` in Drizzle, or the equivalent `encryptedSupabase` wrapper in Supabase) so the call site receives plaintext. No write-path code change beyond removing the dual-write logic — that comes after cutover.
 
 ### 6. `stash encrypt drop`
 

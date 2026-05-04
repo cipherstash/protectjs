@@ -9,6 +9,27 @@ import { z } from 'zod'
 const IndexKind = z.enum(['unique', 'match', 'ore', 'ste_vec'])
 
 /**
+ * EQL cast types accepted by the configuration. Validated up front so a
+ * typo (`timestampz`, `strnig`) fails at manifest read rather than blowing
+ * up much later when the CLI tries to use it.
+ */
+const CastAs = z.enum([
+  'text',
+  'int',
+  'small_int',
+  'big_int',
+  'real',
+  'double',
+  'boolean',
+  'date',
+  'jsonb',
+  'json',
+  'float',
+  'decimal',
+  'timestamp',
+])
+
+/**
  * Intent for a single column within the manifest. Expresses *what the user
  * wants the state of this column to be*, not the observed reality — the
  * `status` / `plan` commands diff this against `cs_migrations` and EQL to
@@ -22,7 +43,7 @@ const ManifestColumnSchema = z.object({
    * (`text | int | small_int | big_int | real | double | boolean | date |
    * jsonb | json | float | decimal | timestamp`).
    */
-  castAs: z.string().default('text'),
+  castAs: CastAs.default('text'),
   /** Desired EQL index set. Driver of the `indexes: {…}` block in EQL config. */
   indexes: z.array(IndexKind).default([]),
   /**

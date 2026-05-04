@@ -146,19 +146,30 @@ export async function loadEncryptionContext(): Promise<EncryptionContext> {
  * context. Exits the process with code `1` if the table is not declared
  * in the user's encryption client file — without this schema, backfill
  * cannot call `bulkEncryptModels`.
+ *
+ * Accepts schema-qualified inputs (`public.users`) and falls back to the
+ * unqualified name when no exact match is found — `EncryptedTable.tableName`
+ * is typically declared without a schema, so `public.users` should still
+ * resolve to a table whose `tableName === 'users'`.
  */
 export function requireTable(
   ctx: EncryptionContext,
   tableName: string,
 ): EncryptedTableLike {
-  const table = ctx.tables.get(tableName)
-  if (!table) {
-    const available = Array.from(ctx.tables.keys()).join(', ') || '(none)'
-    console.error(
-      `Error: Table "${tableName}" was not found in the encryption client exports.\n` +
-        `Available: ${available}`,
-    )
-    process.exit(1)
+  const direct = ctx.tables.get(tableName)
+  if (direct) return direct
+
+  const dot = tableName.lastIndexOf('.')
+  if (dot >= 0) {
+    const unqualified = tableName.slice(dot + 1)
+    const fallback = ctx.tables.get(unqualified)
+    if (fallback) return fallback
   }
-  return table
+
+  const available = Array.from(ctx.tables.keys()).join(', ') || '(none)'
+  console.error(
+    `Error: Table "${tableName}" was not found in the encryption client exports.\n` +
+      `Available: ${available}`,
+  )
+  process.exit(1)
 }

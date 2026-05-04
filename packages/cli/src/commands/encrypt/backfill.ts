@@ -116,11 +116,13 @@ export async function backfillCommand(options: BackfillCommandOptions) {
     p.log.warn('Interrupt received; finishing current chunk and exiting.')
     controller.abort()
   }
-  process.on('SIGINT', onSignal)
-  process.on('SIGTERM', onSignal)
 
-  const db = await pool.connect()
+  let db: pg.PoolClient | undefined
+  let exitCode = 0
   try {
+    process.on('SIGINT', onSignal)
+    process.on('SIGTERM', onSignal)
+    db = await pool.connect()
     const pkColumn =
       options.pkColumn ?? (await detectPkColumn(db, options.table))
 
@@ -249,14 +251,23 @@ export async function backfillCommand(options: BackfillCommandOptions) {
       `Backfill complete. ${result.rowsProcessed.toLocaleString()} rows encrypted.`,
     )
   } catch (error) {
-    p.log.error(error instanceof Error ? error.message : 'Backfill failed.')
-    process.exit(1)
+    // Generic message only — `error.message` may include plaintext sample
+    // values bubbled up from the encryption pipeline (e.g. the leak guard
+    // in @cipherstash/migrate now emits type-only diagnostics, but
+    // upstream libraries can still embed offending input in their
+    // exception text). Preserve exit behaviour but stop the message path
+    // from leaking sensitive data.
+    p.log.error(
+      `Backfill failed${error instanceof Error && /^[\w. -]+$/.test(error.name) ? ` (${error.name})` : ''}. Re-run with diagnostic logging if you need details.`,
+    )
+    exitCode = 1
   } finally {
     process.off('SIGINT', onSignal)
     process.off('SIGTERM', onSignal)
-    db.release()
+    db?.release()
     await pool.end()
   }
+  if (exitCode) process.exit(exitCode)
 }
 
 /**

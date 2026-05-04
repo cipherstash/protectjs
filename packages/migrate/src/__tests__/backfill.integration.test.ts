@@ -17,6 +17,7 @@
  * most surface area for subtle bugs.
  */
 
+import 'dotenv/config'
 import pg from 'pg'
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
 import { type EncryptionClientLike, runBackfill } from '../backfill.js'

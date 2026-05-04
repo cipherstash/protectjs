@@ -77,15 +77,16 @@ export async function pushCommand(options: {
   }
 
   const client = new pg.Client({ connectionString: config.databaseUrl })
+  let exitCode = 0
 
   try {
     s.start('Connecting to Postgres...')
     await client.connect()
     s.stop('Connected to Postgres.')
 
-    s.start('Checking eql_v2_configuration state...')
+    s.start('Checking public.eql_v2_configuration state...')
     const activeResult = await client.query<{ exists: boolean }>(
-      "SELECT EXISTS(SELECT 1 FROM eql_v2_configuration WHERE state = 'active') AS exists",
+      "SELECT EXISTS(SELECT 1 FROM public.eql_v2_configuration WHERE state = 'active') AS exists",
     )
     const hasActive = activeResult.rows[0]?.exists === true
     s.stop(
@@ -99,7 +100,7 @@ export async function pushCommand(options: {
       // Proxy reading the active config. Insert directly as `active`.
       s.start('Writing initial active configuration...')
       await client.query(
-        "INSERT INTO eql_v2_configuration (state, data) VALUES ('active', $1)",
+        "INSERT INTO public.eql_v2_configuration (state, data) VALUES ('active', $1)",
         [eqlConfig],
       )
       s.stop('Active configuration written.')
@@ -118,7 +119,7 @@ export async function pushCommand(options: {
     try {
       await discardPendingConfig(client)
       await client.query(
-        "INSERT INTO eql_v2_configuration (state, data) VALUES ('pending', $1)",
+        "INSERT INTO public.eql_v2_configuration (state, data) VALUES ('pending', $1)",
         [eqlConfig],
       )
       await client.query('COMMIT')
@@ -151,8 +152,9 @@ export async function pushCommand(options: {
     p.log.error(
       error instanceof Error ? error.message : 'Failed to push configuration.',
     )
-    process.exit(1)
+    exitCode = 1
   } finally {
     await client.end()
   }
+  if (exitCode) process.exit(exitCode)
 }

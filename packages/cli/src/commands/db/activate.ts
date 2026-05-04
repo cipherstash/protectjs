@@ -35,18 +35,20 @@ export async function activateCommand(
     databaseUrlFlag: options.databaseUrl,
   })
   const client = new pg.Client({ connectionString: stashConfig.databaseUrl })
+  let exitCode = 0
 
   try {
     await client.connect()
 
     const pending = await client.query<{ exists: boolean }>(
-      "SELECT EXISTS(SELECT 1 FROM eql_v2_configuration WHERE state = 'pending') AS exists",
+      "SELECT EXISTS(SELECT 1 FROM public.eql_v2_configuration WHERE state = 'pending') AS exists",
     )
     if (pending.rows[0]?.exists !== true) {
       p.log.error(
         'No pending EQL configuration to activate. Run `stash db push` first to register a change.',
       )
-      process.exit(1)
+      exitCode = 1
+      return
     }
 
     await client.query('BEGIN')
@@ -63,8 +65,9 @@ export async function activateCommand(
     p.outro('Done.')
   } catch (error) {
     p.log.error(error instanceof Error ? error.message : 'Activation failed.')
-    process.exit(1)
+    exitCode = 1
   } finally {
     await client.end()
   }
+  if (exitCode) process.exit(exitCode)
 }

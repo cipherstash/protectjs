@@ -479,7 +479,7 @@ if (decrypted.failure) throw new Error(decrypted.failure.message)
 const email = decrypted.data.email
 ```
 
-For queries that filter on `email`, switch to the encrypted operators from `createProtectOperators` — `eq`, `like`, `gte`, etc. (See `## Query Encrypted Data` above.)
+For queries that filter on `email`, switch to the encrypted operators from `createEncryptionOperators` — `eq`, `like`, `gte`, etc. (See `## Query Encrypted Data` above.)
 
 ### Phase 5 — Drop: remove the plaintext column
 

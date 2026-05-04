@@ -1,4 +1,4 @@
-import { execSync } from 'node:child_process'
+import { spawnSync } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { readdir, writeFile } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
@@ -37,23 +37,19 @@ export async function scaffoldDrizzleMigration(opts: {
   }
 
   // `drizzle-kit generate --custom` scaffolds an empty migration file with
-  // the right prefix and records the journal/snapshot entry. Stderr is
-  // captured so a missing-drizzle-kit error surfaces cleanly.
-  try {
-    execSync(`npx drizzle-kit generate --custom --name=${opts.name}`, {
-      stdio: 'pipe',
-      encoding: 'utf-8',
-    })
-  } catch (error) {
-    const stderr =
-      error !== null &&
-      typeof error === 'object' &&
-      'stderr' in error &&
-      typeof error.stderr === 'string'
-        ? error.stderr.trim()
-        : undefined
+  // the right prefix and records the journal/snapshot entry. spawnSync
+  // (not execSync) so opts.name can't escape into the shell — names like
+  // `cutover_T_C` are agent-controlled and could in principle include
+  // special characters.
+  const cp = spawnSync(
+    'npx',
+    ['drizzle-kit', 'generate', '--custom', `--name=${opts.name}`],
+    { stdio: 'pipe', encoding: 'utf-8' },
+  )
+  if (cp.error || cp.status !== 0) {
+    const stderr = typeof cp.stderr === 'string' ? cp.stderr.trim() : undefined
     throw new Error(
-      `Failed to scaffold Drizzle migration: ${stderr ?? (error instanceof Error ? error.message : String(error))}`,
+      `Failed to scaffold Drizzle migration: ${stderr ?? cp.error?.message ?? 'unknown error'}`,
     )
   }
 

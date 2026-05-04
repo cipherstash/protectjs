@@ -378,9 +378,15 @@ export async function runBackfill(
         const value = row[options.schemaColumnKey]
         if (!isEncryptedPayload(value)) {
           const pk = row.__pk ?? page.rows[i]?.pk
-          const preview = JSON.stringify(value)?.slice(0, 120) ?? String(value)
+          // Only the *type* of the offender goes into the error — never the
+          // value. The path that hits this branch is precisely the one
+          // where the encryption client passed plaintext through, so the
+          // value here IS sensitive plaintext. Bubbling it into the
+          // exception text would leak via downstream loggers and via the
+          // cs_migrations error event (`details.error`).
+          const valueType = value === null ? 'null' : typeof value
           throw new Error(
-            `Encryption client returned a non-ciphertext value at model key "${options.schemaColumnKey}" for pk=${pk} (got: ${preview}). This usually means the schema column key does not match your EncryptedTable. Verify that your schema declares a column keyed "${options.schemaColumnKey}", or pass --schema-column-key <name> to override.`,
+            `Encryption client returned a non-ciphertext value (type: ${valueType}) at model key "${options.schemaColumnKey}" for pk=${pk}. This usually means the schema column key does not match your EncryptedTable. Verify that your schema declares a column keyed "${options.schemaColumnKey}", or pass --schema-column-key <name> to override.`,
           )
         }
       }

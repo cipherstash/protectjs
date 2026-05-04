@@ -664,13 +664,17 @@ Long-running backfills can also embed the engine directly without the CLI:
 import { runBackfill } from '@cipherstash/migrate'
 import { Encryption } from '@cipherstash/stack'
 
-const client = await Encryption({ schemas: [users] })
+const encryptionClient = await Encryption({ schemas: [usersTable] })
 
 await runBackfill({
-  table: 'users',
-  column: 'email',
-  client,
-  db,                  // postgres-js or drizzle connection
+  db,                              // pg client/pool, postgres-js or drizzle conn
+  encryptionClient,
+  tableSchema: usersTable,         // the EncryptedTable from your schemas
+  tableName: 'users',
+  schemaColumnKey: 'email',        // key in the EncryptedTable schema
+  plaintextColumn: 'email',
+  encryptedColumn: 'email_encrypted',
+  pkColumn: 'id',
   chunkSize: 1000,
   signal: abortCtrl.signal,
 })

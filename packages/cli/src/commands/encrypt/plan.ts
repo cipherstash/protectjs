@@ -24,6 +24,7 @@ export async function planCommand() {
   }
 
   const client = new pg.Client({ connectionString: config.databaseUrl })
+  let exitCode = 0
   try {
     await client.connect()
     const state = await latestByColumn(client)
@@ -51,8 +52,9 @@ export async function planCommand() {
     p.outro('Done.')
   } catch (error) {
     p.log.error(error instanceof Error ? error.message : 'Plan failed.')
-    process.exit(1)
+    exitCode = 1
   } finally {
     await client.end()
   }
+  if (exitCode) process.exit(exitCode)
 }

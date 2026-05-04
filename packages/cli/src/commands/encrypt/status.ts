@@ -35,6 +35,7 @@ export async function statusCommand() {
   const config = await loadStashConfig()
   const manifest = await readManifest(process.cwd())
   const client = new pg.Client({ connectionString: config.databaseUrl })
+  let exitCode = 0
 
   try {
     await client.connect()
@@ -69,7 +70,12 @@ export async function statusCommand() {
 
     for (const [key, state] of stateMap) {
       if (seen.has(key)) continue
-      const [tableName, columnName] = key.split('.') as [string, string]
+      // `key` is `${tableName}.${columnName}` where tableName itself may
+      // be schema-qualified (`public.users`). Split on the *last* dot so
+      // the schema prefix stays attached to the table.
+      const lastDot = key.lastIndexOf('.')
+      const tableName = key.slice(0, lastDot)
+      const columnName = key.slice(lastDot + 1)
       rows.push(
         renderRow({
           tableName,
@@ -96,10 +102,11 @@ export async function statusCommand() {
     p.log.error(
       error instanceof Error ? error.message : 'Failed to read status.',
     )
-    process.exit(1)
+    exitCode = 1
   } finally {
     await client.end()
   }
+  if (exitCode) process.exit(exitCode)
 }
 
 async function latestByColumnSafe(client: pg.Client) {
@@ -127,7 +134,7 @@ async function fetchActiveEqlConfig(
   const out = new Map<string, EqlColumnInfo>()
   try {
     const result = await client.query<{ state: string; data: unknown }>(
-      `SELECT state, data FROM eql_v2_configuration
+      `SELECT state, data FROM public.eql_v2_configuration
        WHERE state IN ('active', 'pending', 'encrypting')
        ORDER BY CASE state WHEN 'active' THEN 0 WHEN 'encrypting' THEN 1 ELSE 2 END`,
     )
