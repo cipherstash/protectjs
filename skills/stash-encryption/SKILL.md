@@ -24,7 +24,41 @@ Comprehensive guide for implementing field-level encryption with `@cipherstash/s
 npm install @cipherstash/stack
 ```
 
-The package includes a native FFI module (`@cipherstash/protect-ffi`). You must opt out of bundling it in tools like Webpack, esbuild, or Next.js (`serverExternalPackages`).
+> [!IMPORTANT]
+> **Exclude `@cipherstash/stack` from bundling — required for any project with a bundler (Next.js, webpack, esbuild, vite SSR, etc.).** The package wraps a native FFI module (`@cipherstash/protect-ffi`) that cannot be bundled. Importing the encryption client from server code without this exclusion will fail at runtime with errors about missing native modules. Configure as soon as you install the package; do not skip this step.
+
+Concrete configuration for the most common bundlers:
+
+**Next.js** (`next.config.{js,ts,mjs}`):
+
+```ts
+const nextConfig = {
+  serverExternalPackages: ['@cipherstash/stack', '@cipherstash/protect-ffi'],
+}
+export default nextConfig
+```
+
+(Older Next.js — pre-15 — uses `experimental.serverComponentsExternalPackages` with the same value.)
+
+**webpack** (next/nuxt/remix/etc. that compose webpack directly):
+
+```js
+config.externals.push('@cipherstash/stack', '@cipherstash/protect-ffi')
+```
+
+**esbuild**:
+
+```js
+{ external: ['@cipherstash/stack', '@cipherstash/protect-ffi'] }
+```
+
+**Vite SSR**:
+
+```ts
+ssr: { external: ['@cipherstash/stack', '@cipherstash/protect-ffi'] }
+```
+
+If you skip this step, you'll see runtime errors like `Cannot find module '@cipherstash/protect-ffi-darwin-arm64'` or `dlopen failed` once the bundler tries to inline the native binding.
 
 ## Configuration
 

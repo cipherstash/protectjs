@@ -1,7 +1,11 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { loadStashConfig } from '@/config/index.js'
-import { appendEvent, progress } from '@cipherstash/migrate'
+import {
+  appendEvent,
+  progress,
+  setManifestTargetPhase,
+} from '@cipherstash/migrate'
 import * as p from '@clack/prompts'
 import pg from 'pg'
 
@@ -73,6 +77,12 @@ export async function dropCommand(options: DropCommandOptions) {
       phase: 'dropped',
       details: { migrationFile: filePath },
     })
+
+    // Bump the manifest's target phase so `encrypt plan` reflects the
+    // user's commitment to fully removing the plaintext column. No-op
+    // when the column wasn't tracked in the manifest yet (e.g. migrations
+    // begun before the manifest-on-backfill behaviour shipped).
+    await setManifestTargetPhase(options.table, options.column, 'dropped')
 
     p.log.success(`Migration written to ${filePath}`)
     p.note(

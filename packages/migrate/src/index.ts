@@ -58,6 +58,8 @@ export {
 export {
   readManifest,
   writeManifest,
+  upsertManifestColumn,
+  setManifestTargetPhase,
   manifestPath,
   type Manifest,
   type ManifestColumn,

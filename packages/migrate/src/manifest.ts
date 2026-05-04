@@ -99,3 +99,52 @@ export async function writeManifest(
     'utf-8',
   )
 }
+
+/**
+ * Read the manifest, upsert a single column entry under the named table,
+ * and write it back. If no manifest exists, creates one. If the column
+ * already exists for the table, the existing entry is replaced with the
+ * supplied values — useful for keeping the intent in lockstep with what
+ * the lifecycle commands actually committed.
+ *
+ * Called by `stash encrypt backfill` on first run for a column so the
+ * intent leg of the three-source state model exists in the repo. The
+ * agent (or the user) is free to hand-edit the file later — re-running
+ * `backfill` won't clobber a column the user has annotated, only the
+ * fields this function controls.
+ */
+export async function upsertManifestColumn(
+  table: string,
+  column: ManifestColumn,
+  cwd: string = process.cwd(),
+): Promise<void> {
+  const existing = (await readManifest(cwd)) ?? { version: 1, tables: {} }
+  const tableColumns = existing.tables[table] ?? []
+  const remaining = tableColumns.filter((c) => c.column !== column.column)
+  existing.tables[table] = [...remaining, column]
+  await writeManifest(existing, cwd)
+}
+
+/**
+ * Update just the `targetPhase` of an existing column entry. No-op if
+ * the column isn't tracked yet — used by `stash encrypt drop` to bump
+ * the intent forward when the user commits to removing the plaintext
+ * column entirely.
+ */
+export async function setManifestTargetPhase(
+  table: string,
+  columnName: string,
+  targetPhase: ManifestColumn['targetPhase'],
+  cwd: string = process.cwd(),
+): Promise<void> {
+  const existing = await readManifest(cwd)
+  if (!existing) return
+  const tableColumns = existing.tables[table]
+  if (!tableColumns) return
+  const current = tableColumns.find((c) => c.column === columnName)
+  if (!current) return
+  existing.tables[table] = tableColumns.map((c) =>
+    c.column === columnName ? { ...c, targetPhase } : c,
+  )
+  await writeManifest(existing, cwd)
+}

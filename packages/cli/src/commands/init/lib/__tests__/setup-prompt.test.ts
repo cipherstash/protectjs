@@ -125,4 +125,14 @@ describe('renderSetupPrompt — orient + route', () => {
     expect(out).toContain('## Stop and ask the user when')
     expect(out).toMatch(/path 2/i)
   })
+
+  it('flags the bundler exclusion for projects using @cipherstash/stack', () => {
+    // Skipping serverExternalPackages / webpack externals is the most
+    // common Next.js footgun — the agent missed it on the spike project.
+    // The prompt should call this out explicitly in the path-1 walkthrough
+    // so it's visible without having to read the skill.
+    const out = renderSetupPrompt(baseCtx)
+    expect(out).toContain('serverExternalPackages')
+    expect(out).toContain('@cipherstash/protect-ffi')
+  })
 })

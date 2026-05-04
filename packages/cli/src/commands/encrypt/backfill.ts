@@ -1,5 +1,11 @@
 import { loadStashConfig } from '@/config/index.js'
-import { appendEvent, progress, runBackfill } from '@cipherstash/migrate'
+import {
+  type ManifestColumn,
+  appendEvent,
+  progress,
+  runBackfill,
+  upsertManifestColumn,
+} from '@cipherstash/migrate'
 import * as p from '@clack/prompts'
 import pg from 'pg'
 import { loadEncryptionContext, requireTable } from './context.js'
@@ -158,6 +164,24 @@ export async function backfillCommand(options: BackfillCommandOptions) {
 
     const { transform: transformPlaintext, castAs: detectedCastAs } =
       buildPlaintextCoercer(tableSchema, schemaColumnKey)
+
+    // Record intent in `.cipherstash/migrations.json`. Backfill is the
+    // first lifecycle command the user invokes for a column, so it's the
+    // natural moment to commit the manifest entry. Idempotent — re-runs
+    // (resume / --force) replace the same entry with the same content.
+    // `targetPhase: 'cut-over'` is the typical end state; the user can
+    // hand-edit the manifest to bump it to 'dropped' later, or `stash
+    // encrypt drop` does that automatically when it runs.
+    const manifestEntry = buildManifestEntry(
+      tableSchema,
+      schemaColumnKey,
+      plaintextColumn,
+      options.pkColumn,
+    )
+    await upsertManifestColumn(options.table, manifestEntry)
+    p.log.success(
+      `Recorded intent for ${options.table}.${plaintextColumn} in .cipherstash/migrations.json.`,
+    )
 
     // protect-ffi's JsPlaintext wire enum currently has 4 variants:
     // String / Number / Boolean / JsonB. Date and Timestamp columns are
@@ -401,4 +425,51 @@ async function ensureDualWritesDeployed(
     `${opts.table}.${opts.column} marked as 'dual-writing' in cs_migrations.`,
   )
   return true
+}
+
+/**
+ * Build the manifest entry for the column being backfilled by inspecting
+ * the user's `EncryptedTable` schema. The manifest's `castAs` and
+ * `indexes` fields mirror what EQL was configured with via `db push`, so
+ * the source of truth is the same schema object the encryption client
+ * consumes.
+ *
+ * `EncryptedTable.build()` shape (from `@cipherstash/stack/schema`):
+ *
+ *   { columns: { [key]: { cast_as: 'string' | …, indexes: { ore?, unique?, match?, ste_vec? } } } }
+ *
+ * We pull the entry keyed by `schemaColumnKey` and surface the configured
+ * index kinds as a flat array of `IndexKind` values that the manifest
+ * schema accepts.
+ */
+function buildManifestEntry(
+  // biome-ignore lint/suspicious/noExplicitAny: EncryptedTable.build() is generic
+  tableSchema: { build(): { columns: Record<string, any> } },
+  schemaColumnKey: string,
+  plaintextColumn: string,
+  pkColumn: string | undefined,
+): ManifestColumn {
+  let castAs = 'text'
+  // biome-ignore lint/suspicious/noExplicitAny: see buildPlaintextCoercer for the same shape
+  let indexConfig: Record<string, any> = {}
+  try {
+    const built = tableSchema.build().columns?.[schemaColumnKey]
+    castAs = built?.cast_as ?? 'text'
+    indexConfig = built?.indexes ?? {}
+  } catch {
+    // Fall through with defaults — the manifest is informational, so a
+    // partial entry is better than failing the whole backfill.
+  }
+
+  const indexes = (['unique', 'match', 'ore', 'ste_vec'] as const).filter(
+    (kind) => indexConfig[kind] !== undefined,
+  )
+
+  return {
+    column: plaintextColumn,
+    castAs,
+    indexes,
+    targetPhase: 'cut-over',
+    ...(pkColumn ? { pkColumn } : {}),
+  }
 }
