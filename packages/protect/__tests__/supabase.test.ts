@@ -1,5 +1,6 @@
 import 'dotenv/config'
 import { csColumn, csTable } from '@cipherstash/schema'
+import postgres from 'postgres'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import {
   type Encrypted,
@@ -17,6 +18,9 @@ if (!process.env.SUPABASE_URL) {
 }
 if (!process.env.SUPABASE_ANON_KEY) {
   throw new Error('Missing env.SUPABASE_ANON_KEY')
+}
+if (!process.env.DATABASE_URL) {
+  throw new Error('Missing env.DATABASE_URL — needed for fixture setup DDL')
 }
 
 const supabase = createClient(
@@ -41,6 +45,33 @@ const TEST_RUN_ID = `test-run-${Date.now()}-${Math.random().toString(36).slice(2
 const insertedIds: number[] = []
 
 beforeAll(async () => {
+  // Idempotent fixture setup. The `protect-ci` table is shared across the
+  // drizzle + protect/supabase + stack/supabase integration suites; each
+  // suite's beforeAll runs the same CREATE TABLE so a fresh database is
+  // ready without manual DBA work. The schema is the union of every
+  // column those suites read or write.
+  const sql = postgres(process.env.DATABASE_URL as string, { prepare: false })
+  try {
+    await sql`
+      CREATE TABLE IF NOT EXISTS "protect-ci" (
+        id INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+        email eql_v2_encrypted,
+        age eql_v2_encrypted,
+        score eql_v2_encrypted,
+        profile eql_v2_encrypted,
+        encrypted eql_v2_encrypted,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        test_run_id TEXT
+      )
+    `
+    // Tell PostgREST to refresh its schema cache so the supabase-js client
+    // can see a freshly created table without waiting for the polling
+    // interval. No-op on plain Postgres (no listener bound).
+    await sql`NOTIFY pgrst, 'reload schema'`
+  } finally {
+    await sql.end()
+  }
+
   // Clean up any data from this specific test run (safe for concurrent runs)
   const { error } = await supabase
     .from('protect-ci')
@@ -50,7 +81,7 @@ beforeAll(async () => {
   if (error) {
     console.warn(`[protect]: Failed to clean up test data: ${error.message}`)
   }
-})
+}, 30000)
 
 afterAll(async () => {
   // Clean up all data from this test run

@@ -117,6 +117,24 @@ beforeAll(async () => {
   postgresClient = postgres(process.env.DATABASE_URL as string)
   db = drizzle({ client: postgresClient })
 
+  // Idempotent fixture setup. The `protect-ci` table is shared across the
+  // drizzle + protect/supabase + stack/supabase integration suites; each
+  // suite's beforeAll runs the same CREATE TABLE so a fresh database is
+  // ready without manual DBA work. The schema is the union of every
+  // column those suites read or write.
+  await postgresClient`
+    CREATE TABLE IF NOT EXISTS "protect-ci" (
+      id INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+      email eql_v2_encrypted,
+      age eql_v2_encrypted,
+      score eql_v2_encrypted,
+      profile eql_v2_encrypted,
+      encrypted eql_v2_encrypted,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      test_run_id TEXT
+    )
+  `
+
   const encryptedUsers = unwrapResult(
     await protectClient.bulkEncryptModels(userSeedData, users),
     'bulkEncryptModels',
