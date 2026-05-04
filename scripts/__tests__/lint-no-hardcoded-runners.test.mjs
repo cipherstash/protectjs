@@ -38,4 +38,8 @@ describe('lint-no-hardcoded-runners', () => {
   it('ignores comments mentioning npx', () => {
     expect(run(fx('allowed-comment.ts')).exitCode).toBe(0)
   })
+
+  it('skips files in __tests__ directories', () => {
+    expect(run(fx('__tests__/inside.test.ts')).exitCode).toBe(0)
+  })
 })

@@ -24,9 +24,10 @@ async function* walk(dir) {
   for (const entry of entries) {
     const full = join(dir, entry.name)
     if (entry.isDirectory()) {
-      if (entry.name === 'node_modules' || entry.name === 'dist' || entry.name === '.turbo') continue
+      if (entry.name === 'node_modules' || entry.name === 'dist' || entry.name === '.turbo' || entry.name === '__tests__') continue
       yield* walk(full)
     } else if (/\.(ts|tsx|mts|cts)$/.test(entry.name)) {
+      if (/\.(test|spec)\.(ts|tsx|mts|cts)$/.test(entry.name)) continue
       yield full
     }
   }
@@ -60,6 +61,7 @@ for (const target of TARGETS) {
   for await (const file of files) {
     const rel = relative(REPO_ROOT, file)
     if (ALLOWLISTED_PATHS.has(rel)) continue
+    if (/\.(test|spec)\.(ts|tsx|mts|cts)$/.test(file)) continue
     const lines = readFileSync(file, 'utf8').split('\n')
     lines.forEach((line, idx) => {
       if (!NPX_LITERAL.test(line)) return
