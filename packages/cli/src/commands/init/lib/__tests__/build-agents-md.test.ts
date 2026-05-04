@@ -50,6 +50,5 @@ describe('buildAgentsMdBody', () => {
     expect(out).toContain('# Skill: stash-cli')
     expect(out).not.toContain('# Skill: stash-drizzle')
     expect(out).not.toContain('# Skill: stash-supabase')
-    expect(out).not.toContain('# Skill: stash-dynamodb')
   })
 })

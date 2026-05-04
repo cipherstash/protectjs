@@ -19,11 +19,11 @@ import type { InitProvider, InitState, InitStep } from '../types.js'
 export const resolveDatabaseStep: InitStep = {
   id: 'resolve-database',
   name: 'Resolve database URL',
-  async run(state: InitState, _provider: InitProvider): Promise<InitState> {
+  async run(state: InitState, provider: InitProvider): Promise<InitState> {
     // The provider name carries the integration flag the user passed at the
     // CLI (`--supabase` → 'supabase'), which lets the resolver try
     // `supabase status` even before we've inspected the project layout.
-    const supabaseHint = _provider.name === 'supabase'
+    const supabaseHint = provider.name === 'supabase'
     const databaseUrl = await resolveDatabaseUrl({ supabase: supabaseHint })
     return { ...state, databaseUrl }
   },

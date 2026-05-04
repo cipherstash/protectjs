@@ -2,14 +2,11 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import * as p from '@clack/prompts'
 import { buildAgentsMdBody } from '../lib/build-agents-md.js'
+import { writeArtifacts } from '../lib/handoff-helpers.js'
 import { upsertManagedBlock } from '../lib/sentinel-upsert.js'
 import {
   CONTEXT_REL_PATH,
   SETUP_PROMPT_REL_PATH,
-  buildContextFile,
-  buildSetupPromptContext,
-  writeContextFile,
-  writeSetupPrompt,
 } from '../lib/write-context.js'
 import type { InitProvider, InitState, InitStep } from '../types.js'
 
@@ -34,7 +31,6 @@ export const handoffAgentsMdStep: InitStep = {
   async run(state: InitState, _provider: InitProvider): Promise<InitState> {
     const cwd = process.cwd()
     const integration = state.integration ?? 'postgresql'
-    const envKeys = state.envKeys ?? []
 
     const agentsMdAbs = resolve(cwd, AGENTS_MD_REL_PATH)
     const managed = buildAgentsMdBody(integration, 'doctrine-plus-skills')
@@ -48,20 +44,7 @@ export const handoffAgentsMdStep: InitStep = {
     )
     p.log.success(`Wrote ${AGENTS_MD_REL_PATH}`)
 
-    const contextAbs = resolve(cwd, CONTEXT_REL_PATH)
-    const ctx = buildContextFile(state)
-    ctx.envKeys = envKeys
-    // No skill directory installed for editor-agent users; the rules are
-    // inlined directly into AGENTS.md.
-    ctx.installedSkills = []
-    writeContextFile(contextAbs, ctx)
-    p.log.success(`Wrote ${CONTEXT_REL_PATH}`)
-
-    const promptCtx = buildSetupPromptContext(state, 'agents-md', [])
-    if (promptCtx) {
-      writeSetupPrompt(resolve(cwd, SETUP_PROMPT_REL_PATH), promptCtx)
-      p.log.success(`Wrote ${SETUP_PROMPT_REL_PATH}`)
-    }
+    writeArtifacts(cwd, state, 'agents-md', [])
 
     p.note(
       [

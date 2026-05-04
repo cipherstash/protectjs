@@ -1,8 +1,8 @@
 import { existsSync, readFileSync } from 'node:fs'
-import { dirname, join, resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { join } from 'node:path'
 import * as p from '@clack/prompts'
 import type { Integration } from '../types.js'
+import { findBundledDir } from './bundled-paths.js'
 import { SKILL_MAP, readBundledSkill } from './install-skills.js'
 
 /** Sentinel pair so re-runs replace only our region in the user's file. */
@@ -85,35 +85,9 @@ function stripFrontmatter(body: string): string {
   return body.slice(end + 4).trim()
 }
 
-/**
- * Locate and read the bundled doctrine markdown. `tsup` copies
- * `src/commands/init/doctrine/` into `dist/commands/init/doctrine/` at
- * build time. Multi-layout fallback mirrors `install-skills.ts` so dev
- * (running from `src/`) and prod builds both find the file.
- */
 function readDoctrine(): string | undefined {
-  const here = currentDir()
-  const candidates = [
-    // Layout-preserving: same directory as the compiled lib file.
-    join(here, 'doctrine', 'AGENTS-doctrine.md'),
-    // Dev / preserved-layout build: sibling of `lib/`.
-    join(here, '..', 'doctrine', 'AGENTS-doctrine.md'),
-    // Prod with shallow flattening (e.g. tsup chunk dir).
-    join(here, '..', '..', 'doctrine', 'AGENTS-doctrine.md'),
-    // Prod with deeper flattening — `dist/bin/` calling back into init.
-    join(here, '..', '..', '..', 'doctrine', 'AGENTS-doctrine.md'),
-    // Final fallback: walk further up. Costs ~1ms of stat calls; harmless.
-    join(here, '..', '..', '..', '..', 'doctrine', 'AGENTS-doctrine.md'),
-  ]
-  for (const candidate of candidates) {
-    if (existsSync(candidate)) return readFileSync(resolve(candidate), 'utf-8')
-  }
-  return undefined
-}
-
-function currentDir(): string {
-  if (typeof import.meta?.url === 'string' && import.meta.url) {
-    return dirname(fileURLToPath(import.meta.url))
-  }
-  return __dirname
+  const dir = findBundledDir('doctrine')
+  if (!dir) return undefined
+  const file = join(dir, 'AGENTS-doctrine.md')
+  return existsSync(file) ? readFileSync(file, 'utf-8') : undefined
 }

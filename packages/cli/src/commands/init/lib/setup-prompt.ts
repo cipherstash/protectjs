@@ -99,10 +99,8 @@ function rulesPointer(
   handoff: HandoffChoice,
   installedSkills: string[],
 ): string {
-  // Empty `installedSkills` means the bundled skills were missing at install
-  // time (`installSkills` warned and returned []). Avoid emitting the broken
-  // "the  skills loaded into …" string by falling back to a generic
-  // pointer that doesn't try to enumerate.
+  // Empty list = bundled skills missing at install time. Skip the
+  // enumeration so we don't emit "the  skills loaded into …".
   if (handoff === 'claude-code') {
     if (installedSkills.length === 0) {
       return 'the installed skills under `.claude/skills/`'

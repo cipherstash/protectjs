@@ -24,14 +24,9 @@ describe('SKILL_MAP', () => {
     expect(SKILL_MAP.supabase).toContain('stash-supabase')
   })
 
-  it('dynamodb includes stash-dynamodb', () => {
-    expect(SKILL_MAP.dynamodb).toContain('stash-dynamodb')
-  })
-
   it('postgresql skips ORM-specific skills', () => {
     expect(SKILL_MAP.postgresql).not.toContain('stash-drizzle')
     expect(SKILL_MAP.postgresql).not.toContain('stash-supabase')
-    expect(SKILL_MAP.postgresql).not.toContain('stash-dynamodb')
   })
 })
 

@@ -1,17 +1,13 @@
-import { spawn } from 'node:child_process'
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import * as p from '@clack/prompts'
 import { buildAgentsMdBody } from '../lib/build-agents-md.js'
+import { spawnAgent, writeArtifacts } from '../lib/handoff-helpers.js'
 import { installSkills } from '../lib/install-skills.js'
 import { upsertManagedBlock } from '../lib/sentinel-upsert.js'
 import {
   CONTEXT_REL_PATH,
   SETUP_PROMPT_REL_PATH,
-  buildContextFile,
-  buildSetupPromptContext,
-  writeContextFile,
-  writeSetupPrompt,
 } from '../lib/write-context.js'
 import type { InitProvider, InitState, InitStep } from '../types.js'
 
@@ -19,17 +15,6 @@ const AGENTS_MD_REL_PATH = 'AGENTS.md'
 const CODEX_SKILLS_DIR = '.codex/skills'
 
 const CODEX_INSTALL_URL = 'https://github.com/openai/codex'
-
-function spawnCodex(prompt: string): Promise<number> {
-  return new Promise((resolvePromise) => {
-    const child = spawn('codex', [prompt], {
-      stdio: 'inherit',
-      shell: false,
-    })
-    child.on('close', (code) => resolvePromise(code ?? 0))
-    child.on('error', () => resolvePromise(-1))
-  })
-}
 
 /**
  * Hand off to Codex CLI. Following OpenAI's Codex guidance, AGENTS.md
@@ -46,7 +31,6 @@ export const handoffCodexStep: InitStep = {
   async run(state: InitState, _provider: InitProvider): Promise<InitState> {
     const cwd = process.cwd()
     const integration = state.integration ?? 'postgresql'
-    const envKeys = state.envKeys ?? []
 
     const installed = installSkills(cwd, CODEX_SKILLS_DIR, integration)
     if (installed.length > 0) {
@@ -67,18 +51,7 @@ export const handoffCodexStep: InitStep = {
     )
     p.log.success(`Wrote ${AGENTS_MD_REL_PATH}`)
 
-    const contextAbs = resolve(cwd, CONTEXT_REL_PATH)
-    const ctx = buildContextFile(state)
-    ctx.envKeys = envKeys
-    ctx.installedSkills = installed
-    writeContextFile(contextAbs, ctx)
-    p.log.success(`Wrote ${CONTEXT_REL_PATH}`)
-
-    const promptCtx = buildSetupPromptContext(state, 'codex', installed)
-    if (promptCtx) {
-      writeSetupPrompt(resolve(cwd, SETUP_PROMPT_REL_PATH), promptCtx)
-      p.log.success(`Wrote ${SETUP_PROMPT_REL_PATH}`)
-    }
+    writeArtifacts(cwd, state, 'codex', installed)
 
     const launchPrompt = `Read ${SETUP_PROMPT_REL_PATH} and complete the setup steps. AGENTS.md has the durable rules; the skills under ${CODEX_SKILLS_DIR}/ have the API details; ${CONTEXT_REL_PATH} has the project facts.`
 
@@ -97,7 +70,7 @@ export const handoffCodexStep: InitStep = {
     }
 
     p.log.info('Launching Codex...')
-    const exitCode = await spawnCodex(launchPrompt)
+    const exitCode = await spawnAgent('codex', launchPrompt)
     if (exitCode !== 0) {
       p.log.warn(
         `Codex exited with code ${exitCode}. Re-run \`codex '${launchPrompt}'\` to resume.`,

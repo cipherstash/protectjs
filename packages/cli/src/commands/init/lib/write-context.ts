@@ -41,8 +41,13 @@ export interface ContextFile {
  * lives at `dist/index.js` (or similar) and the source at
  * `src/commands/init/lib/write-context.ts`, so we walk up to six levels.
  * Falling back to `'unknown'` is fine — the field is informational.
+ *
+ * Memoized: the answer is fixed for the lifetime of the process.
  */
+let cliVersionCache: string | undefined
+
 export function readCliVersion(): string {
+  if (cliVersionCache !== undefined) return cliVersionCache
   let dir = dirname(fileURLToPath(import.meta.url))
   for (let i = 0; i < 6; i++) {
     const candidate = resolve(dir, 'package.json')
@@ -52,14 +57,18 @@ export function readCliVersion(): string {
           name?: string
           version?: string
         }
-        if (pkg.name === 'stash' && pkg.version) return pkg.version
+        if (pkg.name === 'stash' && pkg.version) {
+          cliVersionCache = pkg.version
+          return pkg.version
+        }
       } catch {
         // keep walking
       }
     }
     dir = dirname(dir)
   }
-  return 'unknown'
+  cliVersionCache = 'unknown'
+  return cliVersionCache
 }
 
 function ensureDir(path: string): void {

@@ -49,20 +49,39 @@ function packageManagerFromUserAgent(): PackageManager | undefined {
  *     without a matching lockfile (e.g. fresh projects).
  *  2. Lockfile in cwd — respects the existing project convention.
  *  3. Default to `npm`.
+ *
+ * Cached per (cwd, user-agent) pair: the same CLI process never changes
+ * either, but tests vary both via `vi.spyOn(process, 'cwd')` so the cache
+ * has to be input-keyed rather than a single slot.
  */
-export function detectPackageManager(): PackageManager {
-  const fromUserAgent = packageManagerFromUserAgent()
-  if (fromUserAgent) return fromUserAgent
+const pmCache = new Map<string, PackageManager>()
 
+export function detectPackageManager(): PackageManager {
   const cwd = process.cwd()
+  const ua = process.env.npm_config_user_agent ?? ''
+  const cacheKey = `${cwd}\n${ua}`
+  const cached = pmCache.get(cacheKey)
+  if (cached) return cached
+
+  const fromUserAgent = packageManagerFromUserAgent()
+  if (fromUserAgent) {
+    pmCache.set(cacheKey, fromUserAgent)
+    return fromUserAgent
+  }
+
+  let pm: PackageManager = 'npm'
   if (
     existsSync(resolve(cwd, 'bun.lockb')) ||
     existsSync(resolve(cwd, 'bun.lock'))
-  )
-    return 'bun'
-  if (existsSync(resolve(cwd, 'pnpm-lock.yaml'))) return 'pnpm'
-  if (existsSync(resolve(cwd, 'yarn.lock'))) return 'yarn'
-  return 'npm'
+  ) {
+    pm = 'bun'
+  } else if (existsSync(resolve(cwd, 'pnpm-lock.yaml'))) {
+    pm = 'pnpm'
+  } else if (existsSync(resolve(cwd, 'yarn.lock'))) {
+    pm = 'yarn'
+  }
+  pmCache.set(cacheKey, pm)
+  return pm
 }
 
 /** Returns the install command for adding a production dependency with the given package manager. */
