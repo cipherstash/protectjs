@@ -1,5 +1,5 @@
 ---
-'@cipherstash/cli': patch
+'stash': patch
 ---
 
 Make `--help` banners and the post-install "Next steps" panel show commands using the package manager the user actually invoked the CLI with, instead of always emitting `npx`.
