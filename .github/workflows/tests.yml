@@ -31,6 +31,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Lint — no hardcoded package-manager runners
+        run: pnpm run lint:runners
+
+      - name: Test — lint script self-tests
+        run: pnpm run test:scripts
+
       - name: Create .env file in ./packages/protect/
         run: |
           touch ./packages/protect/.env

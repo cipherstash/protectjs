@@ -47,9 +47,11 @@
     "dev": "turbo dev --filter './packages/*'",
     "clean": "rimraf --glob **/.next **/.turbo **/dist **/node_modules",
     "code:fix": "biome check --write",
+    "lint:runners": "node scripts/lint-no-hardcoded-runners.mjs",
     "release": "pnpm run build && changeset publish",
     "test": "turbo test --filter './packages/*'",
-    "test:e2e": "turbo run test:e2e"
+    "test:e2e": "turbo run test:e2e",
+    "test:scripts": "vitest run --config scripts/vitest.config.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
