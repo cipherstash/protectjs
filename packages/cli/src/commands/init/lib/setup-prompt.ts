@@ -28,8 +28,8 @@ interface MigrationCommands {
 }
 
 /**
- * Per-integration migration commands. We compute these from the detected
- * package manager + integration so the agent gets the exact string it should
+ * Per-integration migration commands. Used in the path-1 (add new encrypted
+ * column) walkthrough so the prompt names the exact strings the agent should
  * run, not a generic "run your migrations" hand-wave.
  */
 function migrationCommands(
@@ -82,10 +82,6 @@ function checked(line: string): string {
   return `- [x] ${line}`
 }
 
-function todo(line: string): string {
-  return `- [ ] ${line}`
-}
-
 /**
  * Phrase the "where the rules live" pointer for each handoff target.
  *
@@ -95,39 +91,63 @@ function todo(line: string): string {
  *                 skill directories, so the rules are inlined there)
  *   wizard      → handled separately; this prompt isn't written for wizard
  */
-function rulesPointer(
-  handoff: HandoffChoice,
-  installedSkills: string[],
-): string {
-  // Empty list = bundled skills missing at install time. Skip the
-  // enumeration so we don't emit "the  skills loaded into …".
-  if (handoff === 'claude-code') {
-    if (installedSkills.length === 0) {
-      return 'the installed skills under `.claude/skills/`'
-    }
-    const skillNames = installedSkills.map((s) => `\`${s}\``).join(', ')
-    return `the ${skillNames} skill${installedSkills.length !== 1 ? 's' : ''} loaded into \`.claude/skills/\``
+function rulesLocation(handoff: HandoffChoice): string {
+  if (handoff === 'claude-code') return '`.claude/skills/`'
+  if (handoff === 'codex')
+    return '`.codex/skills/` plus durable rules in `AGENTS.md`'
+  return '`AGENTS.md` (Cursor / Windsurf / Cline)'
+}
+
+/**
+ * One-line purpose for each skill so the prompt can introduce them by what
+ * they're for, not just by name. Returned in the order the user is most
+ * likely to consult them.
+ */
+const SKILL_PURPOSES: Record<string, string> = {
+  'stash-encryption':
+    'the encryption API, schema definition, and the column-migration lifecycle (the source of truth for migrating an existing column)',
+  'stash-drizzle':
+    'Drizzle-specific patterns: declaring encrypted columns, query operators, the migrating-an-existing-column worked example',
+  'stash-supabase':
+    'Supabase-specific patterns: `encryptedSupabase` wrapper, encrypted query filters, transparent decryption',
+  'stash-dynamodb':
+    'DynamoDB encryption: per-item encrypt/decrypt, HMAC attribute keys, audit logging',
+  'stash-cli':
+    '`stash` command reference — `db install`, `encrypt {status,plan,backfill,cutover,drop}`, etc.',
+  'stash-secrets':
+    'storing and retrieving encrypted secrets (separate concern from column encryption)',
+  'stash-supply-chain-security':
+    'supply-chain controls (post-install policy, lockfile integrity, etc.)',
+}
+
+function renderSkillIndex(installedSkills: string[]): string {
+  if (installedSkills.length === 0) {
+    return 'No skills were installed (handoff likely wrote AGENTS.md only — read that for the rules).'
   }
-  if (handoff === 'codex') {
-    if (installedSkills.length === 0) {
-      return '`AGENTS.md` (durable rules) + the installed skills under `.codex/skills/`'
-    }
-    const skillNames = installedSkills.map((s) => `\`${s}\``).join(', ')
-    return `\`AGENTS.md\` (durable rules) + the ${skillNames} skill${installedSkills.length !== 1 ? 's' : ''} loaded into \`.codex/skills/\``
-  }
-  return 'the `AGENTS.md` at the project root'
+  return installedSkills
+    .map((name) => {
+      const purpose = SKILL_PURPOSES[name] ?? '(no description)'
+      return `- **\`${name}\`** — ${purpose}`
+    })
+    .join('\n')
 }
 
 /**
  * Render the project-specific action prompt.
  *
- * This is the file the agent reads first — it tells them exactly what state
- * the project is in, what's already done, and what to do next, with concrete
- * paths and commands. The skills / AGENTS.md provide reusable rules; this
- * file is the imperative for *this run*.
+ * This is the file the agent reads first after `stash init` hands off. It
+ * does NOT prescribe a fixed sequence of edits — the agent doesn't yet know
+ * what the user wants. Instead the prompt:
  *
- * Structure: header → "what's done" checklist → "what's next" actionable list
- * → reference to the skills/AGENTS.md for the rules.
+ *   1. Confirms what setup is complete.
+ *   2. Names the skills loaded and what each is for.
+ *   3. Explains the two real options for encrypting a column (add a new
+ *      encrypted column from scratch, or migrate an existing populated
+ *      column via the staged-twin lifecycle). In-place conversion is not
+ *      supported and called out as such.
+ *   4. Tells the agent its FIRST response should be a routing question, not
+ *      an action.
+ *   5. Lists the "stop and ask" rules that override flow mechanics.
  */
 export function renderSetupPrompt(ctx: SetupPromptContext): string {
   const cli = runnerCommand(ctx.packageManager, 'stash')
@@ -137,11 +157,7 @@ export function renderSetupPrompt(ctx: SetupPromptContext): string {
     checked('Authenticated to CipherStash and selected a workspace'),
     checked(`Detected integration: \`${ctx.integration}\``),
     checked(
-      `Wrote the encryption client to \`${ctx.encryptionClientPath}\` (${
-        ctx.schemaFromIntrospection
-          ? 'sourced from live database introspection'
-          : "PLACEHOLDER schema — not yet aligned to the user's real data model"
-      })`,
+      `Wrote a placeholder encryption client at \`${ctx.encryptionClientPath}\` (a small file showing the encryption-client patterns; the user's real Drizzle/Supabase schema files remain authoritative)`,
     ),
   ]
   if (ctx.stackInstalled) {
@@ -153,97 +169,90 @@ export function renderSetupPrompt(ctx: SetupPromptContext): string {
   if (ctx.eqlInstalled) {
     done.push(
       checked(
-        'Installed the EQL extension into the database (`stash db install`)',
+        'Installed the EQL extension and `cipherstash.cs_migrations` into the database',
       ),
     )
   }
 
-  const next: string[] = []
-
-  if (!ctx.eqlInstalled) {
-    next.push(
-      todo(
-        `**Install EQL into the database** — run \`${cli} db install\`. This is required before any migration that creates encrypted columns.`,
-      ),
-    )
-  }
-
-  if (!ctx.schemaFromIntrospection) {
-    next.push(
-      todo(
-        `**Reshape the encryption client.** \`${ctx.encryptionClientPath}\` currently uses a placeholder \`users\` table with \`email\` and \`name\` columns. Read the user's existing schema (probably under \`src/db/\` or similar for ${ctx.integration}), decide which real tables and columns should be encrypted, and update the encryption client to match. Refer to the skills for the column types and constraints to use.`,
-      ),
-    )
-  }
-
-  if (ctx.integration === 'drizzle') {
-    next.push(
-      todo(
-        `**Wire the encryption client into Drizzle config.** Make sure \`drizzle.config.ts\`'s \`schema\` field includes the encryption client file so \`drizzle-kit generate\` picks up the encrypted columns. If the user keeps a single \`schema.ts\`, re-export the table definitions from there instead.`,
-      ),
-    )
-  }
-
-  if (ctx.integration === 'supabase') {
-    next.push(
-      todo(
-        '**Wrap the Supabase client.** Find every call to `createClient` / `createServerClient` / `createBrowserClient` from `@supabase/supabase-js` or `@supabase/ssr`. Wrap each with `encryptedSupabase({ encryptionClient, supabaseClient })` from `@cipherstash/stack/supabase` (see the `stash-supabase` skill for the exact API).',
-      ),
-    )
-  }
-
-  if (migration) {
-    next.push(
-      todo(
-        `**Generate the migration** — \`${migration.generate}\` (${migration.tool}). Verify the generated SQL declares encrypted columns as nullable \`jsonb\`. Never \`NOT NULL\` on creation.`,
-      ),
-    )
-    next.push(
-      todo(
-        `**Apply the migration** — \`${migration.apply}\`. Show the user the generated SQL before running.`,
-      ),
-    )
-  } else {
-    next.push(
-      todo(
-        '**Generate and apply a migration** that adds the encrypted columns as nullable `jsonb`. The exact tooling depends on the project — pick the one already in use.',
-      ),
-    )
-  }
-
-  next.push(
-    todo(
-      '**Verify with a round-trip.** Insert a record through the encryption client, select it back, confirm the value decrypts and the search ops work as expected.',
-    ),
-  )
-
-  return [
-    '# CipherStash setup — action plan',
+  const sections: string[] = [
+    '# CipherStash setup — orient and ask',
     '',
-    `Integration: ${ctx.integration}`,
-    `Package manager: ${ctx.packageManager}`,
+    `Integration: \`${ctx.integration}\` · Package manager: \`${ctx.packageManager}\``,
     '',
-    `You are picking up a CipherStash setup that \`stash init\` has started. Read this file in full before touching anything. Project-specific facts live in \`.cipherstash/context.json\`. Reusable rules (column types, things never to touch, never-\`.notNull()\`-on-encrypted etc.) live in ${rulesPointer(ctx.handoff, ctx.installedSkills)}.`,
+    '`stash init` has finished its mechanical setup. Your job is **not** to start editing schema or running migrations immediately. Your job is to **orient the user with the two real options for encrypting a column, then ask which one they want before touching anything**. Pick concrete table/column names from `.cipherstash/context.json` when describing the options so the user can recognise their own data.',
     '',
     '## What `stash init` already did',
     '',
     ...done,
     '',
-    '## What you need to do',
+    '## Skills loaded',
     '',
-    ...next,
+    `Reusable rules and worked examples live in ${rulesLocation(ctx.handoff)}:`,
+    '',
+    renderSkillIndex(ctx.installedSkills),
+    '',
+    'Read the skills before answering API or pattern questions. The doctrine in `AGENTS.md` (or its inlined equivalent) covers the invariants that apply regardless of which flow you take — never log plaintext, never `.notNull()` on creation, etc.',
+    '',
+    '## The two options',
+    '',
+    "There are exactly two supported ways to encrypt a column. Recognise which one applies to the user's request before doing anything.",
+    '',
+    '### Add a new encrypted column',
+    '',
+    'Use when the column **does not yet exist** in the database (no plaintext predecessor to preserve). This is normal Drizzle / Supabase work plus the encryption client patterns from the integration skill.',
+    '',
+    "1. **If this is the first encrypted column in the project, configure the bundler exclusion first.** `@cipherstash/stack` cannot be bundled (it wraps a native FFI module). Next.js: add `serverExternalPackages: ['@cipherstash/stack', '@cipherstash/protect-ffi']` to `next.config.*`. Webpack: `externals`. esbuild: `external`. Vite SSR: `ssr.external`. Without this, the encryption client crashes at runtime with `Cannot find module '@cipherstash/protect-ffi-*'`. See the `stash-encryption` skill's Installation section for the full snippets.",
+    "2. Edit the user's real schema file (`src/db/schema.ts` or wherever they keep it) to declare the new encrypted column. Use the patterns in the integration skill — `encryptedType` for Drizzle, `encryptedColumn` for Supabase. Encrypted columns must be **nullable `jsonb`** at creation time. Never `.notNull()`.",
+    `3. Generate the schema migration${migration ? ` — \`${migration.generate}\` (${migration.tool})` : " using the project's existing migration tooling"}.`,
+    `4. Show the user the generated SQL before applying${migration ? ` — \`${migration.apply}\`` : ''}.`,
+    `5. Register the encryption config — \`${cli} db push\`. If the project has no active EQL config yet (first encrypted column ever), this writes directly to active and you can skip step 6. If an active config already exists, push writes \`pending\` and prints a next-step note.`,
+    `6. **If db push wrote pending**, promote it to active — \`${cli} db activate\`. (Use \`${cli} db activate\` here because no rename is needed; \`${cli} encrypt cutover\` is reserved for the migrate-existing-column flow.)`,
+    '7. Wire the column through the application code: insert paths encrypt before write, select paths decrypt after read, query paths use the right operator (`protectOps.eq`, etc. — see the integration skill).',
+    '8. Verify with a round-trip: insert a record, select it back, confirm the value decrypts and the search ops work.',
+    '',
+    '### Migrate an existing column to encrypted',
+    '',
+    "Use when the column **already exists** in the user's database and contains live data that must be preserved.",
+    '',
+    "Why it's staged: there is no atomic way to replace a populated column with an encrypted one without corrupting data. Instead the lifecycle adds a parallel `<col>_encrypted` twin, dual-writes from the app while existing rows are backfilled, then renames the twin into the original column name and drops the old plaintext. The `stash encrypt` CLI commands drive each step; the `stash-encryption` skill has the full model.",
+    '',
+    "1. **Schema-add.** Add an `<col>_encrypted` twin column (nullable `jsonb`) alongside the existing plaintext column in the user's real schema file. Generate and apply the schema migration. **If this is the first encrypted column in the project, configure the bundler exclusion now** — see the snippets in the previous section. Without it, importing the encryption client at backfill time will crash.",
+    `2. **Register pending config** — \`${cli} db push\`. With an existing active config, this writes the new column-set as \`pending\`. Cutover (step 5) will promote it. (If this is the very first push for the project, db push writes active directly — fine, the rest of the flow still works.)`,
+    '3. **Dual-write.** Edit the application code so every insert/update writes to *both* `<col>` (plaintext, unchanged) and `<col>_encrypted` (ciphertext via the encryption client). Reads still come from the plaintext column. Ship that code change.',
+    `4. **Backfill.** Run \`${cli} encrypt backfill --table <T> --column <c>\`. The CLI prompts the user (or accepts \`--confirm-dual-writes-deployed\` non-interactively) to confirm dual-writes are live, then chunks through the existing rows. Resumable; checkpoints to \`cs_migrations\` after every chunk. SIGINT-safe.`,
+    `5. **Switch the schema and re-push, then cutover.** Update the schema file to declare the encrypted column under its final name (drop \`_encrypted\` suffix, switch \`<col>\` to \`encryptedType\`). Run \`${cli} db push\` again — pending now reflects the renamed shape. Then \`${cli} encrypt cutover --table <T> --column <c>\` runs the rename in one transaction (\`<col>\` → \`<col>_plaintext\`, \`<col>_encrypted\` → \`<col>\`) and promotes pending → active.`,
+    '6. **Wire the read path through the encryption client.** Post-cutover, `<col>` holds ciphertext. Read code paths must decrypt before returning the value to callers — `decryptModel(row, table)` for Drizzle, the `encryptedSupabase` wrapper for Supabase, or the equivalent `decrypt`/`bulkDecryptModels` calls. Without this step, your read paths return raw `eql_v2_encrypted` payloads to end users. The integration skill has the exact API.',
+    '7. **Remove the dual-write code.** The plaintext column is now `<col>_plaintext` and is no longer authoritative. Delete the dual-write logic from the persistence layer.',
+    `8. **Drop.** Run \`${cli} encrypt drop --table <T> --column <c>\`. Generates a migration that removes the now-unused \`<col>_plaintext\`. Apply with the project's normal migration tooling.`,
+    '',
+    'Recovery: if the user reports that backfill ran *before* the dual-write code was actually live, drift is expected (rows written during the backfill window land in plaintext only). Re-run with `--force` to encrypt every plaintext row regardless of current state.',
+    '',
+    '### Converting in place is not supported',
+    '',
+    'There is no supported way to drop a populated plaintext column and replace it with an encrypted column atomically — any "just swap the type" approach corrupts data or loses constraints. If the user asks for that, explain why it doesn\'t work and route them to the migrate-existing-column flow above. The only situation where you can clobber a column without staging is when there is genuinely no data to preserve, which is just the add-new-column flow.',
+    '',
+    '## Your first response',
+    '',
+    'Before any edits, send the user a short orientation message. Confirm setup is complete, list the skills loaded with one-line purposes, summarise the two options in your own words, and end with a clear question — *"Which would you like to do? You can name a specific table+column or describe what you\'re trying to protect."* Reference concrete tables/columns from `.cipherstash/context.json` when it helps.',
+    '',
+    'Once the user answers, execute the relevant flow. Show diffs / generated SQL before applying. Pause for review at every database-mutating step.',
     '',
     '## Stop and ask the user when',
     '',
     bullet(
-      'Schema reshaping involves dropping or renaming a column with existing data — this needs a backfill plan, not a rename.',
+      "The user asks to convert a populated column in place. Explain why it doesn't work and offer the migrate-existing-column flow instead.",
     ),
     bullet(
-      'You discover existing encrypted columns that disagree with the encryption client — someone else may have run `stash init` earlier with different choices.',
+      "A column the user names is already encrypted (`eql_v2_encrypted` udt) but with a different EQL config than they've described. This is the post-cutover re-encryption case (`stash encrypt update`, not yet shipped) — surface it instead of guessing.",
     ),
     bullet(
-      'A migration would change the data type of a column the user has already filled.',
+      'The schema migration would change the data type of a column the user has already filled.',
+    ),
+    bullet(
+      'You discover existing partial CipherStash setup that disagrees with what the user is describing — someone else may have run `stash init` earlier with different choices.',
     ),
     '',
-  ].join('\n')
+  ]
+
+  return sections.join('\n')
 }

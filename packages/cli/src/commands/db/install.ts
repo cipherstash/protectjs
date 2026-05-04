@@ -9,7 +9,12 @@ import {
   downloadEqlSql,
   loadBundledEqlSql,
 } from '@/installer/index.js'
+import {
+  MIGRATIONS_SCHEMA_SQL,
+  installMigrationsSchema,
+} from '@cipherstash/migrate'
 import * as p from '@clack/prompts'
+import pg from 'pg'
 import { ensureEncryptionClient } from './client-scaffold.js'
 import { ensureStashConfig } from './config-scaffold.js'
 import {
@@ -223,6 +228,23 @@ export async function installCommand(options: InstallOptions) {
     p.log.success('Supabase role permissions granted.')
   }
 
+  s.start('Installing cs_migrations tracking schema...')
+  const migrationsDb = new pg.Client({ connectionString: config.databaseUrl })
+  try {
+    await migrationsDb.connect()
+    await installMigrationsSchema(migrationsDb)
+    s.stop('cs_migrations schema installed.')
+  } catch (err) {
+    s.stop('Failed to install cs_migrations schema.')
+    p.log.warn(
+      err instanceof Error
+        ? err.message
+        : 'Encryption migration tracking is unavailable; `stash encrypt` commands will fail until this is resolved.',
+    )
+  } finally {
+    await migrationsDb.end()
+  }
+
   printNextSteps()
   p.outro('Done!')
 }
@@ -269,20 +291,22 @@ function resolveProviderOptions(
 }
 
 function printNextSteps(): void {
-  const pm = detectPackageManager()
   p.note(
     [
-      'Next steps:',
+      'Your project is set up. To encrypt your first column, pick the path',
+      'that fits and ask your agent (the one `stash init` handed off to,',
+      'or whichever agent you use):',
       '',
-      '  1. Wire up encrypt/decrypt with the wizard (AI-guided, automated):',
-      `       ${runnerCommand(pm, 'stash')} wizard`,
+      '  Migrate an existing populated column (preserves live data):',
+      '    Ask: "Use the stash lifecycle to encrypt <table>.<column>."',
       '',
-      '  2. Or use the client directly from @cipherstash/stack:',
-      "       import { Encryption } from '@cipherstash/stack'",
-      '       const client = await Encryption({ /* ... */ })',
-      '       await client.encryptModel(record, table).run()',
+      '  Add a new encrypted column from scratch (no plaintext predecessor):',
+      '    Ask: "Add an encrypted <column> to <table>."',
       '',
-      '  3. Docs: https://cipherstash.com/docs',
+      'The agent will edit your schema, generate the migration, wire the',
+      'application code, and run the relevant `stash encrypt` commands.',
+      'Reference: the stash-encryption / stash-cli skills (loaded in your',
+      "agent's workspace) and https://cipherstash.com/docs.",
     ].join('\n'),
     'What next',
   )
@@ -403,11 +427,16 @@ async function generateDrizzleMigration(
     }
   }
 
-  // Step 4: Write the EQL SQL into the migration file
+  // Step 4: Write the EQL SQL (and cs_migrations tracking schema) into
+  // the migration file. Bundling both means `drizzle-kit migrate` rolls
+  // everything needed for `stash encrypt ...` out to each environment
+  // in one go, rather than requiring an out-of-band `stash db install`.
   s.start('Writing EQL SQL into migration file...')
 
+  const migrationContents = `${eqlSql}\n\n-- CipherStash encryption-migration tracking schema.\n-- Tracks per-column phase + backfill progress for \`stash encrypt\`.\n${MIGRATIONS_SCHEMA_SQL.trim()}\n`
+
   try {
-    writeFileSync(generatedMigrationPath, eqlSql, 'utf-8')
+    writeFileSync(generatedMigrationPath, migrationContents, 'utf-8')
     s.stop('EQL SQL written to migration file.')
   } catch (error) {
     s.stop('Failed to write migration file.')

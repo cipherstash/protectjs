@@ -165,6 +165,27 @@ export function runnerCommand(pm: PackageManager, ref: string): string {
   }
 }
 
+/**
+ * argv split of {@link runnerCommand} for callers using `spawnSync` /
+ * `spawn` rather than a shell. Returns the binary plus any prefix args
+ * (`pnpm dlx` / `yarn dlx`); the caller appends the remaining argv.
+ */
+export function runnerArgv(pm: PackageManager): {
+  command: string
+  prefixArgs: string[]
+} {
+  switch (pm) {
+    case 'bun':
+      return { command: 'bunx', prefixArgs: [] }
+    case 'pnpm':
+      return { command: 'pnpm', prefixArgs: ['dlx'] }
+    case 'yarn':
+      return { command: 'yarn', prefixArgs: ['dlx'] }
+    case 'npm':
+      return { command: 'npx', prefixArgs: [] }
+  }
+}
+
 function toCamelCase(str: string): string {
   return str.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase())
 }
@@ -377,27 +398,116 @@ export function generateClientFromSchemas(
 }
 
 /**
- * Schema definition we ship as the "fresh project" placeholder. Exported
- * separately so steps that follow `build-schema` (gather-context, handoff)
- * can read it back without re-parsing the generated client file.
+ * Generate the placeholder encryption-client file `stash init` writes.
+ *
+ * Deliberately *not* a fully-formed schema: we used to introspect the user's
+ * DB and synthesise a `pgTable` here, which left users with two parallel
+ * definitions (the real one in `src/db/schema.ts` and the synthesised one
+ * here) and no clear way to reconcile them. The agent at handoff time was
+ * left guessing which was canonical.
+ *
+ * The placeholder now shows the encryption-client patterns inline as
+ * commented examples, exports a `encryptionClient` that points at no
+ * schemas yet, and explicitly tells the agent that the user's existing
+ * schema files remain authoritative. The agent's job during the handoff
+ * is to declare encrypted columns directly in those files and update the
+ * `Encryption({ schemas: [...] })` call below to reference them.
  */
-export const PLACEHOLDER_SCHEMA: SchemaDef = {
-  tableName: 'users',
-  columns: [
-    {
-      name: 'email',
-      dataType: 'string',
-      searchOps: ['equality', 'freeTextSearch'],
-    },
-    {
-      name: 'name',
-      dataType: 'string',
-      searchOps: ['equality', 'freeTextSearch'],
-    },
-  ],
+export function generatePlaceholderClient(integration: Integration): string {
+  if (integration === 'drizzle') {
+    return DRIZZLE_PLACEHOLDER
+  }
+  return GENERIC_PLACEHOLDER
 }
 
-/** Generates an encryption client file with a placeholder schema for getting started. */
-export function generatePlaceholderClient(integration: Integration): string {
-  return generateClientFromSchema(integration, PLACEHOLDER_SCHEMA)
-}
+const DRIZZLE_PLACEHOLDER = `/**
+ * CipherStash encryption client — placeholder.
+ *
+ * \`stash init\` wrote this file. It is intentionally NOT a real Drizzle
+ * schema. Your existing schema files (typically under \`src/db/\`) remain
+ * authoritative — your agent will edit those directly when you encrypt a
+ * column, then update the \`Encryption({ schemas: [...] })\` call below
+ * to reference the encrypted tables you declared there.
+ *
+ * Until that happens, the encryption client is initialised with no
+ * schemas, and \`stash encrypt\` commands will surface a clear error
+ * pointing at this file.
+ *
+ * --- Pattern reference (copy into your real schema, do NOT use as-is) ---
+ *
+ * Encrypted twin column for an existing populated column (path 3 — lifecycle):
+ *
+ *   import { encryptedType } from '@cipherstash/stack/drizzle'
+ *
+ *   export const users = pgTable('users', {
+ *     id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
+ *     email: text('email').notNull(),                                   // existing plaintext, unchanged for now
+ *     email_encrypted: encryptedType<string>('email_encrypted', {       // encrypted twin, NULLABLE — never .notNull()
+ *       freeTextSearch: true,
+ *       equality: true,
+ *     }),
+ *   })
+ *
+ * Net-new encrypted column (path 1 — declare encrypted from the start):
+ *
+ *   export const orders = pgTable('orders', {
+ *     id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
+ *     billing_address: encryptedType<string>('billing_address', { equality: true }),
+ *   })
+ *
+ * Once you have encrypted tables declared, harvest them and pass to Encryption():
+ *
+ *   import { extractEncryptionSchema } from '@cipherstash/stack/drizzle'
+ *   import { users, orders } from './db/schema'
+ *
+ *   export const encryptionClient = await Encryption({
+ *     schemas: [extractEncryptionSchema(users), extractEncryptionSchema(orders)],
+ *   })
+ */
+import { Encryption } from '@cipherstash/stack'
+
+export const encryptionClient = await Encryption({ schemas: [] })
+`
+
+const GENERIC_PLACEHOLDER = `/**
+ * CipherStash encryption client — placeholder.
+ *
+ * \`stash init\` wrote this file. It is intentionally NOT a real schema
+ * definition. Your existing schema files remain authoritative — your
+ * agent will declare encrypted columns there and update the
+ * \`Encryption({ schemas: [...] })\` call below to reference them.
+ *
+ * Until that happens, the encryption client is initialised with no
+ * schemas, and \`stash encrypt\` commands will surface a clear error
+ * pointing at this file.
+ *
+ * --- Pattern reference (copy into your real schema, do NOT use as-is) ---
+ *
+ * Encrypted twin column for an existing populated column (path 3 — lifecycle):
+ *
+ *   import { encryptedTable, encryptedColumn } from '@cipherstash/stack/schema'
+ *
+ *   export const users = encryptedTable('users', {
+ *     email_encrypted: encryptedColumn('email_encrypted')
+ *       .freeTextSearch()
+ *       .equality(),
+ *   })
+ *
+ * Net-new encrypted column (path 1 — declare encrypted from the start):
+ *
+ *   export const orders = encryptedTable('orders', {
+ *     billing_address: encryptedColumn('billing_address').equality(),
+ *   })
+ *
+ * Once you have encrypted tables declared, pass them to Encryption():
+ *
+ *   import { users, orders } from './db/schema'
+ *
+ *   export const encryptionClient = await Encryption({
+ *     schemas: [users, orders],
+ *   })
+ */
+import { Encryption } from '@cipherstash/stack'
+
+export const encryptionClient = await Encryption({ schemas: [] })
+`

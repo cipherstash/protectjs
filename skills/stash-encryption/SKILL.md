@@ -24,7 +24,41 @@ Comprehensive guide for implementing field-level encryption with `@cipherstash/s
 npm install @cipherstash/stack
 ```
 
-The package includes a native FFI module (`@cipherstash/protect-ffi`). You must opt out of bundling it in tools like Webpack, esbuild, or Next.js (`serverExternalPackages`).
+> [!IMPORTANT]
+> **Exclude `@cipherstash/stack` from bundling — required for any project with a bundler (Next.js, webpack, esbuild, vite SSR, etc.).** The package wraps a native FFI module (`@cipherstash/protect-ffi`) that cannot be bundled. Importing the encryption client from server code without this exclusion will fail at runtime with errors about missing native modules. Configure as soon as you install the package; do not skip this step.
+
+Concrete configuration for the most common bundlers:
+
+**Next.js** (`next.config.{js,ts,mjs}`):
+
+```ts
+const nextConfig = {
+  serverExternalPackages: ['@cipherstash/stack', '@cipherstash/protect-ffi'],
+}
+export default nextConfig
+```
+
+(Older Next.js — pre-15 — uses `experimental.serverComponentsExternalPackages` with the same value.)
+
+**webpack** (next/nuxt/remix/etc. that compose webpack directly):
+
+```js
+config.externals.push('@cipherstash/stack', '@cipherstash/protect-ffi')
+```
+
+**esbuild**:
+
+```js
+{ external: ['@cipherstash/stack', '@cipherstash/protect-ffi'] }
+```
+
+**Vite SSR**:
+
+```ts
+ssr: { external: ['@cipherstash/stack', '@cipherstash/protect-ffi'] }
+```
+
+If you skip this step, you'll see runtime errors like `Cannot find module '@cipherstash/protect-ffi-darwin-arm64'` or `dlopen failed` once the bundler tries to inline the native binding.
 
 ## Configuration
 
@@ -550,6 +584,110 @@ CREATE TABLE users (
   email jsonb NOT NULL
 );
 ```
+
+## Column Migration Lifecycle
+
+Adding a fresh encrypted column to a table you don't yet write to is the easy case — declare it in the schema, run the migration, start writing. The harder case is taking an **existing plaintext column with live data** and turning it into an encrypted one without dropping a write or returning the wrong value mid-cutover. CipherStash models that as a six-phase lifecycle:
+
+```
+schema-added → dual-writing → backfilling → backfilled → cut-over → dropped
+```
+
+| Phase | What's true | What changes here |
+|---|---|---|
+| `schema-added` | The encrypted twin column (`<col>_encrypted`) exists in the DB and is registered in `eql_v2_configuration`. The plaintext column is unchanged; the application still writes only plaintext. | A schema migration adds the column. |
+| `dual-writing` | Application code now writes both `<col>` (plaintext, unchanged) **and** `<col>_encrypted` (encrypted via the encryption client) on every insert/update. Reads still come from the plaintext column. | Persistence-layer code change. The CLI cannot detect this state; the user (or agent) declares the transition. |
+| `backfilling` | A backfill job is encrypting the existing plaintext rows into `<col>_encrypted`, in chunks, resumably. New rows continue to land in both columns from dual-writing. | The backfill engine in `@cipherstash/migrate` (driven by `stash encrypt backfill`). |
+| `backfilled` | Every row has a non-null `<col>_encrypted` value. Plaintext column still authoritative for reads. | Backfill completes, records the transition. |
+| `cut-over` | A single transaction renames `<col>` → `<col>_plaintext` and `<col>_encrypted` → `<col>` (`eql_v2.rename_encrypted_columns()`). Application reads of `<col>` now return decrypted ciphertext transparently — no app code change required for reads. | One DB transaction. |
+| `dropped` | `<col>_plaintext` is removed via a regular schema migration. The application stops writing to it (dual-writing logic is removed). | App-code change to remove dual-writes + a schema migration. |
+
+### State storage
+
+Three sources of truth, kept separate on purpose:
+
+- **`.cipherstash/migrations.json`** (repo) — *intent*. Which columns the developer wants to encrypt and at which phase, code-reviewable.
+- **`eql_v2_configuration`** (DB, EQL-managed) — *EQL intent*. Which columns are encrypted and with which indexes; drives the CipherStash Proxy.
+- **`cipherstash.cs_migrations`** (DB, CipherStash-managed) — *runtime state*. Append-only event log: phase transitions, backfill cursors, error rows. Latest row per `(table, column)` is the current state.
+
+`stash encrypt status` shows all three side-by-side and flags drift (e.g. EQL says registered, the physical `<col>_encrypted` column is missing).
+
+### CLI surface
+
+The `stash encrypt` command group drives each phase. See the `stash-cli` skill for full flag reference. Typical sequence for a single column:
+
+```bash
+# Phase 1 — schema-added
+# Add the encrypted twin column via your normal migration tooling
+# (drizzle-kit / supabase migrations / etc.). Then register the new
+# encryption config with EQL:
+stash db push
+# First push (no active config yet) → writes directly to active.
+# Subsequent push (active already exists) → writes pending; cutover
+# in phase 4 will promote it.
+
+# Phase 2 + 3 — dual-writing then backfilling, in one command
+# (First, edit the application code to write both columns and ship that deploy.
+#  Then run backfill — it will prompt to confirm dual-writes are live, append
+#  the `dual_writing` event, and run the chunked encryption loop.)
+stash encrypt backfill --table users --column email
+# In CI / non-interactive contexts, swap the prompt for the explicit flag:
+stash encrypt backfill --table users --column email --confirm-dual-writes-deployed
+# Resumable; checkpoints to cs_migrations after every chunk. SIGINT-safe.
+
+# Recovery — if dual-writes weren't actually live when backfill first ran,
+# rows inserted during the backfill landed in plaintext only and the encrypted
+# twin is stale. Re-run with --force to re-encrypt every row regardless.
+stash encrypt backfill --table users --column email --force
+
+# Phase 4 — cut-over
+# First, edit the schema to drop the `_encrypted` suffix (the column will now
+# be named `email`, declared with encryptedType / encryptedColumn). Re-push:
+stash db push
+# → writes the renamed-shape config as `pending`. The active config (still
+#   pointing at `email_encrypted`) keeps serving until cutover finishes.
+
+# Now run the cutover. In one transaction: rename the physical columns,
+# promote pending → active, record cs_migrations event.
+stash encrypt cutover --table users --column email
+
+# Phase 5 — dropped
+stash encrypt drop --table users --column email
+# Emits a migration file removing <col>_plaintext. Apply with your normal tooling.
+```
+
+### Library use
+
+Long-running backfills can also embed the engine directly without the CLI:
+
+```typescript
+import { runBackfill } from '@cipherstash/migrate'
+import { Encryption } from '@cipherstash/stack'
+
+const encryptionClient = await Encryption({ schemas: [usersTable] })
+
+await runBackfill({
+  db,                              // pg client/pool, postgres-js or drizzle conn
+  encryptionClient,
+  tableSchema: usersTable,         // the EncryptedTable from your schemas
+  tableName: 'users',
+  schemaColumnKey: 'email',        // key in the EncryptedTable schema
+  plaintextColumn: 'email',
+  encryptedColumn: 'email_encrypted',
+  pkColumn: 'id',
+  chunkSize: 1000,
+  signal: abortCtrl.signal,
+})
+```
+
+Useful when the backfill needs to run in a worker, on a schedule, or alongside an existing job runner.
+
+### Invariants the lifecycle preserves
+
+- **Reads never return the wrong value.** Until cut-over, reads come from the plaintext column. After cut-over, the same `SELECT email` returns the decrypted ciphertext via Proxy or the encryption client. There is no in-between.
+- **Writes never drop.** Dual-writing keeps both columns in sync until the cut-over moment. After cut-over, writes go to the encrypted column.
+- **Re-runs are safe.** Backfill is idempotent (`<col> IS NOT NULL AND <col>_encrypted IS NULL` guards every chunk). `cs_migrations` is append-only.
+- **Rollback is possible up to cut-over.** Until the rename happens, the plaintext column is authoritative; aborting just leaves the encrypted twin partially populated. After cut-over, rollback is a manual restore — the migration plan should treat cut-over as the one-way door.
 
 ## Migration from @cipherstash/protect
 
