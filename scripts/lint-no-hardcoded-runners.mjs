@@ -17,7 +17,11 @@ const TARGETS = process.argv.slice(2).length
   ? process.argv.slice(2)
   : ['packages']
 
-const NPX_LITERAL = /['"`].*\bnpx\b/
+// A: same-line quoted literal — `'Usage: npx ...'` or backtick equivalents
+const NPX_INLINE = /['"`].*\bnpx\b/
+
+// B: indented `npx <something>` line — usually a template-literal continuation
+const NPX_INDENTED = /^\s*npx\s+\S/
 
 async function* walk(dir) {
   const entries = await readdir(dir, { withFileTypes: true })
@@ -64,7 +68,8 @@ for (const target of TARGETS) {
     if (/\.(test|spec)\.(ts|tsx|mts|cts)$/.test(file)) continue
     const lines = readFileSync(file, 'utf8').split('\n')
     lines.forEach((line, idx) => {
-      if (!NPX_LITERAL.test(line)) return
+      const matches = NPX_INLINE.test(line) || NPX_INDENTED.test(line)
+      if (!matches) return
       if (isCommentLine(line)) return
       if (isAllowedFallback(line)) return
       if (isAllowedRunnerSwitch(line)) return

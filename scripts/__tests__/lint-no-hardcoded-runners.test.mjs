@@ -42,4 +42,12 @@ describe('lint-no-hardcoded-runners', () => {
   it('skips files in __tests__ directories', () => {
     expect(run(fx('__tests__/inside.test.ts')).exitCode).toBe(0)
   })
+
+  it('flags indented `npx <cmd>` lines inside multi-line template literals', () => {
+    const r = run(fx('multiline-offender.ts'))
+    expect(r.exitCode).toBe(1)
+    // Both indented npx lines should be reported
+    expect(r.output).toMatch(/multiline-offender\.ts:3/)
+    expect(r.output).toMatch(/multiline-offender\.ts:4/)
+  })
 })
