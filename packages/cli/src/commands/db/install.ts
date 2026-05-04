@@ -269,12 +269,13 @@ function resolveProviderOptions(
 }
 
 function printNextSteps(): void {
+  const pm = detectPackageManager()
   p.note(
     [
       'Next steps:',
       '',
       '  1. Wire up encrypt/decrypt with the wizard (AI-guided, automated):',
-      '       stash wizard',
+      `       ${runnerCommand(pm, 'stash')} wizard`,
       '',
       '  2. Or use the client directly from @cipherstash/stack:',
       "       import { Encryption } from '@cipherstash/stack'",

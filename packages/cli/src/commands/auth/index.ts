@@ -1,8 +1,11 @@
 import { messages } from '../../messages.js'
+import { detectPackageManager, runnerCommand } from '../init/utils.js'
 import { bindDevice, login, selectRegion } from './login.js'
 
+const STASH_AUTH = runnerCommand(detectPackageManager(), 'stash auth')
+
 const HELP = `
-${messages.auth.usagePrefix} <command> [options]
+${messages.auth.usagePrefix}${STASH_AUTH} <command> [options]
 
 Commands:
   login     Authenticate with CipherStash
@@ -12,8 +15,8 @@ Options:
   --drizzle     Track Drizzle as the referrer
 
 Examples:
-  npx stash auth login
-  npx stash auth login --supabase
+  ${STASH_AUTH} login
+  ${STASH_AUTH} login --supabase
 `.trim()
 
 function referrerFromFlags(flags: Record<string, boolean>): string | undefined {
