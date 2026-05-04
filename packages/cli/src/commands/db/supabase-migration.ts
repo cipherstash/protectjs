@@ -5,6 +5,7 @@ import {
   SUPABASE_PERMISSIONS_SQL,
   loadBundledEqlSql,
 } from '@/installer/index.js'
+import { detectPackageManager, runnerCommand } from '@/commands/init/utils.js'
 
 /**
  * Filename of the Supabase migration that installs CipherStash EQL.
@@ -22,9 +23,11 @@ export const SUPABASE_EQL_MIGRATION_FILENAME =
 /**
  * Header comment block prepended to the generated migration. Explains *why*
  * this file exists for future maintainers reading their own migrations
- * directory.
+ * directory. The runner is resolved at call time based on the detected
+ * package manager.
  */
-const MIGRATION_HEADER = `-- CipherStash EQL — installed by \`npx stash db install --supabase --migration\`.
+function migrationHeader(runner: string): string {
+  return `-- CipherStash EQL — installed by \`${runner} stash db install --supabase --migration\`.
 --
 -- This migration installs the CipherStash Encrypt Query Language (EQL) types,
 -- functions, and operators into the \`eql_v2\` schema, then grants Supabase's
@@ -39,6 +42,7 @@ const MIGRATION_HEADER = `-- CipherStash EQL — installed by \`npx stash db ins
 --
 -- Docs: https://cipherstash.com/docs/stack/cipherstash/supabase
 `
+}
 
 export interface WriteSupabaseEqlMigrationOptions {
   /**
@@ -70,7 +74,7 @@ export interface WriteSupabaseEqlMigrationResult {
  * Generate the `<migrationsDir>/00000000000000_cipherstash_eql.sql` migration.
  *
  * The file body is, in order:
- *   1. {@link MIGRATION_HEADER} — explains why the file exists.
+ *   1. Migration header (generated from {@link migrationHeader}) — explains why the file exists.
  *   2. The bundled `cipherstash-encrypt-supabase.sql` install script.
  *   3. {@link SUPABASE_PERMISSIONS_SQL} — the same grants the runtime install
  *      path issues. One source of truth for both code paths.
@@ -104,8 +108,12 @@ export async function writeSupabaseEqlMigration(
     excludeOperatorFamily: excludeOperatorFamily || true,
   })
 
+  const pm = detectPackageManager()
+  const runner = runnerCommand(pm, '').trim()
+  const header = migrationHeader(runner)
+
   const body = [
-    MIGRATION_HEADER,
+    header,
     '',
     eqlSql.trimEnd(),
     '',

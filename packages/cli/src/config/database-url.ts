@@ -40,6 +40,7 @@ import { join } from 'node:path'
 import * as p from '@clack/prompts'
 import { detectSupabaseProject } from '../commands/db/detect.js'
 import { messages } from '../messages.js'
+import { detectPackageManager, runnerCommand } from '../commands/init/utils.js'
 
 export interface ResolveDatabaseUrlOptions {
   /** Value of `--database-url` if the user passed one. */
@@ -111,10 +112,17 @@ function isUrlParseable(value: string): boolean {
 
 /** Try to extract a `DB_URL=...` value from `supabase status --output env`. */
 function trySupabaseStatus(): string | undefined {
-  const candidates = [
+  const runner = runnerCommand(detectPackageManager(), '').trim()
+  // `runner` is one of 'npx' | 'bunx' | 'pnpm dlx' | 'yarn dlx'.
+  // Split on whitespace because pnpm/yarn dlx uses two tokens.
+  const dlxArgs = runner.split(/\s+/)
+  const candidates: Array<readonly [string, readonly string[]]> = [
     ['supabase', ['status', '--output', 'env']],
-    ['npx', ['--no-install', 'supabase', 'status', '--output', 'env']],
-  ] as const
+    [
+      dlxArgs[0],
+      [...dlxArgs.slice(1), 'supabase', 'status', '--output', 'env'],
+    ],
+  ]
 
   for (const [cmd, args] of candidates) {
     try {

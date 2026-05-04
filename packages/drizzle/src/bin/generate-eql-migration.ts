@@ -2,6 +2,7 @@ import { execSync } from 'node:child_process'
 import { existsSync, unlinkSync, writeFileSync } from 'node:fs'
 import { readdir } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
+import { detectRunner } from './runner.js'
 
 const EQL_INSTALL_URL =
   'https://github.com/cipherstash/encrypt-query-language/releases/latest/download/cipherstash-encrypt.sql'
@@ -31,7 +32,7 @@ function parseArgs(argv: string[]): CliArgs {
   return { migrationName, drizzleDir, showHelp }
 }
 
-function printHelp(): void {
+function printHelp(runner: string): void {
   console.log(`
 Usage: generate-eql-migration [options]
 
@@ -43,10 +44,10 @@ Options:
   -h, --help           Display this help message
 
 Examples:
-  npx generate-eql-migration
-  npx generate-eql-migration --name setup-eql
-  npx generate-eql-migration --out migrations
-  
+  ${runner} generate-eql-migration
+  ${runner} generate-eql-migration --name setup-eql
+  ${runner} generate-eql-migration --out migrations
+
   # Or with your package manager:
   pnpm generate-eql-migration
   yarn generate-eql-migration
@@ -57,9 +58,10 @@ Examples:
 async function main(): Promise<void> {
   let migrationPath: string | null = null
   const args = parseArgs(process.argv.slice(2))
+  const runner = detectRunner()
 
   if (args.showHelp) {
-    printHelp()
+    printHelp(runner)
     process.exit(0)
   }
 
@@ -67,7 +69,7 @@ async function main(): Promise<void> {
 
   try {
     console.log(`📝 Generating custom migration: ${args.migrationName}`)
-    execSync(`npx drizzle-kit generate --custom --name=${args.migrationName}`, {
+    execSync(`${runner} drizzle-kit generate --custom --name=${args.migrationName}`, {
       stdio: 'inherit',
     })
   } catch (error) {
@@ -115,7 +117,7 @@ async function main(): Promise<void> {
     console.log('\n✅ Successfully created EQL migration!')
     console.log('\nNext steps:')
     console.log(`  1. Review the migration: ${migrationPath}`)
-    console.log('  2. Run migrations: npx drizzle-kit migrate')
+    console.log(`  2. Run migrations: ${runner} drizzle-kit migrate`)
     console.log(
       '     (or use your package manager: pnpm/yarn/bun drizzle-kit migrate)',
     )

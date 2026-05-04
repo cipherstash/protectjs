@@ -308,6 +308,7 @@ async function generateDrizzleMigration(
 ) {
   const migrationName = options.name ?? DEFAULT_MIGRATION_NAME
   const outDir = resolve(options.out ?? DEFAULT_DRIZZLE_OUT)
+  const drizzleCmd = `${runnerCommand(detectPackageManager(), '').trim()} drizzle-kit generate --custom --name=${migrationName}`
 
   if (options.dryRun) {
     p.log.info('Dry run — no changes will be made.')
@@ -315,7 +316,7 @@ async function generateDrizzleMigration(
       ? 'Would download EQL install SQL from GitHub'
       : 'Would use bundled EQL install SQL'
     p.note(
-      `Would run: npx drizzle-kit generate --custom --name=${migrationName}\n${source}\nWould write SQL to migration file in ${outDir}`,
+      `Would run: ${drizzleCmd}\n${source}\nWould write SQL to migration file in ${outDir}`,
       'Dry Run',
     )
     p.outro('Dry run complete.')
@@ -328,7 +329,7 @@ async function generateDrizzleMigration(
   s.start('Generating custom Drizzle migration...')
 
   try {
-    execSync(`npx drizzle-kit generate --custom --name=${migrationName}`, {
+    execSync(drizzleCmd, {
       stdio: 'pipe',
       encoding: 'utf-8',
     })
@@ -439,7 +440,7 @@ async function generateDrizzleMigration(
 
   p.log.success(`Migration created: ${generatedMigrationPath}`)
   p.note(
-    'Run your Drizzle migrations to install EQL:\n\n  npx drizzle-kit migrate',
+    `Run your Drizzle migrations to install EQL:\n\n  ${runnerCommand(detectPackageManager(), '').trim()} drizzle-kit migrate`,
     'Next Steps',
   )
   printNextSteps()

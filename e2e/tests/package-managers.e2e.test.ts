@@ -1,4 +1,4 @@
-import { execFileSync } from 'node:child_process'
+import { execFileSync, spawnSync } from 'node:child_process'
 import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
@@ -20,6 +20,20 @@ const RUNNER: Record<PackageManager, string> = {
   bun: 'bunx',
   pnpm: 'pnpm dlx',
   yarn: 'yarn dlx',
+}
+
+const BIN = {
+  cli: resolve(REPO_ROOT, 'packages/cli/dist/bin/stash.js'),
+  wizard: resolve(REPO_ROOT, 'packages/wizard/dist/bin/wizard.js'),
+  protect: resolve(REPO_ROOT, 'packages/protect/dist/bin/stash.js'),
+  drizzleGen: resolve(REPO_ROOT, 'packages/drizzle/dist/bin/generate-eql-migration.js'),
+} as const
+
+const UA: Record<PackageManager, string> = {
+  npm: 'npm/10.0.0',
+  bun: 'bun/1.0.0',
+  pnpm: 'pnpm/10.0.0',
+  yarn: 'yarn/4.0.0',
 }
 
 // Suite A — pure-function rendering of "Next Steps" via the CLI's init
@@ -182,3 +196,23 @@ describe.skipIf(!authConfigured)(
     })
   },
 )
+
+// Suite C — ensures that all built binaries render the correct runner prefix
+// in their --help output when executed under different package manager environments.
+describe('binaries — help text uses detected runner', () => {
+  for (const pm of PMS) {
+    for (const [name, bin] of Object.entries(BIN) as Array<[keyof typeof BIN, string]>) {
+      it(`${name} --help renders ${RUNNER[pm]} for pm=${pm}`, () => {
+        const result = spawnSync('node', [bin, '--help'], {
+          env: { ...process.env, npm_config_user_agent: UA[pm] },
+          encoding: 'utf8',
+        })
+        expect(result.status, `${name} --help (pm=${pm}) stderr: ${result.stderr}`).toBe(0)
+        expect(result.stdout).toContain(RUNNER[pm])
+        if (RUNNER[pm] !== 'npx') {
+          expect(result.stdout).not.toMatch(/\bnpx\b/)
+        }
+      })
+    }
+  }
+})

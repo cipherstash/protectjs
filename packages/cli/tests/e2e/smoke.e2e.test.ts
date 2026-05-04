@@ -69,6 +69,8 @@ describe('stash CLI — non-interactive smoke', () => {
     const r = render(['db', 'migrate'])
     const { exitCode } = await r.exit
     expect(exitCode).toBe(0)
-    expect(r.output).toContain(messages.db.migrateNotImplemented)
+    // `migrateNotImplemented` is a runner-aware factory; the runner-agnostic
+    // suffix is the stable assertion target.
+    expect(r.output).toContain('stash db migrate" is not yet implemented.')
   })
 })
