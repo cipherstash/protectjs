@@ -7,6 +7,11 @@ import {
   runBackfill,
   upsertManifestColumn,
 } from '@cipherstash/migrate'
+import {
+  type ColumnSchema,
+  castAsEnum,
+  toEqlCastAs,
+} from '@cipherstash/stack/schema'
 import * as p from '@clack/prompts'
 import pg from 'pg'
 import { loadEncryptionContext, requireTable } from './context.js'
@@ -159,24 +164,25 @@ export async function backfillCommand(options: BackfillCommandOptions) {
         return
       }
     }
-    // The EncryptedTable schema is keyed by the *encrypted* column name
-    // (because the user's ORM schema declares the encrypted column, not
-    // the plaintext one). Default accordingly — override with
-    // --schema-column-key only if your schema uses a different object key.
-    const schemaColumnKey = options.schemaColumnKey ?? encryptedColumn
+    const columns = (tableSchema.build().columns ?? {}) as Record<
+      string,
+      ColumnSchema
+    >
+    const schemaColumnKey = resolveSchemaColumnKey({
+      columns,
+      tableName: options.table,
+      plaintextColumn,
+      encryptedColumn,
+      override: options.schemaColumnKey,
+    })
+    const column = columns[schemaColumnKey]
 
     const { transform: transformPlaintext, castAs: detectedCastAs } =
-      buildPlaintextCoercer(tableSchema, schemaColumnKey)
+      buildPlaintextCoercer(column?.cast_as)
 
-    // Record intent in `.cipherstash/migrations.json`. Backfill is the
-    // first lifecycle command the user invokes for a column, so it's the
-    // natural moment to commit the manifest entry. Idempotent — re-runs
-    // (resume / --force) replace the same entry with the same content.
-    // `targetPhase: 'cut-over'` is the typical end state; the user can
-    // hand-edit the manifest to bump it to 'dropped' later, or `stash
-    // encrypt drop` does that automatically when it runs.
+    // Idempotent: re-runs (resume / --force) replace the same entry.
     const manifestEntry = buildManifestEntry(
-      tableSchema,
+      column,
       schemaColumnKey,
       plaintextColumn,
       options.pkColumn,
@@ -252,15 +258,21 @@ export async function backfillCommand(options: BackfillCommandOptions) {
       `Backfill complete. ${result.rowsProcessed.toLocaleString()} rows encrypted.`,
     )
   } catch (error) {
-    // Generic message only — `error.message` may include plaintext sample
-    // values bubbled up from the encryption pipeline (e.g. the leak guard
-    // in @cipherstash/migrate now emits type-only diagnostics, but
-    // upstream libraries can still embed offending input in their
-    // exception text). Preserve exit behaviour but stop the message path
-    // from leaking sensitive data.
-    p.log.error(
-      `Backfill failed${error instanceof Error && /^[\w. -]+$/.test(error.name) ? ` (${error.name})` : ''}. Re-run with diagnostic logging if you need details.`,
-    )
+    if (error instanceof BackfillConfigError) {
+      // Author-controlled diagnostic — safe to print verbatim and tells
+      // the user exactly what to fix. Does not include any row data.
+      p.log.error(error.message)
+    } else {
+      // Generic message only — `error.message` may include plaintext sample
+      // values bubbled up from the encryption pipeline (e.g. the leak guard
+      // in @cipherstash/migrate now emits type-only diagnostics, but
+      // upstream libraries can still embed offending input in their
+      // exception text). Preserve exit behaviour but stop the message path
+      // from leaking sensitive data.
+      p.log.error(
+        `Backfill failed${error instanceof Error && /^[\w. -]+$/.test(error.name) ? ` (${error.name})` : ''}. Re-run with diagnostic logging if you need details.`,
+      )
+    }
     exitCode = 1
   } finally {
     process.off('SIGINT', onSignal)
@@ -269,6 +281,57 @@ export async function backfillCommand(options: BackfillCommandOptions) {
     await pool.end()
   }
   if (exitCode) process.exit(exitCode)
+}
+
+/**
+ * Tagged error class for misconfigurations we detect ourselves (e.g. a
+ * `--schema-column-key` that does not exist in the schema). Messages on
+ * these errors are author-controlled and safe to print in full — unlike
+ * upstream encryption errors, which can embed plaintext samples and are
+ * suppressed by the catch block in {@link backfillCommand}.
+ */
+class BackfillConfigError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'BackfillConfigError'
+  }
+}
+
+/**
+ * Pick the schema-column key for this physical column. The drizzle
+ * helper (`extractEncryptionSchema`) keys by the physical encrypted name;
+ * handwritten `encryptedTable(...)` schemas key by whatever the author
+ * wrote (typically plaintext). Honour `--schema-column-key`; otherwise
+ * prefer encrypted, fall back to plaintext, and throw a
+ * {@link BackfillConfigError} listing the schema's available keys when
+ * neither candidate is present.
+ */
+function resolveSchemaColumnKey(opts: {
+  columns: Record<string, ColumnSchema>
+  tableName: string
+  plaintextColumn: string
+  encryptedColumn: string
+  override: string | undefined
+}): string {
+  const { columns, override, encryptedColumn, plaintextColumn, tableName } =
+    opts
+  const available = Object.keys(columns).join(', ') || '(none)'
+
+  if (override !== undefined) {
+    if (!(override in columns)) {
+      throw new BackfillConfigError(
+        `--schema-column-key "${override}" is not declared in the encryption schema for table "${tableName}". Available keys: ${available}.`,
+      )
+    }
+    return override
+  }
+
+  if (encryptedColumn in columns) return encryptedColumn
+  if (plaintextColumn in columns) return plaintextColumn
+
+  throw new BackfillConfigError(
+    `Could not resolve a schema column key for ${tableName}.${plaintextColumn} (encrypted twin: ${encryptedColumn}). The encryption schema for this table declares: ${available}. Pass --schema-column-key <name> with one of those keys.`,
+  )
 }
 
 /**
@@ -286,18 +349,10 @@ export async function backfillCommand(options: BackfillCommandOptions) {
  *
  * Null / undefined are always passed through unchanged.
  */
-function buildPlaintextCoercer(
-  // biome-ignore lint/suspicious/noExplicitAny: EncryptedTableLike.build is generic
-  tableSchema: { build(): { columns: Record<string, any> } },
-  schemaColumnKey: string,
-): { transform: (value: unknown) => unknown; castAs: string | undefined } {
-  let castAs: string | undefined
-  try {
-    castAs = tableSchema.build().columns?.[schemaColumnKey]?.cast_as
-  } catch {
-    castAs = undefined
-  }
-
+function buildPlaintextCoercer(castAs: string | undefined): {
+  transform: (value: unknown) => unknown
+  castAs: string | undefined
+} {
   const transform = (() => {
     switch (castAs) {
       case 'number':
@@ -439,40 +494,24 @@ async function ensureDualWritesDeployed(
   return true
 }
 
-/**
- * Build the manifest entry for the column being backfilled by inspecting
- * the user's `EncryptedTable` schema. The manifest's `castAs` and
- * `indexes` fields mirror what EQL was configured with via `db push`, so
- * the source of truth is the same schema object the encryption client
- * consumes.
- *
- * `EncryptedTable.build()` shape (from `@cipherstash/stack/schema`):
- *
- *   { columns: { [key]: { cast_as: 'string' | …, indexes: { ore?, unique?, match?, ste_vec? } } } }
- *
- * We pull the entry keyed by `schemaColumnKey` and surface the configured
- * index kinds as a flat array of `IndexKind` values that the manifest
- * schema accepts.
- */
 function buildManifestEntry(
-  // biome-ignore lint/suspicious/noExplicitAny: EncryptedTable.build() is generic
-  tableSchema: { build(): { columns: Record<string, any> } },
+  column: ColumnSchema | undefined,
   schemaColumnKey: string,
   plaintextColumn: string,
   pkColumn: string | undefined,
 ): ManifestColumn {
-  let castAs = 'text'
-  // biome-ignore lint/suspicious/noExplicitAny: see buildPlaintextCoercer for the same shape
-  let indexConfig: Record<string, any> = {}
-  try {
-    const built = tableSchema.build().columns?.[schemaColumnKey]
-    castAs = built?.cast_as ?? 'text'
-    indexConfig = built?.indexes ?? {}
-  } catch {
-    // Fall through with defaults — the manifest is informational, so a
-    // partial entry is better than failing the whole backfill.
-  }
+  // SDK `cast_as` ('string', 'number', …) and EQL `castAs` ('text',
+  // 'double', …) are different vocabularies; translate via the same
+  // helper `stash db push` uses so the two stay aligned.
+  const castAs: ManifestColumn['castAs'] =
+    column?.cast_as !== undefined
+      ? translateCastAs(
+          column.cast_as,
+          `"${schemaColumnKey}" (plaintext: "${plaintextColumn}")`,
+        )
+      : 'text'
 
+  const indexConfig = column?.indexes ?? {}
   const indexes = (['unique', 'match', 'ore', 'ste_vec'] as const).filter(
     (kind) => indexConfig[kind] !== undefined,
   )
@@ -484,4 +523,22 @@ function buildManifestEntry(
     targetPhase: 'cut-over',
     ...(pkColumn ? { pkColumn } : {}),
   }
+}
+
+// Drop the wrapping default so unknown values fail validation instead of
+// being silently coerced to `'text'`. Reuses `castAsEnum` so this list
+// stays in lockstep with the SDK as new types are added.
+const sdkCastAsEnum = castAsEnum.removeDefault()
+
+function translateCastAs(
+  raw: unknown,
+  where: string,
+): ManifestColumn['castAs'] {
+  const parsed = sdkCastAsEnum.safeParse(raw)
+  if (!parsed.success) {
+    throw new BackfillConfigError(
+      `Encryption schema for column ${where} declares cast_as: ${JSON.stringify(raw)}, which is not one of the supported SDK data types (${sdkCastAsEnum.options.join(', ')}). Fix the .dataType(...) call in your encryption client.`,
+    )
+  }
+  return toEqlCastAs(parsed.data)
 }
