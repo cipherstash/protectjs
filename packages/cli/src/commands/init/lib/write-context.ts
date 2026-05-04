@@ -77,21 +77,16 @@ function ensureDir(path: string): void {
 }
 
 /**
- * Build the universal `.cipherstash/context.json` from `InitState`. Throws
- * on a missing schema — the build-schema step is required to have run
- * before any handoff fires.
+ * Build the universal `.cipherstash/context.json` from `InitState`.
+ *
+ * `schemas` is allowed to be empty — `stash init` no longer asks the user
+ * which columns to encrypt, so there are no inferred schemas at init time.
+ * The agent (or `stash encrypt` commands later) populates this when real
+ * encrypted tables exist.
  */
 export function buildContextFile(state: InitState): ContextFile {
   const integration = state.integration ?? 'postgresql'
   const clientFilePath = state.clientFilePath ?? './src/encryption/index.ts'
-  const schemas = state.schemas
-  if (!schemas || schemas.length === 0) {
-    // Should not happen — build-schema always populates this. Keep the
-    // assertion explicit so a future refactor that drops the field gets
-    // caught here rather than producing a half-empty context.json.
-    throw new Error('Schemas missing from init state — cannot write context.')
-  }
-
   const pm = detectPackageManager()
   return {
     cliVersion: readCliVersion(),
@@ -100,7 +95,7 @@ export function buildContextFile(state: InitState): ContextFile {
     packageManager: pm,
     installCommand: prodInstallCommand(pm, '@cipherstash/stack'),
     envKeys: [],
-    schemas,
+    schemas: state.schemas ?? [],
     installedSkills: [],
     generatedAt: new Date().toISOString(),
   }
@@ -130,7 +125,6 @@ export function writeBaselineContextFile(
   cwd: string,
   envKeys: string[],
 ): void {
-  if (!state.schemas || state.schemas.length === 0) return
   const absPath = resolve(cwd, CONTEXT_REL_PATH)
   const ctx = buildContextFile(state)
   ctx.envKeys = envKeys

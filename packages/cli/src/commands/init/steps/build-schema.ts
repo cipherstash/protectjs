@@ -3,21 +3,15 @@ import { dirname, resolve } from 'node:path'
 import * as p from '@clack/prompts'
 import { detectDrizzle, detectSupabase } from '../../db/detect.js'
 import { readEnvKeyNames } from '../lib/env-keys.js'
-import { buildSchemasFromDatabase } from '../lib/introspect.js'
 import { writeBaselineContextFile } from '../lib/write-context.js'
 import type {
   InitProvider,
   InitState,
   InitStep,
   Integration,
-  SchemaDef,
 } from '../types.js'
 import { CancelledError } from '../types.js'
-import {
-  PLACEHOLDER_SCHEMA,
-  generateClientFromSchemas,
-  generatePlaceholderClient,
-} from '../utils.js'
+import { generatePlaceholderClient } from '../utils.js'
 
 const DEFAULT_CLIENT_PATH = './src/encryption/index.ts'
 
@@ -36,6 +30,22 @@ function detectIntegration(
   return 'postgresql'
 }
 
+/**
+ * Write a placeholder encryption client to `src/encryption/index.ts`.
+ *
+ * Init no longer introspects the database to generate a parallel
+ * encryption client. The user's existing schema files (Drizzle / Supabase /
+ * raw SQL migrations) remain the authoritative source. The placeholder is a
+ * heavily-commented file showing the encryption-client patterns; the agent
+ * at handoff time edits the user's real schema files directly and updates
+ * the `Encryption({ schemas: [...] })` call in this file to reference them.
+ *
+ * Why no column picker: deciding which columns to encrypt is the user's
+ * choice in conversation with their agent, not a question to answer at
+ * init time. Path 1 (new column) and path 3 (existing populated column —
+ * lifecycle migration via `stash encrypt`) need different treatment, and
+ * init can't tell which the user wants.
+ */
 export const buildSchemaStep: InitStep = {
   id: 'build-schema',
   name: 'Generate encryption client',
@@ -54,9 +64,9 @@ export const buildSchemaStep: InitStep = {
           {
             value: 'keep',
             label: 'Keep existing file',
-            hint: 'skip code generation, still record schema in context.json',
+            hint: 'skip code generation',
           },
-          { value: 'overwrite', label: 'Overwrite with new schema' },
+          { value: 'overwrite', label: 'Overwrite with placeholder' },
         ],
       })
 
@@ -66,42 +76,16 @@ export const buildSchemaStep: InitStep = {
       if (keepExisting) p.log.info('Keeping existing encryption client file.')
     }
 
-    // Try real introspection first. Falls through to placeholder for an
-    // empty database, a connection error, or user cancellation at any prompt.
-    // We run introspection even when keeping the existing file so
-    // `context.json` reflects what's actually in the database — agents read
-    // those schemas to understand the project, not just to drive codegen.
-    let introspected: SchemaDef[] | undefined
-    if (state.databaseUrl) {
-      introspected = await buildSchemasFromDatabase(state.databaseUrl)
-    }
-
-    const fromIntrospection = Boolean(introspected && introspected.length > 0)
-    const recordedSchemas: SchemaDef[] = fromIntrospection
-      ? (introspected as SchemaDef[])
-      : [PLACEHOLDER_SCHEMA]
-
-    // When `keepExisting`, skip codegen but keep the introspected schemas
-    // on state so the handoff prompt + context.json reflect the live DB.
-    // The agent reconciles any divergence as part of its action plan.
     if (!keepExisting) {
-      const fileContents = fromIntrospection
-        ? generateClientFromSchemas(integration, introspected as SchemaDef[])
-        : generatePlaceholderClient(integration)
-
-      if (!fromIntrospection) {
-        p.log.info(
-          'No tables found in the public schema — writing a placeholder client. The handoff prompt will note this so the agent reshapes it to your real schema.',
-        )
-      }
-
       const dir = dirname(resolvedPath)
       if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
-      writeFileSync(resolvedPath, fileContents, 'utf-8')
+      writeFileSync(
+        resolvedPath,
+        generatePlaceholderClient(integration),
+        'utf-8',
+      )
       p.log.success(
-        fromIntrospection
-          ? `Encryption client written to ${clientFilePath} (${integration}, ${recordedSchemas.length} table${recordedSchemas.length !== 1 ? 's' : ''} from introspection)`
-          : `Encryption client written to ${clientFilePath} (${integration} placeholder)`,
+        `Encryption client placeholder written to ${clientFilePath} (${integration}). Your real schema files remain authoritative.`,
       )
     }
 
@@ -115,17 +99,17 @@ export const buildSchemaStep: InitStep = {
       clientFilePath,
       schemaGenerated: !keepExisting,
       integration,
-      schemas: recordedSchemas,
-      schemaFromIntrospection: fromIntrospection,
+      schemas: [],
+      // No longer meaningful — init never introspects-and-picks. Kept on
+      // state for now to avoid a wider type change; always false.
+      schemaFromIntrospection: false,
       envKeys,
     }
 
     // Write a baseline `.cipherstash/context.json` immediately so it tracks
-    // the encryption client we just generated. Handoff steps refresh it
-    // later with the list of installed skills, but this guarantees the file
-    // is consistent with the client even if init aborts before the handoff
-    // (e.g. install-eql failure, Ctrl+C). Without this, an agent reading a
-    // stale context.json from a previous run would happily believe it.
+    // the placeholder we just wrote. Handoff steps refresh it later with
+    // the list of installed skills; this baseline guarantees the file
+    // exists even if init aborts before the handoff fires.
     writeBaselineContextFile(nextState, cwd, envKeys)
 
     return nextState

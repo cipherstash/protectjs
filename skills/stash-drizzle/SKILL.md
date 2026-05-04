@@ -332,6 +332,167 @@ if (!decrypted.failure) {
 }
 ```
 
+## Migrating an Existing Column to Encrypted
+
+The hard case: a Drizzle table that already exists in production with live data in a plaintext column you want to encrypt. You can't just change the column type — that would drop the data and break NOT NULL constraints. Use the **column lifecycle** documented in the `stash-encryption` skill (`schema-added → dual-writing → backfilling → cut-over → dropped`), driven by the `stash encrypt` CLI commands.
+
+This section walks the Drizzle-specific shape of each phase. The CLI commands themselves are documented in the `stash-cli` skill.
+
+### Starting state
+
+You have:
+
+```typescript
+// src/db/schema.ts
+export const users = pgTable('users', {
+  id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
+  email: text('email').notNull(),  // plaintext, populated, NOT NULL
+})
+```
+
+And an `INSERT INTO users (email) VALUES (...)` somewhere in your app code.
+
+### Phase 1 — Schema-add: declare the encrypted twin
+
+Add an `email_encrypted` column **alongside** `email`. Crucially, the encrypted column is **nullable** at creation — never `.notNull()`, because rows that already exist will have NULL in this column until backfill catches them.
+
+```typescript
+// src/db/schema.ts
+import { encryptedType } from '@cipherstash/stack/drizzle'
+
+export const users = pgTable('users', {
+  id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
+  email: text('email').notNull(),                              // unchanged
+  email_encrypted: encryptedType<string>('email_encrypted', {  // new — nullable
+    freeTextSearch: true,
+    equality: true,
+  }),
+})
+```
+
+Update the encryption client to harvest the encrypted columns from the table:
+
+```typescript
+// src/encryption/index.ts
+import { Encryption } from '@cipherstash/stack'
+import { extractEncryptionSchema } from '@cipherstash/stack/drizzle'
+import { users } from '../db/schema'
+
+const usersEncryptionSchema = extractEncryptionSchema(users)
+
+export const encryptionClient = await Encryption({ schemas: [usersEncryptionSchema] })
+```
+
+Generate the migration with `drizzle-kit generate`. The generated SQL should be a single `ALTER TABLE ... ADD COLUMN email_encrypted eql_v2_encrypted;`. Apply with `drizzle-kit migrate`.
+
+After this phase, rows still have `email_encrypted = NULL`. App reads still come from `email`. Nothing has broken.
+
+### Phase 2 — Dual-writing: write to both columns from app code
+
+Find every code path that writes to `users.email` (insert, update, upsert, seeders, fixtures) and update it to encrypt and also write to `email_encrypted`:
+
+```typescript
+// Before
+await db.insert(users).values({ email: input.email })
+
+// After
+const encrypted = await encryptionClient.encryptModel({ email_encrypted: input.email }, usersEncryptionSchema)
+if (encrypted.failure) throw new Error(encrypted.failure.message)
+
+await db.insert(users).values({
+  email: input.email,                                  // plaintext — keep writing
+  email_encrypted: encrypted.data.email_encrypted,     // encrypted twin — new
+})
+```
+
+Same shape for UPDATE: if your app updates `email`, it must also re-encrypt and update `email_encrypted` in the same statement.
+
+**Ship this code change to production.** Verify in the DB that new rows arrive with `email_encrypted IS NOT NULL` (run a SELECT or check via your observability). Only proceed once you're confident every write path is dual-writing.
+
+### Phase 3 — Backfill: encrypt the historical rows
+
+Once dual-writes are live in production:
+
+```bash
+stash encrypt backfill --table users --column email
+# (Interactive: answer 'yes' to the dual-write confirmation prompt.)
+# (CI: pass --confirm-dual-writes-deployed instead.)
+```
+
+Resumable, idempotent, chunked. The CLI walks the table in keyset-pagination order, encrypts each chunk via the encryption client, and writes the ciphertext into `email_encrypted` inside transactions that also checkpoint to `cs_migrations`. SIGINT-safe.
+
+If something goes wrong (e.g. you discover the dual-write code wasn't actually live when backfill ran), re-run with `--force` to re-encrypt every row regardless of current state.
+
+### Phase 4 — Cutover: rename swap
+
+```bash
+stash encrypt cutover --table users --column email
+```
+
+Single-transaction rename: `email` becomes `email_plaintext`, `email_encrypted` becomes `email`. The Drizzle schema needs to be updated to reflect the new shape — switch `email` to use `encryptedType` and remove the `email_encrypted` column:
+
+```typescript
+// src/db/schema.ts (post-cutover)
+export const users = pgTable('users', {
+  id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
+  email: encryptedType<string>('email', {
+    freeTextSearch: true,
+    equality: true,
+  }),
+  email_plaintext: text('email_plaintext'),  // temporary; dropped in phase 5
+})
+```
+
+App code that does `SELECT email FROM users` now returns ciphertext that must be decrypted via the encryption client. **This is the moment that breaks read paths if they aren't decrypting.**
+
+Update read paths to decrypt:
+
+```typescript
+// Before
+const rows = await db.select().from(users).where(eq(users.id, id))
+const email = rows[0].email
+
+// After
+const rows = await db.select().from(users).where(eq(users.id, id))
+const decrypted = await encryptionClient.decryptModel(rows[0])
+if (decrypted.failure) throw new Error(decrypted.failure.message)
+const email = decrypted.data.email
+```
+
+For queries that filter on `email`, switch to the encrypted operators from `createProtectOperators` — `eq`, `like`, `gte`, etc. (See `## Query Encrypted Data` above.)
+
+### Phase 5 — Drop: remove the plaintext column
+
+Once read paths are updated and you're confident reads are decrypting correctly, generate the drop migration:
+
+```bash
+stash encrypt drop --table users --column email
+```
+
+The CLI emits a Drizzle migration file with `ALTER TABLE users DROP COLUMN email_plaintext;`. Review and apply with `drizzle-kit migrate`. Update the schema to remove `email_plaintext`:
+
+```typescript
+// src/db/schema.ts (final)
+export const users = pgTable('users', {
+  id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
+  email: encryptedType<string>('email', {
+    freeTextSearch: true,
+    equality: true,
+  }),
+})
+```
+
+Also remove the dual-write code from app paths — `email_plaintext` is gone; only `email` (encrypted) is written now.
+
+### Inspecting progress at any time
+
+```bash
+stash encrypt status   # shows current phase, EQL state, backfill progress
+stash encrypt plan     # diffs your migrations.json intent vs observed state
+```
+
+Both are read-only.
+
 ## Complete Operator Reference
 
 ### Encrypted Operators (async)
