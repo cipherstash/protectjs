@@ -144,6 +144,7 @@ export async function installCommand(options: InstallOptions) {
         projectInfo,
         force: options.force,
         dryRun: options.dryRun,
+        runner,
       })
       return
     }
@@ -571,9 +572,10 @@ async function writeSupabaseMigrationFile(
     projectInfo: SupabaseProjectInfo
     force?: boolean
     dryRun?: boolean
+    runner: string
   },
 ): Promise<void> {
-  const { projectInfo, force, dryRun } = opts
+  const { projectInfo, force, dryRun, runner } = opts
   const targetPath = join(
     projectInfo.migrationsDir,
     SUPABASE_EQL_MIGRATION_FILENAME,
@@ -632,7 +634,7 @@ async function writeSupabaseMigrationFile(
     ].join('\n'),
     'Next Steps',
   )
-  printNextSteps()
+  printNextSteps(runner)
   p.outro('Done!')
 }
 
