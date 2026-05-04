@@ -19,6 +19,12 @@ describe('classifyError runner', () => {
       'Run: pnpm dlx stash auth login',
     )
   })
+
+  it('uses yarn dlx when runner=yarn dlx for auth failure', () => {
+    expect(classifyError('authentication_failed', '', 'yarn dlx')).toContain(
+      'Run: yarn dlx stash auth login',
+    )
+  })
 })
 
 describe('classifyHttpError runner', () => {
@@ -37,6 +43,12 @@ describe('classifyHttpError runner', () => {
   it('uses pnpm dlx when runner=pnpm dlx for 401', () => {
     expect(classifyHttpError(401, '', 'pnpm dlx')).toContain(
       'Run: pnpm dlx stash auth login',
+    )
+  })
+
+  it('uses yarn dlx when runner=yarn dlx for 401', () => {
+    expect(classifyHttpError(401, '', 'yarn dlx')).toContain(
+      'Run: yarn dlx stash auth login',
     )
   })
 })

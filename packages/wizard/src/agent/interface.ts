@@ -84,7 +84,10 @@ function isAllowedDlxCommand(cmd: string): boolean {
   for (const prefix of RUNNER_PREFIXES) {
     if (cmd.startsWith(`${prefix} `)) {
       const rest = cmd.slice(prefix.length + 1)
-      return ALLOWED_DLX_TOOLS.some((t) => rest.startsWith(t))
+      // Token-boundary match: the tool name must be the entire remainder, or
+      // the tool name followed by a space (then args). A bare `startsWith`
+      // would let `drizzle-kit-malicious` slip through `drizzle-kit`.
+      return ALLOWED_DLX_TOOLS.some((t) => rest === t || rest.startsWith(`${t} `))
     }
   }
   return false

@@ -1,9 +1,8 @@
-import { execFileSync } from 'node:child_process'
+import { execFileSync, spawnSync } from 'node:child_process'
 import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { spawnSync } from 'node:child_process'
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { createBaseProvider } from '../../packages/cli/src/commands/init/providers/base.js'
