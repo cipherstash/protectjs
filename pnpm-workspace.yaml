@@ -13,7 +13,7 @@ catalogs:
   security:
     '@clerk/nextjs': 6.31.2
     next: 15.5.10
-    vite: 6.4.1
+    vite: 8.0.9
 
 # Supply-chain hardening — see skills/stash-supply-chain-security/
 # 7 days in minutes; mirrors the Dependabot cooldown so manual + automated
