@@ -2,6 +2,7 @@ import { spawnSync } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { readdir, writeFile } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
+import { detectPackageManager, runnerArgv } from '@/commands/init/utils.js'
 
 /**
  * Scaffold a custom Drizzle Kit migration file with a known name and write
@@ -41,9 +42,16 @@ export async function scaffoldDrizzleMigration(opts: {
   // (not execSync) so opts.name can't escape into the shell — names like
   // `cutover_T_C` are agent-controlled and could in principle include
   // special characters.
+  const { command, prefixArgs } = runnerArgv(detectPackageManager())
   const cp = spawnSync(
-    'npx',
-    ['drizzle-kit', 'generate', '--custom', `--name=${opts.name}`],
+    command,
+    [
+      ...prefixArgs,
+      'drizzle-kit',
+      'generate',
+      '--custom',
+      `--name=${opts.name}`,
+    ],
     { stdio: 'pipe', encoding: 'utf-8' },
   )
   if (cp.error || cp.status !== 0) {

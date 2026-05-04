@@ -165,6 +165,27 @@ export function runnerCommand(pm: PackageManager, ref: string): string {
   }
 }
 
+/**
+ * argv split of {@link runnerCommand} for callers using `spawnSync` /
+ * `spawn` rather than a shell. Returns the binary plus any prefix args
+ * (`pnpm dlx` / `yarn dlx`); the caller appends the remaining argv.
+ */
+export function runnerArgv(pm: PackageManager): {
+  command: string
+  prefixArgs: string[]
+} {
+  switch (pm) {
+    case 'bun':
+      return { command: 'bunx', prefixArgs: [] }
+    case 'pnpm':
+      return { command: 'pnpm', prefixArgs: ['dlx'] }
+    case 'yarn':
+      return { command: 'yarn', prefixArgs: ['dlx'] }
+    case 'npm':
+      return { command: 'npx', prefixArgs: [] }
+  }
+}
+
 function toCamelCase(str: string): string {
   return str.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase())
 }

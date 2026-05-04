@@ -1,6 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { detectDrizzle } from '@/commands/db/detect.js'
+import { detectPackageManager, runnerCommand } from '@/commands/init/utils.js'
 import { loadStashConfig } from '@/config/index.js'
 import {
   appendEvent,
@@ -48,7 +49,7 @@ export interface DropCommandOptions {
  * tooling (Prisma migrate, psql, etc.).
  */
 export async function dropCommand(options: DropCommandOptions) {
-  p.intro('npx @cipherstash/cli encrypt drop')
+  p.intro(runnerCommand(detectPackageManager(), 'stash encrypt drop'))
 
   const config = await loadStashConfig()
   const client = new pg.Client({ connectionString: config.databaseUrl })
@@ -89,8 +90,7 @@ export async function dropCommand(options: DropCommandOptions) {
         sql: dropSql,
       })
       filePath = result.path
-      nextStep =
-        'Apply with your usual Drizzle migrate command:\n  npx drizzle-kit migrate'
+      nextStep = `Apply with your usual Drizzle migrate command:\n  ${runnerCommand(detectPackageManager(), 'drizzle-kit migrate')}`
     } else {
       // Non-Drizzle fallback: emit a timestamped SQL file the user
       // applies with whichever migration tool they're running.

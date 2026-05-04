@@ -1,3 +1,4 @@
+import { detectPackageManager, runnerCommand } from '@/commands/init/utils.js'
 import { loadStashConfig } from '@/config/index.js'
 import {
   type ManifestColumn,
@@ -100,7 +101,7 @@ export interface BackfillCommandOptions {
  * and resumes from the last committed checkpoint.
  */
 export async function backfillCommand(options: BackfillCommandOptions) {
-  p.intro('npx @cipherstash/cli encrypt backfill')
+  p.intro(runnerCommand(detectPackageManager(), 'stash encrypt backfill'))
 
   const stashConfig = await loadStashConfig()
   const ctx = await loadEncryptionContext()

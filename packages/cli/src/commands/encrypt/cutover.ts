@@ -1,4 +1,5 @@
 import { detectDrizzle } from '@/commands/db/detect.js'
+import { detectPackageManager, runnerCommand } from '@/commands/init/utils.js'
 import { loadStashConfig } from '@/config/index.js'
 import {
   activateConfig,
@@ -52,7 +53,7 @@ export interface CutoverCommandOptions {
  * Proxy config reload. Exits with code `1` if preconditions are not met.
  */
 export async function cutoverCommand(options: CutoverCommandOptions) {
-  p.intro('npx @cipherstash/cli encrypt cutover')
+  p.intro(runnerCommand(detectPackageManager(), 'stash encrypt cutover'))
 
   const config = await loadStashConfig()
   const client = new pg.Client({ connectionString: config.databaseUrl })

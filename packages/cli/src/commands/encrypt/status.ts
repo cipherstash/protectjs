@@ -1,3 +1,4 @@
+import { detectPackageManager, runnerCommand } from '@/commands/init/utils.js'
 import { loadStashConfig } from '@/config/index.js'
 import {
   type MigrationPhase,
@@ -30,7 +31,7 @@ interface Row {
  * `<col>_encrypted` column doesn't exist yet).
  */
 export async function statusCommand() {
-  p.intro('npx @cipherstash/cli encrypt status')
+  p.intro(runnerCommand(detectPackageManager(), 'stash encrypt status'))
 
   const config = await loadStashConfig()
   const manifest = await readManifest(process.cwd())

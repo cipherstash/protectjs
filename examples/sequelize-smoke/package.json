@@ -1,0 +1,20 @@
+{
+  "name": "@cipherstash/sequelize-smoke",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "smoke": "tsx smoke.ts"
+  },
+  "dependencies": {
+    "@cipherstash/stack": "workspace:*",
+    "dotenv": "^16.6.1",
+    "pg": "8.13.1",
+    "pg-hstore": "^2.3.4",
+    "sequelize": "^6.37.0"
+  },
+  "devDependencies": {
+    "tsx": "catalog:repo",
+    "typescript": "catalog:repo"
+  }
+}

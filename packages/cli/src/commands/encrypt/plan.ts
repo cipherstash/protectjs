@@ -1,3 +1,4 @@
+import { detectPackageManager, runnerCommand } from '@/commands/init/utils.js'
 import { loadStashConfig } from '@/config/index.js'
 import { latestByColumn, readManifest } from '@cipherstash/migrate'
 import * as p from '@clack/prompts'
@@ -12,7 +13,7 @@ import pg from 'pg'
  * `advance`d everything" preview.
  */
 export async function planCommand() {
-  p.intro('npx @cipherstash/cli encrypt plan')
+  p.intro(runnerCommand(detectPackageManager(), 'stash encrypt plan'))
 
   const config = await loadStashConfig()
   const manifest = await readManifest(process.cwd())
