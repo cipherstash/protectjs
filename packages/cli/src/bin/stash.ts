@@ -286,7 +286,12 @@ async function runEncryptCommand(
       const { cutoverCommand } = await requireStack(
         () => import('../commands/encrypt/cutover.js'),
       )
-      await cutoverCommand({ table, column, proxyUrl: values['proxy-url'] })
+      await cutoverCommand({
+        table,
+        column,
+        proxyUrl: values['proxy-url'],
+        migrationsDir: values['migrations-dir'],
+      })
       break
     }
     case 'drop': {

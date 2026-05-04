@@ -205,14 +205,13 @@ function renderRow(input: {
     ? eqlColumn.indexes.join(', ') || '(none)'
     : intentIndexes?.join(', ') || '—'
 
-  let progress = '—'
-  if (state && state.rowsTotal !== null && state.rowsTotal !== undefined) {
-    const pct =
-      state.rowsTotal > 0
-        ? Math.floor(((state.rowsProcessed ?? 0) / state.rowsTotal) * 100)
-        : 100
-    progress = `${state.rowsProcessed ?? 0}/${state.rowsTotal} (${pct}%)`
-  }
+  // The PROGRESS column means different things in different phases. The
+  // raw rowsProcessed/rowsTotal numbers in cs_migrations come from the
+  // backfill engine, but rendering them as a uniform fraction across
+  // every phase produces nonsense at the boundaries (e.g. `0/0 (100%)`
+  // for a `backfilled` column that needed no encrypting because dual-
+  // writes covered every row from seeding). Frame per phase.
+  const progress = formatProgress(phase, state)
 
   const flags: string[] = []
   if (intentIndexes && !eqlColumn) flags.push('not-registered')
@@ -231,6 +230,58 @@ function renderRow(input: {
     indexes,
     progress,
     flags: flags.join(', '),
+  }
+}
+
+/**
+ * Phase-aware framing for the PROGRESS column.
+ *
+ *   schema-added  — no backfill has run, no progress data yet.
+ *   dual-writing  — backfill hasn't started either; the meaningful
+ *                   measurement here is "is dual-write code populating
+ *                   every new row?", which requires a live coverage
+ *                   query against the user's table. We don't run that
+ *                   here (the row would have to do its own SELECT) so
+ *                   we surface "(awaiting backfill)" — see follow-ups.
+ *   backfilling   — show backfill progress: rowsProcessed/rowsTotal.
+ *                   Percentage based on rows already done.
+ *   backfilled    — show "(complete)" instead of a degenerate ratio.
+ *                   `0/0` here means "nothing needed encrypting
+ *                   because dual-writes already covered every row" —
+ *                   not a failure, but unintuitive as a fraction.
+ *   cut-over      — physical rename complete, encrypted column live.
+ *   dropped       — plaintext column gone, lifecycle complete.
+ */
+function formatProgress(
+  phase: MigrationPhase | '—',
+  state: {
+    rowsProcessed: number | null
+    rowsTotal: number | null
+  } | null,
+): string {
+  switch (phase) {
+    case 'schema-added':
+      return '—'
+    case 'dual-writing':
+      return '(awaiting backfill)'
+    case 'backfilling': {
+      if (!state || state.rowsTotal === null || state.rowsTotal === undefined) {
+        return '—'
+      }
+      const pct =
+        state.rowsTotal > 0
+          ? Math.floor(((state.rowsProcessed ?? 0) / state.rowsTotal) * 100)
+          : 100
+      return `${state.rowsProcessed ?? 0}/${state.rowsTotal} (${pct}%)`
+    }
+    case 'backfilled':
+      return '(backfill complete)'
+    case 'cut-over':
+      return '(cut over)'
+    case 'dropped':
+      return '(dropped)'
+    default:
+      return '—'
   }
 }
 
