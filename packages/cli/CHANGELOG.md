@@ -1,5 +1,96 @@
 # @cipherstash/cli
 
+## 0.12.0
+
+### Minor Changes
+
+- f315334: `stash init` can now hand off the rest of setup to whichever coding agent the user is set up with — and it leaves them with a project-specific action plan and the right reference material, not just generic rules.
+
+  The new pipeline:
+
+  1. **Authenticate** (unchanged).
+  2. **Resolve `DATABASE_URL`** — uses the same resolver as `stash db install` (flag → env → `supabase status` → interactive prompt). Hard-fails with an actionable message if nothing resolves.
+  3. **Build the encryption client.** When the database has tables, `init` introspects them and generates a real client from the user's selection. When the database is empty, it falls back to a placeholder so fresh projects still work — and the action prompt notes the placeholder so the agent reshapes it later.
+  4. **Install dependencies** — `@cipherstash/stack` (runtime) + `stash` (CLI dev dep).
+  5. **Install EQL into the database** — y/N confirm, then runs `stash db install` programmatically against the URL we already resolved. No second prompt for credentials.
+  6. **Pick a handoff** from the four-option menu. Each handoff installs the right artifacts for the chosen tool:
+     - **Hand off to Claude Code** — copies the per-integration set of authored skills (`stash-encryption` + `stash-<integration>` + `stash-cli`) into `.claude/skills/`, writes `.cipherstash/context.json` and `.cipherstash/setup-prompt.md`, spawns `claude`. Default when `claude` is on PATH.
+     - **Hand off to Codex** — writes a sentinel-managed `AGENTS.md` (durable doctrine) + copies the same skills into `.codex/skills/` (procedural workflows), writes `context.json` + `setup-prompt.md`, spawns `codex`. Default when `codex` is on PATH and `claude` is not. Follows OpenAI's Codex guidance: AGENTS.md for repo doctrine, skills for repeatable workflows.
+     - **Use the CipherStash Agent** — writes `context.json` and runs `stash wizard`. Fallback for users without a local CLI agent. The wizard installs its own skills.
+     - **Write AGENTS.md** — for editor agents (Cursor, Windsurf, Cline) that don't auto-load skill directories. Writes a single `AGENTS.md` with the doctrine _plus_ the relevant skill content inlined under a sentinel block, so the agent has the API details without needing to follow file references. Plus `context.json` + `setup-prompt.md`. No spawn.
+
+  Detection is non-blocking: if the chosen CLI agent (`claude` or `codex`) isn't installed, init still writes the artifacts and prints install + manual-launch instructions. Progress is never wasted.
+
+  `.cipherstash/setup-prompt.md` is the headline artifact. It's the project-specific action plan — _"init has done X and Y; you need to do Z next, with these exact commands and paths"_ — generated from the current init state. The launch prompt for Claude / Codex points the agent at this file first; the installed skills provide the reusable rulebook the prompt references. For IDE users, it's ready to paste into the first chat.
+
+  Per-integration skill subset:
+
+  ```text
+  drizzle    → stash-encryption + stash-drizzle  + stash-cli
+  supabase   → stash-encryption + stash-supabase + stash-cli
+  postgresql → stash-encryption + stash-cli
+  ```
+
+  The skills themselves are the authored ones at the repo root (`/skills/`); they ship inside the CLI tarball via `tsup` so init can copy them locally without a network round-trip. The AGENTS.md doctrine fragment ships the same way.
+
+  Re-running `init` is safe — `AGENTS.md` uses sentinel-marker upsert (`<!-- cipherstash:rulebook start/end -->`), so the managed region is replaced in place and any user edits outside it are preserved. Skill directories are overwritten so the user always gets the latest content. `setup-prompt.md` is regenerated wholesale each run since it's meant to reflect the current state.
+
+  `.cipherstash/context.json` is the universal "what shape is this project" payload — integration, encryption client path, schema, env key names (never values), package manager, install command, CLI version, names of installed skills, generation timestamp.
+
+- ce70b4d: Add `stash wizard` as a thin wrapper subcommand around `@cipherstash/wizard`.
+
+  The wizard ships as a separate npm package so the heavy agent SDK stays out of the `stash` CLI bundle. Until now, users had to remember a second tool name (`npx @cipherstash/wizard`); the wrapper exposes the same capability under the existing `stash` surface so the user only has to think about one CLI.
+
+  `stash wizard` detects the project's package manager and spawns the wizard via the matching one-shot runner — `npx`, `pnpm dlx`, `yarn dlx`, or `bunx` — with `stdio: 'inherit'` so the wizard owns the terminal cleanly. Any flags after `wizard` are forwarded verbatim, so `stash wizard --debug` works.
+
+  On a cold cache (the wizard package isn't installed in the project) the runner downloads it before launching — a few seconds. The wrapper prints an explicit "first run downloads ~5s" line in that case so the CLI doesn't appear hung. On a warm cache, just a "Launching the CipherStash wizard…" line, then the wizard takes over.
+
+  Existing copy that pointed at `npx @cipherstash/wizard` (init's next-steps for base / Drizzle / Supabase, `db install`'s post-install note) now uses `stash wizard`.
+
+- add4357: Add `stash encrypt` command group and `@cipherstash/migrate` library for plaintext → encrypted column migrations.
+
+  New CLI commands:
+
+  - `stash encrypt status` — per-column migration status (phase, backfill progress, drift between intent and state, EQL registration).
+  - `stash encrypt plan` — diff `.cipherstash/migrations.json` (intent) vs observed state.
+  - `stash encrypt backfill --table <t> --column <c>` — resumable, idempotent, chunked encryption of plaintext into `<col>_encrypted`. Uses the user's encryption client (Protect/Stack). SIGINT-safe; re-run to resume. The first run on a column prompts to confirm dual-writes are deployed (or accept `--confirm-dual-writes-deployed` for non-interactive contexts), records the `dual_writing` transition in `cs_migrations`, then runs the chunked encryption loop. `--force` re-encrypts every plaintext row regardless of current state — recovery path for drift caused by an earlier backfill running before dual-writes were actually live.
+  - `stash encrypt cutover --table <t> --column <c>` — runs `eql_v2.rename_encrypted_columns()` inside a transaction; optionally forces Proxy config refresh via `CIPHERSTASH_PROXY_URL`. After cutover, apps reading `<col>` transparently receive the encrypted column.
+  - `stash encrypt drop --table <t> --column <c>` — generates a migration file that drops the old plaintext column.
+
+  `stash db install` now also installs a `cipherstash.cs_migrations` table used to track per-column migration runtime state (current phase, backfill cursor, rows processed). The table is append-only (event-log shape) and kept separate from `eql_v2_configuration` which remains the authoritative EQL intent store used by Proxy.
+
+  The new `@cipherstash/migrate` package exposes the same primitives as a library for users who want to embed backfill in their own workers or cron jobs — all commands are thin wrappers around its exports (`runBackfill`, `appendEvent`, `latestByColumn`, `progress`, `renameEncryptedColumns`, `reloadConfig`, `readManifest`, `writeManifest`).
+
+### Patch Changes
+
+- 39af183: Make `--help` banners and the post-install "Next steps" panel show commands using the package manager the user actually invoked the CLI with, instead of always emitting `npx`.
+
+  A user who runs `bunx @cipherstash/cli --help` now sees:
+
+  ```
+  Usage: bunx @cipherstash/cli <command> [options]
+  …
+  Examples:
+    bunx @cipherstash/cli init
+    bunx @cipherstash/cli auth login
+    bunx @cipherstash/cli db install
+  ```
+
+  instead of `npx @cipherstash/cli …` regardless of how they invoked it. Same for `pnpm dlx`, `yarn dlx`, and the default `npx` path.
+
+  Concretely:
+
+  - `--help` (top-level) — usage line and all six examples in `bin/stash.ts`.
+  - `--help` (auth) — usage line and the two `auth login` examples in `commands/auth/index.ts`.
+  - `db install`'s "Next steps" note — the `wizard` invocation now matches the user's runner.
+  - The `@cipherstash/stack is required for this command` hint shown by `requireStack` (when `db push`/`validate`/`schema build` are run before the runtime SDK is installed) now suggests the package manager's install command and the user's runner for the follow-up `init` invocation.
+
+  No public-API change. Detection sources unchanged from #379: `npm_config_user_agent` first, then lockfile, then `npx` fallback.
+
+- a8dbb65: Render every user-facing CLI string and execute every shell-out under the detected package manager (`npx` / `bunx` / `pnpm dlx` / `yarn dlx`), completing the work started in #379. Affected surfaces: `@cipherstash/cli` top-level + `auth` + `env` help, `db install` Drizzle migration steps, `db migrate` not-implemented warning, the Supabase migration SQL header, the Supabase status fallback exec, the `@cipherstash/protect` `stash` Stricli help (set/get/list/delete), the `@cipherstash/wizard` usage line and agent command allowlist, and the `@cipherstash/drizzle` `generate-eql-migration` help + drizzle-kit invocation. A new `pnpm run lint:runners` lint runs in CI and fails on any reintroduction of a hardcoded runner literal.
+- Updated dependencies [add4357]
+  - @cipherstash/migrate@0.2.0
+
 ## 0.11.0
 
 ### Minor Changes
