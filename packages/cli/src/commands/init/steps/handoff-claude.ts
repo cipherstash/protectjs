@@ -9,8 +9,7 @@ import type { InitProvider, InitState, InitStep } from '../types.js'
 
 const CLAUDE_SKILLS_DIR = '.claude/skills'
 
-const CLAUDE_INSTALL_URL =
-  'https://docs.claude.com/en/docs/claude-code/quickstart'
+const CLAUDE_INSTALL_URL = 'https://code.claude.com/docs/en/quickstart'
 
 /**
  * Hand off to Claude Code: copy the per-integration set of skills into

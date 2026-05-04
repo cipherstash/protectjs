@@ -23,11 +23,10 @@ Detection is non-blocking: if the chosen CLI agent (`claude` or `codex`) isn't i
 
 Per-integration skill subset:
 
-```
-drizzle    → stash-encryption + stash-drizzle    + stash-cli
-supabase   → stash-encryption + stash-supabase   + stash-cli
+```text
+drizzle    → stash-encryption + stash-drizzle  + stash-cli
+supabase   → stash-encryption + stash-supabase + stash-cli
 postgresql → stash-encryption + stash-cli
-dynamodb   → stash-encryption + stash-dynamodb   + stash-cli
 ```
 
 The skills themselves are the authored ones at the repo root (`/skills/`); they ship inside the CLI tarball via `tsup` so init can copy them locally without a network round-trip. The AGENTS.md doctrine fragment ships the same way.

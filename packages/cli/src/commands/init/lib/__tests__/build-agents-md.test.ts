@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import { buildAgentsMdBody } from '../build-agents-md.js'
 
-const SENTINEL_START = '<!-- cipherstash:rulebook start -->'
-const SENTINEL_END = '<!-- cipherstash:rulebook end -->'
-
 describe('buildAgentsMdBody', () => {
-  it('wraps the body in the rulebook sentinel pair', () => {
+  it('returns content WITHOUT sentinel wrappers (upsertManagedBlock owns those)', () => {
+    // Regression guard: if buildAgentsMdBody emits sentinels itself,
+    // upsertManagedBlock will wrap them again and produce a malformed
+    // file on the second init run.
     const out = buildAgentsMdBody('drizzle', 'doctrine-only')
-    expect(out.startsWith(SENTINEL_START)).toBe(true)
-    expect(out.trimEnd().endsWith(SENTINEL_END)).toBe(true)
+    expect(out).not.toContain('<!-- cipherstash:rulebook start -->')
+    expect(out).not.toContain('<!-- cipherstash:rulebook end -->')
   })
 
   it('doctrine-only includes the durable doctrine but no skill content', () => {

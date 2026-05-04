@@ -71,7 +71,7 @@ export const installDepsStep: InitStep = {
     // Package installs can take tens of seconds and a silent spinner makes
     // the CLI look hung. We log a "starting" line here and a success line
     // after, letting the package manager own the terminal in between.
-    let allSucceeded = true
+    const failed: string[] = []
     for (const cmd of commands) {
       p.log.step(`Running: ${cmd}`)
       try {
@@ -80,23 +80,30 @@ export const installDepsStep: InitStep = {
         const message = err instanceof Error ? err.message : String(err)
         p.log.error(`Install failed: ${cmd}`)
         p.log.error(message)
-        allSucceeded = false
+        failed.push(cmd)
       }
     }
 
-    if (allSucceeded) {
+    // Re-check from disk rather than inferring from exit codes — partial
+    // success (one command works, the other fails) needs precise
+    // per-package tracking, not a composite flag.
+    const stackInstalled = isPackageInstalled(STACK_PACKAGE)
+    const cliInstalled = isPackageInstalled(CLI_PACKAGE)
+
+    if (stackInstalled && cliInstalled) {
       p.log.success('Stack dependencies installed.')
     } else {
+      const stillMissing = [
+        ...(stackInstalled ? [] : [`${STACK_PACKAGE} (prod)`]),
+        ...(cliInstalled ? [] : [`${CLI_PACKAGE} (dev)`]),
+      ]
+      p.log.warn(`Still missing: ${stillMissing.join(', ')}.`)
       p.note(
-        `You can retry manually:\n  ${commands.join('\n  ')}`,
+        `You can retry manually:\n  ${(failed.length ? failed : commands).join('\n  ')}`,
         'Manual Installation',
       )
     }
 
-    return {
-      ...state,
-      stackInstalled: stackPresent || allSucceeded,
-      cliInstalled: cliPresent || allSucceeded,
-    }
+    return { ...state, stackInstalled, cliInstalled }
   },
 }

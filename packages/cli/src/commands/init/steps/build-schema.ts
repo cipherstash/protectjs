@@ -2,6 +2,7 @@ import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import * as p from '@clack/prompts'
 import { detectDrizzle, detectSupabase } from '../../db/detect.js'
+import { readEnvKeyNames } from '../lib/env-keys.js'
 import { buildSchemasFromDatabase } from '../lib/introspect.js'
 import { writeBaselineContextFile } from '../lib/write-context.js'
 import type {
@@ -17,7 +18,6 @@ import {
   generateClientFromSchemas,
   generatePlaceholderClient,
 } from '../utils.js'
-import { readEnvKeyNames } from './gather-context.js'
 
 const DEFAULT_CLIENT_PATH = './src/encryption/index.ts'
 
@@ -46,6 +46,7 @@ export const buildSchemaStep: InitStep = {
     const resolvedPath = resolve(cwd, clientFilePath)
 
     // Existing-file branch: silent overwrite is bad. Ask once.
+    let keepExisting = false
     if (existsSync(resolvedPath)) {
       const action = await p.select({
         message: `${clientFilePath} already exists. What would you like to do?`,
@@ -53,7 +54,7 @@ export const buildSchemaStep: InitStep = {
           {
             value: 'keep',
             label: 'Keep existing file',
-            hint: 'skip code generation',
+            hint: 'skip code generation, still record schema in context.json',
           },
           { value: 'overwrite', label: 'Overwrite with new schema' },
         ],
@@ -61,54 +62,48 @@ export const buildSchemaStep: InitStep = {
 
       if (p.isCancel(action)) throw new CancelledError()
 
-      if (action === 'keep') {
-        p.log.info('Keeping existing encryption client file.')
-        return {
-          ...state,
-          clientFilePath,
-          schemaGenerated: false,
-          integration,
-          schemas: [PLACEHOLDER_SCHEMA],
-          schemaFromIntrospection: false,
-        }
-      }
+      keepExisting = action === 'keep'
+      if (keepExisting) p.log.info('Keeping existing encryption client file.')
     }
 
     // Try real introspection first. Falls through to placeholder for an
     // empty database, a connection error, or user cancellation at any prompt.
+    // We run introspection even when keeping the existing file so
+    // `context.json` reflects what's actually in the database — agents read
+    // those schemas to understand the project, not just to drive codegen.
     let introspected: SchemaDef[] | undefined
     if (state.databaseUrl) {
       introspected = await buildSchemasFromDatabase(state.databaseUrl)
     }
 
-    let fileContents: string
-    let recordedSchemas: SchemaDef[]
-    let fromIntrospection: boolean
+    const fromIntrospection = Boolean(introspected && introspected.length > 0)
+    const recordedSchemas: SchemaDef[] = fromIntrospection
+      ? (introspected as SchemaDef[])
+      : [PLACEHOLDER_SCHEMA]
 
-    if (introspected && introspected.length > 0) {
-      fileContents = generateClientFromSchemas(integration, introspected)
-      recordedSchemas = introspected
-      fromIntrospection = true
-    } else {
-      p.log.info(
-        'No tables found in the public schema — writing a placeholder client. The handoff prompt will note this so the agent reshapes it to your real schema.',
+    // When `keepExisting`, skip codegen but keep the introspected schemas
+    // on state so the handoff prompt + context.json reflect the live DB.
+    // The agent reconciles any divergence as part of its action plan.
+    if (!keepExisting) {
+      const fileContents = fromIntrospection
+        ? generateClientFromSchemas(integration, introspected as SchemaDef[])
+        : generatePlaceholderClient(integration)
+
+      if (!fromIntrospection) {
+        p.log.info(
+          'No tables found in the public schema — writing a placeholder client. The handoff prompt will note this so the agent reshapes it to your real schema.',
+        )
+      }
+
+      const dir = dirname(resolvedPath)
+      if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
+      writeFileSync(resolvedPath, fileContents, 'utf-8')
+      p.log.success(
+        fromIntrospection
+          ? `Encryption client written to ${clientFilePath} (${integration}, ${recordedSchemas.length} table${recordedSchemas.length !== 1 ? 's' : ''} from introspection)`
+          : `Encryption client written to ${clientFilePath} (${integration} placeholder)`,
       )
-      fileContents = generatePlaceholderClient(integration)
-      recordedSchemas = [PLACEHOLDER_SCHEMA]
-      fromIntrospection = false
     }
-
-    const dir = dirname(resolvedPath)
-    if (!existsSync(dir)) {
-      mkdirSync(dir, { recursive: true })
-    }
-
-    writeFileSync(resolvedPath, fileContents, 'utf-8')
-    p.log.success(
-      fromIntrospection
-        ? `Encryption client written to ${clientFilePath} (${integration}, ${recordedSchemas.length} table${recordedSchemas.length !== 1 ? 's' : ''} from introspection)`
-        : `Encryption client written to ${clientFilePath} (${integration} placeholder)`,
-    )
 
     // Read env-key names once and put them on state. gather-context (later in
     // the pipeline) and the handoff steps all read from there rather than
@@ -118,7 +113,7 @@ export const buildSchemaStep: InitStep = {
     const nextState: InitState = {
       ...state,
       clientFilePath,
-      schemaGenerated: true,
+      schemaGenerated: !keepExisting,
       integration,
       schemas: recordedSchemas,
       schemaFromIntrospection: fromIntrospection,

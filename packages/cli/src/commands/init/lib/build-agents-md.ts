@@ -5,15 +5,14 @@ import type { Integration } from '../types.js'
 import { findBundledDir } from './bundled-paths.js'
 import { SKILL_MAP, readBundledSkill } from './install-skills.js'
 
-/** Sentinel pair so re-runs replace only our region in the user's file. */
-const SENTINEL_START = '<!-- cipherstash:rulebook start -->'
-const SENTINEL_END = '<!-- cipherstash:rulebook end -->'
-
 export type AgentsMdMode = 'doctrine-only' | 'doctrine-plus-skills'
 
 /**
- * Render the managed body of `AGENTS.md` (the bit that goes inside the
- * sentinel block — the caller is responsible for the upsert).
+ * Render the managed body of `AGENTS.md` (the bit that goes *inside* the
+ * sentinel block — the caller is responsible for the upsert via
+ * `upsertManagedBlock`, which owns the sentinel pair). This function must
+ * NOT emit sentinels itself or we get nested sentinels and a malformed
+ * file on the second init run.
  *
  *   doctrine-only         — the durable AGENTS.md doctrine file. Used by
  *                           the Codex handoff, where workflows live in
@@ -35,40 +34,31 @@ export function buildAgentsMdBody(
     p.log.warn(
       'AGENTS.md doctrine fragment not found in this CLI build — writing a minimal AGENTS.md.',
     )
-    return [
-      SENTINEL_START,
-      '',
-      '# CipherStash',
-      '',
-      'See `.cipherstash/setup-prompt.md` for the action plan and the installed skills for the rules.',
-      '',
-      SENTINEL_END,
-    ].join('\n')
+    return '# CipherStash\n\nSee `.cipherstash/setup-prompt.md` for the action plan and the installed skills for the rules.'
   }
 
-  const parts: string[] = [SENTINEL_START, '', doctrine.trim(), '']
+  const parts: string[] = [doctrine.trim()]
 
   if (mode === 'doctrine-plus-skills') {
-    const skillNames = SKILL_MAP[integration]
     const skillBodies: string[] = []
-    for (const name of skillNames) {
+    for (const name of SKILL_MAP[integration]) {
       const body = readBundledSkill(name)
       if (body) {
         skillBodies.push(`---\n\n# Skill: ${name}\n\n${stripFrontmatter(body)}`)
       }
     }
     if (skillBodies.length > 0) {
-      parts.push('## Skill references', '')
       parts.push(
+        '',
+        '## Skill references',
+        '',
         'These are the CipherStash skills that apply to this project. They contain the API details and patterns the rules above reference.',
         '',
+        skillBodies.join('\n\n'),
       )
-      parts.push(skillBodies.join('\n\n'))
-      parts.push('')
     }
   }
 
-  parts.push(SENTINEL_END)
   return parts.join('\n')
 }
 
