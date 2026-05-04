@@ -22,11 +22,12 @@ export function formatWizardError(summary: string, detail?: string): string {
 /**
  * Classify an error from the agent SDK into a user-friendly message.
  * Accepts an optional SDK error code and the raw error message.
+ * The runner parameter must be passed explicitly (the detected package manager's execCommand).
  */
 export function classifyError(
   errorCode: string | undefined,
   rawMessage: string,
-  runner = 'npx',
+  runner: string,
 ): string {
   if (errorCode === 'authentication_failed') {
     return formatWizardError(
@@ -87,11 +88,12 @@ export function classifyError(
 /**
  * Classify an HTTP error from a direct gateway fetch into the same
  * user-friendly format the agent SDK errors use.
+ * The runner parameter must be passed explicitly (the detected package manager's execCommand).
  */
 export function classifyHttpError(
   status: number,
   apiMessage: string,
-  runner = 'npx',
+  runner: string,
 ): string {
   if (status === 400) {
     return formatWizardError(

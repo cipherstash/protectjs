@@ -19,7 +19,7 @@ interface GatewayErrorBody {
 export async function fetchIntegrationPrompt(
   ctx: GatheredContext,
   cliVersion: string,
-  runner = 'npx',
+  runner: string,
 ): Promise<FetchedPrompt> {
   const strategy = AutoStrategy.detect()
   const { token } = await strategy.getToken()

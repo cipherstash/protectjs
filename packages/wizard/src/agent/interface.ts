@@ -45,6 +45,12 @@ export interface WizardAgentResult {
   error?: string
 }
 
+/** Package manager DLX runner prefixes (tools run via runner dlx). */
+const RUNNER_PREFIXES = ['npx', 'bunx', 'pnpm dlx', 'yarn dlx'] as const
+
+/** Tools allowed to run via any DLX runner. */
+const ALLOWED_DLX_TOOLS = ['drizzle-kit', 'tsc', 'stash db'] as const
+
 /** Allowed Bash commands — whitelist approach. */
 const ALLOWED_BASH_COMMANDS = [
   // Package managers
@@ -64,11 +70,24 @@ const ALLOWED_BASH_COMMANDS = [
   'bun remove',
   'bun run',
   // Build & validation
-  'npx drizzle-kit',
-  'npx tsc',
-  'npx stash db',
   'stash db',
 ]
+
+/**
+ * Check whether `cmd` is a `<runner> <tool>` invocation we allow the agent to run.
+ * Strips any of the four runner prefixes, then matches the remainder against
+ * the allowed tools. Returns true if the prefix-stripped command starts with
+ * any allowed tool token.
+ */
+function isAllowedDlxCommand(cmd: string): boolean {
+  for (const prefix of RUNNER_PREFIXES) {
+    if (cmd.startsWith(`${prefix} `)) {
+      const rest = cmd.slice(prefix.length + 1)
+      return ALLOWED_DLX_TOOLS.some((t) => rest.startsWith(t))
+    }
+  }
+  return false
+}
 
 /** Filesystem paths the agent is allowed to write to. */
 const ALLOWED_WRITE_PATHS = [
@@ -150,12 +169,12 @@ export function wizardCanUseTool(
       return 'Direct .env file access via Bash is blocked. Use the wizard-tools MCP server instead.'
     }
 
-    // Check against allowed commands
-    const isAllowed = ALLOWED_BASH_COMMANDS.some((allowed) =>
-      command.startsWith(allowed),
-    )
+    // Check against allowed commands (including DLX variants)
+    const isAllowed =
+      ALLOWED_BASH_COMMANDS.some((allowed) => command.startsWith(allowed)) ||
+      isAllowedDlxCommand(command)
     if (!isAllowed) {
-      return `Command not in allowlist. Allowed: ${ALLOWED_BASH_COMMANDS.join(', ')}`
+      return `Command not in allowlist. Allowed: ${ALLOWED_BASH_COMMANDS.join(', ')}, or ${RUNNER_PREFIXES.join('/')} <tool> for: ${ALLOWED_DLX_TOOLS.join(', ')}`
     }
   }
 

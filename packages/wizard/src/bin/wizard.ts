@@ -13,6 +13,7 @@ import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import * as p from '@clack/prompts'
+import { detectPackageManager } from '../lib/detect.js'
 import { run } from '../run.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -20,10 +21,12 @@ const pkg = JSON.parse(
   readFileSync(join(__dirname, '../../package.json'), 'utf-8'),
 )
 
+const RUNNER = detectPackageManager(process.cwd())?.execCommand ?? 'npx'
+
 const HELP = `
 CipherStash Wizard v${pkg.version}
 
-Usage: npx @cipherstash/wizard [options]
+Usage: ${RUNNER} @cipherstash/wizard [options]
 
 The wizard reads your codebase and wires up @cipherstash/stack encryption
 for the columns you select. Run it once per project, after \`stash init\`.
