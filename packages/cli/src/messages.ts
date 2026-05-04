@@ -31,7 +31,8 @@ export const messages = {
   },
   db: {
     unknownSubcommand: 'Unknown db subcommand',
-    migrateNotImplemented: '"npx stash db migrate" is not yet implemented.',
+    migrateNotImplemented: (stashRef: string) =>
+      `"${stashRef} db migrate" is not yet implemented.`,
     /** Source labels surfaced after DATABASE_URL resolution. */
     urlResolvedFromFlag: 'Using DATABASE_URL from --database-url flag',
     urlResolvedFromSupabase: 'Using DATABASE_URL from supabase status',

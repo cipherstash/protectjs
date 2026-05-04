@@ -216,7 +216,7 @@ async function runDbCommand(
       await testConnectionCommand({ databaseUrl })
       break
     case 'migrate':
-      p.log.warn(messages.db.migrateNotImplemented)
+      p.log.warn(messages.db.migrateNotImplemented(STASH))
       break
     default:
       p.log.error(`${messages.db.unknownSubcommand}: ${sub ?? '(none)'}`)

@@ -144,7 +144,6 @@ export async function installCommand(options: InstallOptions) {
         projectInfo,
         force: options.force,
         dryRun: options.dryRun,
-        runner,
       })
       return
     }
@@ -309,6 +308,7 @@ async function generateDrizzleMigration(
 ) {
   const migrationName = options.name ?? DEFAULT_MIGRATION_NAME
   const outDir = resolve(options.out ?? DEFAULT_DRIZZLE_OUT)
+  const drizzleCmd = `${runnerCommand(detectPackageManager(), '').trim()} drizzle-kit generate --custom --name=${migrationName}`
 
   if (options.dryRun) {
     p.log.info('Dry run — no changes will be made.')
@@ -316,7 +316,7 @@ async function generateDrizzleMigration(
       ? 'Would download EQL install SQL from GitHub'
       : 'Would use bundled EQL install SQL'
     p.note(
-      `Would run: npx drizzle-kit generate --custom --name=${migrationName}\n${source}\nWould write SQL to migration file in ${outDir}`,
+      `Would run: ${drizzleCmd}\n${source}\nWould write SQL to migration file in ${outDir}`,
       'Dry Run',
     )
     p.outro('Dry run complete.')
@@ -329,7 +329,7 @@ async function generateDrizzleMigration(
   s.start('Generating custom Drizzle migration...')
 
   try {
-    execSync(`npx drizzle-kit generate --custom --name=${migrationName}`, {
+    execSync(drizzleCmd, {
       stdio: 'pipe',
       encoding: 'utf-8',
     })
@@ -440,7 +440,7 @@ async function generateDrizzleMigration(
 
   p.log.success(`Migration created: ${generatedMigrationPath}`)
   p.note(
-    'Run your Drizzle migrations to install EQL:\n\n  npx drizzle-kit migrate',
+    `Run your Drizzle migrations to install EQL:\n\n  ${runnerCommand(detectPackageManager(), '').trim()} drizzle-kit migrate`,
     'Next Steps',
   )
   printNextSteps()
@@ -572,10 +572,9 @@ async function writeSupabaseMigrationFile(
     projectInfo: SupabaseProjectInfo
     force?: boolean
     dryRun?: boolean
-    runner: string
   },
 ): Promise<void> {
-  const { projectInfo, force, dryRun, runner } = opts
+  const { projectInfo, force, dryRun } = opts
   const targetPath = join(
     projectInfo.migrationsDir,
     SUPABASE_EQL_MIGRATION_FILENAME,
@@ -634,7 +633,7 @@ async function writeSupabaseMigrationFile(
     ].join('\n'),
     'Next Steps',
   )
-  printNextSteps(runner)
+  printNextSteps()
   p.outro('Done!')
 }
 
