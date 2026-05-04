@@ -30,16 +30,20 @@ describe('renderSetupPrompt — orient + route', () => {
     expect(out).toMatch(/orientation message/)
   })
 
-  it('describes both supported paths and explicitly forbids path 2', () => {
+  it('describes both supported flows and explicitly forbids in-place conversion', () => {
     const out = renderSetupPrompt(baseCtx)
-    expect(out).toContain('Path 1 — Add a new encrypted column from scratch')
-    expect(out).toContain(
-      'Path 3 — Migrate an existing populated column to encrypted',
-    )
-    expect(out).toContain('Path 2 — Convert a column in place (NOT SUPPORTED)')
+    expect(out).toContain('### Add a new encrypted column')
+    expect(out).toContain('### Migrate an existing column to encrypted')
+    expect(out).toContain('### Converting in place is not supported')
   })
 
-  it('names the lifecycle CLI commands inline in path 3', () => {
+  it('mentions the staged twin model in the migrate-existing flow', () => {
+    const out = renderSetupPrompt(baseCtx)
+    expect(out).toMatch(/<col>_encrypted/)
+    expect(out).toMatch(/dual-?writ/i)
+  })
+
+  it('names the lifecycle CLI commands inline in the migrate-existing flow', () => {
     const out = renderSetupPrompt(baseCtx)
     expect(out).toContain('pnpm dlx stash encrypt backfill')
     expect(out).toContain('pnpm dlx stash encrypt cutover')
@@ -48,7 +52,7 @@ describe('renderSetupPrompt — orient + route', () => {
     expect(out).toContain('--force')
   })
 
-  it('emits drizzle-kit commands in path 1 for drizzle integration', () => {
+  it('emits drizzle-kit commands in the add-new-column flow for drizzle integration', () => {
     const out = renderSetupPrompt(baseCtx)
     expect(out).toContain('pnpm exec drizzle-kit generate')
     expect(out).toContain('pnpm exec drizzle-kit migrate')
@@ -63,7 +67,7 @@ describe('renderSetupPrompt — orient + route', () => {
     expect(out).toContain('supabase migration new')
   })
 
-  it('uses the right runner per package manager in path 1', () => {
+  it('uses the right runner per package manager in the add-new-column flow', () => {
     const npm = renderSetupPrompt({ ...baseCtx, packageManager: 'npm' })
     const bun = renderSetupPrompt({ ...baseCtx, packageManager: 'bun' })
     const yarn = renderSetupPrompt({ ...baseCtx, packageManager: 'yarn' })
@@ -115,22 +119,22 @@ describe('renderSetupPrompt — orient + route', () => {
       installedSkills: [],
     })
     expect(out).not.toMatch(/the {2,}skill/)
-    // Still describes both paths so the agent can route.
-    expect(out).toContain('Path 1')
-    expect(out).toContain('Path 3')
+    // Still describes both flows so the agent can route.
+    expect(out).toContain('### Add a new encrypted column')
+    expect(out).toContain('### Migrate an existing column to encrypted')
   })
 
   it('preserves stop-and-ask invariants', () => {
     const out = renderSetupPrompt(baseCtx)
     expect(out).toContain('## Stop and ask the user when')
-    expect(out).toMatch(/path 2/i)
+    expect(out).toMatch(/convert a populated column in place/i)
   })
 
   it('flags the bundler exclusion for projects using @cipherstash/stack', () => {
     // Skipping serverExternalPackages / webpack externals is the most
     // common Next.js footgun — the agent missed it on the spike project.
-    // The prompt should call this out explicitly in the path-1 walkthrough
-    // so it's visible without having to read the skill.
+    // The prompt should call this out explicitly in the add-new-column
+    // walkthrough so it's visible without having to read the skill.
     const out = renderSetupPrompt(baseCtx)
     expect(out).toContain('serverExternalPackages')
     expect(out).toContain('@cipherstash/protect-ffi')
