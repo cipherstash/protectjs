@@ -348,8 +348,8 @@ importers:
         specifier: 1.9.0
         version: 1.9.0
       uuid:
-        specifier: 13.0.0
-        version: 13.0.0
+        specifier: 14.0.0
+        version: 14.0.0
       zod:
         specifier: 3.24.2
         version: 3.24.2
@@ -3132,8 +3132,8 @@ packages:
     peerDependencies:
       react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
-  uuid@13.0.0:
-    resolution: {integrity: sha512-XQegIaBTVUjSHliKqcnFqYypAd4S+WCYt5NIeRs6w/UAry7z8Y9j5ZwRRL4kzq9U3sD6v+85er9FvkEaBpji2w==}
+  uuid@14.0.0:
+    resolution: {integrity: sha512-Qo+uWgilfSmAhXCMav1uYFynlQO7fMFiMVZsQqZRMIXp0O7rR7qjkj+cPvBHLgBqi960QCoo/PH2/6ZtVqKvrg==}
     hasBin: true
 
   vary@1.1.2:
@@ -4200,7 +4200,7 @@ snapshots:
 
   '@types/uuid@11.0.0':
     dependencies:
-      uuid: 13.0.0
+      uuid: 14.0.0
 
   '@types/ws@8.18.1':
     dependencies:
@@ -5633,7 +5633,7 @@ snapshots:
     dependencies:
       react: 19.2.3
 
-  uuid@13.0.0: {}
+  uuid@14.0.0: {}
 
   vary@1.1.2: {}
 
