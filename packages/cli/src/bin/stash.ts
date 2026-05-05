@@ -17,6 +17,7 @@ import * as p from '@clack/prompts'
 import {
   authCommand,
   envCommand,
+  implCommand,
   initCommand,
   installCommand,
   statusCommand,
@@ -74,6 +75,7 @@ ${messages.cli.usagePrefix}${STASH} <command> [options]
 
 Commands:
   init                 Initialize CipherStash for your project
+  impl                 Draft an encryption plan (or implement, if a plan exists)
   auth <subcommand>    Authenticate with CipherStash
   wizard               AI-guided encryption setup (reads your codebase)
 
@@ -104,6 +106,10 @@ Init Flags:
   --supabase           Use Supabase-specific setup flow
   --drizzle            Use Drizzle-specific setup flow
 
+Impl Flags:
+  --yolo               Skip the planning checkpoint and go straight to implementation
+                       (interactively confirms before proceeding)
+
 DB Flags:
   --force                    (install) Reinstall / overwrite even if already installed
   --dry-run                  (install, push, upgrade) Show what would happen without making changes
@@ -119,6 +125,8 @@ DB Flags:
 Examples:
   ${STASH} init
   ${STASH} init --supabase
+  ${STASH} impl
+  ${STASH} impl --yolo
   ${STASH} auth login
   ${STASH} wizard
   ${STASH} db install
@@ -366,6 +374,9 @@ async function main() {
   switch (command) {
     case 'init':
       await initCommand(flags)
+      break
+    case 'impl':
+      await implCommand(flags)
       break
     case 'auth': {
       const authArgs = subcommand ? [subcommand, ...commandArgs] : commandArgs

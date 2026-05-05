@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import type { AgentEnvironment } from '../detect-agents.js'
+import type { AgentEnvironment } from '../../init/detect-agents.js'
+import type { InitState } from '../../init/types.js'
 import { buildOptions, defaultChoice } from '../steps/how-to-proceed.js'
-import type { InitState } from '../types.js'
 
 function makeAgents(claudeCode: boolean, codex: boolean): AgentEnvironment {
   return {

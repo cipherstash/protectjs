@@ -6,7 +6,7 @@ import {
   type InitProvider,
   type InitState,
   type InitStep,
-} from '../types.js'
+} from '../../init/types.js'
 import { handoffAgentsMdStep } from './handoff-agents-md.js'
 import { handoffClaudeStep } from './handoff-claude.js'
 import { handoffCodexStep } from './handoff-codex.js'

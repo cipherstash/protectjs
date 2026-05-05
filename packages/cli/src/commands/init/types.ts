@@ -58,8 +58,9 @@ export interface InitState {
   agents?: AgentEnvironment
   /** What the user picked at the "how to proceed" step. */
   handoff?: HandoffChoice
-  /** Whether the handoff should plan first or implement directly. Set by
-   *  choose-mode. Defaults to `plan` when the user accepts the recommendation. */
+  /** Whether the handoff should plan first or implement directly. Derived
+   *  from disk state by `stash impl`: if `.cipherstash/plan.md` exists, the
+   *  mode is `implement`; otherwise `plan`. `--yolo` forces `implement`. */
   mode?: InitMode
 }
 

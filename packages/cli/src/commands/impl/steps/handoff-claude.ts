@@ -1,11 +1,11 @@
 import * as p from '@clack/prompts'
-import { spawnAgent, writeArtifacts } from '../lib/handoff-helpers.js'
-import { installSkills } from '../lib/install-skills.js'
+import { spawnAgent, writeArtifacts } from '../../init/lib/handoff-helpers.js'
+import { installSkills } from '../../init/lib/install-skills.js'
 import {
   CONTEXT_REL_PATH,
   SETUP_PROMPT_REL_PATH,
-} from '../lib/write-context.js'
-import type { InitProvider, InitState, InitStep } from '../types.js'
+} from '../../init/lib/write-context.js'
+import type { InitProvider, InitState, InitStep } from '../../init/types.js'
 
 const CLAUDE_SKILLS_DIR = '.claude/skills'
 
