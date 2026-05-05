@@ -137,7 +137,7 @@ importers:
         version: 7.2.0
       tsup:
         specifier: catalog:repo
-        version: 8.4.0(jiti@2.6.1)(postcss@8.5.6)(tsx@4.19.3)(typescript@5.6.3)(yaml@2.8.4)
+        version: 8.4.0(jiti@2.6.1)(postcss@8.5.10)(tsx@4.19.3)(typescript@5.6.3)(yaml@2.8.4)
       tsx:
         specifier: catalog:repo
         version: 4.19.3
@@ -180,7 +180,7 @@ importers:
         version: 4.4.0
       tsup:
         specifier: catalog:repo
-        version: 8.4.0(jiti@2.6.1)(postcss@8.5.6)(tsx@4.19.3)(typescript@5.6.3)(yaml@2.8.4)
+        version: 8.4.0(jiti@2.6.1)(postcss@8.5.10)(tsx@4.19.3)(typescript@5.6.3)(yaml@2.8.4)
       typescript:
         specifier: catalog:repo
         version: 5.6.3
@@ -208,7 +208,7 @@ importers:
         version: 8.13.1
       tsup:
         specifier: catalog:repo
-        version: 8.4.0(jiti@2.6.1)(postcss@8.5.6)(tsx@4.19.3)(typescript@5.6.3)(yaml@2.8.4)
+        version: 8.4.0(jiti@2.6.1)(postcss@8.5.10)(tsx@4.19.3)(typescript@5.6.3)(yaml@2.8.4)
       typescript:
         specifier: catalog:repo
         version: 5.6.3
@@ -233,7 +233,7 @@ importers:
         version: 16.6.1
       tsup:
         specifier: catalog:repo
-        version: 8.4.0(jiti@2.6.1)(postcss@8.5.6)(tsx@4.19.3)(typescript@5.6.3)(yaml@2.8.4)
+        version: 8.4.0(jiti@2.6.1)(postcss@8.5.10)(tsx@4.19.3)(typescript@5.6.3)(yaml@2.8.4)
       typescript:
         specifier: catalog:repo
         version: 5.6.3
@@ -280,7 +280,7 @@ importers:
         version: 3.4.9
       tsup:
         specifier: catalog:repo
-        version: 8.4.0(jiti@2.6.1)(postcss@8.5.6)(tsx@4.19.3)(typescript@5.6.3)(yaml@2.8.4)
+        version: 8.4.0(jiti@2.6.1)(postcss@8.5.10)(tsx@4.19.3)(typescript@5.6.3)(yaml@2.8.4)
       tsx:
         specifier: catalog:repo
         version: 4.19.3
@@ -309,7 +309,7 @@ importers:
         version: 16.6.1
       tsup:
         specifier: catalog:repo
-        version: 8.4.0(jiti@2.6.1)(postcss@8.5.6)(tsx@4.19.3)(typescript@5.6.3)(yaml@2.8.4)
+        version: 8.4.0(jiti@2.6.1)(postcss@8.5.10)(tsx@4.19.3)(typescript@5.6.3)(yaml@2.8.4)
       tsx:
         specifier: catalog:repo
         version: 4.19.3
@@ -328,7 +328,7 @@ importers:
     devDependencies:
       tsup:
         specifier: catalog:repo
-        version: 8.4.0(jiti@2.6.1)(postcss@8.5.6)(tsx@4.19.3)(typescript@5.6.3)(yaml@2.8.4)
+        version: 8.4.0(jiti@2.6.1)(postcss@8.5.10)(tsx@4.19.3)(typescript@5.6.3)(yaml@2.8.4)
       typescript:
         specifier: catalog:repo
         version: 5.6.3
@@ -380,7 +380,7 @@ importers:
         version: 3.4.9
       tsup:
         specifier: catalog:repo
-        version: 8.4.0(jiti@2.6.1)(postcss@8.5.6)(tsx@4.19.3)(typescript@5.6.3)(yaml@2.8.4)
+        version: 8.4.0(jiti@2.6.1)(postcss@8.5.10)(tsx@4.19.3)(typescript@5.6.3)(yaml@2.8.4)
       tsx:
         specifier: catalog:repo
         version: 4.19.3
@@ -423,7 +423,7 @@ importers:
         version: 8.16.0
       tsup:
         specifier: catalog:repo
-        version: 8.4.0(jiti@2.6.1)(postcss@8.5.6)(tsx@4.19.3)(typescript@5.6.3)(yaml@2.8.4)
+        version: 8.4.0(jiti@2.6.1)(postcss@8.5.10)(tsx@4.19.3)(typescript@5.6.3)(yaml@2.8.4)
       tsx:
         specifier: catalog:repo
         version: 4.19.3
@@ -2695,12 +2695,8 @@ packages:
       yaml:
         optional: true
 
-  postcss@8.4.31:
-    resolution: {integrity: sha512-PS08Iboia9mts/2ygV3eLpY5ghnUcfLV/EXTOW1E2qYxJKGGBUtNjN76FYHnMs36RmARn41bC0AZmn+rR0OVpQ==}
-    engines: {node: ^10 || ^12 || >=14}
-
-  postcss@8.5.6:
-    resolution: {integrity: sha512-3Ybi1tAuwAP9s0r1UQ2J4n5Y0G05bJkpUIO0/bI9MhwmD70S5aTWbXGBwxHrelT+XM1k6dM0pk+SwNkpTRN7Pg==}
+  postcss@8.5.10:
+    resolution: {integrity: sha512-pMMHxBOZKFU6HgAZ4eyGnwXF/EvPGGqUr0MnZ5+99485wwW41kW91A4LOGxSHhgugZmSChL5AlElNdwlNgcnLQ==}
     engines: {node: ^10 || ^12 || >=14}
 
   postgres-array@2.0.0:
@@ -5020,7 +5016,7 @@ snapshots:
       '@next/env': 15.5.10
       '@swc/helpers': 0.5.15
       caniuse-lite: 1.0.30001760
-      postcss: 8.4.31
+      postcss: 8.5.10
       react: 19.2.3
       react-dom: 19.2.3(react@19.2.3)
       styled-jsx: 5.1.6(react@19.2.3)
@@ -5171,22 +5167,16 @@ snapshots:
 
   pkce-challenge@5.0.1: {}
 
-  postcss-load-config@6.0.1(jiti@2.6.1)(postcss@8.5.6)(tsx@4.19.3)(yaml@2.8.4):
+  postcss-load-config@6.0.1(jiti@2.6.1)(postcss@8.5.10)(tsx@4.19.3)(yaml@2.8.4):
     dependencies:
       lilconfig: 3.1.3
     optionalDependencies:
       jiti: 2.6.1
-      postcss: 8.5.6
+      postcss: 8.5.10
       tsx: 4.19.3
       yaml: 2.8.4
 
-  postcss@8.4.31:
-    dependencies:
-      nanoid: 3.3.11
-      picocolors: 1.1.1
-      source-map-js: 1.2.1
-
-  postcss@8.5.6:
+  postcss@8.5.10:
     dependencies:
       nanoid: 3.3.11
       picocolors: 1.1.1
@@ -5552,7 +5542,7 @@ snapshots:
 
   tslib@2.8.1: {}
 
-  tsup@8.4.0(jiti@2.6.1)(postcss@8.5.6)(tsx@4.19.3)(typescript@5.6.3)(yaml@2.8.4):
+  tsup@8.4.0(jiti@2.6.1)(postcss@8.5.10)(tsx@4.19.3)(typescript@5.6.3)(yaml@2.8.4):
     dependencies:
       bundle-require: 5.1.0(esbuild@0.25.12)
       cac: 6.7.14
@@ -5562,7 +5552,7 @@ snapshots:
       esbuild: 0.25.12
       joycon: 3.1.1
       picocolors: 1.1.1
-      postcss-load-config: 6.0.1(jiti@2.6.1)(postcss@8.5.6)(tsx@4.19.3)(yaml@2.8.4)
+      postcss-load-config: 6.0.1(jiti@2.6.1)(postcss@8.5.10)(tsx@4.19.3)(yaml@2.8.4)
       resolve-from: 5.0.0
       rollup: 4.59.0
       source-map: 0.8.0-beta.0
@@ -5571,7 +5561,7 @@ snapshots:
       tinyglobby: 0.2.15
       tree-kill: 1.2.2
     optionalDependencies:
-      postcss: 8.5.6
+      postcss: 8.5.10
       typescript: 5.6.3
     transitivePeerDependencies:
       - jiti
@@ -5663,7 +5653,7 @@ snapshots:
       esbuild: 0.25.12
       fdir: 6.5.0(picomatch@4.0.4)
       picomatch: 4.0.4
-      postcss: 8.5.6
+      postcss: 8.5.10
       rollup: 4.59.0
       tinyglobby: 0.2.15
     optionalDependencies:
