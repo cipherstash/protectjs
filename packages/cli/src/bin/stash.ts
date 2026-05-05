@@ -16,6 +16,7 @@ import * as p from '@clack/prompts'
 // Commands that depend on @cipherstash/stack are lazy-loaded in the switch below.
 import {
   authCommand,
+  dbStatusCommand,
   envCommand,
   implCommand,
   initCommand,
@@ -76,6 +77,7 @@ ${messages.cli.usagePrefix}${STASH} <command> [options]
 Commands:
   init                 Initialize CipherStash for your project
   impl                 Draft an encryption plan (or implement, if a plan exists)
+  status               Show project lifecycle: init done? plan written? implementation engaged?
   auth <subcommand>    Authenticate with CipherStash
   wizard               AI-guided encryption setup (reads your codebase)
 
@@ -127,6 +129,7 @@ Examples:
   ${STASH} init --supabase
   ${STASH} impl
   ${STASH} impl --yolo
+  ${STASH} status
   ${STASH} auth login
   ${STASH} wizard
   ${STASH} db install
@@ -232,7 +235,7 @@ async function runDbCommand(
       break
     }
     case 'status':
-      await statusCommand({ databaseUrl })
+      await dbStatusCommand({ databaseUrl })
       break
     case 'test-connection':
       await testConnectionCommand({ databaseUrl })
@@ -377,6 +380,9 @@ async function main() {
       break
     case 'impl':
       await implCommand(flags)
+      break
+    case 'status':
+      await statusCommand()
       break
     case 'auth': {
       const authArgs = subcommand ? [subcommand, ...commandArgs] : commandArgs

@@ -207,6 +207,21 @@ describe('renderSetupPrompt — plan mode', () => {
     expect(out).toContain('.cipherstash/context.json')
   })
 
+  it('instructs the agent to begin the plan with a machine-readable summary block', () => {
+    // `stash impl` parses this block to render a confirmation panel before
+    // launching implementation. If the agent forgets it, plan-summary
+    // gracefully degrades — but the prompt still has to ask for it so
+    // most plans get a structured summary.
+    const out = renderSetupPrompt(planCtx)
+    expect(out).toContain('cipherstash:plan-summary')
+    expect(out).toContain('"columns"')
+    // The instruction shows the union form `"new" | "migrate"`; both
+    // values must appear so the agent knows what to choose between.
+    expect(out).toContain('"new"')
+    expect(out).toContain('"migrate"')
+    expect(out).toMatch(/at the very top of the file/i)
+  })
+
   it('preserves the integration + package manager header in plan mode', () => {
     const out = renderSetupPrompt(planCtx)
     expect(out).toContain('Integration: `drizzle`')

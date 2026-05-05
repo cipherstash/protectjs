@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import * as p from '@clack/prompts'
 import { type AgentEnvironment, detectAgents } from '../init/detect-agents.js'
+import { parsePlanSummary, renderPlanSummary } from '../init/lib/parse-plan.js'
 import { PLAN_REL_PATH } from '../init/lib/setup-prompt.js'
 import {
   CONTEXT_REL_PATH,
@@ -136,14 +137,44 @@ export async function implCommand(flags: Record<string, boolean>) {
   try {
     const mode = await deriveMode(cwd, flags.yolo === true)
 
+    const planPath = resolve(cwd, PLAN_REL_PATH)
+    const planExists = existsSync(planPath)
+
     if (mode === 'plan') {
       p.log.info(
         `No plan at \`${PLAN_REL_PATH}\`. The agent will draft one for you to review.`,
       )
-    } else {
+    } else if (planExists && process.stdout.isTTY) {
+      // Plan-summary checkpoint: the last save point before the agent
+      // commits to the (potentially hour-long) implementation phase. Parse
+      // the structured summary block the planning agent was instructed to
+      // emit; fall back to a soft "open it in your editor" panel if the
+      // block is missing (older plans, or an agent that didn't follow the
+      // schema). Default-yes on the confirm — the user is here to proceed.
+      const summary = parsePlanSummary(readFileSync(planPath, 'utf-8'))
+      if (summary) {
+        p.note(renderPlanSummary(summary), 'Plan summary')
+      } else {
+        p.note(
+          `Plan at \`${PLAN_REL_PATH}\` doesn't include a machine-readable summary. Open it in your editor before proceeding.`,
+          'Plan ready',
+        )
+      }
+      const proceed = await p.confirm({
+        message: 'Proceed with implementation against this plan?',
+        initialValue: true,
+      })
+      if (p.isCancel(proceed) || !proceed) {
+        throw new CancelledError()
+      }
+    } else if (planExists) {
+      // Non-TTY: skip the confirm; assume the caller (CI, pipe) wants to proceed.
       p.log.info(
-        `Plan at \`${PLAN_REL_PATH}\` — the agent will execute it as the source of truth.`,
+        `Plan at \`${PLAN_REL_PATH}\` — agent will execute it as the source of truth.`,
       )
+    } else {
+      // Implement without a plan — `--yolo` already confirmed earlier in deriveMode.
+      p.log.info('No plan exists — implementing from scratch (--yolo).')
     }
 
     const agents = detectAgents(cwd, process.env)
