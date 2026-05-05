@@ -1,5 +1,7 @@
-import type { HandoffChoice, Integration } from '../types.js'
+import type { HandoffChoice, InitMode, Integration } from '../types.js'
 import { type PackageManager, runnerCommand } from '../utils.js'
+
+export const PLAN_REL_PATH = '.cipherstash/plan.md'
 
 export interface SetupPromptContext {
   integration: Integration
@@ -12,6 +14,11 @@ export interface SetupPromptContext {
   /** Which handoff option the user picked. Lets us tailor wording (e.g. the
    *  Codex prompt names AGENTS.md, Claude names the skill). */
   handoff: HandoffChoice
+  /** Whether the agent should produce a plan first or implement directly.
+   *  Drives the entire prompt body — plan-mode tells the agent its task is
+   *  to produce `.cipherstash/plan.md`; implement-mode is the original
+   *  orient-and-route action prompt. */
+  mode: InitMode
   /** Names of skills `stash init` copied into the project (e.g.
    *  `stash-encryption`, `stash-drizzle`, `stash-cli`). The action prompt
    *  names them so the agent knows which references to consult. Empty for
@@ -133,11 +140,24 @@ function renderSkillIndex(installedSkills: string[]): string {
 }
 
 /**
- * Render the project-specific action prompt.
+ * Render the project-specific action prompt. Dispatches to the plan-mode or
+ * implement-mode renderer based on `ctx.mode`. Both produce the same shape
+ * (orient → describe options → tell the agent what its first response is)
+ * but the *deliverable* differs: plan-mode writes `.cipherstash/plan.md`,
+ * implement-mode edits code and runs lifecycle commands.
+ */
+export function renderSetupPrompt(ctx: SetupPromptContext): string {
+  return ctx.mode === 'plan'
+    ? renderPlanPrompt(ctx)
+    : renderImplementPrompt(ctx)
+}
+
+/**
+ * Render the implementation action prompt.
  *
- * This is the file the agent reads first after `stash init` hands off. It
- * does NOT prescribe a fixed sequence of edits — the agent doesn't yet know
- * what the user wants. Instead the prompt:
+ * This is the file the agent reads first after `stash init` hands off in
+ * implement mode. It does NOT prescribe a fixed sequence of edits — the
+ * agent doesn't yet know what the user wants. Instead the prompt:
  *
  *   1. Confirms what setup is complete.
  *   2. Names the skills loaded and what each is for.
@@ -148,8 +168,13 @@ function renderSkillIndex(installedSkills: string[]): string {
  *   4. Tells the agent its FIRST response should be a routing question, not
  *      an action.
  *   5. Lists the "stop and ask" rules that override flow mechanics.
+ *
+ * If `.cipherstash/plan.md` exists (a previous `stash init --plan` run),
+ * the prompt directs the agent to read it first and treat it as the
+ * source of truth for routing — the user has already done the
+ * orientation pass.
  */
-export function renderSetupPrompt(ctx: SetupPromptContext): string {
+export function renderImplementPrompt(ctx: SetupPromptContext): string {
   const cli = runnerCommand(ctx.packageManager, 'stash')
   const migration = migrationCommands(ctx.integration, ctx.packageManager)
 
@@ -180,6 +205,12 @@ export function renderSetupPrompt(ctx: SetupPromptContext): string {
     `Integration: \`${ctx.integration}\` · Package manager: \`${ctx.packageManager}\``,
     '',
     '`stash init` has finished its mechanical setup. Your job is **not** to start editing schema or running migrations immediately. Your job is to **orient the user with the two real options for encrypting a column, then ask which one they want before touching anything**. Pick concrete table/column names from `.cipherstash/context.json` when describing the options so the user can recognise their own data.',
+    '',
+    '## Existing plan',
+    '',
+    `Before anything else, check whether \`${PLAN_REL_PATH}\` exists. If it does, the user has already done a planning pass with you (or another agent). Read it as the source of truth for which path applies, which tables/columns are in scope, and the deploy ordering — do not re-ask the routing question. Confirm with the user that the plan is still current, then execute it. If the plan looks stale (the schema or context has moved on), say so and propose specific updates rather than starting fresh.`,
+    '',
+    `If \`${PLAN_REL_PATH}\` does **not** exist, proceed with the orient-and-route flow below.`,
     '',
     '## What `stash init` already did',
     '',
@@ -250,6 +281,140 @@ export function renderSetupPrompt(ctx: SetupPromptContext): string {
     ),
     bullet(
       'You discover existing partial CipherStash setup that disagrees with what the user is describing — someone else may have run `stash init` earlier with different choices.',
+    ),
+    '',
+  ]
+
+  return sections.join('\n')
+}
+
+/**
+ * Render the planning action prompt.
+ *
+ * Plan-mode tells the agent its task is to produce a reviewable plan file
+ * at `.cipherstash/plan.md` — no schema edits, no migrations, no `db push`,
+ * no `encrypt *` mutations during this phase. Read-only inspection
+ * (`stash db status`, schema grep, file reads) is fine.
+ *
+ * The plan covers: which table(s) and column(s) to protect, which
+ * lifecycle path applies per column (path 1 = new column / path 3 =
+ * migrate existing), the deploy ordering for path-3 columns, any
+ * project-specific risks, and the exact CLI sequence to execute when the
+ * user is ready to implement.
+ */
+export function renderPlanPrompt(ctx: SetupPromptContext): string {
+  const cli = runnerCommand(ctx.packageManager, 'stash')
+
+  const done: string[] = [
+    checked('Authenticated to CipherStash and selected a workspace'),
+    checked(`Detected integration: \`${ctx.integration}\``),
+    checked(
+      `Wrote a placeholder encryption client at \`${ctx.encryptionClientPath}\` (a small file showing the encryption-client patterns; the user's real Drizzle/Supabase schema files remain authoritative)`,
+    ),
+  ]
+  if (ctx.stackInstalled) {
+    done.push(checked('Installed `@cipherstash/stack` (runtime)'))
+  }
+  if (ctx.cliInstalled) {
+    done.push(checked('Installed `stash` (CLI, dev dep)'))
+  }
+  if (ctx.eqlInstalled) {
+    done.push(
+      checked(
+        'Installed the EQL extension and `cipherstash.cs_migrations` into the database',
+      ),
+    )
+  }
+
+  const sections: string[] = [
+    '# CipherStash setup — write a plan',
+    '',
+    `Integration: \`${ctx.integration}\` · Package manager: \`${ctx.packageManager}\``,
+    '',
+    `\`stash init\` has finished its mechanical setup. The user picked **plan-first** — your job is to produce a reviewable plan at \`${PLAN_REL_PATH}\`, **not** to make schema or code changes. Read-only inspection (\`${cli} db status\`, reading schema files, grepping the codebase) is encouraged. Schema edits, migrations, \`${cli} db push\`, and any \`${cli} encrypt *\` mutations are deferred to the implementation phase that runs after the user reviews and approves the plan.`,
+    '',
+    '## What `stash init` already did',
+    '',
+    ...done,
+    '',
+    '## Skills loaded',
+    '',
+    `Reusable rules and worked examples live in ${rulesLocation(ctx.handoff)}:`,
+    '',
+    renderSkillIndex(ctx.installedSkills),
+    '',
+    'Read the skills before answering API or pattern questions. The doctrine in `AGENTS.md` (or its inlined equivalent) covers the invariants that apply regardless of which flow you take — never log plaintext, never `.notNull()` on creation, etc.',
+    '',
+    '## The two options',
+    '',
+    'There are exactly two supported ways to encrypt a column. The plan must identify which one applies per column:',
+    '',
+    '- **Add a new encrypted column** — the column does not yet exist; no plaintext predecessor to preserve. Single-deploy.',
+    '- **Migrate an existing column** — the column already exists with live data. Staged across four deploys: schema-add + dual-write → backfill run → cutover + read-from-encrypted → drop. The lifecycle is irreducible; the plan must spell out the deploy ordering so reviewers can sequence PRs correctly.',
+    '',
+    'Converting a populated column in place is **not** supported — any "just swap the type" approach corrupts data. If the user asks for that, the plan must explain why and route them to the migrate-existing flow.',
+    '',
+    '## Your task: produce a plan file',
+    '',
+    `Write \`${PLAN_REL_PATH}\` covering, for each table+column the user wants to protect:`,
+    '',
+    bullet(
+      "The table and column names (extract candidates from `.cipherstash/context.json`; if the user hasn't yet said which columns matter, ask before writing the plan).",
+    ),
+    bullet(
+      'Which lifecycle path applies (path 1 = add new / path 3 = migrate existing). Justify briefly — the user should be able to verify the choice without reading the skill.',
+    ),
+    bullet(
+      'For path-3 columns: the four-deploy sequence with one line per deploy on what changes (schema, app code, lifecycle command). Call out which step the deploy gates on (e.g. "deploy 2 must wait until deploy 1 is live in production before backfill is safe").',
+    ),
+    bullet(
+      `Project-specific risks. Common ones: bundler exclusion not yet configured (Next.js / webpack / Vite), top-level-await in the placeholder encryption client breaks non-Next contexts, existing partial CipherStash state (run \`${cli} db status\` and note any pre-existing encrypted columns or pending configs).`,
+    ),
+    bullet(
+      `The exact CLI sequence to execute when the user is ready to implement (the \`${cli} encrypt {backfill,cutover,drop}\` invocations with concrete \`--table\` / \`--column\` values).`,
+    ),
+    bullet(
+      "Open questions for the user — anything you can't determine from the schema, context.json, or the skills. Better to surface than guess.",
+    ),
+    '',
+    `After writing the plan, also offer to copy it into \`docs/plans/cipherstash-encryption.md\` if the project has a \`docs/plans/\` directory — many teams version their plans alongside the code. Don't copy without asking. If \`docs/plans/\` does not exist, leave the plan at \`${PLAN_REL_PATH}\` and don't create the directory.`,
+    '',
+    '## What you must NOT do',
+    '',
+    bullet(
+      'Edit schema files, application code, or migration files. The plan describes future changes — it does not perform them.',
+    ),
+    bullet(
+      `Run \`${cli} db push\`, \`${cli} encrypt backfill\`, \`${cli} encrypt cutover\`, \`${cli} encrypt drop\`, \`${cli} db activate\`, or any other state-mutating command.`,
+    ),
+    bullet(
+      'Run schema migrations (`drizzle-kit migrate`, `supabase migration up`, `prisma migrate`, etc.).',
+    ),
+    bullet(
+      'Modify the placeholder encryption client beyond what is required to read it.',
+    ),
+    '',
+    `Read-only commands (\`${cli} db status\`, file reads, greps, \`${cli} doctor\` if available) are fine and encouraged — the plan is more useful when grounded in the actual current state.`,
+    '',
+    '## Your first response',
+    '',
+    `Send the user a short orientation message before writing anything. Confirm setup is complete, list the skills loaded with one-line purposes, summarise the two options in your own words, and end with a clear question — *"Which table(s) and column(s) would you like the plan to cover? You can name them or describe what you're trying to protect."* Reference concrete tables/columns from \`.cipherstash/context.json\` when it helps.`,
+    '',
+    `Once the user answers, write \`${PLAN_REL_PATH}\`. Show the plan in chat as well so the user can react inline. After the plan is approved, tell the user how to proceed to implementation — re-run \`${cli} init\` and pick **Go straight to implementation**, or paste the implementation prompt manually.`,
+    '',
+    '## Stop and ask the user when',
+    '',
+    bullet(
+      "The user asks to convert a populated column in place. Explain why it doesn't work and offer the migrate-existing-column flow instead.",
+    ),
+    bullet(
+      "A column the user names is already encrypted (`eql_v2_encrypted` udt) but with a different EQL config than they've described. This is the post-cutover re-encryption case (`stash encrypt update`, not yet shipped) — surface it in the plan as a flagged risk.",
+    ),
+    bullet(
+      'You discover existing partial CipherStash setup that disagrees with what the user is describing — someone else may have run `stash init` earlier with different choices. Note this in the plan and ask the user to clarify before writing prescriptive steps.',
+    ),
+    bullet(
+      "The user names columns that don't appear in `.cipherstash/context.json` or in the schema files you can see. Confirm the names rather than guessing.",
     ),
     '',
   ]

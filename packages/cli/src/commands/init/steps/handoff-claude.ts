@@ -34,7 +34,11 @@ export const handoffClaudeStep: InitStep = {
 
     writeArtifacts(cwd, state, 'claude-code', installed)
 
-    const launchPrompt = `Read ${SETUP_PROMPT_REL_PATH} and complete the setup steps. The installed skills under ${CLAUDE_SKILLS_DIR}/ have the rules; ${CONTEXT_REL_PATH} has the project facts.`
+    const mode = state.mode ?? 'implement'
+    const launchPrompt =
+      mode === 'plan'
+        ? `Read ${SETUP_PROMPT_REL_PATH} and produce the planning deliverable it describes. The installed skills under ${CLAUDE_SKILLS_DIR}/ have the rules; ${CONTEXT_REL_PATH} has the project facts. Do not edit code or run mutating commands during this phase.`
+        : `Read ${SETUP_PROMPT_REL_PATH} and complete the setup steps. The installed skills under ${CLAUDE_SKILLS_DIR}/ have the rules; ${CONTEXT_REL_PATH} has the project facts.`
 
     if (!state.agents?.cli.claudeCode) {
       p.note(

@@ -20,6 +20,14 @@ export interface SchemaDef {
 
 export type HandoffChoice = 'claude-code' | 'codex' | 'agents-md' | 'wizard'
 
+/**
+ * Whether the handoff agent should produce a plan first (`plan`) or go
+ * straight to implementation (`implement`). `plan` is the default — it
+ * gives the user a reviewable plan file at `.cipherstash/plan.md` before
+ * any code or schema changes happen.
+ */
+export type InitMode = 'plan' | 'implement'
+
 export interface InitState {
   authenticated?: boolean
   /** Resolved DATABASE_URL. Set by resolve-database; threaded into every
@@ -50,6 +58,9 @@ export interface InitState {
   agents?: AgentEnvironment
   /** What the user picked at the "how to proceed" step. */
   handoff?: HandoffChoice
+  /** Whether the handoff should plan first or implement directly. Set by
+   *  choose-mode. Defaults to `plan` when the user accepts the recommendation. */
+  mode?: InitMode
 }
 
 export interface InitStep {

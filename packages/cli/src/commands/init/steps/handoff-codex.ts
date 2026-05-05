@@ -53,7 +53,11 @@ export const handoffCodexStep: InitStep = {
 
     writeArtifacts(cwd, state, 'codex', installed)
 
-    const launchPrompt = `Read ${SETUP_PROMPT_REL_PATH} and complete the setup steps. AGENTS.md has the durable rules; the skills under ${CODEX_SKILLS_DIR}/ have the API details; ${CONTEXT_REL_PATH} has the project facts.`
+    const mode = state.mode ?? 'implement'
+    const launchPrompt =
+      mode === 'plan'
+        ? `Read ${SETUP_PROMPT_REL_PATH} and produce the planning deliverable it describes. AGENTS.md has the durable rules; the skills under ${CODEX_SKILLS_DIR}/ have the API details; ${CONTEXT_REL_PATH} has the project facts. Do not edit code or run mutating commands during this phase.`
+        : `Read ${SETUP_PROMPT_REL_PATH} and complete the setup steps. AGENTS.md has the durable rules; the skills under ${CODEX_SKILLS_DIR}/ have the API details; ${CONTEXT_REL_PATH} has the project facts.`
 
     if (!state.agents?.cli.codex) {
       p.note(

@@ -2,6 +2,7 @@ import * as p from '@clack/prompts'
 import {
   CancelledError,
   type HandoffChoice,
+  type InitMode,
   type InitProvider,
   type InitState,
   type InitStep,
@@ -12,27 +13,33 @@ import { handoffCodexStep } from './handoff-codex.js'
 import { handoffWizardStep } from './handoff-wizard.js'
 
 /**
- * Pick the default option in the four-way menu.
+ * Pick the default option in the menu.
  *
  * Detected CLIs win — Claude Code first, then Codex. Otherwise we default to
  * the AGENTS.md path because that's the broadest "works without anything else
  * installed" option. The CipherStash Agent option is positioned as a fallback
  * (slow first run, requires the wizard package on top of the CLI) and is
- * never selected by default.
+ * never selected by default. In plan mode, AGENTS.md and wizard aren't
+ * offered — the default falls back to `claude-code`.
  */
-function defaultChoice(state: InitState): HandoffChoice {
+export function defaultChoice(state: InitState, mode: InitMode): HandoffChoice {
   if (state.agents?.cli.claudeCode) return 'claude-code'
   if (state.agents?.cli.codex) return 'codex'
-  return 'agents-md'
+  return mode === 'plan' ? 'claude-code' : 'agents-md'
 }
 
 /**
- * Build the option list for the four-way menu. Hints reflect detection state
- * — a missing CLI doesn't hide the option (handoff steps still write the
+ * Build the option list for the menu. Hints reflect detection state — a
+ * missing CLI doesn't hide the option (handoff steps still write the
  * rules files and print install instructions), it just nudges the user.
+ *
+ * In plan mode we only offer Claude Code and Codex. AGENTS.md and the
+ * wizard don't yet have planning prompt templates, so suppress them
+ * entirely rather than degrading silently.
  */
-function buildOptions(
+export function buildOptions(
   state: InitState,
+  mode: InitMode,
 ): { value: HandoffChoice; label: string; hint?: string }[] {
   const claudeHint = state.agents?.cli.claudeCode
     ? 'claude detected — will launch interactively'
@@ -41,7 +48,7 @@ function buildOptions(
     ? 'codex detected — will launch interactively'
     : 'codex not on PATH — files will be written, install link shown'
 
-  return [
+  const options: { value: HandoffChoice; label: string; hint?: string }[] = [
     {
       value: 'claude-code',
       label: 'Hand off to Claude Code',
@@ -52,27 +59,40 @@ function buildOptions(
       label: 'Hand off to Codex',
       hint: codexHint,
     },
-    {
-      value: 'wizard',
-      label: 'Use the CipherStash Agent',
-      hint: 'our hosted setup wizard (runs `stash wizard`)',
-    },
-    {
-      value: 'agents-md',
-      label: 'Write AGENTS.md',
-      hint: 'works with Cursor, Windsurf, Cline, and more',
-    },
   ]
+
+  if (mode === 'implement') {
+    options.push(
+      {
+        value: 'wizard',
+        label: 'Use the CipherStash Agent',
+        hint: 'our hosted setup wizard (runs `stash wizard`)',
+      },
+      {
+        value: 'agents-md',
+        label: 'Write AGENTS.md',
+        hint: 'works with Cursor, Windsurf, Cline, and more',
+      },
+    )
+  }
+
+  return options
 }
 
 export const howToProceedStep: InitStep = {
   id: 'how-to-proceed',
   name: 'How to proceed',
   async run(state: InitState, provider: InitProvider): Promise<InitState> {
+    const mode: InitMode = state.mode ?? 'implement'
+    const message =
+      mode === 'plan'
+        ? 'Which agent should write the plan?'
+        : 'How would you like to finish setup?'
+
     const choice = await p.select<HandoffChoice>({
-      message: 'How would you like to finish setup?',
-      options: buildOptions(state),
-      initialValue: defaultChoice(state),
+      message,
+      options: buildOptions(state, mode),
+      initialValue: defaultChoice(state, mode),
     })
 
     if (p.isCancel(choice)) throw new CancelledError()

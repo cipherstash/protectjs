@@ -4,6 +4,7 @@ import { createDrizzleProvider } from './providers/drizzle.js'
 import { createSupabaseProvider } from './providers/supabase.js'
 import { authenticateStep } from './steps/authenticate.js'
 import { buildSchemaStep } from './steps/build-schema.js'
+import { chooseModeStep } from './steps/choose-mode.js'
 import { gatherContextStep } from './steps/gather-context.js'
 import { howToProceedStep } from './steps/how-to-proceed.js'
 import { installDepsStep } from './steps/install-deps.js'
@@ -25,6 +26,7 @@ const STEPS = [
   installDepsStep,
   installEqlStep,
   gatherContextStep,
+  chooseModeStep,
   howToProceedStep,
   nextStepsStep,
 ]
