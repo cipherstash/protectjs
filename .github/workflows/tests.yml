@@ -28,6 +28,12 @@ jobs:
           node-version: 22
           cache: 'pnpm'
 
+      # node-pty's install hook falls back to `node-gyp rebuild` when no
+      # linux-x64 prebuild matches. pnpm/action-setup v6 no longer ships
+      # node-gyp on PATH, so install it explicitly.
+      - name: Install node-gyp
+        run: npm install -g node-gyp
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
@@ -115,6 +121,12 @@ jobs:
         with:
           node-version: 22
           cache: 'pnpm'
+
+      # node-pty's install hook falls back to `node-gyp rebuild` when no
+      # linux-x64 prebuild matches. pnpm/action-setup v6 no longer ships
+      # node-gyp on PATH, so install it explicitly.
+      - name: Install node-gyp
+        run: npm install -g node-gyp
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
