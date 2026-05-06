@@ -851,7 +851,19 @@ function createTextSearchOperator(
       )
     }
 
-    const sqlFn = sql`eql_v2.${sql.raw(operator === 'notIlike' ? 'ilike' : operator)}(${left}, ${bindIfParam(encrypted, left)})`
+    // Emit the bloom-filter containment form directly. `eql_v2.like` /
+    // `eql_v2.ilike` are themselves a single-statement `SELECT
+    // eql_v2.bloom_filter(a) @> eql_v2.bloom_filter(b)` — but the functions
+    // are marked VOLATILE, so the planner won't inline them, and the
+    // documented `bench_text_bloom_idx` GIN functional index never engages.
+    // Inlining by hand here lets the planner match the index on every
+    // install, including Supabase. (Same shape as the hmac_256 wrap for
+    // eq/ne/inArray.)
+    //
+    // `like` and `ilike` resolve to the same SQL post-encryption — case
+    // sensitivity is determined by the column's `freeTextSearch` token
+    // filters, not by which operator the user picked.
+    const sqlFn = sql`eql_v2.bloom_filter(${left}) @> eql_v2.bloom_filter(${bindIfParam(encrypted, left)}::eql_v2_encrypted)`
     return operator === 'notIlike' ? sql`NOT (${sqlFn})` : sqlFn
   }
 

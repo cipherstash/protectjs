@@ -156,22 +156,45 @@ describe('#421: equality and array operators', () => {
   })
 })
 
-// --- #422: investigation operators ----------------------------------------
+// --- like / ilike: bloom-filter containment ------------------------------
 //
-// We don't yet know which call-shaped forms the planner inlines. Record plan
-// shape; assertions land in a follow-up once #422 closes.
-describe('#422: call-shaped operators (recorded, not asserted)', () => {
-  it('records like / ilike plan shapes', async () => {
-    await tryExplainWhere(
-      'like',
-      (await ops.like(benchTable.encText, '%value-00000%')) as SQL,
+// `eql_v2.like` and `eql_v2.ilike` are SQL functions whose bodies are already
+// `SELECT eql_v2.bloom_filter(a) @> eql_v2.bloom_filter(b)` — but they're
+// marked VOLATILE, so the planner won't inline them into the index match.
+// Drizzle now emits the inlined containment form directly so the bloom GIN
+// index engages. The wildcard pattern is irrelevant at the SQL layer —
+// bloom-filter match works on the encrypted token set, not LIKE syntax.
+describe('like / ilike: engage bloom_filter functional index', () => {
+  // The pattern needs to be selective — `%value-0000042%` is unique to one
+  // seeded row, whereas a broad pattern like `%value-00000%` is shared by
+  // every row in the fixture (all seed values start with `value-`), and
+  // the planner correctly picks seq scan when the predicate matches every
+  // row.
+  it('like engages bench_text_bloom_idx', async () => {
+    const plan = await explainWhere(
+      (await ops.like(benchTable.encText, '%value-0000042%')) as SQL,
     )
-    await tryExplainWhere(
-      'ilike',
-      (await ops.ilike(benchTable.encText, '%VALUE-00000%')) as SQL,
-    )
+    recordObservation('like', plan)
+    expect(hasSeqScan(plan), summarize(plan)).toBe(false)
   })
 
+  it('ilike engages bench_text_bloom_idx', async () => {
+    const plan = await explainWhere(
+      (await ops.ilike(benchTable.encText, '%VALUE-0000042%')) as SQL,
+    )
+    recordObservation('ilike', plan)
+    expect(hasSeqScan(plan), summarize(plan)).toBe(false)
+  })
+})
+
+// --- #422: remaining call-shaped operators (recorded, not asserted) ------
+//
+// gt/gte/lt/lte/between have no Supabase functional index path today (OPE
+// work is still in flight in EQL). jsonb_path_* don't have an obvious
+// containment form on ste_vec. order_by has no Supabase index path either.
+// Record plan shape for the investigation log; assertions land in a
+// follow-up once EQL ships the relevant index recipes.
+describe('#422: remaining call-shaped operators (recorded, not asserted)', () => {
   it('records gt / gte / lt / lte plan shapes', async () => {
     for (const [name, build] of [
       ['gt', () => ops.gt(benchTable.encInt, 5000)],
