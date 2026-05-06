@@ -1,5 +1,21 @@
 # @cipherstash/cli
 
+## 0.13.0
+
+### Minor Changes
+
+- e16b282: Split agent handoff out of `stash init` into a new `stash impl` command. `init` now owns scaffolding only (auth, database, encryption client, EQL extension) and exits at a clean checkpoint pointing at `stash impl`. `stash impl` derives plan-vs-implement mode from disk state — if `.cipherstash/plan.md` is missing it asks the agent to draft a plan; if it exists, the agent executes the plan as the source of truth. `--continue-without-plan` skips the planning checkpoint after an interactive confirmation. The earlier in-init `Plan first / Go straight to implementation` picker is removed in favour of the new command boundary.
+- db163e1: `stash impl` now renders a plan summary panel and asks the user to confirm before launching the implementation agent. When a plan exists, the CLI parses a machine-readable `<!-- cipherstash:plan-summary {...} -->` block (the planning agent is instructed to emit one at the top of `.cipherstash/plan.md`) and prints column counts, per-column paths, and whether the work is single-deploy or staged across 4 deploys. Default-yes on the confirm so the path of least resistance is to proceed; saying No exits cleanly. Older plans without the summary block fall back to a soft "open in your editor" panel — never an error. Non-TTY runs (CI, pipes) skip the confirm and proceed.
+- 59b138b: Extract planning into its own `stash plan` command. Three commands now own the setup lifecycle:
+
+  - `stash init` — scaffold (auth, db, deps, EQL). Ends with a chain prompt to `stash plan`.
+  - `stash plan` — draft a reviewable plan at `.cipherstash/plan.md`. Ends with a chain prompt to `stash impl`.
+  - `stash impl` — execute. With a plan, shows the summary panel and confirms. Without one, presents a `Draft a plan first / Continue without a plan` picker (the second option goes through a security confirm). `--continue-without-plan` skips the picker.
+
+  `stash status` reflects the new flow — its "Plan written" stage and `Next:` line route to `stash plan` when init is done but no plan exists. Non-TTY runs of `stash impl` without a plan now error out with a clear next-action rather than guessing intent.
+
+- db163e1: Add `stash status` — a top-level lifecycle map for the project. Reads `.cipherstash/context.json`, `.cipherstash/plan.md`, and `.cipherstash/setup-prompt.md` from disk to render a panel showing whether init is done, whether a plan has been written, and whether an agent has been engaged. Points at `stash db status` for EQL install info and `stash encrypt status` for per-column migration phase. Runs in milliseconds — no auth, no database connection required. The existing `stash db status` is unchanged.
+
 ## 0.12.1
 
 ### Patch Changes
