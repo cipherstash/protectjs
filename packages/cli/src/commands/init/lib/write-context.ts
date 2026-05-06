@@ -154,6 +154,7 @@ export function buildSetupPromptContext(
     stackInstalled: state.stackInstalled ?? false,
     cliInstalled: state.cliInstalled ?? false,
     handoff,
+    mode: state.mode ?? 'implement',
     installedSkills,
   }
 }

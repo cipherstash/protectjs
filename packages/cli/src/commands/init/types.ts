@@ -20,6 +20,14 @@ export interface SchemaDef {
 
 export type HandoffChoice = 'claude-code' | 'codex' | 'agents-md' | 'wizard'
 
+/**
+ * Whether the handoff agent should produce a plan first (`plan`) or go
+ * straight to implementation (`implement`). `plan` is the default — it
+ * gives the user a reviewable plan file at `.cipherstash/plan.md` before
+ * any code or schema changes happen.
+ */
+export type InitMode = 'plan' | 'implement'
+
 export interface InitState {
   authenticated?: boolean
   /** Resolved DATABASE_URL. Set by resolve-database; threaded into every
@@ -50,12 +58,38 @@ export interface InitState {
   agents?: AgentEnvironment
   /** What the user picked at the "how to proceed" step. */
   handoff?: HandoffChoice
+  /** Whether the handoff is producing a plan or executing one. Set by the
+   *  command itself: `stash plan` always sets `'plan'`, `stash impl` always
+   *  sets `'implement'`. */
+  mode?: InitMode
 }
 
+/**
+ * A step that runs as part of the `stash init` pipeline. The init
+ * pipeline owns the `InitProvider` (intro copy, provider-specific
+ * defaults) and threads it into every step. Some init steps consult it
+ * (e.g. `authenticateStep` reads `provider.name` for telemetry) so the
+ * argument is required at the type level — calling
+ * `authenticateStep.run(state)` without a provider would crash.
+ */
 export interface InitStep {
   id: string
   name: string
   run(state: InitState, provider: InitProvider): Promise<InitState>
+}
+
+/**
+ * A step that runs after init has finished — invoked by `stash plan` and
+ * `stash impl` to drive the agent handoff. These steps don't have an
+ * `InitProvider` available (init owns that abstraction) and don't need
+ * one, so the type intentionally omits it. Keeping `InitStep` and
+ * `HandoffStep` distinct prevents callers from accidentally invoking
+ * init-only steps from the post-init flow.
+ */
+export interface HandoffStep {
+  id: string
+  name: string
+  run(state: InitState): Promise<InitState>
 }
 
 export interface InitProvider {

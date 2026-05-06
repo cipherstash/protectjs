@@ -1,15 +1,15 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import * as p from '@clack/prompts'
-import { buildAgentsMdBody } from '../lib/build-agents-md.js'
-import { spawnAgent, writeArtifacts } from '../lib/handoff-helpers.js'
-import { installSkills } from '../lib/install-skills.js'
-import { upsertManagedBlock } from '../lib/sentinel-upsert.js'
+import { buildAgentsMdBody } from '../../init/lib/build-agents-md.js'
+import { spawnAgent, writeArtifacts } from '../../init/lib/handoff-helpers.js'
+import { installSkills } from '../../init/lib/install-skills.js'
+import { upsertManagedBlock } from '../../init/lib/sentinel-upsert.js'
 import {
   CONTEXT_REL_PATH,
   SETUP_PROMPT_REL_PATH,
-} from '../lib/write-context.js'
-import type { InitProvider, InitState, InitStep } from '../types.js'
+} from '../../init/lib/write-context.js'
+import type { HandoffStep, InitState } from '../../init/types.js'
 
 const AGENTS_MD_REL_PATH = 'AGENTS.md'
 const CODEX_SKILLS_DIR = '.codex/skills'
@@ -25,10 +25,10 @@ const CODEX_INSTALL_URL = 'https://github.com/openai/codex'
  * AGENTS.md is sentinel-upserted so re-runs replace only our region and
  * any user content outside it survives.
  */
-export const handoffCodexStep: InitStep = {
+export const handoffCodexStep: HandoffStep = {
   id: 'handoff-codex',
   name: 'Hand off to Codex',
-  async run(state: InitState, _provider: InitProvider): Promise<InitState> {
+  async run(state: InitState): Promise<InitState> {
     const cwd = process.cwd()
     const integration = state.integration ?? 'postgresql'
 
@@ -53,7 +53,11 @@ export const handoffCodexStep: InitStep = {
 
     writeArtifacts(cwd, state, 'codex', installed)
 
-    const launchPrompt = `Read ${SETUP_PROMPT_REL_PATH} and complete the setup steps. AGENTS.md has the durable rules; the skills under ${CODEX_SKILLS_DIR}/ have the API details; ${CONTEXT_REL_PATH} has the project facts.`
+    const mode = state.mode ?? 'implement'
+    const launchPrompt =
+      mode === 'plan'
+        ? `Read ${SETUP_PROMPT_REL_PATH} and produce the planning deliverable it describes. AGENTS.md has the durable rules; the skills under ${CODEX_SKILLS_DIR}/ have the API details; ${CONTEXT_REL_PATH} has the project facts. Do not edit code or run mutating commands during this phase.`
+        : `Read ${SETUP_PROMPT_REL_PATH} and complete the setup steps. AGENTS.md has the durable rules; the skills under ${CODEX_SKILLS_DIR}/ have the API details; ${CONTEXT_REL_PATH} has the project facts.`
 
     if (!state.agents?.cli.codex) {
       p.note(
