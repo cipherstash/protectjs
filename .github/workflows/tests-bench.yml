@@ -58,8 +58,12 @@ jobs:
         working-directory: local
         run: docker compose up --wait --wait-timeout 60
 
-      # `pnpm test:local` resolves to `vitest run`; the `--` passthrough
-      # narrows it to __tests__/db-only.test.ts (credential-free smoke).
+      # `pnpm test:local` resolves to `vitest run`; the trailing `db-only`
+      # is a vitest path filter that narrows to __tests__/db-only.test.ts
+      # (credential-free smoke). Note: pnpm 10 forwards script args without
+      # `--`; using `--` here would cause vitest to treat it as the
+      # option-terminator and ignore the filter, running all 3 test files
+      # — including ones that need CipherStash credentials.
       - name: Run bench smoke tests
         working-directory: packages/bench
-        run: pnpm test:local -- db-only
+        run: pnpm test:local db-only
