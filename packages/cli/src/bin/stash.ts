@@ -78,8 +78,8 @@ ${messages.cli.usagePrefix}${STASH} <command> [options]
 Commands:
   init                 Initialize CipherStash for your project
   plan                 Draft a reviewable encryption plan at .cipherstash/plan.md
-  impl                 Execute an encryption plan (or implement without one with --continue-without-plan)
-  status               Show project lifecycle: init done? plan written? implementation engaged?
+  impl                 Execute the plan with a local agent
+  status               Displays implementation status
   auth <subcommand>    Authenticate with CipherStash
   wizard               AI-guided encryption setup (reads your codebase)
 
@@ -111,7 +111,7 @@ Init Flags:
   --drizzle            Use Drizzle-specific setup flow
 
 Impl Flags:
-  --continue-without-plan  Skip the planning checkpoint and go straight to implementation
+  --continue-without-plan  Skip planning and go straight to implementation
                            (interactively confirms before proceeding)
 
 DB Flags:

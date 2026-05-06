@@ -67,7 +67,11 @@ export interface InitState {
 export interface InitStep {
   id: string
   name: string
-  run(state: InitState, provider: InitProvider): Promise<InitState>
+  /** `provider` is optional. The init pipeline passes one (it owns
+   *  intro copy and provider-specific defaults); the post-init handoff
+   *  steps invoked by `stash plan` / `stash impl` don't have a provider
+   *  to give and don't use one. */
+  run(state: InitState, provider?: InitProvider): Promise<InitState>
 }
 
 export interface InitProvider {

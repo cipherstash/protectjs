@@ -9,24 +9,8 @@ import {
   CONTEXT_REL_PATH,
   type ContextFile,
 } from '../init/lib/write-context.js'
-import {
-  CancelledError,
-  type InitProvider,
-  type InitState,
-} from '../init/types.js'
+import { CancelledError, type InitState } from '../init/types.js'
 import { detectPackageManager, runnerCommand } from '../init/utils.js'
-
-/**
- * `stash plan` borrows the same handoff machinery as `stash impl`. The
- * handoff steps don't actually use the provider (their `run` signatures
- * take `_provider`); the abstraction is an init-time concept for intro
- * copy. A stub satisfies the type.
- */
-const STUB_PROVIDER: InitProvider = {
-  name: 'plan',
-  introMessage: '',
-  getNextSteps: () => [],
-}
 
 function buildStateFromContext(
   ctx: ContextFile,
@@ -82,7 +66,7 @@ export async function planCommand() {
     const agents = detectAgents(cwd, process.env)
     const state = buildStateFromContext(ctx, agents)
 
-    await howToProceedStep.run(state, STUB_PROVIDER)
+    await howToProceedStep.run(state)
 
     // Chain into `stash impl` so the user doesn't have to copy/paste. Lazy
     // import avoids a circular module load — plan and impl both pull from

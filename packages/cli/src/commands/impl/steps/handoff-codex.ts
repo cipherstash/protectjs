@@ -28,7 +28,7 @@ const CODEX_INSTALL_URL = 'https://github.com/openai/codex'
 export const handoffCodexStep: InitStep = {
   id: 'handoff-codex',
   name: 'Hand off to Codex',
-  async run(state: InitState, _provider: InitProvider): Promise<InitState> {
+  async run(state: InitState, _provider?: InitProvider): Promise<InitState> {
     const cwd = process.cwd()
     const integration = state.integration ?? 'postgresql'
 

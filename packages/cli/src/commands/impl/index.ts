@@ -9,24 +9,9 @@ import {
   CONTEXT_REL_PATH,
   type ContextFile,
 } from '../init/lib/write-context.js'
-import {
-  CancelledError,
-  type InitProvider,
-  type InitState,
-} from '../init/types.js'
+import { CancelledError, type InitState } from '../init/types.js'
 import { detectPackageManager, runnerCommand } from '../init/utils.js'
 import { howToProceedStep } from './steps/how-to-proceed.js'
-
-/**
- * The handoff steps in `impl/steps/handoff-*.ts` accept an `InitProvider`
- * but ignore it. Stub keeps the type signature happy without pretending
- * impl has provider-specific behaviour.
- */
-const STUB_PROVIDER: InitProvider = {
-  name: 'impl',
-  introMessage: '',
-  getNextSteps: () => [],
-}
 
 function buildStateFromContext(
   ctx: ContextFile,
@@ -46,15 +31,14 @@ function buildStateFromContext(
 }
 
 /**
- * Confirm "are you sure?" before implementing without a plan. The
- * default-no on the confirm is the security stance — passing through
- * the planning checkpoint by accident is the failure mode we're guarding
- * against.
+ * Confirm before launching implementation when the user has chosen to
+ * skip the planning checkpoint. Default-no is the security stance —
+ * passing through this prompt by accident is the failure mode we're
+ * guarding against.
  */
 async function confirmContinueWithoutPlan(): Promise<void> {
   const confirmed = await p.confirm({
-    message:
-      'Implementing without a plan commits you to ~45–60 min of agent work. Continue?',
+    message: 'Implementation can take some time. Continue?',
     initialValue: false,
   })
   if (p.isCancel(confirmed) || !confirmed) {
@@ -168,7 +152,7 @@ export async function implCommand(flags: Record<string, boolean>) {
     const agents = detectAgents(cwd, process.env)
     const state = buildStateFromContext(ctx, agents)
 
-    await howToProceedStep.run(state, STUB_PROVIDER)
+    await howToProceedStep.run(state)
 
     p.outro(
       `Implementation handoff complete. Run \`${cli} db status\` to verify state.`,
