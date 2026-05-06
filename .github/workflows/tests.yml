@@ -137,3 +137,64 @@ jobs:
       # job above; we filter to the new workspace here to avoid duplication.
       - name: Run E2E tests
         run: pnpm exec turbo run test:e2e --filter @cipherstash/e2e
+
+  changes:
+    name: Detect changed paths
+    runs-on: ubuntu-latest
+    # Outputs a boolean `bench` consumed by bench-smoke-tests below.
+    # On pull_request, dorny/paths-filter uses the GitHub API (no checkout
+    # needed). On push, it falls back to comparing against the event's
+    # `before` SHA, which is fine for fast-forward pushes to main.
+    outputs:
+      bench: ${{ steps.filter.outputs.bench }}
+    steps:
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            bench:
+              - 'packages/bench/**'
+              - 'local/**'
+              - '.github/workflows/tests.yml'
+
+  bench-smoke-tests:
+    name: Run Bench Smoke Tests
+    needs: changes
+    if: needs.changes.outputs.bench == 'true'
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v6.0.3
+        name: Install pnpm
+        with:
+          run_install: false
+
+      - name: Install Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: 'pnpm'
+
+      # node-pty's install hook falls back to `node-gyp rebuild` when no
+      # linux-x64 prebuild matches. pnpm/action-setup v6 no longer ships
+      # node-gyp on PATH, so install it explicitly.
+      - name: Install node-gyp
+        run: npm install -g node-gyp
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Builds the local EQL-enabled Postgres image (local/Dockerfile),
+      # starts it, and waits for the pg_isready healthcheck to pass.
+      - name: Start local Postgres (EQL)
+        working-directory: local
+        run: docker compose up --wait --wait-timeout 60
+
+      # `pnpm test:local` resolves to `vitest run`; the `--` passthrough
+      # narrows it to __tests__/db-only.test.ts (credential-free smoke).
+      - name: Run bench smoke tests
+        working-directory: packages/bench
+        run: pnpm test:local -- db-only
