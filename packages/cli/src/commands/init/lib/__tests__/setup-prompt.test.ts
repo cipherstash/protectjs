@@ -10,10 +10,11 @@ const baseCtx: SetupPromptContext = {
   stackInstalled: true,
   cliInstalled: true,
   handoff: 'claude-code',
+  mode: 'implement',
   installedSkills: ['stash-encryption', 'stash-drizzle', 'stash-cli'],
 }
 
-describe('renderSetupPrompt — orient + route', () => {
+describe('renderSetupPrompt — orient + route (implement mode)', () => {
   it('emits integration + package manager in the header', () => {
     const out = renderSetupPrompt(baseCtx)
     expect(out).toContain('Integration: `drizzle`')
@@ -138,5 +139,101 @@ describe('renderSetupPrompt — orient + route', () => {
     const out = renderSetupPrompt(baseCtx)
     expect(out).toContain('serverExternalPackages')
     expect(out).toContain('@cipherstash/protect-ffi')
+  })
+
+  it('directs the agent to read .cipherstash/plan.md first if it exists', () => {
+    // Plan mode produces .cipherstash/plan.md; if the user later runs init
+    // again in implement mode, the plan must be the source of truth — not
+    // a re-asked routing question.
+    const out = renderSetupPrompt(baseCtx)
+    expect(out).toContain('.cipherstash/plan.md')
+    expect(out).toMatch(/source of truth/i)
+  })
+})
+
+describe('renderSetupPrompt — plan mode', () => {
+  const planCtx: SetupPromptContext = { ...baseCtx, mode: 'plan' }
+
+  it('frames the deliverable as a plan file, not code changes', () => {
+    const out = renderSetupPrompt(planCtx)
+    expect(out).toContain('# CipherStash setup — write a plan')
+    expect(out).toContain('.cipherstash/plan.md')
+    expect(out).toMatch(/produce a plan file/i)
+  })
+
+  it('explicitly forbids mutating commands during planning', () => {
+    const out = renderSetupPrompt(planCtx)
+    expect(out).toContain('## What you must NOT do')
+    expect(out).toMatch(/db push/)
+    expect(out).toMatch(/encrypt backfill/)
+    expect(out).toMatch(/encrypt cutover/)
+    expect(out).toMatch(/encrypt drop/)
+  })
+
+  it('allows read-only inspection commands', () => {
+    const out = renderSetupPrompt(planCtx)
+    expect(out).toMatch(/db status/)
+    expect(out).toMatch(/Read-only/i)
+  })
+
+  it('tells the agent to offer copying the plan into docs/plans when it exists', () => {
+    const out = renderSetupPrompt(planCtx)
+    expect(out).toContain('docs/plans/')
+    expect(out).toMatch(/offer to copy/i)
+  })
+
+  it('lists project-specific risk classes the plan must cover', () => {
+    const out = renderSetupPrompt(planCtx)
+    expect(out).toMatch(/bundler exclusion/i)
+    expect(out).toMatch(/top-level-await/i)
+    expect(out).toMatch(/partial CipherStash/i)
+  })
+
+  it('requires the plan to identify which lifecycle path applies per column', () => {
+    const out = renderSetupPrompt(planCtx)
+    expect(out).toMatch(/path 1/i)
+    expect(out).toMatch(/path 3/i)
+    expect(out).toMatch(/four-deploy sequence/i)
+  })
+
+  it('still tells the agent its first response is an orientation message, not action', () => {
+    const out = renderSetupPrompt(planCtx)
+    expect(out).toContain('## Your first response')
+    expect(out).toMatch(/orientation message/i)
+  })
+
+  it('references concrete table/column names from .cipherstash/context.json', () => {
+    const out = renderSetupPrompt(planCtx)
+    expect(out).toContain('.cipherstash/context.json')
+  })
+
+  it('instructs the agent to begin the plan with a machine-readable summary block', () => {
+    // `stash impl` parses this block to render a confirmation panel before
+    // launching implementation. If the agent forgets it, plan-summary
+    // gracefully degrades — but the prompt still has to ask for it so
+    // most plans get a structured summary.
+    const out = renderSetupPrompt(planCtx)
+    expect(out).toContain('cipherstash:plan-summary')
+    expect(out).toContain('"columns"')
+    // The instruction shows the union form `"new" | "migrate"`; both
+    // values must appear so the agent knows what to choose between.
+    expect(out).toContain('"new"')
+    expect(out).toContain('"migrate"')
+    expect(out).toMatch(/at the very top of the file/i)
+  })
+
+  it('preserves the integration + package manager header in plan mode', () => {
+    const out = renderSetupPrompt(planCtx)
+    expect(out).toContain('Integration: `drizzle`')
+    expect(out).toContain('Package manager: `pnpm`')
+  })
+
+  it('does not emit the implement-mode flow walkthroughs verbatim', () => {
+    // Plan mode summarises the two options in one line each rather than
+    // restating the full numbered walkthroughs; the walkthroughs live in
+    // the implement prompt.
+    const out = renderSetupPrompt(planCtx)
+    expect(out).not.toContain('### Add a new encrypted column')
+    expect(out).not.toContain('### Migrate an existing column to encrypted')
   })
 })

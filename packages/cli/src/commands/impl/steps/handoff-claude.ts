@@ -1,11 +1,11 @@
 import * as p from '@clack/prompts'
-import { spawnAgent, writeArtifacts } from '../lib/handoff-helpers.js'
-import { installSkills } from '../lib/install-skills.js'
+import { spawnAgent, writeArtifacts } from '../../init/lib/handoff-helpers.js'
+import { installSkills } from '../../init/lib/install-skills.js'
 import {
   CONTEXT_REL_PATH,
   SETUP_PROMPT_REL_PATH,
-} from '../lib/write-context.js'
-import type { InitProvider, InitState, InitStep } from '../types.js'
+} from '../../init/lib/write-context.js'
+import type { HandoffStep, InitState } from '../../init/types.js'
 
 const CLAUDE_SKILLS_DIR = '.claude/skills'
 
@@ -18,10 +18,10 @@ const CLAUDE_INSTALL_URL = 'https://code.claude.com/docs/en/quickstart'
  * on PATH we still write the artifacts and print install + manual-launch
  * instructions.
  */
-export const handoffClaudeStep: InitStep = {
+export const handoffClaudeStep: HandoffStep = {
   id: 'handoff-claude',
   name: 'Hand off to Claude Code',
-  async run(state: InitState, _provider: InitProvider): Promise<InitState> {
+  async run(state: InitState): Promise<InitState> {
     const cwd = process.cwd()
     const integration = state.integration ?? 'postgresql'
 
@@ -34,7 +34,11 @@ export const handoffClaudeStep: InitStep = {
 
     writeArtifacts(cwd, state, 'claude-code', installed)
 
-    const launchPrompt = `Read ${SETUP_PROMPT_REL_PATH} and complete the setup steps. The installed skills under ${CLAUDE_SKILLS_DIR}/ have the rules; ${CONTEXT_REL_PATH} has the project facts.`
+    const mode = state.mode ?? 'implement'
+    const launchPrompt =
+      mode === 'plan'
+        ? `Read ${SETUP_PROMPT_REL_PATH} and produce the planning deliverable it describes. The installed skills under ${CLAUDE_SKILLS_DIR}/ have the rules; ${CONTEXT_REL_PATH} has the project facts. Do not edit code or run mutating commands during this phase.`
+        : `Read ${SETUP_PROMPT_REL_PATH} and complete the setup steps. The installed skills under ${CLAUDE_SKILLS_DIR}/ have the rules; ${CONTEXT_REL_PATH} has the project facts.`
 
     if (!state.agents?.cli.claudeCode) {
       p.note(

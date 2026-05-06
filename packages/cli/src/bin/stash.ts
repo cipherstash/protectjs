@@ -16,9 +16,12 @@ import * as p from '@clack/prompts'
 // Commands that depend on @cipherstash/stack are lazy-loaded in the switch below.
 import {
   authCommand,
+  dbStatusCommand,
   envCommand,
+  implCommand,
   initCommand,
   installCommand,
+  planCommand,
   statusCommand,
   testConnectionCommand,
   upgradeCommand,
@@ -74,6 +77,9 @@ ${messages.cli.usagePrefix}${STASH} <command> [options]
 
 Commands:
   init                 Initialize CipherStash for your project
+  plan                 Draft a reviewable encryption plan at .cipherstash/plan.md
+  impl                 Execute the plan with a local agent
+  status               Displays implementation status
   auth <subcommand>    Authenticate with CipherStash
   wizard               AI-guided encryption setup (reads your codebase)
 
@@ -104,6 +110,10 @@ Init Flags:
   --supabase           Use Supabase-specific setup flow
   --drizzle            Use Drizzle-specific setup flow
 
+Impl Flags:
+  --continue-without-plan  Skip planning and go straight to implementation
+                           (interactively confirms before proceeding)
+
 DB Flags:
   --force                    (install) Reinstall / overwrite even if already installed
   --dry-run                  (install, push, upgrade) Show what would happen without making changes
@@ -119,6 +129,10 @@ DB Flags:
 Examples:
   ${STASH} init
   ${STASH} init --supabase
+  ${STASH} plan
+  ${STASH} impl
+  ${STASH} impl --continue-without-plan
+  ${STASH} status
   ${STASH} auth login
   ${STASH} wizard
   ${STASH} db install
@@ -224,7 +238,7 @@ async function runDbCommand(
       break
     }
     case 'status':
-      await statusCommand({ databaseUrl })
+      await dbStatusCommand({ databaseUrl })
       break
     case 'test-connection':
       await testConnectionCommand({ databaseUrl })
@@ -366,6 +380,15 @@ async function main() {
   switch (command) {
     case 'init':
       await initCommand(flags)
+      break
+    case 'plan':
+      await planCommand()
+      break
+    case 'impl':
+      await implCommand(flags)
+      break
+    case 'status':
+      await statusCommand()
       break
     case 'auth': {
       const authArgs = subcommand ? [subcommand, ...commandArgs] : commandArgs
