@@ -1,5 +1,5 @@
 import * as p from '@clack/prompts'
-import { implCommand } from '../impl/index.js'
+import { planCommand } from '../plan/index.js'
 import { createBaseProvider } from './providers/base.js'
 import { createDrizzleProvider } from './providers/drizzle.js'
 import { createSupabaseProvider } from './providers/supabase.js'
@@ -89,25 +89,25 @@ export async function initCommand(flags: Record<string, boolean>) {
 
     p.note(checkmarks.join('\n'), 'Setup complete')
 
-    // Offer to chain straight into `stash impl` so first-time users don't
+    // Offer to chain straight into `stash plan` so first-time users don't
     // have to copy/paste the next command. Default-yes for low friction;
     // answering N (or running non-interactively) preserves the explicit
-    // two-command flow. Only prompts in plan mode by definition — at this
-    // point the user has no plan yet, so impl will draft one (~1–3 min)
-    // rather than dropping them into the hour-long implementation phase.
+    // multi-command flow. Drafting a plan is fast (~1–3 min of agent
+    // thinking) and produces a reviewable artifact — `stash impl` is the
+    // separate, slower verb that actually mutates code.
     if (process.stdout.isTTY) {
       const proceed = await p.confirm({
-        message: `Continue to \`${cli} impl\` now to draft your encryption plan?`,
+        message: `Continue to \`${cli} plan\` now to draft your encryption plan?`,
         initialValue: true,
       })
       if (!p.isCancel(proceed) && proceed) {
-        p.outro('Setup complete — handing off to `stash impl`.')
-        await implCommand({})
+        p.outro('Setup complete — handing off to `stash plan`.')
+        await planCommand()
         return
       }
     }
 
-    p.outro(`Next: run \`${cli} impl\` to draft your encryption plan.`)
+    p.outro(`Next: run \`${cli} plan\` to draft your encryption plan.`)
   } catch (err) {
     if (err instanceof CancelledError) {
       p.cancel('Setup cancelled.')

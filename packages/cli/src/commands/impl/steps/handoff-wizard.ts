@@ -23,7 +23,7 @@ import { runWizardSpawn } from '../../wizard/index.js'
 export const handoffWizardStep: InitStep = {
   id: 'handoff-wizard',
   name: 'Use the CipherStash Agent',
-  async run(state: InitState, _provider: InitProvider): Promise<InitState> {
+  async run(state: InitState, _provider?: InitProvider): Promise<InitState> {
     const cwd = process.cwd()
     const envKeys = state.envKeys ?? []
 

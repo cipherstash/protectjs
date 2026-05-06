@@ -2,22 +2,17 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { deriveMode, readContextFile } from '../index.js'
+import { readContextFile } from '../read-context.js'
 
 let cwd: string
 
 beforeEach(() => {
-  cwd = mkdtempSync(join(tmpdir(), 'stash-impl-'))
+  cwd = mkdtempSync(join(tmpdir(), 'stash-context-'))
 })
 
 afterEach(() => {
   rmSync(cwd, { recursive: true, force: true })
 })
-
-function writePlan(): void {
-  mkdirSync(join(cwd, '.cipherstash'), { recursive: true })
-  writeFileSync(join(cwd, '.cipherstash', 'plan.md'), '# plan\n', 'utf-8')
-}
 
 function writeContext(payload: Record<string, unknown>): void {
   mkdirSync(join(cwd, '.cipherstash'), { recursive: true })
@@ -27,29 +22,6 @@ function writeContext(payload: Record<string, unknown>): void {
     'utf-8',
   )
 }
-
-describe('deriveMode (no --yolo)', () => {
-  it('returns plan when no plan file exists', async () => {
-    expect(await deriveMode(cwd, false)).toBe('plan')
-  })
-
-  it('returns implement when plan file exists', async () => {
-    writePlan()
-    expect(await deriveMode(cwd, false)).toBe('implement')
-  })
-})
-
-describe('deriveMode (--yolo)', () => {
-  it('is a no-op when a plan already exists — no prompt, returns implement', async () => {
-    // The interactive confirmation must NOT fire when a plan exists, since
-    // the safety checkpoint (the plan itself) has already happened.
-    writePlan()
-    expect(await deriveMode(cwd, true)).toBe('implement')
-  })
-
-  // The `--yolo + no plan` path is interactive (p.confirm). Covered by
-  // manual smoke tests; mocking @clack/prompts isn't worth the churn here.
-})
 
 describe('readContextFile', () => {
   it('returns undefined when context.json is missing', () => {

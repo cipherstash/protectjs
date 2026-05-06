@@ -28,7 +28,7 @@ const AGENTS_MD_REL_PATH = 'AGENTS.md'
 export const handoffAgentsMdStep: InitStep = {
   id: 'handoff-agents-md',
   name: 'Write AGENTS.md',
-  async run(state: InitState, _provider: InitProvider): Promise<InitState> {
+  async run(state: InitState, _provider?: InitProvider): Promise<InitState> {
     const cwd = process.cwd()
     const integration = state.integration ?? 'postgresql'
 

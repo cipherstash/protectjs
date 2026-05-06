@@ -21,7 +21,7 @@ const CLAUDE_INSTALL_URL = 'https://code.claude.com/docs/en/quickstart'
 export const handoffClaudeStep: InitStep = {
   id: 'handoff-claude',
   name: 'Hand off to Claude Code',
-  async run(state: InitState, _provider: InitProvider): Promise<InitState> {
+  async run(state: InitState, _provider?: InitProvider): Promise<InitState> {
     const cwd = process.cwd()
     const integration = state.integration ?? 'postgresql'
 
