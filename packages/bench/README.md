@@ -17,8 +17,8 @@ on a Supabase-shaped install (no operator classes). It runs in two layers:
   ```bash
   cd ../../local && docker compose up -d
   ```
-- A CipherStash profile signed in (`stash login`). Auth is read from the
-  CipherStash profile; no environment variables required.
+- A CipherStash profile signed in (`npx stash auth login`). Auth is read from
+  the CipherStash profile; no environment variables required.
 - `DATABASE_URL` only needs to be set if you want to override the default
   (`postgres://cipherstash:password@localhost:5432/cipherstash`).
 
@@ -32,7 +32,7 @@ the repo's CI `test` step (the scripts are deliberately named `test:local` /
 # Credential-free smoke (verifies schema + EXPLAIN harness):
 pnpm test:local -- db-only
 
-# Full suite (requires CipherStash auth via `stash login`, seeds 10k rows on first run):
+# Full suite (requires CipherStash auth via `npx stash auth login`, seeds 10k rows on first run):
 pnpm db:setup                   # apply schema + seed BENCH_ROWS rows (default 10k)
 pnpm test:local                 # EXPLAIN-shape assertions for #421 / #422
 pnpm bench:local                # timing benches (slow)
