@@ -1,0 +1,58 @@
+name: "Test JS"
+
+on:
+  push:
+    branches:
+      - 'main'
+    paths:
+      - 'packages/bench/**'
+      - 'local/**'
+      - '.github/workflows/tests-bench.yml'
+  pull_request:
+    branches:
+      - "**"
+    paths:
+      - 'packages/bench/**'
+      - 'local/**'
+      - '.github/workflows/tests-bench.yml'
+
+jobs:
+  tests-bench:
+    name: Run Bench Smoke Tests
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v6
+        name: Install pnpm
+        with:
+          run_install: false
+
+      - name: Install Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: 'pnpm'
+
+      # node-pty's install hook falls back to `node-gyp rebuild` when no
+      # linux-x64 prebuild matches. pnpm/action-setup v6 no longer ships
+      # node-gyp on PATH, so install it explicitly.
+      - name: Install node-gyp
+        run: npm install -g node-gyp
+
+      - name: Install dependencies
+        run: pnpm recursive install --frozen-lockfile
+
+      # Builds the local EQL-enabled Postgres image (local/Dockerfile),
+      # starts it, and waits for the pg_isready healthcheck to pass.
+      - name: Start local Postgres (EQL)
+        working-directory: local
+        run: docker compose up --wait --wait-timeout 60
+
+      # `pnpm test:local` resolves to `vitest run`; the `--` passthrough
+      # narrows it to __tests__/db-only.test.ts (credential-free smoke).
+      - name: Run bench smoke tests
+        working-directory: packages/bench
+        run: pnpm test:local -- db-only
