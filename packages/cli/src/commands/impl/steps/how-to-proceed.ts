@@ -2,10 +2,9 @@ import * as p from '@clack/prompts'
 import {
   CancelledError,
   type HandoffChoice,
+  type HandoffStep,
   type InitMode,
-  type InitProvider,
   type InitState,
-  type InitStep,
 } from '../../init/types.js'
 import { handoffAgentsMdStep } from './handoff-agents-md.js'
 import { handoffClaudeStep } from './handoff-claude.js'
@@ -79,10 +78,10 @@ export function buildOptions(
   return options
 }
 
-export const howToProceedStep: InitStep = {
+export const howToProceedStep: HandoffStep = {
   id: 'how-to-proceed',
   name: 'How to proceed',
-  async run(state: InitState, _provider?: InitProvider): Promise<InitState> {
+  async run(state: InitState): Promise<InitState> {
     const mode: InitMode = state.mode ?? 'implement'
     const message =
       mode === 'plan'

@@ -8,7 +8,7 @@ import {
   CONTEXT_REL_PATH,
   SETUP_PROMPT_REL_PATH,
 } from '../../init/lib/write-context.js'
-import type { InitProvider, InitState, InitStep } from '../../init/types.js'
+import type { HandoffStep, InitState } from '../../init/types.js'
 
 const AGENTS_MD_REL_PATH = 'AGENTS.md'
 
@@ -25,10 +25,10 @@ const AGENTS_MD_REL_PATH = 'AGENTS.md'
  * tools wouldn't know to look there. Re-runs replace only the sentinel
  * region in AGENTS.md.
  */
-export const handoffAgentsMdStep: InitStep = {
+export const handoffAgentsMdStep: HandoffStep = {
   id: 'handoff-agents-md',
   name: 'Write AGENTS.md',
-  async run(state: InitState, _provider?: InitProvider): Promise<InitState> {
+  async run(state: InitState): Promise<InitState> {
     const cwd = process.cwd()
     const integration = state.integration ?? 'postgresql'
 

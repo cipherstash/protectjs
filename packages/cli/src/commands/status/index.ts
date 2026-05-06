@@ -1,9 +1,9 @@
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 import * as p from '@clack/prompts'
+import { readContextFile } from '../init/lib/read-context.js'
 import { PLAN_REL_PATH } from '../init/lib/setup-prompt.js'
 import {
-  CONTEXT_REL_PATH,
   type ContextFile,
   SETUP_PROMPT_REL_PATH,
 } from '../init/lib/write-context.js'
@@ -29,15 +29,7 @@ export interface ProjectStatus {
 }
 
 export function readProjectStatus(cwd: string): ProjectStatus {
-  const contextPath = resolve(cwd, CONTEXT_REL_PATH)
-  let context: ContextFile | undefined
-  if (existsSync(contextPath)) {
-    try {
-      context = JSON.parse(readFileSync(contextPath, 'utf-8')) as ContextFile
-    } catch {
-      // malformed context.json — treat as not-initialized
-    }
-  }
+  const context = readContextFile(cwd)
   return {
     initialized: context !== undefined,
     context,

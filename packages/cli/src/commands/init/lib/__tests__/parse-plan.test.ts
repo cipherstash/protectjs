@@ -61,6 +61,17 @@ describe('parsePlanSummary', () => {
     expect(parsePlanSummary(empty)).toBeUndefined()
   })
 
+  it('rejects an empty columns array — falls back to soft summary', () => {
+    // An agent that writes `{"columns": []}` (genuinely empty plan,
+    // truncated write, or chat cutoff) would otherwise render as
+    // "0 columns across 0 tables — single-deploy", which is misleading.
+    // `stash impl` falls back to the "open in your editor" panel instead.
+    const md = `<!-- cipherstash:plan-summary
+{"columns": []}
+-->`
+    expect(parsePlanSummary(md)).toBeUndefined()
+  })
+
   it('tolerates extra unknown fields without dropping the parse', () => {
     // Future-proofing — agents may include estimated-deploys or other
     // ancillary keys. The parser should ignore them, not fail.

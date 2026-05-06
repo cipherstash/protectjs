@@ -5,7 +5,7 @@ import {
   buildContextFile,
   writeContextFile,
 } from '../../init/lib/write-context.js'
-import type { InitProvider, InitState, InitStep } from '../../init/types.js'
+import type { HandoffStep, InitState } from '../../init/types.js'
 import { runWizardSpawn } from '../../wizard/index.js'
 
 /**
@@ -20,10 +20,10 @@ import { runWizardSpawn } from '../../wizard/index.js'
  * No skills are installed here. The wizard fetches its own agent-side
  * prompt from the gateway and runs its own `maybeInstallSkills` flow.
  */
-export const handoffWizardStep: InitStep = {
+export const handoffWizardStep: HandoffStep = {
   id: 'handoff-wizard',
   name: 'Use the CipherStash Agent',
-  async run(state: InitState, _provider?: InitProvider): Promise<InitState> {
+  async run(state: InitState): Promise<InitState> {
     const cwd = process.cwd()
     const envKeys = state.envKeys ?? []
 

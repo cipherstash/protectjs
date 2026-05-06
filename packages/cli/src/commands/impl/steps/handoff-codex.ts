@@ -9,7 +9,7 @@ import {
   CONTEXT_REL_PATH,
   SETUP_PROMPT_REL_PATH,
 } from '../../init/lib/write-context.js'
-import type { InitProvider, InitState, InitStep } from '../../init/types.js'
+import type { HandoffStep, InitState } from '../../init/types.js'
 
 const AGENTS_MD_REL_PATH = 'AGENTS.md'
 const CODEX_SKILLS_DIR = '.codex/skills'
@@ -25,10 +25,10 @@ const CODEX_INSTALL_URL = 'https://github.com/openai/codex'
  * AGENTS.md is sentinel-upserted so re-runs replace only our region and
  * any user content outside it survives.
  */
-export const handoffCodexStep: InitStep = {
+export const handoffCodexStep: HandoffStep = {
   id: 'handoff-codex',
   name: 'Hand off to Codex',
-  async run(state: InitState, _provider?: InitProvider): Promise<InitState> {
+  async run(state: InitState): Promise<InitState> {
     const cwd = process.cwd()
     const integration = state.integration ?? 'postgresql'
 

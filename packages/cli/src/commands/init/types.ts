@@ -64,14 +64,32 @@ export interface InitState {
   mode?: InitMode
 }
 
+/**
+ * A step that runs as part of the `stash init` pipeline. The init
+ * pipeline owns the `InitProvider` (intro copy, provider-specific
+ * defaults) and threads it into every step. Some init steps consult it
+ * (e.g. `authenticateStep` reads `provider.name` for telemetry) so the
+ * argument is required at the type level — calling
+ * `authenticateStep.run(state)` without a provider would crash.
+ */
 export interface InitStep {
   id: string
   name: string
-  /** `provider` is optional. The init pipeline passes one (it owns
-   *  intro copy and provider-specific defaults); the post-init handoff
-   *  steps invoked by `stash plan` / `stash impl` don't have a provider
-   *  to give and don't use one. */
-  run(state: InitState, provider?: InitProvider): Promise<InitState>
+  run(state: InitState, provider: InitProvider): Promise<InitState>
+}
+
+/**
+ * A step that runs after init has finished — invoked by `stash plan` and
+ * `stash impl` to drive the agent handoff. These steps don't have an
+ * `InitProvider` available (init owns that abstraction) and don't need
+ * one, so the type intentionally omits it. Keeping `InitStep` and
+ * `HandoffStep` distinct prevents callers from accidentally invoking
+ * init-only steps from the post-init flow.
+ */
+export interface HandoffStep {
+  id: string
+  name: string
+  run(state: InitState): Promise<InitState>
 }
 
 export interface InitProvider {

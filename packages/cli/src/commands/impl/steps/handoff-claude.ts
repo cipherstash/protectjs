@@ -5,7 +5,7 @@ import {
   CONTEXT_REL_PATH,
   SETUP_PROMPT_REL_PATH,
 } from '../../init/lib/write-context.js'
-import type { InitProvider, InitState, InitStep } from '../../init/types.js'
+import type { HandoffStep, InitState } from '../../init/types.js'
 
 const CLAUDE_SKILLS_DIR = '.claude/skills'
 
@@ -18,10 +18,10 @@ const CLAUDE_INSTALL_URL = 'https://code.claude.com/docs/en/quickstart'
  * on PATH we still write the artifacts and print install + manual-launch
  * instructions.
  */
-export const handoffClaudeStep: InitStep = {
+export const handoffClaudeStep: HandoffStep = {
   id: 'handoff-claude',
   name: 'Hand off to Claude Code',
-  async run(state: InitState, _provider?: InitProvider): Promise<InitState> {
+  async run(state: InitState): Promise<InitState> {
     const cwd = process.cwd()
     const integration = state.integration ?? 'postgresql'
 

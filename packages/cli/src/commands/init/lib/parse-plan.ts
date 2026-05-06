@@ -49,7 +49,15 @@ function isPlanColumn(x: unknown): x is PlanColumn {
 function isPlanSummary(x: unknown): x is PlanSummary {
   if (!x || typeof x !== 'object') return false
   const obj = x as Record<string, unknown>
-  return Array.isArray(obj.columns) && obj.columns.every(isPlanColumn)
+  // Empty `columns` is rejected: downstream `renderPlanSummary` would
+  // produce "0 columns across 0 tables — single-deploy", which is
+  // misleading. Treating empty as invalid lets `stash impl` fall back
+  // to the soft "open it in your editor" panel.
+  return (
+    Array.isArray(obj.columns) &&
+    obj.columns.length > 0 &&
+    obj.columns.every(isPlanColumn)
+  )
 }
 
 /**
