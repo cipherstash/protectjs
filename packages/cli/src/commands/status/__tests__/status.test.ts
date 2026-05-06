@@ -134,11 +134,11 @@ describe('buildStages', () => {
     expect(stages[1].detail).toContain('.cipherstash/plan.md')
   })
 
-  it('points at `impl` for next-step when init done but plan missing', () => {
+  it('points at `plan` for next-step when init done but plan missing', () => {
     writeContext(sampleContext)
     const stages = buildStages(readProjectStatus(cwd), 'pnpm dlx stash')
     expect(stages[1].status).toBe('pending')
-    expect(stages[1].detail).toMatch(/impl/)
+    expect(stages[1].detail).toMatch(/plan/)
     expect(stages[2].detail).toMatch(/waiting on plan/)
   })
 
@@ -157,9 +157,11 @@ describe('nextAction', () => {
     expect(nextAction(readProjectStatus(cwd), 'pnpm dlx stash')).toMatch(/init/)
   })
 
-  it('points at impl when initialized but no plan', () => {
+  it('points at `plan` when initialized but no plan exists', () => {
     writeContext(sampleContext)
-    expect(nextAction(readProjectStatus(cwd), 'pnpm dlx stash')).toMatch(/impl/)
+    expect(nextAction(readProjectStatus(cwd), 'pnpm dlx stash')).toMatch(
+      /\bplan\b/,
+    )
   })
 
   it('asks the user to review the plan before implementing', () => {

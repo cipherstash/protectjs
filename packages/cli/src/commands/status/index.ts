@@ -54,7 +54,7 @@ export function buildStages(status: ProjectStatus, cli: string): Stage[] {
   const planDetail = status.planExists
     ? PLAN_REL_PATH
     : status.initialized
-      ? `run \`${cli} impl\` to draft`
+      ? `run \`${cli} plan\` to draft`
       : 'waiting on init'
 
   let implLabel = 'Implementation'
@@ -96,7 +96,7 @@ export function buildStages(status: ProjectStatus, cli: string): Stage[] {
 export function nextAction(status: ProjectStatus, cli: string): string {
   if (!status.initialized) return `Run \`${cli} init\` to begin.`
   if (!status.planExists) {
-    return `Run \`${cli} impl\` to draft your encryption plan.`
+    return `Run \`${cli} plan\` to draft your encryption plan.`
   }
   if (!status.agentEngaged) {
     return `Review \`${PLAN_REL_PATH}\`, then run \`${cli} impl\` to implement.`

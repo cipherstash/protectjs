@@ -21,6 +21,7 @@ import {
   implCommand,
   initCommand,
   installCommand,
+  planCommand,
   statusCommand,
   testConnectionCommand,
   upgradeCommand,
@@ -76,7 +77,8 @@ ${messages.cli.usagePrefix}${STASH} <command> [options]
 
 Commands:
   init                 Initialize CipherStash for your project
-  impl                 Draft an encryption plan (or implement, if a plan exists)
+  plan                 Draft a reviewable encryption plan at .cipherstash/plan.md
+  impl                 Execute an encryption plan (or implement without one with --continue-without-plan)
   status               Show project lifecycle: init done? plan written? implementation engaged?
   auth <subcommand>    Authenticate with CipherStash
   wizard               AI-guided encryption setup (reads your codebase)
@@ -109,8 +111,8 @@ Init Flags:
   --drizzle            Use Drizzle-specific setup flow
 
 Impl Flags:
-  --yolo               Skip the planning checkpoint and go straight to implementation
-                       (interactively confirms before proceeding)
+  --continue-without-plan  Skip the planning checkpoint and go straight to implementation
+                           (interactively confirms before proceeding)
 
 DB Flags:
   --force                    (install) Reinstall / overwrite even if already installed
@@ -127,8 +129,9 @@ DB Flags:
 Examples:
   ${STASH} init
   ${STASH} init --supabase
+  ${STASH} plan
   ${STASH} impl
-  ${STASH} impl --yolo
+  ${STASH} impl --continue-without-plan
   ${STASH} status
   ${STASH} auth login
   ${STASH} wizard
@@ -377,6 +380,9 @@ async function main() {
   switch (command) {
     case 'init':
       await initCommand(flags)
+      break
+    case 'plan':
+      await planCommand()
       break
     case 'impl':
       await implCommand(flags)
