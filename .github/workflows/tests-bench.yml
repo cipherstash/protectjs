@@ -45,6 +45,13 @@ jobs:
       - name: Install dependencies
         run: pnpm recursive install --frozen-lockfile
 
+      # `@cipherstash/stack` ships dist/-based `exports`; bench imports
+      # from it (and `@cipherstash/stack/drizzle`) so the package needs
+      # to be built before vitest can resolve it. Going through turbo
+      # also picks up `^build` deps if any are added later.
+      - name: Build @cipherstash/stack
+        run: pnpm exec turbo run build --filter @cipherstash/stack
+
       # Builds the local EQL-enabled Postgres image (local/Dockerfile),
       # starts it, and waits for the pg_isready healthcheck to pass.
       - name: Start local Postgres (EQL)
