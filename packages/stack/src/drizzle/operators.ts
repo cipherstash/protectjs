@@ -1484,15 +1484,26 @@ export function createEncryptionOperators(encryptionClient: EncryptionClient): {
       tableCache,
     )
 
+    // Fail fast if any value failed to encrypt — silently dropping a value
+    // would change query semantics (matches that should be found get missed).
+    if (encryptedValues.some((encrypted) => encrypted === undefined)) {
+      throw new EncryptionOperatorError(
+        'Encryption failed for one or more inArray values',
+        {
+          columnName: columnInfo.columnName,
+          tableName: columnInfo.tableName,
+          operator: 'inArray',
+        },
+      )
+    }
+
     // Wrap each comparison in eql_v2.hmac_256(...) so the hmac_256 functional
     // hash index engages. Postgres can BitmapOr several hash-index scans, so
     // OR-of-eq stays as fast as a single equality lookup per value.
-    const conditions = encryptedValues
-      .filter((encrypted) => encrypted !== undefined)
-      .map(
-        (encrypted) =>
-          sql`eql_v2.hmac_256(${left}) = eql_v2.hmac_256(${bindIfParam(encrypted, left)})`,
-      )
+    const conditions = encryptedValues.map(
+      (encrypted) =>
+        sql`eql_v2.hmac_256(${left}) = eql_v2.hmac_256(${bindIfParam(encrypted, left)})`,
+    )
 
     if (conditions.length === 0) {
       return sql`false`
@@ -1535,16 +1546,27 @@ export function createEncryptionOperators(encryptionClient: EncryptionClient): {
       tableCache,
     )
 
+    // Fail fast if any value failed to encrypt — silently dropping a value
+    // from a NOT IN list would admit rows that should be excluded.
+    if (encryptedValues.some((encrypted) => encrypted === undefined)) {
+      throw new EncryptionOperatorError(
+        'Encryption failed for one or more notInArray values',
+        {
+          columnName: columnInfo.columnName,
+          tableName: columnInfo.tableName,
+          operator: 'notInArray',
+        },
+      )
+    }
+
     // Wrap each comparison in eql_v2.hmac_256(...) for index engagement (see
     // encryptedInArray above for rationale). NOT IN is naturally low-
     // selectivity, so the planner may still pick a seq scan — the wrap keeps
     // it correct on Supabase and lets the planner decide.
-    const conditions = encryptedValues
-      .filter((encrypted) => encrypted !== undefined)
-      .map(
-        (encrypted) =>
-          sql`eql_v2.hmac_256(${left}) <> eql_v2.hmac_256(${bindIfParam(encrypted, left)})`,
-      )
+    const conditions = encryptedValues.map(
+      (encrypted) =>
+        sql`eql_v2.hmac_256(${left}) <> eql_v2.hmac_256(${bindIfParam(encrypted, left)})`,
+    )
 
     if (conditions.length === 0) {
       return sql`true`
