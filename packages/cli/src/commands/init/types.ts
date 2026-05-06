@@ -58,15 +58,20 @@ export interface InitState {
   agents?: AgentEnvironment
   /** What the user picked at the "how to proceed" step. */
   handoff?: HandoffChoice
-  /** Whether the handoff should plan first or implement directly. Set by
-   *  choose-mode. Defaults to `plan` when the user accepts the recommendation. */
+  /** Whether the handoff is producing a plan or executing one. Set by the
+   *  command itself: `stash plan` always sets `'plan'`, `stash impl` always
+   *  sets `'implement'`. */
   mode?: InitMode
 }
 
 export interface InitStep {
   id: string
   name: string
-  run(state: InitState, provider: InitProvider): Promise<InitState>
+  /** `provider` is optional. The init pipeline passes one (it owns
+   *  intro copy and provider-specific defaults); the post-init handoff
+   *  steps invoked by `stash plan` / `stash impl` don't have a provider
+   *  to give and don't use one. */
+  run(state: InitState, provider?: InitProvider): Promise<InitState>
 }
 
 export interface InitProvider {

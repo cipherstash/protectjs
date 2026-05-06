@@ -1,11 +1,11 @@
 import * as p from '@clack/prompts'
-import { spawnAgent, writeArtifacts } from '../lib/handoff-helpers.js'
-import { installSkills } from '../lib/install-skills.js'
+import { spawnAgent, writeArtifacts } from '../../init/lib/handoff-helpers.js'
+import { installSkills } from '../../init/lib/install-skills.js'
 import {
   CONTEXT_REL_PATH,
   SETUP_PROMPT_REL_PATH,
-} from '../lib/write-context.js'
-import type { InitProvider, InitState, InitStep } from '../types.js'
+} from '../../init/lib/write-context.js'
+import type { InitProvider, InitState, InitStep } from '../../init/types.js'
 
 const CLAUDE_SKILLS_DIR = '.claude/skills'
 
@@ -21,7 +21,7 @@ const CLAUDE_INSTALL_URL = 'https://code.claude.com/docs/en/quickstart'
 export const handoffClaudeStep: InitStep = {
   id: 'handoff-claude',
   name: 'Hand off to Claude Code',
-  async run(state: InitState, _provider: InitProvider): Promise<InitState> {
+  async run(state: InitState, _provider?: InitProvider): Promise<InitState> {
     const cwd = process.cwd()
     const integration = state.integration ?? 'postgresql'
 

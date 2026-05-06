@@ -6,7 +6,7 @@ import {
   type InitProvider,
   type InitState,
   type InitStep,
-} from '../types.js'
+} from '../../init/types.js'
 import { handoffAgentsMdStep } from './handoff-agents-md.js'
 import { handoffClaudeStep } from './handoff-claude.js'
 import { handoffCodexStep } from './handoff-codex.js'
@@ -82,7 +82,7 @@ export function buildOptions(
 export const howToProceedStep: InitStep = {
   id: 'how-to-proceed',
   name: 'How to proceed',
-  async run(state: InitState, provider: InitProvider): Promise<InitState> {
+  async run(state: InitState, _provider?: InitProvider): Promise<InitState> {
     const mode: InitMode = state.mode ?? 'implement'
     const message =
       mode === 'plan'
@@ -101,13 +101,13 @@ export const howToProceedStep: InitStep = {
 
     switch (choice) {
       case 'claude-code':
-        return handoffClaudeStep.run(next, provider)
+        return handoffClaudeStep.run(next)
       case 'codex':
-        return handoffCodexStep.run(next, provider)
+        return handoffCodexStep.run(next)
       case 'agents-md':
-        return handoffAgentsMdStep.run(next, provider)
+        return handoffAgentsMdStep.run(next)
       case 'wizard':
-        return handoffWizardStep.run(next, provider)
+        return handoffWizardStep.run(next)
     }
   },
 }

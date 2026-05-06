@@ -1,15 +1,15 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import * as p from '@clack/prompts'
-import { buildAgentsMdBody } from '../lib/build-agents-md.js'
-import { spawnAgent, writeArtifacts } from '../lib/handoff-helpers.js'
-import { installSkills } from '../lib/install-skills.js'
-import { upsertManagedBlock } from '../lib/sentinel-upsert.js'
+import { buildAgentsMdBody } from '../../init/lib/build-agents-md.js'
+import { spawnAgent, writeArtifacts } from '../../init/lib/handoff-helpers.js'
+import { installSkills } from '../../init/lib/install-skills.js'
+import { upsertManagedBlock } from '../../init/lib/sentinel-upsert.js'
 import {
   CONTEXT_REL_PATH,
   SETUP_PROMPT_REL_PATH,
-} from '../lib/write-context.js'
-import type { InitProvider, InitState, InitStep } from '../types.js'
+} from '../../init/lib/write-context.js'
+import type { InitProvider, InitState, InitStep } from '../../init/types.js'
 
 const AGENTS_MD_REL_PATH = 'AGENTS.md'
 const CODEX_SKILLS_DIR = '.codex/skills'
@@ -28,7 +28,7 @@ const CODEX_INSTALL_URL = 'https://github.com/openai/codex'
 export const handoffCodexStep: InitStep = {
   id: 'handoff-codex',
   name: 'Hand off to Codex',
-  async run(state: InitState, _provider: InitProvider): Promise<InitState> {
+  async run(state: InitState, _provider?: InitProvider): Promise<InitState> {
     const cwd = process.cwd()
     const integration = state.integration ?? 'postgresql'
 
