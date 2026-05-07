@@ -1,5 +1,11 @@
 # @cipherstash/cli
 
+## 0.13.1
+
+### Patch Changes
+
+- 440879b: feat(cli): pass `--allow-dangerously-skip-permissions` when `stash init` launches Claude Code, so the user can opt in to skip-permissions mode mid-session without relaunching. Codex and Wizard handoffs are unchanged.
+
 ## 0.13.0
 
 ### Minor Changes
