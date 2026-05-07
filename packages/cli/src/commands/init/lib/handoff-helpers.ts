@@ -16,6 +16,11 @@ import {
  * prompt as a single argument. `stdio: 'inherit'` so the user sees tool
  * calls and approves edits live; the call resolves with the exit code.
  *
+ * Claude is launched with `--allow-dangerously-skip-permissions` so the
+ * user can opt in to skip-permissions mode for the integration handoff
+ * without having to relaunch — the flag permits the toggle, it doesn't
+ * force it on.
+ *
  * Returns -1 if the binary isn't on PATH (the spawn `error` event fires
  * before `close` does). Init never aborts on a non-zero code — the
  * artifacts are already written, the user can re-run the agent.
@@ -24,8 +29,12 @@ export function spawnAgent(
   binary: 'claude' | 'codex',
   prompt: string,
 ): Promise<number> {
+  const args =
+    binary === 'claude'
+      ? ['--allow-dangerously-skip-permissions', prompt]
+      : [prompt]
   return new Promise((resolvePromise) => {
-    const child = spawn(binary, [prompt], { stdio: 'inherit', shell: false })
+    const child = spawn(binary, args, { stdio: 'inherit', shell: false })
     child.on('close', (code) => resolvePromise(code ?? 0))
     child.on('error', () => resolvePromise(-1))
   })

@@ -47,7 +47,7 @@ export const handoffClaudeStep: HandoffStep = {
           `Install: ${CLAUDE_INSTALL_URL}`,
           '',
           'Once installed, run:',
-          `  claude '${launchPrompt}'`,
+          `  claude --allow-dangerously-skip-permissions '${launchPrompt}'`,
         ].join('\n'),
         'Files written — install Claude Code to run the handoff',
       )
@@ -58,7 +58,7 @@ export const handoffClaudeStep: HandoffStep = {
     const exitCode = await spawnAgent('claude', launchPrompt)
     if (exitCode !== 0) {
       p.log.warn(
-        `Claude Code exited with code ${exitCode}. Re-run \`claude '${launchPrompt}'\` to resume.`,
+        `Claude Code exited with code ${exitCode}. Re-run \`claude --allow-dangerously-skip-permissions '${launchPrompt}'\` to resume.`,
       )
     }
 
